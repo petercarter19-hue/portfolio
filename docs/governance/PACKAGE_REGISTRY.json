@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-14",
+  "updated_at": "2026-09-15",
   "classification_checkpoint": "c0450dbd675554e7363c8fc262a6d4f8bf2c6921",
   "current_checkpoint_at_creation": "fdb71c604f81d305b971775bd28aeac964231ebe",
   "authority_note": "This is a complete rationalization index, not delivery authority. CURRENT_LANES.json and CURRENT_BASELINE.yaml remain authoritative for current lifecycle and release state.",
@@ -40,6 +40,7 @@
       "PS-CONNECT-002",
       "PS-DATA-FOUNDATION-001",
       "PS-DELIVERY-RESET-001",
+      "PS-DELIVERY-CONTRACTS-SAFE-CUSTODY-001",
       "PS-GOV-001",
       "PS-GOV-CONNECTED-SYSTEM-001",
       "PS-GOV-JOURNAL-SYSTEM-001",
@@ -173,11 +174,11 @@
     ]
   },
   "counts": {
-    "current_protect": 81,
+    "current_protect": 82,
     "future_finish": 33,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 149
+    "total": 150
   }
 }

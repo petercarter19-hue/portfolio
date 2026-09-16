@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "pre_safe_custody_ref": "34e7b1cecc890bcb4544abbadadd96c60df71745",
+  "clients": {
+    "delivery": {
+      "path": "scripts/delivery_preflight.py",
+      "future_schema": 4,
+      "expected_error": "schema_version must be 3"
+    },
+    "lifecycle": {
+      "path": "scripts/worktree_lifecycle.py",
+      "future_schema": 2,
+      "expected_error": "registry schema is missing or unsupported"
+    }
+  }
+}

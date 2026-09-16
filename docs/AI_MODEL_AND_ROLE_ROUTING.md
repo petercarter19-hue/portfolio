@@ -291,12 +291,12 @@ identical failures, stop retrying and report the blocker.
 |---|---|---|
 | Site management | **GPT-6 Astra, Medium** | Required OpenAI site-management default. |
 | Package management | **Sol, Extra High** | Required OpenAI package-management default. |
-| Known-cause implementation | **Sol, Extra High** | Implementation, associated tests, debugging, complete-diff self-review and corrections |
-| Bounded supporting work | **Sol, High** | Evidence collection and routine documentation under the assigned writer or manager |
+| Known-cause implementation | **Sol, High** | Implementation, associated tests, debugging, complete-diff self-review and corrections |
+| Bounded supporting work | **Sol, Medium** | Evidence collection and routine documentation under the assigned writer or manager |
 | Consequential architecture or cross-package decision | **GPT-6 Astra, High** | Architecture or coordination whose decision materially affects multiple systems or packages |
 | Difficult unresolved debugging or integration | **GPT-6 Astra, Medium or High** | Use only when the unresolved cause or integration risk needs broader reasoning; state that reason first |
 | Consequential independent security, privacy or architecture review | **Fresh GPT-6 Astra, High** | Exact-candidate review of the defined consequential risk |
-| Routine bounded independent review, release or closeout execution | **Sol, Extra High** | Focused exact-candidate conformance review or ordinary authorized delivery execution |
+| Routine bounded independent review, release or closeout execution | **Sol, High** | Focused exact-candidate conformance review or ordinary authorized delivery execution |
 | Demanding well-bounded implementation | **Sol, Extra High** | Selectively for an unusually demanding implementation with clear boundaries; state the concrete need first |
 
 Site managers use Astra Medium; package managers use Sol Extra High. Discuss an

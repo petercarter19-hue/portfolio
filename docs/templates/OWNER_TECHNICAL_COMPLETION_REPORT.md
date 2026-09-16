@@ -23,6 +23,11 @@ applied.
 - Branch, base SHA, final SHA, and changed paths:
 - Verification performed and result:
 - Release state: local only / PR / merged / pipeline verified / live verified
+- Dependencies and custody: dependency, owner/package, state, exact release
+  condition, and whether it is only a control-window sequence.
+- Delivery state: active / paused / held / scope-release-frozen /
+  scope-sync-required / reconciliation-refresh-required. Hold policy and claim
+  pause are distinct.
 - Known limits, deferred work, or owner decision needed:
 - Next action (or `None`):
 

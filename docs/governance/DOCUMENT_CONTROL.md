@@ -10,8 +10,10 @@ When current records genuinely disagree, use this order:
 
 1. The owner's explicit current decision.
 2. `PeerSlate_Constitution_v3.0.md` for enduring product and trust rules.
-3. `CURRENT_BASELINE.yaml` for current authority pointers, active ownership,
-   verified release facts, and explicit temporary holds.
+3. `CURRENT_BASELINE.yaml` for current authority pointers, verified release
+   facts, sequencing, and explicit temporary holds. Active repository
+   writer/branch/path/domain ownership is defined by the validated package
+   claims indexed by `CURRENT_LANES.json`.
 4. `PeerSlate_Roadmap_v3.0.md` for sequencing and dependencies.
 5. The assigned initiative brief for bounded scope, files, acceptance, and
    exclusions.
@@ -29,7 +31,8 @@ authorization, canonical data, a migration, or a locked visual direction.
 |---|---|---|
 | Constitution v3.0 | durable product/trust rules | task steps, release history, test plans |
 | Roadmap v3.0 | order and dependencies | detailed package acceptance |
-| CURRENT_BASELINE | current pointers, active ownership, verified release facts | duplicate narrative status |
+| CURRENT_BASELINE | current pointers, sequencing/holds, verified release facts | package writer/branch/path/domain ownership or duplicate narrative status |
+| CURRENT_LANES + package claims | current repository writer, branch, exact paths/domains, review class, and lifecycle state | product direction, production authority, or sequencing policy |
 | Initiative brief | the one deliverable and its special risks | platform-wide policy |
 | Specialist standard | one risk domain when triggered | universal startup or delivery rules |
 | AI_WORKFLOW | the three delivery paths and release mechanics | product direction |
@@ -42,8 +45,9 @@ as historical evidence. They must not be read or updated by default.
 
 Update the smallest authoritative record that owns the changed fact:
 
-- update `CURRENT_BASELINE.yaml` for a current pointer, active owner, verified
-  release fact, or explicit scoped hold;
+- update `CURRENT_BASELINE.yaml` for a current pointer, verified release fact,
+  sequencing fact, or explicit scoped hold; use the governed one-claim
+  transitions for repository ownership;
 - update the affected package for its scope, decision, or delivery evidence;
 - update Constitution/Roadmap only for a durable rule or sequencing change;
 - append a decision record when an owner decision changes the operating model.

@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from argparse import Namespace
@@ -17,6 +18,11 @@ from scripts import worktree_lifecycle as lifecycle_registry
 
 
 ROOT = Path(__file__).resolve().parents[1]
+COMPAT_FIXTURE = json.loads(
+    (ROOT / "tests" / "fixtures" / "delivery_control_compat" / "manifest.json")
+    .read_text(encoding="utf-8")
+)
+PRE_SAFE_CUSTODY_REF = COMPAT_FIXTURE["pre_safe_custody_ref"]
 MAIN = "a" * 40
 HEAD = "b" * 40
 CANDIDATE = "c" * 40
@@ -682,6 +688,494 @@ class ClaimValidationTests(unittest.TestCase):
             )
         )
         self.assertTrue(any("UTC closed_at" in error for error in errors))
+
+
+class SafeCustodyClaimTests(unittest.TestCase):
+    def _transition(self):
+        before = claim(
+            surfaces=claimed_surfaces(
+                "PS-EXAMPLE-001", "src/released.py", "src/retained.py"
+            ),
+            domains=["product:example"],
+        )
+        after = copy.deepcopy(before)
+        after["surfaces"] = claimed_surfaces("PS-EXAMPLE-001", "src/retained.py")
+        responsibilities = [
+            {"responsibility": "Maintain retained behavior", "domain": "product:example"}
+        ]
+        rationale = "The released file has no remaining package dependency."
+        file_proofs = [{
+            "path": "src/released.py",
+            "main_mode": "100644",
+            "main_blob": "a" * 40,
+            "checkpoint_mode": "100644",
+            "checkpoint_blob": "a" * 40,
+            "unpublished_delta": False,
+            "accepted_introduction": None,
+        }]
+        fixed_evidence = preflight.evidence_relative_path(before["package"])
+        after["scope_release"] = {
+            "schema_version": 1,
+            "operation_id": "f" * 64,
+            "control_branch": "work/2026-09-13-delivery-release-surfaces-example",
+            "control_lease_sha256": "9" * 64,
+            "quiescence_ref": "task:writer-quiescent",
+            "prior_claim_sha256": preflight.canonical_claim_sha256(before),
+            "reduction_sha256": preflight.scope_reduction_sha256(
+                before_surfaces=before["surfaces"],
+                after_surfaces=after["surfaces"],
+                before_domains=before["domains"],
+                after_domains=after["domains"],
+                retained_responsibilities=responsibilities,
+                release_rationale=rationale,
+                released_file_proofs=file_proofs,
+                fixed_evidence_ref=fixed_evidence,
+            ),
+            "checkpoint_sha": HEAD,
+            "prepared_from_main": MAIN,
+            "released_surfaces": ["src/released.py"],
+            "released_file_proofs": file_proofs,
+            "prior_domains": before["domains"],
+            "new_domains": after["domains"],
+            "retained_responsibilities": responsibilities,
+            "release_rationale": rationale,
+            "fixed_evidence_ref": fixed_evidence,
+            "registry_schema": 2,
+            "index_schema": 4,
+        }
+        return before, after
+
+    def _registry(self, after):
+        proof = after["scope_release"]
+        registry = {
+            "schema_version": 2,
+            "safe_custody": {
+                "schema_version": 1,
+                "migration": {
+                    "from_schema": 1,
+                    "to_schema": 2,
+                    "before_sha256": "1" * 64,
+                    "after_sha256": "",
+                    "migrated_at": "2026-09-13T00:00:00Z",
+                },
+                "scope_releases": [{
+                    "operation_id": proof["operation_id"],
+                    "package": after["package"],
+                    "task_ref": after["writer_ref"],
+                    "worktree": str(ROOT),
+                    "branch": after["branch"],
+                    "control_branch": proof["control_branch"],
+                    "control_lease_sha256": proof["control_lease_sha256"],
+                    "quiescence_ref": proof["quiescence_ref"],
+                    "checkpoint_sha": proof["checkpoint_sha"],
+                    "prior_claim_sha256": proof["prior_claim_sha256"],
+                    "reduction_sha256": proof["reduction_sha256"],
+                    "intended_claim_sha256": preflight.canonical_claim_sha256(after),
+                    "prepared_from_main": proof["prepared_from_main"],
+                    "prepared_at": "2026-09-13T00:00:00Z",
+                    "state": "pending",
+                    "terminal_at": None,
+                }],
+                "reconciliations": [],
+                "package_blocks": {
+                    after["package"].casefold(): {
+                        "kind": "scope_release",
+                        "operation_id": proof["operation_id"],
+                    }
+                },
+            },
+        }
+        lifecycle_registry._seal_safe_custody_after_sha256(registry)
+        return registry
+
+    def _domain_only_transition(self, before_domains, after_domains):
+        before, after = self._transition()
+        before["domains"] = before_domains
+        after["surfaces"] = copy.deepcopy(before["surfaces"])
+        after["domains"] = after_domains
+        proof = after["scope_release"]
+        proof["released_surfaces"] = []
+        proof["released_file_proofs"] = []
+        proof["prior_domains"] = before_domains
+        proof["new_domains"] = after_domains
+        proof["retained_responsibilities"] = [
+            {
+                "responsibility": "Maintain retained behavior",
+                "domain": after_domains[0],
+            }
+        ]
+        proof["prior_claim_sha256"] = preflight.canonical_claim_sha256(before)
+        proof["reduction_sha256"] = preflight.scope_reduction_sha256(
+            before_surfaces=before["surfaces"],
+            after_surfaces=after["surfaces"],
+            before_domains=before_domains,
+            after_domains=after_domains,
+            retained_responsibilities=proof["retained_responsibilities"],
+            release_rationale=proof["release_rationale"],
+            released_file_proofs=[],
+            fixed_evidence_ref=proof["fixed_evidence_ref"],
+        )
+        return before, after
+
+    def test_schema_three_stays_compatible_and_schema_four_is_strict(self):
+        self.assertEqual([], preflight.validate_index(index()))
+        future = index()
+        future["schema_version"] = 4
+        future["capabilities"] = copy.deepcopy(preflight.SAFE_CUSTODY_CAPABILITIES)
+        self.assertEqual([], preflight.validate_index(future))
+        future["capabilities"]["registry_schema"] = 1
+        self.assertTrue(any("capabilities" in item for item in preflight.validate_index(future)))
+
+    def test_exact_monotonic_release_and_freeze_link_pass(self):
+        before, after = self._transition()
+        self.assertEqual([], preflight.validate_claim(after))
+        self.assertEqual(
+            [],
+            preflight.validate_scope_release_transition(
+                before, after, registry=self._registry(after)
+            ),
+        )
+
+    def test_release_rejects_stale_proof_expansion_and_fixed_control_removal(self):
+        before, after = self._transition()
+        stale = copy.deepcopy(after)
+        stale["scope_release"]["prior_claim_sha256"] = "0" * 64
+        self.assertTrue(any(
+            "prior_claim_sha256" in item
+            for item in preflight.validate_scope_release_transition(before, stale)
+        ))
+        expanded = copy.deepcopy(after)
+        expanded["domains"] = ["product:other"]
+        self.assertTrue(any(
+            "expands or moves" in item
+            for item in preflight.validate_scope_release_transition(before, expanded)
+        ))
+        removed_control = copy.deepcopy(after)
+        removed_control["surfaces"].remove(preflight.claim_relative_path(before["package"]))
+        self.assertTrue(any(
+            "fixed claim" in item
+            for item in preflight.validate_scope_release_transition(before, removed_control)
+        ))
+
+    def test_domain_change_rejects_permutation_without_path_reduction(self):
+        before, after = self._domain_only_transition(
+            ["product:alpha", "product:beta"],
+            ["product:beta", "product:alpha"],
+        )
+        errors = preflight.validate_scope_release_transition(before, after)
+        self.assertTrue(any("strictly reduce semantic authority" in item for item in errors), errors)
+
+    def test_domain_change_rejects_redundant_descendant_without_path_reduction(self):
+        before, after = self._domain_only_transition(
+            ["product:example"],
+            ["product:example", "product:example:child"],
+        )
+        errors = preflight.validate_scope_release_transition(before, after)
+        self.assertTrue(any("strictly reduce semantic authority" in item for item in errors), errors)
+
+    def test_domain_change_accepts_strict_semantic_narrowing(self):
+        cases = (
+            (["product:example"], ["product:example:child"]),
+            (["product:alpha", "product:beta"], ["product:alpha"]),
+        )
+        for before_domains, after_domains in cases:
+            with self.subTest(before=before_domains, after=after_domains):
+                before, after = self._domain_only_transition(
+                    before_domains, after_domains
+                )
+                self.assertEqual(
+                    [], preflight.validate_scope_release_transition(before, after)
+                )
+
+    def test_release_proof_rejects_type_confusion_and_unknown_fields(self):
+        before, after = self._transition()
+        after["scope_release"]["released_surfaces"] = "src/released.py"
+        after["scope_release"]["unexpected"] = True
+        errors = preflight.validate_scope_release_transition(before, after)
+        self.assertTrue(any("exact safe_custody_v1 field set" in item for item in errors))
+        self.assertTrue(any("released_surfaces" in item for item in errors))
+
+    def test_released_file_git_proof_recomputes_and_rejects_candidate_escape(self):
+        def run_git(repo, *arguments):
+            result = subprocess.run(
+                ["git", *arguments], cwd=repo, text=True, encoding="utf-8",
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+            )
+            self.assertEqual(0, result.returncode, result.stderr or result.stdout)
+            return result.stdout.strip()
+
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            run_git(repo, "init", "--initial-branch=main")
+            run_git(repo, "config", "user.email", "tests@peerslate.invalid")
+            run_git(repo, "config", "user.name", "PeerSlate Tests")
+            (repo / "src").mkdir()
+            (repo / "src" / "released.py").write_text("released\n", encoding="utf-8")
+            (repo / "src" / "retained.py").write_text("base\n", encoding="utf-8")
+            run_git(repo, "add", ".")
+            run_git(repo, "commit", "-m", "base")
+            run_git(repo, "checkout", "-b", "work/2026-09-13-safe-custody-test")
+            (repo / "src" / "retained.py").write_text("candidate\n", encoding="utf-8")
+            run_git(repo, "add", "src/retained.py")
+            run_git(repo, "commit", "-m", "candidate retained work")
+            checkpoint = run_git(repo, "rev-parse", "HEAD")
+            run_git(repo, "checkout", "main")
+            (repo / "main.txt").write_text("main\n", encoding="utf-8")
+            run_git(repo, "add", "main.txt")
+            run_git(repo, "commit", "-m", "advance main")
+            prepared_main = run_git(repo, "rev-parse", "HEAD")
+            run_git(repo, "checkout", "work/2026-09-13-safe-custody-test")
+
+            before, after = self._transition()
+            proof = after["scope_release"]
+            proof["checkpoint_sha"] = checkpoint
+            proof["prepared_from_main"] = prepared_main
+            proof["released_file_proofs"] = preflight.build_scope_release_file_proofs(
+                root=repo,
+                before_surfaces=before["surfaces"],
+                after_surfaces=after["surfaces"],
+                checkpoint_sha=checkpoint,
+                prepared_from_main=prepared_main,
+                accepted_introductions=[],
+            )
+            proof["reduction_sha256"] = preflight.scope_reduction_sha256(
+                before_surfaces=before["surfaces"],
+                after_surfaces=after["surfaces"],
+                before_domains=before["domains"],
+                after_domains=after["domains"],
+                retained_responsibilities=proof["retained_responsibilities"],
+                release_rationale=proof["release_rationale"],
+                released_file_proofs=proof["released_file_proofs"],
+                fixed_evidence_ref=proof["fixed_evidence_ref"],
+            )
+            self.assertEqual(
+                [], preflight.validate_scope_release_transition(before, after, root=repo)
+            )
+
+            (repo / "escape.py").write_text("unclaimed\n", encoding="utf-8")
+            run_git(repo, "add", "escape.py")
+            run_git(repo, "commit", "-m", "unclaimed candidate escape")
+            escaped_checkpoint = run_git(repo, "rev-parse", "HEAD")
+            proof["checkpoint_sha"] = escaped_checkpoint
+            proof["released_file_proofs"] = preflight.build_scope_release_file_proofs(
+                root=repo,
+                before_surfaces=before["surfaces"],
+                after_surfaces=after["surfaces"],
+                checkpoint_sha=escaped_checkpoint,
+                prepared_from_main=prepared_main,
+                accepted_introductions=[],
+            )
+            proof["reduction_sha256"] = preflight.scope_reduction_sha256(
+                before_surfaces=before["surfaces"],
+                after_surfaces=after["surfaces"],
+                before_domains=before["domains"],
+                after_domains=after["domains"],
+                retained_responsibilities=proof["retained_responsibilities"],
+                release_rationale=proof["release_rationale"],
+                released_file_proofs=proof["released_file_proofs"],
+                fixed_evidence_ref=proof["fixed_evidence_ref"],
+            )
+            errors = preflight.validate_scope_release_transition(before, after, root=repo)
+            self.assertTrue(any("escapes retained surfaces" in item for item in errors), errors)
+
+            run_git(repo, "checkout", "main")
+            (repo / "src" / "released.py").write_text("changed on main\n", encoding="utf-8")
+            run_git(repo, "add", "src/released.py")
+            run_git(repo, "commit", "-m", "change released path on main")
+            changed_main = run_git(repo, "rev-parse", "HEAD")
+            with self.assertRaisesRegex(preflight.PreflightError, "differs between"):
+                preflight.build_scope_release_file_proofs(
+                    root=repo,
+                    before_surfaces=before["surfaces"],
+                    after_surfaces=after["surfaces"],
+                    checkpoint_sha=escaped_checkpoint,
+                    prepared_from_main=changed_main,
+                    accepted_introductions=[],
+                )
+
+    def test_released_file_accepts_exact_reviewed_squash_introduction(self):
+        def run_git(repo, *arguments):
+            result = subprocess.run(
+                ["git", *arguments], cwd=repo, text=True, encoding="utf-8",
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+            )
+            self.assertEqual(0, result.returncode, result.stderr or result.stdout)
+            return result.stdout.strip()
+
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            run_git(repo, "init", "--initial-branch=main")
+            run_git(repo, "config", "user.email", "tests@peerslate.invalid")
+            run_git(repo, "config", "user.name", "PeerSlate Tests")
+            intro_package = "PS-INTRODUCER-001"
+            intro_claim_path = repo / preflight.claim_relative_path(intro_package)
+            intro_receipt_path = repo / preflight.receipt_relative_path(intro_package)
+            intro_evidence_path = repo / preflight.evidence_relative_path(intro_package)
+            intro_claim_path.parent.mkdir(parents=True)
+            intro_receipt_path.parent.mkdir(parents=True)
+            intro_evidence_path.parent.mkdir(parents=True)
+            intro_claim_path.write_text(
+                json.dumps({
+                    "package": intro_package,
+                    "writer_ref": "task:introducer",
+                    "review_requirement": "independent",
+                }) + "\n",
+                encoding="utf-8",
+            )
+            intro_evidence_path.write_text("review evidence\n", encoding="utf-8")
+            (repo / "src").mkdir()
+            (repo / "src" / "released.py").write_text("old\n", encoding="utf-8")
+            (repo / "src" / "retained.py").write_text("base\n", encoding="utf-8")
+            run_git(repo, "add", ".")
+            run_git(repo, "commit", "-m", "base")
+            base = run_git(repo, "rev-parse", "HEAD")
+
+            run_git(repo, "checkout", "-b", "reviewed-candidate")
+            (repo / "src" / "released.py").write_text("reviewed\n", encoding="utf-8")
+            run_git(repo, "add", "src/released.py")
+            run_git(repo, "commit", "-m", "reviewed candidate")
+            candidate = run_git(repo, "rev-parse", "HEAD")
+            intro_receipt_path.write_text(
+                json.dumps({
+                    "schema_version": 1,
+                    "package": intro_package,
+                    "candidate_sha": candidate,
+                    "review_type": "independent",
+                    "reviewer_ref": "task:independent-reviewer",
+                    "result": "pass",
+                    "reviewed_at": "2026-09-13T00:00:00Z",
+                    "findings": [],
+                    "evidence_ref": preflight.evidence_relative_path(intro_package),
+                }) + "\n",
+                encoding="utf-8",
+            )
+            run_git(repo, "add", preflight.receipt_relative_path(intro_package))
+            run_git(repo, "commit", "-m", "record exact review")
+            reviewed_tip = run_git(repo, "rev-parse", "HEAD")
+
+            run_git(repo, "checkout", "main")
+            run_git(
+                repo,
+                "checkout",
+                reviewed_tip,
+                "--",
+                "src/released.py",
+                preflight.receipt_relative_path(intro_package),
+            )
+            run_git(repo, "commit", "-m", "squash accepted candidate")
+            accepted_main = run_git(repo, "rev-parse", "HEAD")
+
+            run_git(repo, "checkout", "-b", "work/2026-09-13-release", base)
+            (repo / "src" / "released.py").write_text("reviewed\n", encoding="utf-8")
+            (repo / "src" / "retained.py").write_text("candidate\n", encoding="utf-8")
+            run_git(repo, "add", "src")
+            run_git(repo, "commit", "-m", "matching branch bytes")
+            checkpoint = run_git(repo, "rev-parse", "HEAD")
+
+            before, after = self._transition()
+            proof = after["scope_release"]
+            introduction = {
+                "path": "src/released.py",
+                "package": intro_package,
+                "candidate_sha": candidate,
+                "merged_sha": accepted_main,
+                "receipt_ref": preflight.receipt_relative_path(intro_package),
+            }
+            proof["checkpoint_sha"] = checkpoint
+            proof["prepared_from_main"] = accepted_main
+            proof["released_file_proofs"] = preflight.build_scope_release_file_proofs(
+                root=repo,
+                before_surfaces=before["surfaces"],
+                after_surfaces=after["surfaces"],
+                checkpoint_sha=checkpoint,
+                prepared_from_main=accepted_main,
+                accepted_introductions=[introduction],
+            )
+            proof["reduction_sha256"] = preflight.scope_reduction_sha256(
+                before_surfaces=before["surfaces"],
+                after_surfaces=after["surfaces"],
+                before_domains=before["domains"],
+                after_domains=after["domains"],
+                retained_responsibilities=proof["retained_responsibilities"],
+                release_rationale=proof["release_rationale"],
+                released_file_proofs=proof["released_file_proofs"],
+                fixed_evidence_ref=proof["fixed_evidence_ref"],
+            )
+            self.assertEqual(
+                [], preflight.validate_scope_release_transition(before, after, root=repo)
+            )
+
+    def test_prechange_delivery_client_refuses_schema_four(self):
+        def run_git(cwd, *arguments):
+            result = subprocess.run(
+                ["git", *arguments], cwd=cwd, text=True, encoding="utf-8",
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+            )
+            self.assertEqual(0, result.returncode, result.stderr or result.stdout)
+            return result.stdout.strip()
+
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            repo = base / "repo"
+            remote = base / "origin.git"
+            repo.mkdir()
+            run_git(base, "init", "--bare", str(remote))
+            run_git(repo, "init", "--initial-branch=main")
+            run_git(repo, "config", "user.email", "tests@peerslate.invalid")
+            run_git(repo, "config", "user.name", "PeerSlate Tests")
+            (repo / "scripts").mkdir()
+            governance = repo / "docs" / "governance"
+            (governance / "lane_claims").mkdir(parents=True)
+            old_delivery = run_git(
+                ROOT,
+                "show",
+                f"{PRE_SAFE_CUSTODY_REF}:{COMPAT_FIXTURE['clients']['delivery']['path']}",
+            )
+            old_lifecycle = run_git(
+                ROOT,
+                "show",
+                f"{PRE_SAFE_CUSTODY_REF}:{COMPAT_FIXTURE['clients']['lifecycle']['path']}",
+            )
+            (repo / "scripts" / "delivery_preflight.py").write_text(
+                old_delivery + "\n", encoding="utf-8"
+            )
+            (repo / "scripts" / "worktree_lifecycle.py").write_text(
+                old_lifecycle + "\n", encoding="utf-8"
+            )
+            future = index()
+            future["schema_version"] = COMPAT_FIXTURE["clients"]["delivery"]["future_schema"]
+            future["capabilities"] = copy.deepcopy(preflight.SAFE_CUSTODY_CAPABILITIES)
+            (governance / "CURRENT_LANES.json").write_text(
+                json.dumps(future, indent=2) + "\n", encoding="utf-8"
+            )
+            candidate_claim = claim()
+            candidate_claim.pop("_relative_path")
+            (governance / "lane_claims" / "PS-EXAMPLE-001.json").write_text(
+                json.dumps(candidate_claim, indent=2) + "\n", encoding="utf-8"
+            )
+            run_git(repo, "add", ".")
+            run_git(repo, "commit", "-m", "schema four fixture")
+            run_git(repo, "remote", "add", "origin", str(remote))
+            run_git(repo, "push", "-u", "origin", "main")
+            run_git(repo, "checkout", "-b", candidate_claim["branch"])
+            before = run_git(repo, "status", "--porcelain=v1")
+            result = subprocess.run(
+                [
+                    sys.executable, "-B", str(repo / "scripts" / "delivery_preflight.py"),
+                    "--repo", str(repo), "--package", "PS-EXAMPLE-001",
+                    "--intent", "write", "--fetch", "--require-clean",
+                    "--task-ref", candidate_claim["writer_ref"],
+                ],
+                cwd=repo, text=True, encoding="utf-8", stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, check=False,
+            )
+            payload = json.loads(result.stdout)
+            self.assertEqual(2, result.returncode, payload)
+            self.assertTrue(any(
+                COMPAT_FIXTURE["clients"]["delivery"]["expected_error"] in item
+                for item in payload["errors"]
+            ), payload["errors"])
+            self.assertEqual(before, run_git(repo, "status", "--porcelain=v1"))
 
 
 class ConcurrencyTests(unittest.TestCase):

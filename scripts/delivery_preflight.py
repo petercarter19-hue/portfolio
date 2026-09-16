@@ -46,7 +46,7 @@ ACTIVATION_BRANCH_RE = re.compile(
 )
 CONTROL_BRANCH_RE = re.compile(
     r"^work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-"
-    r"(?:authorize|extend-surfaces|transfer|owner-reassignment|pause|resume|close|supersede)-[a-z0-9-]+$"
+    r"(?:authorize|extend-surfaces|release-surfaces|transfer|owner-reassignment|pause|resume|close|supersede)-[a-z0-9-]+$"
 )
 OWNER_REASSIGNMENT_CONTROL_BRANCH_RE = re.compile(
     r"^work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-owner-reassignment-[a-z0-9-]+$"
@@ -79,7 +79,7 @@ MUTATING_INTENTS = {
     "repair-activate", "repair-merge",
     "activate", "authorize", "extend-surfaces", "write", "transfer",
     "owner-reassignment", "pause", "resume", "merge", "close", "supersede",
-    "evidence-errata",
+    "evidence-errata", "release-surfaces",
 }
 # evidence-errata is a control-style transition: it runs from the leased
 # sparse _control singleton and its claim is read from the branch copy, but
@@ -88,7 +88,7 @@ CONTROL_INTENTS = {
     "repair-activate", "repair-merge",
     "activate", "authorize", "extend-surfaces", "transfer",
     "owner-reassignment", "pause", "resume", "close", "supersede",
-    "evidence-errata",
+    "evidence-errata", "release-surfaces",
 }
 REPAIR_INTENTS = {"repair-activate", "repair-merge"}
 REPAIR_SURFACES = frozenset({
@@ -136,6 +136,34 @@ OWNER_REASSIGNMENT_FIELDS = {
 WORKTREE_REGISTRY_REL = Path("peerslate") / "worktree_registry.json"
 WORKTREE_LOCK_DIRECTORY_NAME = "worktree_registry.lock"
 CI_ENVIRONMENT_KEYS = ("TF_BUILD", "CI", "GITHUB_ACTIONS", "BUILD_BUILDID")
+ACTIVE_INDEX_SCHEMA = 3
+SAFE_CUSTODY_INDEX_SCHEMA = 4
+SAFE_CUSTODY_REGISTRY_SCHEMA = 2
+SAFE_CUSTODY_CAPABILITIES = {
+    "scope_release": "safe_custody_v1",
+    "main_reconciliation": "safe_custody_v1",
+    "registry_schema": SAFE_CUSTODY_REGISTRY_SCHEMA,
+}
+SCOPE_RELEASE_FIELDS = {
+    "schema_version",
+    "operation_id",
+    "control_branch",
+    "control_lease_sha256",
+    "quiescence_ref",
+    "prior_claim_sha256",
+    "reduction_sha256",
+    "checkpoint_sha",
+    "prepared_from_main",
+    "released_surfaces",
+    "released_file_proofs",
+    "prior_domains",
+    "new_domains",
+    "retained_responsibilities",
+    "release_rationale",
+    "fixed_evidence_ref",
+    "registry_schema",
+    "index_schema",
+}
 
 
 class PreflightError(RuntimeError):
@@ -824,10 +852,28 @@ def evaluate_local_worktree_context(
         # It binds the earlier source/preparation proof to the later claim and
         # remote proof without exposing machine-local registry data in output.
         context["_owner_reassignment_registry_snapshot"] = registry
-    if registry.get("schema_version") != 1 or not registry.get("initialized_at"):
+    registry_schema = registry.get("schema_version")
+    if (
+        registry_schema not in {
+            lifecycle_registry.SCHEMA_VERSION,
+            lifecycle_registry.SAFE_CUSTODY_SCHEMA_VERSION,
+        }
+        or not registry.get("initialized_at")
+    ):
         context["registry"] = "invalid"
-        errors.append("machine-local worktree registry is not an initialized schema 1 registry")
+        errors.append("machine-local worktree registry has an unsupported schema")
         return context, errors, warnings
+    try:
+        if registry_schema == lifecycle_registry.SAFE_CUSTODY_SCHEMA_VERSION:
+            lifecycle_registry.validate_owner_reassignment_registry(registry)
+            lifecycle_registry.validate_safe_custody_registry(registry)
+    except lifecycle_registry.Refusal as exc:
+        context["registry"] = "invalid"
+        errors.append("machine-local worktree registry is invalid: " + str(exc))
+        return context, errors, warnings
+    context["schema_version"] = registry_schema
+    if registry_schema == lifecycle_registry.SAFE_CUSTODY_SCHEMA_VERSION:
+        context["_safe_custody_registry_snapshot"] = registry
     if args.intent == "owner-reassignment" and (
         "pending" not in registry or registry.get("pending") is not None
     ):
@@ -858,6 +904,22 @@ def evaluate_local_worktree_context(
         return context, errors, warnings
 
     package = str(claim.get("package", ""))
+    if registry_schema == lifecycle_registry.SAFE_CUSTODY_SCHEMA_VERSION:
+        block = lifecycle_registry.safe_custody_block_for_package(registry, package)
+        if block is not None:
+            context["safe_custody_block"] = block
+            permitted = (
+                args.intent == "release-surfaces"
+                and block.get("kind") == "scope_release"
+                and isinstance(claim.get("scope_release"), dict)
+                and claim["scope_release"].get("operation_id")
+                == block.get("operation_id")
+            )
+            if not permitted:
+                errors.append(
+                    "package mutation is blocked by safe-custody "
+                    f"{block.get('kind')} operation {block.get('operation_id')}"
+                )
     try:
         if registry.get(
             "control_custody_transitions"
@@ -1610,8 +1672,12 @@ def load_receipt_at_ref(root: Path, ref: str, package: str) -> dict | None:
 
 def validate_index(index: dict) -> list[str]:
     errors: list[str] = []
-    if index.get("schema_version") != 3:
-        errors.append("CURRENT_LANES.json schema_version must be 3")
+    schema_version = index.get("schema_version")
+    if schema_version not in {ACTIVE_INDEX_SCHEMA, SAFE_CUSTODY_INDEX_SCHEMA}:
+        errors.append(
+            "CURRENT_LANES.json schema_version must be a supported version "
+            f"({ACTIVE_INDEX_SCHEMA} or {SAFE_CUSTODY_INDEX_SCHEMA})"
+        )
     if index.get("model") != "generic_package_claims_v1":
         errors.append("CURRENT_LANES.json model must be generic_package_claims_v1")
     if index.get("claims_path") != CLAIMS_REL:
@@ -1625,6 +1691,31 @@ def validate_index(index: dict) -> list[str]:
     }
     if rules != expected_rules:
         errors.append("CURRENT_LANES.json rules do not match the generic model")
+    capabilities = index.get("capabilities")
+    if schema_version == ACTIVE_INDEX_SCHEMA:
+        if capabilities is not None:
+            errors.append(
+                "CURRENT_LANES.json schema 3 must not advertise safe-custody capabilities"
+            )
+    elif capabilities != SAFE_CUSTODY_CAPABILITIES:
+        errors.append(
+            "CURRENT_LANES.json schema 4 capabilities do not match safe_custody_v1"
+        )
+    expected_fields = {
+        "schema_version", "updated_at", "model", "claims_path", "rules", "legacy_snapshot"
+    }
+    if schema_version == SAFE_CUSTODY_INDEX_SCHEMA:
+        expected_fields.add("capabilities")
+    unknown = sorted(set(index) - expected_fields)
+    missing = sorted(expected_fields - set(index))
+    if schema_version in {ACTIVE_INDEX_SCHEMA, SAFE_CUSTODY_INDEX_SCHEMA} and (
+        unknown or missing
+    ):
+        errors.append(
+            "CURRENT_LANES.json has an unsupported field set"
+            + (f"; missing={missing}" if missing else "")
+            + (f"; unknown={unknown}" if unknown else "")
+        )
     legacy = index.get("legacy_snapshot")
     if not isinstance(legacy, dict):
         errors.append("legacy_snapshot must be an object")
@@ -1635,6 +1726,596 @@ def validate_index(index: dict) -> list[str]:
             errors.append(f"legacy_snapshot.path must be {INDEX_REL}")
         if not re.fullmatch(r"^[0-9a-f]{40}$", str(legacy.get("blob", ""))):
             errors.append("legacy_snapshot.blob must be a full Git blob id")
+    return errors
+
+
+def canonical_claim_sha256(claim: dict, *, omit_scope_release: bool = False) -> str:
+    """Return the stable digest used by machine-local custody proofs."""
+
+    payload = {
+        key: value
+        for key, value in claim.items()
+        if key != "_relative_path" and not (omit_scope_release and key == "scope_release")
+    }
+    return hashlib.sha256(
+        json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def _domain_is_equal_or_descendant(candidate: str, ancestor: str) -> bool:
+    return candidate == ancestor or candidate.startswith(ancestor + ":")
+
+
+def _domain_coverage_is_subset(candidate: list, ancestor: list) -> bool:
+    """Compare the authority covered by domain unions, independent of order."""
+
+    if not all(isinstance(domain, str) for domain in [*candidate, *ancestor]):
+        return False
+    return all(
+        any(_domain_is_equal_or_descendant(domain, old) for old in ancestor)
+        for domain in candidate
+    )
+
+
+def validate_scope_release_proof(proof: object) -> list[str]:
+    """Validate the strict, runtime-inert proof carried by a reduced claim."""
+
+    if proof is None:
+        return []
+    if not isinstance(proof, dict):
+        return ["claim scope_release must be null or an object"]
+    errors: list[str] = []
+    if set(proof) != SCOPE_RELEASE_FIELDS:
+        errors.append(
+            "scope_release must use the exact safe_custody_v1 field set"
+        )
+    if proof.get("schema_version") != 1:
+        errors.append("scope_release schema_version must be 1")
+    if proof.get("registry_schema") != SAFE_CUSTODY_REGISTRY_SCHEMA:
+        errors.append("scope_release registry_schema must be 2")
+    if proof.get("index_schema") != SAFE_CUSTODY_INDEX_SCHEMA:
+        errors.append("scope_release index_schema must be 4")
+    operation_id = proof.get("operation_id")
+    if not isinstance(operation_id, str) or not re.fullmatch(r"[0-9a-f]{64}", operation_id):
+        errors.append("scope_release operation_id must be a lowercase SHA-256")
+    control_branch = proof.get("control_branch")
+    if (
+        not isinstance(control_branch, str)
+        or not CONTROL_BRANCH_RE.fullmatch(control_branch)
+        or "-release-surfaces-" not in control_branch
+    ):
+        errors.append("scope_release control_branch must be a release-surfaces control branch")
+    if not re.fullmatch(r"[0-9a-f]{64}", str(proof.get("control_lease_sha256", ""))):
+        errors.append("scope_release control_lease_sha256 must be a lowercase SHA-256")
+    quiescence_ref = proof.get("quiescence_ref")
+    if not isinstance(quiescence_ref, str) or not REF_RE.fullmatch(quiescence_ref):
+        errors.append("scope_release quiescence_ref must be an opaque authority reference")
+    for field in ("prior_claim_sha256", "reduction_sha256"):
+        if not re.fullmatch(r"[0-9a-f]{64}", str(proof.get(field, ""))):
+            errors.append(f"scope_release {field} must be a lowercase SHA-256")
+    for field in ("checkpoint_sha", "prepared_from_main"):
+        if not SHA_RE.fullmatch(str(proof.get(field, ""))):
+            errors.append(f"scope_release {field} must be a full SHA")
+    for field, normalizer in (
+        ("released_surfaces", normalize_path),
+        ("prior_domains", normalize_domain),
+        ("new_domains", normalize_domain),
+    ):
+        values = proof.get(field)
+        if not isinstance(values, list) or (field in {"prior_domains", "new_domains"} and not values):
+            errors.append(
+                f"scope_release {field} must be "
+                + ("a non-empty list" if field == "prior_domains" else "a list")
+            )
+            continue
+        normalized: list[str] = []
+        for value in values:
+            try:
+                normalized.append(normalizer(value))
+            except ValueError as exc:
+                errors.append(f"scope_release {field}: {exc}")
+        if normalized != values or len(normalized) != len(set(normalized)):
+            errors.append(f"scope_release {field} must contain unique normalized values")
+    file_proofs = proof.get("released_file_proofs")
+    if not isinstance(file_proofs, list):
+        errors.append("scope_release released_file_proofs must be a list")
+    else:
+        seen_paths: set[str] = set()
+        for item in file_proofs:
+            if not isinstance(item, dict) or set(item) != {
+                "path", "main_mode", "main_blob", "checkpoint_mode",
+                "checkpoint_blob", "unpublished_delta", "accepted_introduction",
+            }:
+                errors.append("each released file proof must use the exact field set")
+                continue
+            try:
+                path = normalize_path(item.get("path"))
+            except ValueError as exc:
+                errors.append(f"scope_release released file path: {exc}")
+                continue
+            if path != item.get("path") or path in seen_paths:
+                errors.append("scope_release released file paths must be unique and normalized")
+            seen_paths.add(path)
+            for prefix in ("main", "checkpoint"):
+                mode = item.get(f"{prefix}_mode")
+                blob = item.get(f"{prefix}_blob")
+                if (mode is None) != (blob is None):
+                    errors.append(
+                        f"scope_release {prefix} mode/blob must both be present or absent"
+                    )
+                elif mode is not None and (
+                    mode not in {"100644", "100755"}
+                    or not isinstance(blob, str)
+                    or not SHA_RE.fullmatch(blob)
+                ):
+                    errors.append(
+                        f"scope_release {prefix} mode/blob must identify one regular Git blob"
+                    )
+            if type(item.get("unpublished_delta")) is not bool:
+                errors.append("scope_release unpublished_delta must be a boolean")
+            introduction = item.get("accepted_introduction")
+            if introduction is not None:
+                if not isinstance(introduction, dict) or set(introduction) != {
+                    "package", "candidate_sha", "merged_sha", "receipt_ref"
+                }:
+                    errors.append("scope_release accepted_introduction has an unsupported field set")
+                else:
+                    if not PACKAGE_RE.fullmatch(str(introduction.get("package", ""))):
+                        errors.append("scope_release accepted introduction package is invalid")
+                    for field in ("candidate_sha", "merged_sha"):
+                        if not SHA_RE.fullmatch(str(introduction.get(field, ""))):
+                            errors.append(
+                                f"scope_release accepted introduction {field} must be a full SHA"
+                            )
+                    package = str(introduction.get("package", ""))
+                    expected_receipt = (
+                        receipt_relative_path(package)
+                        if PACKAGE_RE.fullmatch(package)
+                        else ""
+                    )
+                    if introduction.get("receipt_ref") != expected_receipt:
+                        errors.append(
+                            "scope_release accepted introduction must name its fixed receipt"
+                        )
+            if item.get("unpublished_delta") is False and introduction is not None:
+                errors.append(
+                    "scope_release unchanged released file must not assert accepted introduction"
+                )
+            if item.get("unpublished_delta") is True and introduction is None:
+                errors.append(
+                    "scope_release unpublished released file requires accepted introduction"
+                )
+    responsibilities = proof.get("retained_responsibilities")
+    if not isinstance(responsibilities, list) or not responsibilities:
+        errors.append("scope_release retained_responsibilities must be a non-empty list")
+    else:
+        seen: set[tuple[str, str]] = set()
+        for item in responsibilities:
+            if not isinstance(item, dict) or set(item) != {"responsibility", "domain"}:
+                errors.append(
+                    "each retained responsibility must contain exactly responsibility and domain"
+                )
+                continue
+            responsibility = item.get("responsibility")
+            if (
+                not isinstance(responsibility, str)
+                or responsibility != responsibility.strip()
+                or not responsibility
+                or len(responsibility) > 500
+                or "\n" in responsibility
+                or "\r" in responsibility
+            ):
+                errors.append("scope_release responsibility must be bounded and single-line")
+            try:
+                domain = normalize_domain(item.get("domain"))
+            except ValueError as exc:
+                errors.append(f"scope_release responsibility domain: {exc}")
+                continue
+            if domain != item.get("domain"):
+                errors.append("scope_release responsibility domain must be normalized")
+            key = (str(responsibility), domain)
+            if key in seen:
+                errors.append("scope_release retained_responsibilities contains a duplicate")
+            seen.add(key)
+    rationale = proof.get("release_rationale")
+    if (
+        not isinstance(rationale, str)
+        or rationale != rationale.strip()
+        or not rationale
+        or len(rationale) > 1200
+        or "\n" in rationale
+        or "\r" in rationale
+    ):
+        errors.append("scope_release release_rationale must be bounded and single-line")
+    package = proof.get("fixed_evidence_ref")
+    if (
+        not isinstance(package, str)
+        or package != package.strip()
+        or not package.startswith(EVIDENCE_REL + "/")
+        or not package.endswith(".md")
+    ):
+        errors.append("scope_release fixed_evidence_ref must name one fixed evidence path")
+    return errors
+
+
+def _scope_release_tree_entry(root: Path, ref: str, path: str) -> dict[str, str | None]:
+    """Return an exact regular-file mode/blob tuple, or explicit absence."""
+
+    result = _git_result(root, "ls-tree", "-z", ref, "--", path)
+    if result.returncode:
+        detail = result.stderr.strip() or result.stdout.strip() or "ls-tree failed"
+        raise PreflightError(f"could not inspect released path {path} at {ref}: {detail}")
+    rows = [row for row in result.stdout.split("\0") if row]
+    if not rows:
+        return {"mode": None, "blob": None}
+    if len(rows) != 1:
+        raise PreflightError(f"released path proof is ambiguous at {ref}: {path}")
+    metadata, separator, observed_path = rows[0].partition("\t")
+    columns = metadata.split()
+    if (
+        not separator
+        or observed_path != path
+        or len(columns) != 3
+        or columns[0] not in {"100644", "100755"}
+        or columns[1] != "blob"
+        or not SHA_RE.fullmatch(columns[2].casefold())
+    ):
+        raise PreflightError(
+            f"released path must be one exact regular Git blob or absent: {path}"
+        )
+    return {"mode": columns[0], "blob": columns[2].casefold()}
+
+
+def build_scope_release_file_proofs(
+    *,
+    root: Path,
+    before_surfaces: list[str],
+    after_surfaces: list[str],
+    checkpoint_sha: str,
+    prepared_from_main: str,
+    accepted_introductions: list[dict],
+) -> list[dict]:
+    """Construct exact C/M/base proof for every released file."""
+
+    if not isinstance(accepted_introductions, list):
+        raise PreflightError("accepted_introductions must be a list")
+    introduction_by_path: dict[str, dict] = {}
+    for introduction in accepted_introductions:
+        if not isinstance(introduction, dict) or set(introduction) != {
+            "path", "package", "candidate_sha", "merged_sha", "receipt_ref"
+        }:
+            raise PreflightError("accepted introduction proposal has an unsupported field set")
+        try:
+            path = normalize_path(introduction.get("path"))
+        except ValueError as exc:
+            raise PreflightError(f"accepted introduction path is invalid: {exc}") from exc
+        if path in introduction_by_path:
+            raise PreflightError("accepted introduction path is duplicated")
+        introduction_by_path[path] = {
+            key: introduction[key]
+            for key in ("package", "candidate_sha", "merged_sha", "receipt_ref")
+        }
+    released = [path for path in before_surfaces if path not in set(after_surfaces)]
+    unexpected = sorted(set(introduction_by_path) - set(released))
+    if unexpected:
+        raise PreflightError(
+            "accepted introductions name paths that are not released: " + repr(unexpected)
+        )
+    merge_base = _git(root, "merge-base", checkpoint_sha, prepared_from_main)
+    proofs: list[dict] = []
+    for path in released:
+        main = _scope_release_tree_entry(root, prepared_from_main, path)
+        checkpoint = _scope_release_tree_entry(root, checkpoint_sha, path)
+        if main != checkpoint:
+            raise PreflightError(
+                f"released path mode/blob differs between checkpoint C and prepared main M: {path}"
+            )
+        base = _scope_release_tree_entry(root, merge_base, path)
+        unpublished_delta = base != checkpoint
+        introduction = introduction_by_path.get(path)
+        if unpublished_delta and introduction is None:
+            raise PreflightError(
+                f"released path has net branch delta without accepted introduction proof: {path}"
+            )
+        if not unpublished_delta and introduction is not None:
+            raise PreflightError(
+                f"released path has no net branch delta but asserts accepted introduction: {path}"
+            )
+        proofs.append(
+            {
+                "path": path,
+                "main_mode": main["mode"],
+                "main_blob": main["blob"],
+                "checkpoint_mode": checkpoint["mode"],
+                "checkpoint_blob": checkpoint["blob"],
+                "unpublished_delta": unpublished_delta,
+                "accepted_introduction": introduction,
+            }
+        )
+    return proofs
+
+
+def _scope_release_git_errors(
+    root: Path, before: dict, after: dict, proof: dict
+) -> list[str]:
+    """Recompute file evidence and accepted-main lineage from Git objects."""
+
+    errors: list[str] = []
+    file_proofs = proof.get("released_file_proofs")
+    if not isinstance(file_proofs, list):
+        return ["scope_release released file proofs are unavailable"]
+    accepted = []
+    for item in file_proofs:
+        if isinstance(item, dict) and isinstance(item.get("accepted_introduction"), dict):
+            accepted.append({"path": item.get("path"), **item["accepted_introduction"]})
+    try:
+        expected = build_scope_release_file_proofs(
+            root=root,
+            before_surfaces=before.get("surfaces", []),
+            after_surfaces=after.get("surfaces", []),
+            checkpoint_sha=str(proof.get("checkpoint_sha", "")),
+            prepared_from_main=str(proof.get("prepared_from_main", "")),
+            accepted_introductions=accepted,
+        )
+    except (PreflightError, TypeError, KeyError) as exc:
+        return ["scope_release Git path proof failed: " + str(exc)]
+    if file_proofs != expected:
+        errors.append("scope_release released file proofs do not match exact Git objects")
+
+    package = str(before.get("package", ""))
+    fixed = set(control_relative_paths(package))
+    released_with_accepted = {
+        item["path"]
+        for item in expected
+        if item.get("accepted_introduction") is not None
+    }
+    try:
+        merge_base = _git(
+            root,
+            "merge-base",
+            str(proof.get("checkpoint_sha", "")),
+            str(proof.get("prepared_from_main", "")),
+        )
+        raw_delta = _git(
+            root,
+            "diff",
+            "--name-only",
+            "-z",
+            merge_base,
+            str(proof.get("checkpoint_sha", "")),
+        )
+    except PreflightError as exc:
+        errors.append("scope_release candidate delta proof failed: " + str(exc))
+        raw_delta = ""
+    candidate_paths = [path for path in raw_delta.split("\0") if path]
+    outside = sorted(
+        path
+        for path in candidate_paths
+        if path not in fixed
+        and path not in released_with_accepted
+        and not path_is_claimed(path, after.get("surfaces", []))
+    )
+    if outside:
+        errors.append(
+            "scope_release candidate delta escapes retained surfaces: " + repr(outside)
+        )
+
+    for item in expected:
+        introduction = item.get("accepted_introduction")
+        if not isinstance(introduction, dict):
+            continue
+        intro_package = str(introduction.get("package", ""))
+        candidate = str(introduction.get("candidate_sha", ""))
+        merged = str(introduction.get("merged_sha", ""))
+        main = str(proof.get("prepared_from_main", ""))
+        path = str(item.get("path", ""))
+        try:
+            if not _is_ancestor(root, merged, main):
+                raise ValueError("accepted main commit is not in prepared-main history")
+            receipt = load_receipt_at_ref(root, merged, intro_package)
+            historical_claim = _json_at_ref(
+                root, merged, claim_relative_path(intro_package)
+            )
+            if (
+                receipt is None
+                or validate_receipt(receipt, historical_claim)
+                or receipt.get("candidate_sha") != candidate
+                or receipt.get("evidence_ref") != evidence_relative_path(intro_package)
+                or introduction.get("receipt_ref") != receipt_relative_path(intro_package)
+            ):
+                raise ValueError("accepted introduction lacks its exact review receipt")
+            for ref in (candidate, merged, main, str(proof.get("checkpoint_sha", ""))):
+                if _scope_release_tree_entry(root, ref, path) != {
+                    "mode": item.get("checkpoint_mode"),
+                    "blob": item.get("checkpoint_blob"),
+                }:
+                    raise ValueError("accepted introduction bytes are not exact across history")
+            parent = _git(root, "rev-parse", f"{merged}^1")
+            if _scope_release_tree_entry(root, parent, path) == _scope_release_tree_entry(
+                root, merged, path
+            ):
+                raise ValueError("accepted main commit did not introduce the released bytes")
+            candidate_base = _git(root, "merge-base", candidate, merged)
+            if _scope_release_tree_entry(
+                root, candidate_base, path
+            ) == _scope_release_tree_entry(root, candidate, path):
+                raise ValueError("reviewed candidate did not introduce the released bytes")
+            if not _tracked_regular_blob(
+                root, merged, evidence_relative_path(intro_package)
+            ):
+                raise ValueError("accepted introduction evidence is unavailable")
+        except (PreflightError, ValueError, KeyError, TypeError) as exc:
+            errors.append(f"scope_release accepted introduction for {path}: {exc}")
+    return errors
+
+
+def scope_reduction_sha256(
+    *,
+    before_surfaces: list[str],
+    after_surfaces: list[str],
+    before_domains: list[str],
+    after_domains: list[str],
+    retained_responsibilities: list[dict],
+    release_rationale: str,
+    released_file_proofs: list[dict],
+    fixed_evidence_ref: str,
+) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            {
+                "before_surfaces": before_surfaces,
+                "after_surfaces": after_surfaces,
+                "before_domains": before_domains,
+                "after_domains": after_domains,
+                "retained_responsibilities": retained_responsibilities,
+                "release_rationale": release_rationale,
+                "released_file_proofs": released_file_proofs,
+                "fixed_evidence_ref": fixed_evidence_ref,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def validate_scope_release_transition(
+    before: dict,
+    after: dict,
+    *,
+    registry: dict | None = None,
+    root: Path | None = None,
+) -> list[str]:
+    """Prove one monotonic claim reduction and its durable freeze linkage."""
+
+    errors = validate_scope_release_proof(after.get("scope_release"))
+    proof = after.get("scope_release")
+    if not isinstance(proof, dict):
+        return [*errors, "release-surfaces requires a scope_release proof"]
+    changed = _changed_fields(before, after)
+    if (
+        "scope_release" not in changed
+        or not changed.intersection({"surfaces", "domains"})
+        or not changed <= {"surfaces", "domains", "scope_release"}
+    ):
+        errors.append(
+            "release-surfaces may change only surfaces, domains, and scope_release, "
+            "and must reduce at least one scope field"
+        )
+    before_surfaces = before.get("surfaces")
+    after_surfaces = after.get("surfaces")
+    before_domains = before.get("domains")
+    after_domains = after.get("domains")
+    if not all(
+        isinstance(value, list)
+        for value in (before_surfaces, after_surfaces, before_domains, after_domains)
+    ):
+        return [*errors, "release-surfaces requires valid surface and domain lists"]
+    retained = [path for path in before_surfaces if path in set(after_surfaces)]
+    released = [path for path in before_surfaces if path not in set(after_surfaces)]
+    if retained != after_surfaces:
+        errors.append(
+            "release-surfaces must preserve the relative order of retained paths"
+        )
+    if any(path not in before_surfaces for path in after_surfaces):
+        errors.append("release-surfaces cannot add paths")
+    fixed = set(control_relative_paths(str(before.get("package", ""))))
+    if fixed - set(after_surfaces):
+        errors.append("release-surfaces cannot remove fixed claim, receipt, or evidence paths")
+    if proof.get("released_surfaces") != released:
+        errors.append("scope_release released_surfaces does not match the exact removed paths")
+    if proof.get("prior_domains") != before_domains:
+        errors.append("scope_release prior_domains does not match the authoritative claim")
+    if proof.get("new_domains") != after_domains:
+        errors.append("scope_release new_domains does not match the reduced claim")
+    if not after_domains:
+        errors.append("release-surfaces must retain at least one responsibility domain")
+    if not released and after_domains == before_domains:
+        errors.append("release-surfaces must reduce at least one path or domain")
+    new_coverage_is_subset = _domain_coverage_is_subset(
+        after_domains, before_domains
+    )
+    for domain in after_domains:
+        if not any(_domain_is_equal_or_descendant(domain, old) for old in before_domains):
+            errors.append(f"release-surfaces domain expands or moves scope: {domain}")
+    if (
+        after_domains != before_domains
+        and new_coverage_is_subset
+        and _domain_coverage_is_subset(before_domains, after_domains)
+    ):
+        errors.append(
+            "release-surfaces changed domains must strictly reduce semantic authority coverage"
+        )
+    responsibilities = proof.get("retained_responsibilities")
+    if isinstance(responsibilities, list):
+        for item in responsibilities:
+            if isinstance(item, dict) and item.get("domain") not in after_domains:
+                errors.append(
+                    "each retained responsibility must map to one exact retained domain"
+                )
+    if proof.get("prior_claim_sha256") != canonical_claim_sha256(before):
+        errors.append("scope_release prior_claim_sha256 does not match origin/main")
+    expected_evidence = evidence_relative_path(str(before.get("package", "")))
+    if proof.get("fixed_evidence_ref") != expected_evidence:
+        errors.append("scope_release fixed_evidence_ref does not match the package evidence path")
+    file_proofs = proof.get("released_file_proofs")
+    released_proof_paths = (
+        [item.get("path") for item in file_proofs if isinstance(item, dict)]
+        if isinstance(file_proofs, list)
+        else []
+    )
+    if released_proof_paths != released:
+        errors.append("scope_release released file proofs do not match removed path order")
+    expected_reduction = scope_reduction_sha256(
+        before_surfaces=before_surfaces,
+        after_surfaces=after_surfaces,
+        before_domains=before_domains,
+        after_domains=after_domains,
+        retained_responsibilities=responsibilities if isinstance(responsibilities, list) else [],
+        release_rationale=str(proof.get("release_rationale", "")),
+        released_file_proofs=file_proofs if isinstance(file_proofs, list) else [],
+        fixed_evidence_ref=str(proof.get("fixed_evidence_ref", "")),
+    )
+    if proof.get("reduction_sha256") != expected_reduction:
+        errors.append("scope_release reduction_sha256 does not match the exact reduction")
+    if root is not None:
+        errors.extend(_scope_release_git_errors(root, before, after, proof))
+    if registry is not None:
+        try:
+            lifecycle_registry.validate_safe_custody_registry(registry)
+        except lifecycle_registry.Refusal as exc:
+            errors.append("scope_release registry proof is invalid: " + str(exc))
+        else:
+            matches = [
+                record
+                for record in registry["safe_custody"]["scope_releases"]
+                if record.get("operation_id") == proof.get("operation_id")
+            ]
+            if len(matches) != 1:
+                errors.append("scope_release requires one exact lifecycle freeze record")
+            else:
+                record = matches[0]
+                expected = {
+                    "package": after.get("package"),
+                    "task_ref": after.get("writer_ref"),
+                    "branch": after.get("branch"),
+                    "control_branch": proof.get("control_branch"),
+                    "control_lease_sha256": proof.get("control_lease_sha256"),
+                    "quiescence_ref": proof.get("quiescence_ref"),
+                    "checkpoint_sha": proof.get("checkpoint_sha"),
+                    "prior_claim_sha256": proof.get("prior_claim_sha256"),
+                    "reduction_sha256": proof.get("reduction_sha256"),
+                    "intended_claim_sha256": canonical_claim_sha256(after),
+                    "prepared_from_main": proof.get("prepared_from_main"),
+                    "state": "pending",
+                }
+                if any(record.get(key) != value for key, value in expected.items()):
+                    errors.append("scope_release claim and lifecycle freeze tuple differ")
     return errors
 
 
@@ -1871,6 +2552,10 @@ def validate_claim(claim: dict, *, expected_package: str | None = None) -> list[
             errors.append(
                 "owner reassignment handoff to_branch must equal the current claim branch"
             )
+    scope_release = claim.get("scope_release")
+    errors.extend(validate_scope_release_proof(scope_release))
+    if scope_release is not None and state != ACTIVE_STATE:
+        errors.append("only active claims may carry a scope_release proof")
     return errors
 
 
@@ -2550,7 +3235,10 @@ def evaluate(
         authority_claims = candidate_claims
     else:
         origin_index = load_index_at_ref(control_root, "origin/main")
-        if origin_index.get("schema_version") == 3:
+        if origin_index.get("schema_version") in {
+            ACTIVE_INDEX_SCHEMA,
+            SAFE_CUSTODY_INDEX_SCHEMA,
+        }:
             errors.extend(validate_index(origin_index))
             authority_claims = load_claims_at_ref(control_root, "origin/main")
             authority_claims_for_validation = authority_claims
@@ -2676,6 +3364,9 @@ def evaluate(
     payload["worktree_registry"] = registry_context
     errors.extend(registry_errors)
     warnings.extend(registry_warnings)
+    safe_custody_registry = registry_context.pop(
+        "_safe_custody_registry_snapshot", None
+    )
     if args.intent == "extend-surfaces" and (
         registry_context.get("registry") != "initialized"
         or registry_context.get("enforced") is not True
@@ -2837,6 +3528,53 @@ def evaluate(
         prospective_claims[package_key] = claim
         errors.extend(
             "surface extension prospective state: " + error
+            for error in validate_claim_set(prospective_claims)
+        )
+
+    elif args.intent == "release-surfaces":
+        if (
+            not CONTROL_BRANCH_RE.fullmatch(facts.branch)
+            or "-release-surfaces-" not in facts.branch
+        ):
+            errors.append(
+                "scope release requires a delivery-release-surfaces control branch"
+            )
+        before = _require_control_delta(
+            root=root,
+            claim=claim,
+            facts=facts,
+            allowed_fields={"surfaces", "domains", "scope_release"},
+            errors=errors,
+        )
+        if candidate_index.get("schema_version") != SAFE_CUSTODY_INDEX_SCHEMA:
+            errors.append("scope release remains disabled before index schema 4")
+        if registry_context.get("schema_version") != SAFE_CUSTODY_REGISTRY_SCHEMA:
+            errors.append("scope release remains disabled before registry schema 2")
+        if facts.behind:
+            errors.append("scope release requires a branch from current origin/main")
+        if before and before.get("state") != ACTIVE_STATE:
+            errors.append("scope release requires an active origin claim")
+        if before and (
+            not args.task_ref
+            or args.task_ref != before.get("writer_ref")
+            or claim.get("writer_ref") != before.get("writer_ref")
+        ):
+            errors.append("scope release task context must equal the active writer_ref")
+        if before:
+            errors.extend(
+                validate_scope_release_transition(
+                    before,
+                    claim,
+                    registry=safe_custody_registry
+                    if isinstance(safe_custody_registry, dict)
+                    else None,
+                    root=root,
+                )
+            )
+        prospective_claims = dict(authority_claims)
+        prospective_claims[package_key] = claim
+        errors.extend(
+            "scope release prospective state: " + error
             for error in validate_claim_set(prospective_claims)
         )
 
@@ -3472,6 +4210,7 @@ def build_parser() -> argparse.ArgumentParser:
             "repair-merge",
             "authorize",
             "extend-surfaces",
+            "release-surfaces",
             "write",
             "transfer",
             "owner-reassignment",

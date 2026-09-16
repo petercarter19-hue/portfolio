@@ -10,8 +10,8 @@
 >
 > `python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write --task-ref <WRITER-REF> --fetch --require-clean`
 >
-> A control-only activation, authorize, transfer, owner reassignment, pause,
-> resume, or close is the
+> A control-only activation, authorize, release-surfaces, transfer, owner
+> reassignment, pause, resume, or close is the
 > narrow exception: run `--intent read` before editing, change and commit only
 > the exact package claim on its dedicated control branch, then run the matching
 > control intent with `--fetch --require-clean` before PR. Do not change an
@@ -100,6 +100,14 @@ handoffs are evidence, not additional gates.
   the exact fetched checkpoint and reruns collisions. Preserve the remote
   implementation branch through claim close so reviewed squash bytes remain
   provable.
+- Partial scope release is not an informal edit to a claim. The active writer
+  first establishes the durable `scope-release` freeze described in
+  `WORKTREE_LIFECYCLE.md`; only then may one claim-only control PR remove exact
+  files and/or narrow domains with `--intent release-surfaces`. The freeze
+  survives CI and control-lease release. After the accepted claim transition,
+  ordinary writes remain blocked until `reconcile-main` imports authoritative
+  main. These operations remain disabled until both CURRENT_LANES schema 4 and
+  machine-local registry schema 2 are accepted; schema 3/1 keeps today’s flow.
 - A closed package's fixed evidence file may be amended only through the
   owner-authorized `evidence-errata` control transition in `START_HERE.md`;
   the closed claim itself is never reopened or changed.
@@ -128,7 +136,8 @@ handoffs are evidence, not additional gates.
   They may share the package worktree read-only only when coordinated with its
   writer and there is no concurrent mutation. Runnable isolation leases the
   one sparse `_control` singleton through `verify --runtime-required`.
-- Activation, authorize, transfer, owner reassignment, pause, resume, and close
+- Activation, authorize, release-surfaces, transfer, owner reassignment, pause,
+  resume, and close
   reuse the same
   mutex- and task-leased `_control` singleton. Successful temporary work is
   finalized in the same task; a refusal preserves the exact path and reports

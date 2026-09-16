@@ -217,6 +217,43 @@ Merge that control PR before implementation merge.
   unproved or directory-like additions, any removal/replacement/reorder or
   other field/file change, same-claim overlap, and exact/parent/child collisions
   in the full current claim set.
+- Release surfaces: this dormant Protected operation is available only after
+  accepted `CURRENT_LANES.json` schema 4 and machine-local registry schema 2.
+  Candidate A does not perform that cutover. At a later authorized boundary,
+  qualify every active durable writer as quiescent and use
+  `migrate-registry-v2` once; it binds the actual caller to `--task-ref`, refuses
+  candidate delivery-tool bytes and pending state, creates an exact-byte
+  schema-1 backup, preserves every custody record, seals the schema-2 digest,
+  and atomically validates the one live registry. Recovery refuses if that
+  deterministic backup is missing or changed. The separately reviewed index
+  cutover then enables the
+  capability.
+
+  The active writer leases `_control` on
+  `work/YYYY-MM-DD-delivery-release-surfaces-<slug>` and, from its pristine
+  durable worktree at exact local/remote checkpoint C, runs `scope-release
+  prepare` with a proposal containing only retained surfaces/domains, retained
+  responsibility-to-domain mappings, rationale, and an
+  `accepted_introductions` list (normally empty), plus the writer's explicit
+  `quiescence_ref`. The tool records exact
+  C/M mode/blob or absence for every released path. A path with net branch
+  delta requires an accepted-main commit and exact-candidate receipt in that
+  list; unchanged paths must not assert one. The returned proof is the
+  sole optional `scope_release` object in the claim. Commit only that claim and
+  validate with:
+
+  ```bash
+  python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent release-surfaces --task-ref <WRITER-REF> --fetch --require-clean
+  ```
+
+  The registry freeze remains while CI runs even if `_control` is released.
+  Complete it only after the exact reduced claim is accepted through the
+  recorded prepared-main-to-current-main transition lineage; cancel it
+  only while the exact prior claim and C remain authoritative and no server
+  outcome is uncertain. An accepted reduction becomes `scope_sync_required`.
+  Ordinary writes stay blocked until `reconcile-main` imports current main.
+  Released paths are not implicitly reacquired; use ordinary exact-file
+  extension after fresh admission if later work genuinely needs them.
 - Transfer: push the exact checkpoint, record opaque from/to task references
   and explicit relinquishment in the claim, then validate on a dedicated
   `delivery-transfer` control branch with `--intent transfer`.
@@ -357,6 +394,20 @@ Merge that control PR before implementation merge.
 - Resume: on a `delivery-resume` branch, change only `state` from `paused` to
   `active`, then run `--intent resume`. The fetched branch must still equal the
   preserved checkpoint, and current branch/path/domain collisions rerun.
+- Reconcile main: after ordinary resume or accepted scope release, an active
+  writer whose owned paths intersect newer main uses lifecycle
+  `reconcile-main start`. The operation pins source C and target M in the
+  registry before a normal non-rewriting merge, imports unowned paths exactly
+  from M, exposes only owned conflicts for resolution, digests every other
+  initial index entry so resolution cannot edit an owned non-conflicted path,
+  and records
+  `prepared`, `merging`, `resolved`, `committed`, `pushed`, then `completed` or
+  `refresh_required`. Continue only the exact operation ID. Never reset,
+  force-push, select ours for an unowned conflict, or replay an uncertain push.
+  A committed R is preserved even when main advances; `refresh_required`
+  blocks ordinary work until a fresh R-to-current-main reconciliation. The
+  resulting combined candidate requires its own affected tests, exact-SHA
+  review, and current-target CI.
 - Supersede: the terminal disposition for an activated-but-unmerged package
   that was rejected and replaced or withdrawn. It is distinct from close:
   nothing was delivered. From a `paused` claim whose pushed checkpoint is

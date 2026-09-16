@@ -353,12 +353,12 @@ class WorkflowEfficiencyTests(unittest.TestCase):
         for route in (
             "Site management | **GPT-6 Astra, Medium**",
             "Package management | **Sol, Extra High**",
-            "Known-cause implementation | **Sol, Extra High**",
-            "Bounded supporting work | **Sol, High**",
+            "Known-cause implementation | **Sol, High**",
+            "Bounded supporting work | **Sol, Medium**",
             "Consequential architecture or cross-package decision | **GPT-6 Astra, High**",
             "Difficult unresolved debugging or integration | **GPT-6 Astra, Medium or High**",
             "Consequential independent security, privacy or architecture review | **Fresh GPT-6 Astra, High**",
-            "Routine bounded independent review, release or closeout execution | **Sol, Extra High**",
+            "Routine bounded independent review, release or closeout execution | **Sol, High**",
             "Demanding well-bounded implementation | **Sol, Extra High**",
         ):
             with self.subTest(route=route):

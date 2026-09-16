@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-CONTRACTS-SAFE-CUSTODY-001",
+  "candidate_sha": "93f906ce136332f1ba5aee3869a4551c440dcde6",
+  "review_type": "independent",
+  "reviewer_ref": "agent:grok-owner-supplied-2026-09-15",
+  "result": "pass",
+  "reviewed_at": "2026-09-16T00:26:35Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "Candidate e6c4b9a4f66e963a476213578cd7ec091775b357 allowed registry migration from unaccepted candidate bytes. The corrected candidate binds the executing lifecycle and supporting delivery-tool blobs to accepted origin/main before any backup or write."
+    },
+    {
+      "status": "resolved",
+      "summary": "Candidate e6c4b9a4f66e963a476213578cd7ec091775b357 trusted supplied task references for scope release, main reconciliation, and registry migration. The corrected candidate binds the actual native and registered caller under the registry mutex before side effects."
+    },
+    {
+      "status": "resolved",
+      "summary": "Candidate e6c4b9a4f66e963a476213578cd7ec091775b357 did not prove retained non-conflicted paths stayed exact during reconciliation. The corrected candidate journals the initial merge state and refuses resolution-time edits outside the allowed conflict paths."
+    },
+    {
+      "status": "resolved",
+      "summary": "Candidate e6c4b9a4f66e963a476213578cd7ec091775b357 accepted syntactically valid migration digests and insufficient backup recovery proof. The corrected candidate recomputes the after digest and verifies the deterministic backup exists and matches the before digest."
+    },
+    {
+      "status": "resolved",
+      "summary": "Candidate e6c4b9a4f66e963a476213578cd7ec091775b357 did not fully prove prepared-main lineage before Protected scope-release completion. The corrected candidate proves ancestry, the recorded prior-claim digest, and the intended transition lineage while preserving freeze-on-refusal."
+    },
+    {
+      "status": "resolved",
+      "summary": "Candidate 9032fbb5f05fdc9c9b45cee19b4865d01d5362f8 treated domain-list inequality as authority reduction. The corrected candidate compares normalized semantic coverage and accepts only a strict subset, rejecting permutations and redundant descendant no-ops."
+    },
+    {
+      "status": "informational",
+      "summary": "Reviewer agent:/root/p1_review using gpt-5.6-sol at Extra High returned an unqualified PASS with no findings for exact candidate 2958ee1593f880b48f34d8967be7e27a8821410e after verifying local, tracking, and live remote identity, a clean worktree, architecture hashes, all six cumulative finding closures, the acceptance checklist, and unchanged uninstalled local staging."
+    },
+    {
+      "status": "informational",
+      "summary": "Pete supplied an external Grok independent-review PASS with no findings for exact candidate 93f906ce136332f1ba5aee3869a4551c440dcde6. The review verified exact local, tracking, PR-source, and merge-tree identity; ancestry from accepted main and the prior reviewed candidate; byte-identical original implementation paths; the exact package-registry delta and accounting; unchanged reviewed local staging preconditions; and successful focused validation and Azure build 3056. No external session identifier was provided or inferred."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-DELIVERY-CONTRACTS-SAFE-CUSTODY-001.md"
+}

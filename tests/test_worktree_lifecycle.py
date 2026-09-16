@@ -17,6 +17,11 @@ from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
+COMPAT_FIXTURE = json.loads(
+    (ROOT / "tests" / "fixtures" / "delivery_control_compat" / "manifest.json")
+    .read_text(encoding="utf-8")
+)
+PRE_SAFE_CUSTODY_REF = COMPAT_FIXTURE["pre_safe_custody_ref"]
 SCRIPT = ROOT / "scripts" / "worktree_lifecycle.py"
 SPEC = importlib.util.spec_from_file_location("worktree_lifecycle", SCRIPT)
 LIFECYCLE = importlib.util.module_from_spec(SPEC)
@@ -150,11 +155,17 @@ class RepositoryFixture:
         git(publisher, "push", "origin", f"HEAD:refs/heads/{self.branch}")
         return sha
 
-    def run(self, *arguments: str, cwd: Path | None = None) -> tuple[int, dict]:
+    def run(
+        self,
+        *arguments: str,
+        cwd: Path | None = None,
+        environment_overrides: dict[str, str] | None = None,
+    ) -> tuple[int, dict]:
         environment = os.environ.copy()
         # Synthetic fixture tasks exercise legacy identity-free behavior unless
         # an individual test supplies an explicit launcher/context identity.
         environment["CODEX_THREAD_ID"] = ""
+        environment.update(environment_overrides or {})
         result = subprocess.run(
             [sys.executable, "-B", str(SCRIPT), "--repo", str(self.repo), *arguments],
             cwd=cwd or self.repo,
@@ -7119,6 +7130,740 @@ class LifecycleReportingHookTests(unittest.TestCase):
             {"status": "unavailable", "reason": "exact_session_id_not_selected"},
         )
         runner.assert_not_called()
+
+
+class SafeCustodyRegistryTests(unittest.TestCase):
+    def install_accepted_safe_custody_tools(
+        self, fixture, *, lifecycle_bytes=None
+    ):
+        (fixture.repo / "scripts" / "delivery_preflight.py").write_bytes(
+            (ROOT / "scripts" / "delivery_preflight.py").read_bytes()
+        )
+        (fixture.repo / "scripts" / "worktree_lifecycle.py").write_bytes(
+            SCRIPT.read_bytes() if lifecycle_bytes is None else lifecycle_bytes
+        )
+        git(fixture.repo, "add", "scripts/delivery_preflight.py", "scripts/worktree_lifecycle.py")
+        git(fixture.repo, "commit", "-m", "install accepted safe-custody tools")
+        git(fixture.repo, "push", "origin", "main")
+        fixture.main_sha = git(fixture.repo, "rev-parse", "HEAD")
+
+    def registry(self):
+        registry = {
+            "schema_version": 2,
+            "safe_custody": {
+                "schema_version": 1,
+                "migration": {
+                    "from_schema": 1,
+                    "to_schema": 2,
+                    "before_sha256": "1" * 64,
+                    "after_sha256": "",
+                    "migrated_at": "2026-09-13T00:00:00Z",
+                },
+                "scope_releases": [],
+                "reconciliations": [],
+                "package_blocks": {},
+            },
+        }
+        LIFECYCLE._seal_safe_custody_after_sha256(registry)
+        return registry
+
+    def seal(self, registry):
+        LIFECYCLE._seal_safe_custody_after_sha256(registry)
+        return registry
+
+    def reconciliation(self, *, phase="prepared"):
+        order = ["prepared", "merging", "resolved", "committed", "pushed"]
+        phases = order[: order.index(phase) + 1] if phase in order else [*order, phase]
+        return {
+            "operation_id": "a" * 64,
+            "package": "PS-TEST-001",
+            "task_ref": "task:test-writer",
+            "worktree": str(ROOT),
+            "branch": "work/2026-09-13-test",
+            "source_checkpoint": "1" * 40,
+            "target_main": "2" * 40,
+            "authoritative_claim_sha256": "3" * 64,
+            "allowed_conflict_paths": ["owned/file.py"],
+            "nonconflicted_index_sha256": (
+                None if phase in {"prepared", "merging", "aborted"} else "7" * 64
+            ),
+            "preoperation_tree": "4" * 40,
+            "preoperation_ref": "1" * 40,
+            "phase": phase,
+            "expected_tree": "5" * 40 if phase not in {"prepared", "merging", "aborted"} else None,
+            "result_sha": "6" * 40 if phase in {"committed", "pushed", "completed", "refresh_required"} else None,
+            "remote_before": "1" * 40,
+            "started_at": "2026-09-13T00:00:00Z",
+            "updated_at": "2026-09-13T00:00:00Z",
+            "history": [
+                {"phase": item, "at": "2026-09-13T00:00:00Z"}
+                for item in phases
+            ],
+            "supersedes_operation_id": None,
+        }
+
+    def test_reconciliation_honors_directory_surfaces_but_not_fixed_controls(self):
+        claim = {
+            "package": "PS-TEST-001",
+            "surfaces": [
+                "owned",
+                "docs/governance/lane_claims/PS-TEST-001.json",
+                "docs/governance/lane_claims/evidence/PS-TEST-001.md",
+                "docs/governance/lane_claims/receipts/PS-TEST-001.json",
+            ],
+        }
+        self.assertTrue(
+            LIFECYCLE._reconciliation_path_is_owned("owned/nested/file.py", claim)
+        )
+        self.assertFalse(
+            LIFECYCLE._reconciliation_path_is_owned("owned-sibling/file.py", claim)
+        )
+        for fixed in claim["surfaces"][1:]:
+            with self.subTest(fixed=fixed):
+                self.assertFalse(
+                    LIFECYCLE._reconciliation_path_is_owned(fixed, claim)
+                )
+
+    def reconciliation_git_fixture(
+        self, *, unowned_conflict=False, owned_conflict=False
+    ):
+        temporary = tempfile.TemporaryDirectory(prefix="safe-custody-reconcile-")
+        self.addCleanup(temporary.cleanup)
+        base = Path(temporary.name)
+        repo = base / "repo"
+        remote = base / "origin.git"
+        publisher = base / "publisher"
+        repo.mkdir()
+        git(base, "init", "--bare", str(remote))
+        git(repo, "init", "--initial-branch=main")
+        git(repo, "config", "user.email", "tests@peerslate.invalid")
+        git(repo, "config", "user.name", "PeerSlate Tests")
+        git(repo, "config", "core.autocrlf", "false")
+        branch = "work/2026-09-13-safe-custody-reconcile"
+        package = "PS-TEST-001"
+        task_ref = "task:test-writer"
+        claim = {
+            "package": package,
+            "state": "active",
+            "writer_ref": task_ref,
+            "branch": branch,
+            "surfaces": ["owned.txt", "owned-stable.txt"],
+        }
+        claim_path = repo / "docs" / "governance" / "lane_claims" / f"{package}.json"
+        claim_path.parent.mkdir(parents=True)
+        claim_path.write_text(json.dumps(claim) + "\n", encoding="utf-8")
+        (repo / "owned.txt").write_text("base\n", encoding="utf-8")
+        (repo / "owned-stable.txt").write_text("base\n", encoding="utf-8")
+        (repo / "unowned.txt").write_text("base\n", encoding="utf-8")
+        git(repo, "add", ".")
+        git(repo, "commit", "-m", "base")
+        git(repo, "remote", "add", "origin", str(remote))
+        git(repo, "push", "-u", "origin", "main")
+        git(repo, "checkout", "-b", branch)
+        (repo / "owned.txt").write_text("candidate\n", encoding="utf-8")
+        if unowned_conflict:
+            (repo / "unowned.txt").write_text("candidate conflict\n", encoding="utf-8")
+        git(repo, "add", ".")
+        git(repo, "commit", "-m", "candidate")
+        source = git(repo, "rev-parse", "HEAD")
+        git(repo, "push", "-u", "origin", branch)
+        git(base, "clone", "--branch", "main", str(remote), str(publisher))
+        git(publisher, "config", "user.email", "publisher@peerslate.invalid")
+        git(publisher, "config", "user.name", "PeerSlate Publisher")
+        (publisher / "unowned.txt").write_text("main change\n", encoding="utf-8")
+        if owned_conflict:
+            (publisher / "owned.txt").write_text("main conflict\n", encoding="utf-8")
+        git(publisher, "add", ".")
+        git(publisher, "commit", "-m", "advance main")
+        target = git(publisher, "rev-parse", "HEAD")
+        git(publisher, "push", "origin", "main")
+        git(repo, "fetch", "origin", "main", branch)
+        context = LIFECYCLE._repo_context(repo)
+        record = self.reconciliation()
+        record.update(
+            {
+                "package": package,
+                "task_ref": task_ref,
+                "worktree": str(repo),
+                "branch": branch,
+                "source_checkpoint": source,
+                "target_main": target,
+                "authoritative_claim_sha256": LIFECYCLE._canonical_json_sha256(claim),
+                "allowed_conflict_paths": [],
+                "preoperation_tree": git(repo, "rev-parse", f"{source}^{{tree}}"),
+                "preoperation_ref": source,
+                "phase": "prepared",
+                "expected_tree": None,
+                "result_sha": None,
+                "remote_before": source,
+                "history": [{"phase": "prepared", "at": "2026-09-13T00:00:00Z"}],
+            }
+        )
+        registry = self.registry()
+        registry["worktrees"] = [{
+            "path": str(repo), "kind": "durable", "state": "active",
+            "package": package, "task_ref": task_ref, "branch": branch,
+            "head": source, "updated_at": "2026-09-13T00:00:00Z",
+        }]
+        registry["safe_custody"]["reconciliations"] = [record]
+        registry["safe_custody"]["package_blocks"] = {
+            package.casefold(): {
+                "kind": "reconcile_main", "operation_id": record["operation_id"]
+            }
+        }
+        return repo, publisher, context, registry, record, claim, source, target, branch
+
+    def test_schema_one_remains_readable_but_new_operations_are_fenced(self):
+        registry = {
+            "schema_version": 1,
+            "initialized_at": "2026-09-13T00:00:00Z",
+            "managed_root": str(ROOT),
+            "evidence_root": str(ROOT.parent),
+            "worktrees": [],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "registry.json"
+            path.write_text(json.dumps(registry), encoding="utf-8")
+            loaded = LIFECYCLE._load_registry(path)
+        self.assertEqual(1, loaded["schema_version"])
+        with self.assertRaisesRegex(LIFECYCLE.Refusal, "require registry schema 2"):
+            LIFECYCLE.validate_safe_custody_registry(loaded)
+
+    def test_schema_one_cli_refuses_new_operations_before_registry_mutation(self):
+        fixture = RepositoryFixture()
+        self.addCleanup(fixture.temporary.cleanup)
+        fixture.initialize()
+        before = fixture.registry_path.read_bytes()
+        for arguments in (
+            (
+                "scope-release", "prepare", "--package", fixture.package,
+                "--task-ref", fixture.writer, "--execute",
+            ),
+            (
+                "reconcile-main", "start", "--package", fixture.package,
+                "--task-ref", fixture.writer, "--execute",
+            ),
+            ):
+            code, payload = fixture.run(
+                *arguments,
+                environment_overrides={"PEERSLATE_CALLER_REF": fixture.writer},
+            )
+            self.assertEqual(LIFECYCLE.REFUSAL_EXIT, code, payload)
+            self.assertIn("registry schema 2", payload["error"])
+            self.assertEqual(before, fixture.registry_path.read_bytes())
+
+    def test_registry_migration_preserves_inventory_and_exact_backup(self):
+        fixture = RepositoryFixture()
+        self.addCleanup(fixture.temporary.cleanup)
+        self.install_accepted_safe_custody_tools(fixture)
+        fixture.initialize()
+        code, payload = fixture.run(
+            "ensure", "--package", fixture.package,
+            "--task-ref", fixture.writer, "--execute",
+        )
+        self.assertEqual(0, code, payload)
+        ensured_record = next(
+            record
+            for record in LIFECYCLE._load_registry(fixture.registry_path)["worktrees"]
+            if record.get("kind") == "durable"
+            and record.get("package") == fixture.package
+        )
+        git(
+            Path(ensured_record["path"]),
+            "push", "origin", f"HEAD:refs/heads/{fixture.branch}",
+        )
+        before_bytes = fixture.registry_path.read_bytes()
+        before = json.loads(before_bytes)
+        durable = [
+            record for record in before["worktrees"]
+            if record.get("kind") == "durable" and record.get("state") == "active"
+        ]
+        qualification = {
+            "schema_version": 1,
+            "owner_authorization_ref": "task:owner/migrate-safe-custody",
+            "qualified_at": "2026-09-13T00:00:00Z",
+            "writers": [
+                {
+                    "package": record["package"],
+                    "task_ref": record["task_ref"],
+                    "branch": record["branch"],
+                    "head": record["head"],
+                    "quiescence_ref": "task:writer/quiescent",
+                }
+                for record in durable
+            ],
+        }
+        qualification_path = fixture.base / "qualification.json"
+        qualification_path.write_text(json.dumps(qualification), encoding="utf-8")
+        code, payload = fixture.run(
+            "migrate-registry-v2",
+            "--task-ref", "task:migration-owner",
+            "--qualification-file", str(qualification_path),
+            "--execute",
+            environment_overrides={"PEERSLATE_CALLER_REF": "task:migration-owner"},
+        )
+        self.assertEqual(0, code, payload)
+        after = json.loads(fixture.registry_path.read_text(encoding="utf-8"))
+        self.assertEqual(2, after["schema_version"])
+        preserved_after = copy.deepcopy(after)
+        preserved_before = copy.deepcopy(before)
+        preserved_after.pop("safe_custody")
+        preserved_after["schema_version"] = 1
+        self.assertEqual(preserved_before, preserved_after)
+        backup = Path(payload["backup"])
+        self.assertEqual(before_bytes, backup.read_bytes())
+        self.assertEqual(hashlib.sha256(before_bytes).hexdigest(), payload["before_sha256"])
+        LIFECYCLE.validate_safe_custody_registry(after)
+        exact_backup = backup.read_bytes()
+        backup.unlink()
+        migrated_bytes_for_recovery = fixture.registry_path.read_bytes()
+        code, missing_backup = fixture.run(
+            "migrate-registry-v2",
+            "--task-ref", "task:migration-owner",
+            "--qualification-file", str(qualification_path),
+            "--execute",
+            environment_overrides={"PEERSLATE_CALLER_REF": "task:migration-owner"},
+        )
+        self.assertEqual(LIFECYCLE.REFUSAL_EXIT, code, missing_backup)
+        self.assertIn("exact deterministic schema-1 backup", missing_backup["error"])
+        self.assertEqual(migrated_bytes_for_recovery, fixture.registry_path.read_bytes())
+        backup.write_bytes(exact_backup + b"tampered")
+        code, changed_backup = fixture.run(
+            "migrate-registry-v2",
+            "--task-ref", "task:migration-owner",
+            "--qualification-file", str(qualification_path),
+            "--execute",
+            environment_overrides={"PEERSLATE_CALLER_REF": "task:migration-owner"},
+        )
+        self.assertEqual(LIFECYCLE.REFUSAL_EXIT, code, changed_backup)
+        self.assertIn("exact deterministic schema-1 backup", changed_backup["error"])
+        self.assertEqual(migrated_bytes_for_recovery, fixture.registry_path.read_bytes())
+        backup.write_bytes(exact_backup)
+        old_script = fixture.base / "pre_safe_custody_lifecycle.py"
+        old_script.write_text(
+            git(
+                ROOT,
+                "show",
+                f"{PRE_SAFE_CUSTODY_REF}:{COMPAT_FIXTURE['clients']['lifecycle']['path']}",
+            ),
+            encoding="utf-8",
+        )
+        migrated_bytes = fixture.registry_path.read_bytes()
+        durable_record = durable[0]
+        historical_path = fixture.base / "historical-compatibility-target"
+        entrypoints = {
+            "init": (
+                "init", "--task-ref", fixture.writer,
+                "--managed-root", str(fixture.managed),
+                "--evidence-root", str(fixture.evidence), "--execute",
+            ),
+            "adopt": (
+                "adopt", "--package", fixture.package,
+                "--path", durable_record["path"],
+                "--task-ref", fixture.writer, "--execute",
+            ),
+            "ensure": (
+                "ensure", "--package", fixture.package,
+                "--task-ref", fixture.writer, "--execute",
+            ),
+            "control": (
+                "control", "--task-ref", fixture.writer,
+                "--package", fixture.package, "--execute",
+            ),
+            "caller-context": (
+                "caller-context", "register", "--task-ref", fixture.writer,
+                "--package", fixture.package, "--receiver-ref", "task:receiver",
+                "--owner-authorization-ref", "task:owner", "--lease-token", "token",
+                "--execute",
+            ),
+            "control-custody": (
+                "control-custody", "propose", "--task-ref", fixture.writer,
+                "--execute",
+            ),
+            "control-run": (
+                "control-run", "--task-ref", fixture.writer,
+                "--lease-token", "token", "--execute", "--",
+                sys.executable, "-c", "pass",
+            ),
+            "prepare-owner-reassignment": (
+                "prepare-owner-reassignment", "--package", fixture.package,
+                "--task-ref", "task:successor",
+                "--successor-branch", "work/2026-09-13-compat-successor",
+                "--expected-checkpoint", durable_record["head"],
+                "--owner-authorization-ref", "task:owner", "--execute",
+            ),
+            "verify": (
+                "verify", "--package", fixture.package,
+                "--candidate-sha", durable_record["head"],
+                "--task-ref", fixture.writer, "--runtime-required", "--ephemeral",
+                "--", sys.executable, "-c", "pass",
+            ),
+            "retire": (
+                "retire", "--path", durable_record["path"],
+                "--task-ref", fixture.writer,
+                "--expected-head", durable_record["head"], "--execute",
+            ),
+            "retire-closed-custody": (
+                "retire-closed-custody", "--cleanup-package", "PS-CLEANUP-001",
+                "--task-ref", "task:cleanup", "--target-package", fixture.package,
+                "--path", durable_record["path"], "--branch", fixture.branch,
+                "--source-task-ref", fixture.writer,
+                "--expected-head", durable_record["head"],
+                "--owner-authorization-ref", "task:owner",
+                "--source-unavailable-ref", "task:unavailable", "--execute",
+            ),
+            "retire-historical": (
+                "retire-historical", "--cleanup-package", "PS-CLEANUP-001",
+                "--task-ref", "task:cleanup", "--path", str(historical_path),
+                "--branch", "work/2026-09-13-historical-compat",
+                "--expected-head", fixture.main_sha,
+                "--owner-authorization-ref", "task:owner", "--execute",
+            ),
+            "finalize-task": (
+                "finalize-task", "--task-ref", fixture.writer, "--execute",
+            ),
+            "evidence-path": (
+                "evidence-path", "--package", fixture.package,
+                "--task-ref", fixture.writer,
+                "--storage-class", "ephemeral_same_task",
+                "--byte-budget", "1", "--label", "compatibility", "--execute",
+            ),
+        }
+        for name, arguments in entrypoints.items():
+            with self.subTest(entrypoint=name):
+                result = subprocess.run(
+                    [
+                        sys.executable, "-B", str(old_script),
+                        "--repo", str(fixture.repo), *arguments,
+                    ],
+                    text=True,
+                    encoding="utf-8",
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=False,
+                )
+                self.assertEqual(
+                    LIFECYCLE.REFUSAL_EXIT, result.returncode,
+                    result.stdout or result.stderr,
+                )
+                self.assertIn(
+                    COMPAT_FIXTURE["clients"]["lifecycle"]["expected_error"],
+                    result.stdout,
+                )
+                self.assertEqual(migrated_bytes, fixture.registry_path.read_bytes())
+
+    def test_exact_schema_two_state_and_package_block_pass(self):
+        registry = self.registry()
+        record = self.reconciliation()
+        registry["safe_custody"]["reconciliations"].append(record)
+        registry["safe_custody"]["package_blocks"]["ps-test-001"] = {
+            "kind": "reconcile_main",
+            "operation_id": record["operation_id"],
+        }
+        self.seal(registry)
+        LIFECYCLE.validate_safe_custody_registry(registry)
+        with self.assertRaisesRegex(LIFECYCLE.Refusal, "blocked by safe-custody"):
+            LIFECYCLE.require_package_mutation_unblocked(
+                registry, "PS-TEST-001", operation="ordinary write"
+            )
+        LIFECYCLE.require_package_mutation_unblocked(
+            registry,
+            "PS-TEST-001",
+            operation="exact continuation",
+            allowed_operation_id=record["operation_id"],
+        )
+
+    def test_registry_rejects_tampered_after_digest(self):
+        registry = self.registry()
+        registry["safe_custody"]["migration"]["after_sha256"] = "f" * 64
+        with self.assertRaisesRegex(LIFECYCLE.Refusal, "does not match registry bytes"):
+            LIFECYCLE.validate_safe_custody_registry(registry)
+
+    def test_candidate_lifecycle_cannot_migrate_or_create_backup(self):
+        fixture = RepositoryFixture()
+        self.addCleanup(fixture.temporary.cleanup)
+        self.install_accepted_safe_custody_tools(
+            fixture, lifecycle_bytes=b"# accepted lifecycle bytes\n"
+        )
+        fixture.initialize()
+        qualification_path = fixture.base / "qualification.json"
+        qualification_path.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "owner_authorization_ref": "task:owner",
+                    "qualified_at": "2026-09-13T00:00:00Z",
+                    "writers": [],
+                }
+            ),
+            encoding="utf-8",
+        )
+        before = fixture.registry_path.read_bytes()
+        backups_before = sorted(fixture.registry_path.parent.glob("worktree_registry.schema1.*.json"))
+        code, payload = fixture.run(
+            "migrate-registry-v2",
+            "--task-ref", "task:migration-owner",
+            "--qualification-file", str(qualification_path),
+            "--execute",
+            environment_overrides={"PEERSLATE_CALLER_REF": "task:migration-owner"},
+        )
+        self.assertEqual(LIFECYCLE.REFUSAL_EXIT, code, payload)
+        self.assertIn("accepted origin/main scripts/worktree_lifecycle.py bytes", payload["error"])
+        self.assertEqual(before, fixture.registry_path.read_bytes())
+        self.assertEqual(
+            backups_before,
+            sorted(fixture.registry_path.parent.glob("worktree_registry.schema1.*.json")),
+        )
+
+    def test_safe_custody_commands_reject_native_identity_mismatch_before_effects(self):
+        fixture = RepositoryFixture()
+        self.addCleanup(fixture.temporary.cleanup)
+        fixture.initialize()
+        before = fixture.registry_path.read_bytes()
+        commands = (
+            ("scope-release", "prepare", "--package", fixture.package, "--task-ref", fixture.writer),
+            ("reconcile-main", "start", "--package", fixture.package, "--task-ref", fixture.writer),
+            ("migrate-registry-v2", "--task-ref", fixture.writer, "--qualification-file", str(fixture.base / "absent.json")),
+        )
+        for command in commands:
+            with self.subTest(command=command[0]):
+                code, payload = fixture.run(
+                    *command,
+                    "--execute",
+                    environment_overrides={
+                        "PEERSLATE_CALLER_REF": "",
+                        "CODEX_THREAD_ID": "11111111-1111-4111-8111-111111111111",
+                    },
+                )
+                self.assertEqual(LIFECYCLE.REFUSAL_EXIT, code, payload)
+                self.assertIn("claimed task differs from resolved caller", payload["error"])
+                self.assertEqual(before, fixture.registry_path.read_bytes())
+        self.assertEqual([], list(fixture.registry_path.parent.glob("worktree_registry.schema1.*.json")))
+
+    def test_safe_custody_commands_reject_registered_context_mismatch_before_effects(self):
+        fixture = RepositoryFixture()
+        self.addCleanup(fixture.temporary.cleanup)
+        fixture.initialize()
+        context = LIFECYCLE._repo_context(fixture.repo)
+        registry = json.loads(fixture.registry_path.read_text(encoding="utf-8"))
+        context_id = "b" * 32
+        registry.setdefault("caller_contexts", []).append(
+            {
+                "id": context_id,
+                "state": "active",
+                "repository_common_dir": str(context.common_dir),
+                "receiver_ref": "task:different-writer",
+                "package": fixture.package,
+                "registered_by": "task:registrar",
+                "owner_authorization_ref": "task:owner",
+                "registered_at": "2026-09-13T00:00:00Z",
+                "revoked_at": None,
+                "revoked_by": None,
+                "revocation_authorization_ref": None,
+            }
+        )
+        fixture.registry_path.write_text(json.dumps(registry, indent=2) + "\n", encoding="utf-8")
+        before = fixture.registry_path.read_bytes()
+        commands = (
+            ("scope-release", "prepare", "--package", fixture.package, "--task-ref", fixture.writer),
+            ("reconcile-main", "start", "--package", fixture.package, "--task-ref", fixture.writer),
+            ("migrate-registry-v2", "--task-ref", fixture.writer, "--qualification-file", str(fixture.base / "absent.json")),
+        )
+        for command in commands:
+            with self.subTest(command=command[0]):
+                code, payload = fixture.run(
+                    *command,
+                    "--caller-context", context_id,
+                    "--execute",
+                    environment_overrides={"PEERSLATE_CALLER_REF": "", "CODEX_THREAD_ID": ""},
+                )
+                self.assertEqual(LIFECYCLE.REFUSAL_EXIT, code, payload)
+                self.assertIn("claimed task differs from resolved caller", payload["error"])
+                self.assertEqual(before, fixture.registry_path.read_bytes())
+        self.assertEqual([], list(fixture.registry_path.parent.glob("worktree_registry.schema1.*.json")))
+
+    def test_registry_rejects_block_mismatch_and_nonmonotonic_replay(self):
+        registry = self.registry()
+        record = self.reconciliation(phase="resolved")
+        registry["safe_custody"]["reconciliations"].append(record)
+        registry["safe_custody"]["package_blocks"]["ps-test-001"] = {
+            "kind": "reconcile_main",
+            "operation_id": "f" * 64,
+        }
+        self.seal(registry)
+        with self.assertRaisesRegex(LIFECYCLE.Refusal, "package_blocks"):
+            LIFECYCLE.validate_safe_custody_registry(registry)
+        registry["safe_custody"]["package_blocks"]["ps-test-001"]["operation_id"] = record["operation_id"]
+        record["history"].append(
+            {"phase": "merging", "at": "2026-09-13T00:00:00Z"}
+        )
+        record["phase"] = "merging"
+        record["expected_tree"] = None
+        record["nonconflicted_index_sha256"] = None
+        self.seal(registry)
+        with self.assertRaisesRegex(LIFECYCLE.Refusal, "not monotonic"):
+            LIFECYCLE.validate_safe_custody_registry(registry)
+
+    def test_refresh_required_is_durable_and_may_only_transition_to_completed(self):
+        registry = self.registry()
+        record = self.reconciliation(phase="refresh_required")
+        registry["safe_custody"]["reconciliations"].append(record)
+        registry["safe_custody"]["package_blocks"]["ps-test-001"] = {
+            "kind": "refresh_required",
+            "operation_id": record["operation_id"],
+        }
+        self.seal(registry)
+        LIFECYCLE.validate_safe_custody_registry(registry)
+        record["phase"] = "completed"
+        record["history"].append(
+            {"phase": "completed", "at": "2026-09-13T00:00:00Z"}
+        )
+        registry["safe_custody"]["package_blocks"] = {}
+        self.seal(registry)
+        LIFECYCLE.validate_safe_custody_registry(registry)
+
+    def test_reconciliation_imports_unowned_main_and_pushes_exact_two_parent_merge(self):
+        repo, _publisher, context, registry, record, claim, source, target, branch = (
+            self.reconciliation_git_fixture()
+        )
+        with patch.object(LIFECYCLE, "_atomic_write"):
+            result = LIFECYCLE._complete_reconciliation(
+                context, registry, record, claim
+            )
+        self.assertEqual("completed", result["status"])
+        merged = git(repo, "rev-parse", "HEAD")
+        self.assertEqual([source, target], git(repo, "show", "-s", "--format=%P", merged).split())
+        self.assertEqual("main change", (repo / "unowned.txt").read_text(encoding="utf-8").strip())
+        self.assertEqual(merged, git(repo, "ls-remote", "origin", f"refs/heads/{branch}").split()[0])
+        self.assertEqual({}, registry["safe_custody"]["package_blocks"])
+
+    def test_reconciliation_aborts_unowned_conflict_and_restores_exact_checkpoint(self):
+        repo, _publisher, context, registry, record, claim, source, _target, _branch = (
+            self.reconciliation_git_fixture(unowned_conflict=True)
+        )
+        with (
+            patch.object(LIFECYCLE, "_atomic_write"),
+            self.assertRaisesRegex(LIFECYCLE.Refusal, "unowned conflict"),
+        ):
+            LIFECYCLE._complete_reconciliation(context, registry, record, claim)
+        self.assertEqual(source, git(repo, "rev-parse", "HEAD"))
+        self.assertEqual("", git(repo, "status", "--porcelain=v1"))
+        self.assertEqual("aborted", record["phase"])
+        self.assertEqual({}, registry["safe_custody"]["package_blocks"])
+
+    def test_reconciliation_refuses_owned_nonconflicted_resolution_edit(self):
+        repo, _publisher, context, registry, record, claim, source, _target, branch = (
+            self.reconciliation_git_fixture(owned_conflict=True)
+        )
+        with patch.object(LIFECYCLE, "_atomic_write"):
+            result = LIFECYCLE._complete_reconciliation(
+                context, registry, record, claim
+            )
+        self.assertEqual("resolution_required", result["status"])
+        self.assertEqual(["owned.txt"], record["allowed_conflict_paths"])
+        self.assertRegex(record["nonconflicted_index_sha256"], r"^[0-9a-f]{64}$")
+        (repo / "owned.txt").write_text("resolved\n", encoding="utf-8")
+        (repo / "owned-stable.txt").write_text("unauthorized edit\n", encoding="utf-8")
+        git(repo, "add", "owned.txt", "owned-stable.txt")
+        with (
+            patch.object(LIFECYCLE, "_atomic_write"),
+            self.assertRaisesRegex(LIFECYCLE.Refusal, "non-conflicted index path"),
+        ):
+            LIFECYCLE._complete_reconciliation(context, registry, record, claim)
+        self.assertEqual(source, git(repo, "rev-parse", "HEAD"))
+        self.assertEqual(source, git(repo, "ls-remote", "origin", f"refs/heads/{branch}").split()[0])
+        self.assertEqual("merging", record["phase"])
+
+    def test_scope_release_refuses_rewritten_non_ancestral_main(self):
+        fixture = RepositoryFixture()
+        self.addCleanup(fixture.temporary.cleanup)
+        prepared = fixture.main_sha
+        prior = json.loads(
+            git(
+                fixture.repo,
+                "show",
+                f"{prepared}:docs/governance/lane_claims/{fixture.package}.json",
+            )
+        )
+        intended = copy.deepcopy(prior)
+        intended["surfaces"] = ["sample.txt"]
+        claim_path = fixture.repo / "docs" / "governance" / "lane_claims" / f"{fixture.package}.json"
+        claim_path.write_text(json.dumps(intended, indent=2) + "\n", encoding="utf-8")
+        git(fixture.repo, "add", str(claim_path.relative_to(fixture.repo)))
+        git(fixture.repo, "commit", "-m", "accepted scope release")
+        accepted = git(fixture.repo, "rev-parse", "HEAD")
+        context = LIFECYCLE._repo_context(fixture.repo)
+        LIFECYCLE._scope_release_transition_is_accepted(
+            context,
+            package=fixture.package,
+            prepared_main=prepared,
+            current_main=accepted,
+            prior_claim_sha256=LIFECYCLE._canonical_json_sha256(prior),
+            intended_claim_sha256=LIFECYCLE._canonical_json_sha256(intended),
+        )
+        rewritten = git(
+            fixture.repo,
+            "commit-tree",
+            git(fixture.repo, "rev-parse", f"{accepted}^{{tree}}"),
+            "-m",
+            "rewritten main",
+        )
+        with self.assertRaisesRegex(LIFECYCLE.Refusal, "not an ancestor"):
+            LIFECYCLE._scope_release_transition_is_accepted(
+                context,
+                package=fixture.package,
+                prepared_main=prepared,
+                current_main=rewritten,
+                prior_claim_sha256=LIFECYCLE._canonical_json_sha256(prior),
+                intended_claim_sha256=LIFECYCLE._canonical_json_sha256(intended),
+            )
+
+    def test_reconciliation_preserves_exact_result_when_main_drifts(self):
+        repo, publisher, context, registry, record, claim, source, target, branch = (
+            self.reconciliation_git_fixture()
+        )
+        (publisher / "later.txt").write_text("later main\n", encoding="utf-8")
+        git(publisher, "add", "later.txt")
+        git(publisher, "commit", "-m", "advance main again")
+        later_main = git(publisher, "rev-parse", "HEAD")
+        git(publisher, "push", "origin", "main")
+        with patch.object(LIFECYCLE, "_atomic_write"):
+            result = LIFECYCLE._complete_reconciliation(
+                context, registry, record, claim
+            )
+        self.assertEqual("refresh_required", result["status"])
+        merged = git(repo, "rev-parse", "HEAD")
+        self.assertEqual([source, target], git(repo, "show", "-s", "--format=%P", merged).split())
+        self.assertEqual(merged, git(repo, "ls-remote", "origin", f"refs/heads/{branch}").split()[0])
+        self.assertEqual(later_main, git(repo, "rev-parse", "origin/main"))
+        self.assertEqual(
+            {"kind": "refresh_required", "operation_id": record["operation_id"]},
+            registry["safe_custody"]["package_blocks"][claim["package"].casefold()],
+        )
+
+    def test_reconciliation_preserves_resolved_merge_when_authority_changes(self):
+        repo, publisher, context, registry, record, claim, source, _target, branch = (
+            self.reconciliation_git_fixture()
+        )
+        claim_path = (
+            publisher / "docs" / "governance" / "lane_claims"
+            / f"{claim['package']}.json"
+        )
+        changed_claim = json.loads(claim_path.read_text(encoding="utf-8"))
+        changed_claim["writer_ref"] = "task:replacement-writer"
+        claim_path.write_text(json.dumps(changed_claim) + "\n", encoding="utf-8")
+        git(publisher, "add", str(claim_path.relative_to(publisher)))
+        git(publisher, "commit", "-m", "change package authority")
+        git(publisher, "push", "origin", "main")
+        with (
+            patch.object(LIFECYCLE, "_atomic_write"),
+            self.assertRaisesRegex(LIFECYCLE.Refusal, "authority changed"),
+        ):
+            LIFECYCLE._complete_reconciliation(context, registry, record, claim)
+        self.assertEqual("resolved", record["phase"])
+        self.assertEqual(source, git(repo, "rev-parse", "HEAD"))
+        self.assertTrue(git(repo, "rev-parse", "-q", "--verify", "MERGE_HEAD"))
+        self.assertEqual(source, git(repo, "ls-remote", "origin", f"refs/heads/{branch}").split()[0])
 
 
 if __name__ == "__main__":

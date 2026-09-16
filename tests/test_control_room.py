@@ -17,6 +17,7 @@ import importlib.util
 import inspect
 import json
 import os
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -419,6 +420,34 @@ class ControlRoomSnapshotTests(unittest.TestCase):
         self.assertEqual(snapshot["schema_version"], 1)
         self.assertIn("build", snapshot)
         self.assertNotIn("commits", snapshot)
+
+    def test_delivery_projection_keeps_claim_state_distinct_from_holds(self):
+        with tempfile.TemporaryDirectory() as directory:
+            claim = {
+                "package": "PS-EXAMPLE-001",
+                "state": "paused",
+                "delivery_path": "Protected",
+                "branch": "work/example",
+                "scope_release": {"schema_version": 1},
+            }
+            with open(
+                os.path.join(directory, "PS-EXAMPLE-001.json"),
+                "w",
+                encoding="utf-8",
+            ) as handle:
+                json.dump(claim, handle)
+            with patch.object(
+                SNAPSHOT_GENERATOR, "CLAIMS_DIRECTORY", directory
+            ):
+                records = SNAPSHOT_GENERATOR._delivery_claims()
+        self.assertEqual(1, len(records))
+        self.assertEqual("paused", records[0]["claim_state"])
+        self.assertEqual("not_recorded_in_claim", records[0]["hold_state"])
+        self.assertEqual("not_recorded_in_claim", records[0]["dependencies"])
+        self.assertTrue(records[0]["scope_release_proof"])
+        self.assertEqual(
+            "not_reported_by_claim", records[0]["scope_release_enforcement"]
+        )
 
     def test_generator_main_never_raises_and_exits_zero(self):
         with patch.object(

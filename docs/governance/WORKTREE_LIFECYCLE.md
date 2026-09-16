@@ -62,6 +62,80 @@ A hard process death can leave the lock directory behind. The tool does not
 guess that such a lock is stale or break it automatically; later mutation
 fails closed until the recorded owner and exact local state are investigated.
 
+### Dormant safe-custody schema and journals
+
+The accepted compatible tool reads current registry schema 1 and future strict
+schema 2. New scope-release and main-reconciliation operations require both
+schema 2 and `CURRENT_LANES.json` schema 4 advertising exactly
+`safe_custody_v1`; they also prove that both executing delivery/lifecycle tool
+files are byte-identical to fetched `origin/main`. Thus installing Candidate A
+does not enable a new operation.
+
+At a separately authorized quiescent boundary, `migrate-registry-v2` advances
+the existing registry under its mutex. It requires an exact qualification for
+every active durable writer, no unresolved `pending` record, and released
+control custody. The actual native or registered caller must match `--task-ref`,
+and the executing lifecycle and supporting delivery tool must both match
+accepted `origin/main` before any backup or registry write. It writes a
+create-new exact-byte schema-1 backup, preserves all inventory, identity, lease,
+branch and custody history, adds empty strict safe-custody journals, seals the
+registry with its exact schema-2 digest, validates, and atomically replaces the
+one live file. Already-migrated recovery also requires the deterministic backup
+to exist and hash to the recorded schema-1 digest. It
+never creates a second registry, clears ambiguity, or claims another host is
+qualified. Candidate B performs this migration and the separately reviewed
+repository-index cutover; neither happens in Candidate A.
+
+`scope-release prepare` binds package, actual writer, canonical durable
+worktree, implementation branch, pristine local/remote checkpoint C, prior
+claim digest, current main, dedicated leased control branch, exact reduction
+digest and intended claim digest. The record creates a package block before
+the asynchronous claim PR. Every supported ordinary package mutation refuses
+that block; only the exact claim validation, explicit safe cancellation, or
+accepted-transition completion may continue it. The freeze survives process
+exit and control-lease release. Completion requires unchanged C, the intended
+claim on authoritative main, prepared main to remain an ancestor, its old claim
+to match the recorded digest, and current main to contain the exact
+old-to-intended transition lineage. Only then does the journal atomically become
+`scope_sync_required`. Cancellation requires the old claim and C still exact;
+an uncertain server outcome preserves the freeze.
+
+Every removed path carries exact C/M Git mode and blob (or explicit absence),
+the prior/new domain lists, retained responsibility mapping, and the fixed
+package evidence reference. C and M must match. Net branch delta is releasable
+only when an accepted main commit, its exact reviewed candidate receipt, and
+unchanged candidate/merged/M/C bytes prove the work was already delivered;
+otherwise preparation refuses. Renamed or other candidate paths outside the
+retained scope refuse rather than riding in the control transition.
+Any changed domain list must cover a strict semantic subset of the prior domain
+union: order-only changes and a retained parent plus redundant descendant are
+not authority reductions.
+
+`reconcile-main start` is the sole exception for importing a pinned M after an
+ordinary approved resume, an accepted partial release, or intersecting main
+movement. It requires the same active writer, exact registered durable
+worktree, pristine C, exact local/server branch, authoritative claim and no Git
+operation residue. The journal records C, M, claim digest, preoperation tree,
+remote C, only the actual owned conflict paths, and an exact digest of every
+other initial auto-merge index entry. Resolution may change only the journaled
+conflict paths; staged or unstaged edits to any non-conflicted path refuse.
+Phases are monotonic:
+`prepared`, `merging`, `resolved` with exact tree, `committed` with exact
+two-parent R, `pushed`, and `completed` or `refresh_required`. Final bytes may
+differ from M only in currently retained product surfaces; fixed controls,
+released files and all unowned paths import M exactly. Unowned conflicts
+refuse. Push is non-force and a remote tip other than C or exact R refuses.
+
+Recovery continues only the recorded tuple and phase. It recognizes exact R
+after a crash before the journal write and recognizes an already successful
+push; it never blindly replays a side effect. Precommit abort uses ordinary
+`git merge --abort` and restores the preceding custody block atomically. A
+committed R is never reset. If main advances after the pinned merge, exact R is
+preserved and the journal ends `refresh_required`; ordinary operations remain
+blocked until a fresh R-to-current-main reconciliation completes. Every combined
+candidate still needs affected tests, exact-candidate review and current-target
+CI; reconciliation itself grants no technical acceptance.
+
 ```powershell
 python scripts/worktree_lifecycle.py audit --json
 ```

@@ -23,6 +23,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SNAPSHOT_PATH = os.path.join(ROOT, "control_room_snapshot.json")
 SCHEMA_VERSION = 1
 COMMIT_LIMIT = 30
+CLAIMS_DIRECTORY = os.path.join(ROOT, "docs", "governance", "lane_claims")
 
 
 def _git_commits(limit=COMMIT_LIMIT):
@@ -70,6 +71,52 @@ def _git_commits(limit=COMMIT_LIMIT):
     return commits
 
 
+def _delivery_claims():
+    """Return a small read-only claim projection, or ``None`` when unavailable.
+
+    Claim state and owner/sequencing holds are deliberately separate. Claims do
+    not encode holds or product dependencies, so the snapshot never invents
+    them from ``paused`` or ``active``.
+    """
+
+    try:
+        names = sorted(
+            name
+            for name in os.listdir(CLAIMS_DIRECTORY)
+            if name.startswith("PS-") and name.endswith(".json")
+        )
+    except OSError:
+        return None
+    projected = []
+    for name in names:
+        try:
+            with open(
+                os.path.join(CLAIMS_DIRECTORY, name), encoding="utf-8"
+            ) as handle:
+                claim = json.load(handle)
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not isinstance(claim, dict) or claim.get("package") != name[:-5]:
+            continue
+        state = claim.get("state")
+        if state not in {"active", "paused", "closed", "superseded"}:
+            continue
+        projected.append(
+            {
+                "package": claim["package"],
+                "claim_state": state,
+                "delivery_path": claim.get("delivery_path"),
+                "branch": claim.get("branch"),
+                "hold_state": "not_recorded_in_claim",
+                "dependencies": "not_recorded_in_claim",
+                "release_condition": "not_recorded_in_claim",
+                "scope_release_proof": isinstance(claim.get("scope_release"), dict),
+                "scope_release_enforcement": "not_reported_by_claim",
+            }
+        )
+    return projected
+
+
 def build_snapshot():
     """Assemble the snapshot dict. Pure function; never raises."""
     snapshot = {
@@ -86,6 +133,9 @@ def build_snapshot():
     commits = _git_commits()
     if commits is not None:
         snapshot["commits"] = commits
+    claims = _delivery_claims()
+    if claims is not None:
+        snapshot["delivery_claims"] = claims
     return snapshot
 
 

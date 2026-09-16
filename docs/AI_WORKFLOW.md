@@ -44,6 +44,12 @@ ownership, not its historical control namespace.
 Collisions stop only affected packages. Disjoint main movement preserves review;
 movement across a claimed surface expires it.
 
+An active writer may release exact paths and/or narrow domains only through the
+durable `scope-release` freeze and claim-only `release-surfaces` transition.
+After acceptance, journaled `reconcile-main` imports authoritative main; it
+never permits an unowned conflict or grants technical PASS. Both remain dormant
+until index schema 4 and registry schema 2; schema 3/1 stays compatible.
+
 ## Worktree lifecycle
 
 Ad hoc `git worktree add` is unsupported. Active packages reuse one durable
@@ -107,16 +113,8 @@ and merge path. This transition is not needed for normal implementation claims.
 Use an Azure PR. Current-target CI and unresolved comments still apply. A green
 PR or a merge is repository truth, not deployment truth.
 
-For current claims, run merge preflight in the clean durable worktree with
-`--task-ref <WRITER-REF>`; create no verifier.
-
-For candidates predating generic claims, use the current-main script in a clean
-verifier with `--candidate-worktree <FROZEN-WORKTREE>`. Preserve the old branch
-bytes; current `origin/main` supplies authority.
-
-```bash
-python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent merge --candidate-sha <REVIEWED-SHA> --candidate-worktree <FROZEN-WORKTREE> --fetch --require-clean
-```
+Run merge preflight in the clean durable worktree with the exact writer task
+reference. Historical candidates preserve their old branch bytes.
 
 ### Documentation-only closeout
 
@@ -125,17 +123,10 @@ final squash message. Do not restart App Service merely to publish bookkeeping.
 
 ## Production boundary
 
-Automatic main and PR runs are CI-only. Production web deployment is a manual
-operation requiring an exact 40-character main SHA and Pete's explicit
-authorization reference. Schema actions remain manual, separately checked, and
-mutually exclusive with a web deployment. Azure environment locks serialize
-production operations across runs.
-
-Do not queue a deployment because CI is slow. Do not claim a merge is live.
-Before any separately authorized production operation, confirm its exact source
-SHA, requested action, authorization reference, active locks, rollback/disable
-path, and evidence. Afterward verify exact release identity and the affected
-journey before reporting live.
+PR/main runs are CI-only. Production needs an exact main SHA, Pete's explicit
+reference, environment lock, rollback/disable path, and post-operation journey
+proof. Schema actions stay manual and mutually exclusive with web deployment.
+A green PR or merge is never live proof.
 
 ## Handoffs and closeout
 
@@ -148,6 +139,11 @@ Pause only at an exact pushed checkpoint. Resume through the one-claim
 fetched checkpoint, and reruns collisions. Preserve the remote implementation
 branch through close so squash-merge byte proof remains reproducible. If it was
 deleted, re-push the exact reviewed branch before retrying close.
+
+After resume or partial release, `reconcile-main` pins C/M, permits only retained
+owned resolution, makes a normal two-parent merge, and never force-pushes. Main
+drift preserves R as `refresh_required`; fresh reconciliation and exact review
+cover changed combined bytes.
 
 Record outcome, SHAs, changes, tests, review, release states, limits, next
 action, and exact-session `finalize-task` usage or unavailable once. Candidate,

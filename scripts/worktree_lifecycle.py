@@ -27,6 +27,10 @@ from typing import Any, Iterator, Sequence
 
 
 SCHEMA_VERSION = 1
+SAFE_CUSTODY_SCHEMA_VERSION = 2
+SUPPORTED_SCHEMA_VERSIONS = {SCHEMA_VERSION, SAFE_CUSTODY_SCHEMA_VERSION}
+SAFE_CUSTODY_INDEX_SCHEMA_VERSION = 4
+SAFE_CUSTODY_CONTRACT_VERSION = 1
 REGISTRY_RELATIVE_PATH = Path("peerslate") / "worktree_registry.json"
 LOCK_DIRECTORY_NAME = "worktree_registry.lock"
 REFUSAL_EXIT = 2
@@ -165,6 +169,262 @@ class Refusal(RuntimeError):
     def __init__(self, message: str, *, blockers: Sequence[str] | None = None):
         super().__init__(message)
         self.blockers = list(blockers or ())
+
+
+def _canonical_json_sha256(value: Any) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            value,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def _safe_custody_state(registry: dict[str, Any]) -> dict[str, Any]:
+    state = registry.get("safe_custody")
+    if not isinstance(state, dict):
+        raise Refusal("schema 2 registry requires safe_custody state")
+    return state
+
+
+def _safe_custody_after_sha256(registry: dict[str, Any]) -> str:
+    payload = json.loads(json.dumps(registry))
+    payload["safe_custody"]["migration"]["after_sha256"] = ""
+    return _canonical_json_sha256(payload)
+
+
+def _seal_safe_custody_after_sha256(registry: dict[str, Any]) -> None:
+    """Refresh the schema-2 self-digest before an atomic registry write."""
+
+    _safe_custody_state(registry)["migration"]["after_sha256"] = (
+        _safe_custody_after_sha256(registry)
+    )
+
+
+def validate_safe_custody_registry(registry: dict[str, Any]) -> None:
+    """Validate schema-2 freeze/reconciliation data without repairing it."""
+
+    if registry.get("schema_version") != SAFE_CUSTODY_SCHEMA_VERSION:
+        raise Refusal("safe-custody operations require registry schema 2")
+    state = _safe_custody_state(registry)
+    expected = {
+        "schema_version",
+        "migration",
+        "scope_releases",
+        "reconciliations",
+        "package_blocks",
+    }
+    if set(state) != expected or state.get("schema_version") != SAFE_CUSTODY_CONTRACT_VERSION:
+        raise Refusal("safe_custody state has an unsupported field set or version")
+    migration = state.get("migration")
+    if not isinstance(migration, dict) or set(migration) != {
+        "from_schema", "to_schema", "before_sha256", "after_sha256", "migrated_at"
+    }:
+        raise Refusal("safe_custody migration proof is invalid")
+    if (migration.get("from_schema"), migration.get("to_schema")) != (
+        SCHEMA_VERSION,
+        SAFE_CUSTODY_SCHEMA_VERSION,
+    ):
+        raise Refusal("safe_custody migration versions are invalid")
+    for field in ("before_sha256", "after_sha256"):
+        if not re.fullmatch(r"[0-9a-f]{64}", str(migration.get(field, ""))):
+            raise Refusal(f"safe_custody migration {field} is invalid")
+    if migration["after_sha256"] != _safe_custody_after_sha256(registry):
+        raise Refusal("safe_custody migration after_sha256 does not match registry bytes")
+    _validate_utc_timestamp(migration.get("migrated_at"), field="safe_custody migrated_at")
+    releases = state.get("scope_releases")
+    reconciliations = state.get("reconciliations")
+    blocks = state.get("package_blocks")
+    if not isinstance(releases, list) or not isinstance(reconciliations, list) or not isinstance(blocks, dict):
+        raise Refusal("safe_custody journals and package_blocks must be collections")
+    seen_operations: set[str] = set()
+    active_blocks: dict[str, tuple[str, str]] = {}
+    for record in releases:
+        if not isinstance(record, dict) or set(record) != {
+            "operation_id", "package", "task_ref", "worktree", "branch",
+            "control_branch", "control_lease_sha256", "quiescence_ref",
+            "checkpoint_sha", "prior_claim_sha256", "reduction_sha256",
+            "intended_claim_sha256", "prepared_from_main", "prepared_at",
+            "state", "terminal_at",
+        }:
+            raise Refusal("scope-release journal has an unsupported field set")
+        operation_id = str(record.get("operation_id", ""))
+        if not re.fullmatch(r"[0-9a-f]{64}", operation_id) or operation_id in seen_operations:
+            raise Refusal("scope-release operation identity is invalid or duplicated")
+        seen_operations.add(operation_id)
+        _validate_package(record.get("package"))
+        _validate_task_ref(record.get("task_ref"))
+        _validate_work_branch(record.get("branch"))
+        control_branch = _validate_work_branch(record.get("control_branch"))
+        if "delivery-release-surfaces-" not in control_branch:
+            raise Refusal("scope-release control branch is invalid")
+        if not re.fullmatch(
+            r"[0-9a-f]{64}", str(record.get("control_lease_sha256", ""))
+        ):
+            raise Refusal("scope-release control lease digest is invalid")
+        _validate_delivery_ref(record.get("quiescence_ref"))
+        for field in ("checkpoint_sha", "prepared_from_main"):
+            _validate_preparation_sha(record.get(field), field=f"scope-release {field}")
+        for field in ("prior_claim_sha256", "reduction_sha256", "intended_claim_sha256"):
+            if not re.fullmatch(r"[0-9a-f]{64}", str(record.get(field, ""))):
+                raise Refusal(f"scope-release {field} is invalid")
+        if not isinstance(record.get("worktree"), str) or not record.get("worktree"):
+            raise Refusal("scope-release worktree is invalid")
+        _canonical(record["worktree"])
+        _validate_utc_timestamp(record.get("prepared_at"), field="scope-release prepared_at")
+        state_name = record.get("state")
+        if state_name not in {"pending", "scope_sync_required", "cancelled", "completed"}:
+            raise Refusal("scope-release state is invalid")
+        terminal_at = record.get("terminal_at")
+        if state_name in {"cancelled", "completed"}:
+            _validate_utc_timestamp(terminal_at, field="scope-release terminal_at")
+        elif terminal_at is not None:
+            raise Refusal("nonterminal scope-release must not carry terminal_at")
+        if state_name in {"pending", "scope_sync_required"}:
+            package_key = str(record["package"]).casefold()
+            if package_key in active_blocks:
+                raise Refusal("package has duplicate active safe-custody blocks")
+            active_blocks[package_key] = ("scope_release", operation_id)
+    phase_order = {
+        "prepared": 0,
+        "merging": 1,
+        "resolved": 2,
+        "committed": 3,
+        "pushed": 4,
+        "completed": 5,
+        "refresh_required": 5,
+        "aborted": 5,
+    }
+    for record in reconciliations:
+        if not isinstance(record, dict) or set(record) != {
+            "operation_id", "package", "task_ref", "worktree", "branch",
+            "source_checkpoint", "target_main", "authoritative_claim_sha256",
+            "allowed_conflict_paths", "nonconflicted_index_sha256",
+            "preoperation_tree", "preoperation_ref",
+            "phase", "expected_tree", "result_sha", "remote_before",
+            "started_at", "updated_at", "history", "supersedes_operation_id",
+        }:
+            raise Refusal("reconciliation journal has an unsupported field set")
+        operation_id = str(record.get("operation_id", ""))
+        if not re.fullmatch(r"[0-9a-f]{64}", operation_id) or operation_id in seen_operations:
+            raise Refusal("reconciliation operation identity is invalid or duplicated")
+        seen_operations.add(operation_id)
+        supersedes = record.get("supersedes_operation_id")
+        if supersedes is not None and not re.fullmatch(r"[0-9a-f]{64}", str(supersedes)):
+            raise Refusal("reconciliation supersedes_operation_id is invalid")
+        _validate_package(record.get("package"))
+        _validate_task_ref(record.get("task_ref"))
+        _validate_work_branch(record.get("branch"))
+        if not isinstance(record.get("worktree"), str) or not record.get("worktree"):
+            raise Refusal("reconciliation worktree is invalid")
+        _canonical(record["worktree"])
+        for field in ("source_checkpoint", "target_main", "preoperation_ref", "remote_before"):
+            _validate_preparation_sha(record.get(field), field=f"reconciliation {field}")
+        for field in ("authoritative_claim_sha256", "preoperation_tree"):
+            if not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", str(record.get(field, ""))):
+                raise Refusal(f"reconciliation {field} is invalid")
+        phase = record.get("phase")
+        if phase not in phase_order:
+            raise Refusal("reconciliation phase is invalid")
+        for field in ("expected_tree", "result_sha"):
+            value = record.get(field)
+            if value is not None and not SHA_RE.fullmatch(str(value)):
+                raise Refusal(f"reconciliation {field} is invalid")
+        index_sha = record.get("nonconflicted_index_sha256")
+        if index_sha is not None and not re.fullmatch(r"[0-9a-f]{64}", str(index_sha)):
+            raise Refusal("reconciliation nonconflicted index digest is invalid")
+        if phase_order[phase] >= phase_order["resolved"] and phase != "aborted" and index_sha is None:
+            raise Refusal("resolved reconciliation requires its nonconflicted index digest")
+        if phase_order[phase] < phase_order["resolved"] and record.get("expected_tree") is not None:
+            raise Refusal("pre-resolution reconciliation cannot carry expected_tree")
+        if phase_order[phase] >= phase_order["resolved"] and phase != "aborted" and record.get("expected_tree") is None:
+            raise Refusal("resolved reconciliation requires expected_tree")
+        if phase_order[phase] < phase_order["committed"] and record.get("result_sha") is not None:
+            raise Refusal("pre-commit reconciliation cannot carry result_sha")
+        if phase_order[phase] >= phase_order["committed"] and phase != "aborted" and record.get("result_sha") is None:
+            raise Refusal("committed reconciliation requires result_sha")
+        paths = record.get("allowed_conflict_paths")
+        if not isinstance(paths, list) or len(paths) != len(set(paths)):
+            raise Refusal("reconciliation allowed_conflict_paths must be unique")
+        for path in paths:
+            if not isinstance(path, str) or PurePosixPath(path).as_posix() != path or path.startswith("/") or ".." in PurePosixPath(path).parts:
+                raise Refusal("reconciliation conflict path is not normalized")
+        _validate_utc_timestamp(record.get("started_at"), field="reconciliation started_at")
+        _validate_utc_timestamp(record.get("updated_at"), field="reconciliation updated_at")
+        history = record.get("history")
+        if (
+            not isinstance(history, list)
+            or not history
+            or not isinstance(history[-1], dict)
+            or history[-1].get("phase") != phase
+        ):
+            raise Refusal("reconciliation history must end at the current phase")
+        previous = -1
+        previous_phase: str | None = None
+        allowed_next = {
+            None: {"prepared"},
+            "prepared": {"merging", "aborted"},
+            "merging": {"resolved", "aborted"},
+            "resolved": {"committed", "aborted"},
+            "committed": {"pushed"},
+            "pushed": {"completed", "refresh_required"},
+            "refresh_required": {"completed"},
+            "completed": set(),
+            "aborted": set(),
+        }
+        for entry in history:
+            if not isinstance(entry, dict) or set(entry) != {"phase", "at"} or entry.get("phase") not in phase_order:
+                raise Refusal("reconciliation history entry is invalid")
+            order = phase_order[entry["phase"]]
+            if entry["phase"] not in allowed_next.get(previous_phase, set()):
+                raise Refusal("reconciliation phase history is not monotonic")
+            previous = order
+            previous_phase = str(entry["phase"])
+            _validate_utc_timestamp(entry.get("at"), field="reconciliation history at")
+        if phase not in {"completed", "aborted"}:
+            package_key = str(record["package"]).casefold()
+            if package_key in active_blocks:
+                raise Refusal("package has duplicate active safe-custody blocks")
+            active_blocks[package_key] = (
+                "refresh_required" if phase == "refresh_required" else "reconcile_main",
+                operation_id,
+            )
+    normalized_blocks: dict[str, dict[str, str]] = {}
+    for package_key, (kind, operation_id) in active_blocks.items():
+        normalized_blocks[package_key] = {"kind": kind, "operation_id": operation_id}
+    if blocks != normalized_blocks:
+        raise Refusal("safe_custody package_blocks do not exactly match active journals")
+
+
+def safe_custody_block_for_package(
+    registry: dict[str, Any], package: str
+) -> dict[str, str] | None:
+    if registry.get("schema_version") != SAFE_CUSTODY_SCHEMA_VERSION:
+        return None
+    validate_safe_custody_registry(registry)
+    return _safe_custody_state(registry)["package_blocks"].get(package.casefold())
+
+
+def require_package_mutation_unblocked(
+    registry: dict[str, Any],
+    package: str,
+    *,
+    operation: str,
+    allowed_operation_id: str | None = None,
+) -> None:
+    """Refuse cooperating mutations while a durable custody block exists."""
+
+    block = safe_custody_block_for_package(registry, package)
+    if block is None:
+        return
+    if allowed_operation_id and block.get("operation_id") == allowed_operation_id:
+        return
+    raise Refusal(
+        f"{operation} is blocked by safe-custody {block['kind']} "
+        f"operation {block['operation_id']}"
+    )
 
 
 @dataclass(frozen=True)
@@ -1972,6 +2232,7 @@ def resolve_caller_ref(
     caller_context: str | None = None,
     task_ref: str | None = None,
     package: str | None = None,
+    allow_registry_wide_context: bool = False,
 ) -> str:
     """Resolve one actual caller without treating requested authority as identity."""
 
@@ -1988,15 +2249,14 @@ def resolve_caller_ref(
     if context_id:
         if registry is None or repository_common_dir is None:
             raise Refusal("caller context requires the initialized repository registry")
-        if package is None:
+        if package is None and not allow_registry_wide_context:
             raise Refusal("caller context requires an exact operation package")
-        operation_package = _validate_package(package)
         context_record = _active_caller_context_record(
             registry,
             repository_common_dir=repository_common_dir,
             context_id=context_id,
         )
-        if context_record["package"] != operation_package:
+        if package is not None and context_record["package"] != _validate_package(package):
             raise Refusal("caller context package differs from the operation")
         identities.append(("registered caller context", context_record["receiver_ref"]))
     if not identities:
@@ -2553,7 +2813,7 @@ def _load_registry(path: Path, *, required: bool = True) -> dict[str, Any] | Non
     if (
         not isinstance(data, dict)
         or type(data.get("schema_version")) is not int
-        or data.get("schema_version") != SCHEMA_VERSION
+        or data.get("schema_version") not in SUPPORTED_SCHEMA_VERSIONS
     ):
         raise Refusal("registry schema is missing or unsupported")
     required_keys = {
@@ -2568,15 +2828,20 @@ def _load_registry(path: Path, *, required: bool = True) -> dict[str, Any] | Non
     data.setdefault("evidence_allocations", [])
     data.setdefault("owner_reassignment_preparations", [])
     validate_owner_reassignment_registry(data)
+    if data.get("schema_version") == SAFE_CUSTODY_SCHEMA_VERSION:
+        validate_safe_custody_registry(data)
     return data
 
 
 def _atomic_write(path: Path, payload: dict[str, Any]) -> None:
-    if payload.get("schema_version") == SCHEMA_VERSION and isinstance(
+    if payload.get("schema_version") in SUPPORTED_SCHEMA_VERSIONS and isinstance(
         payload.get("worktrees"), list
     ):
         payload.setdefault("owner_reassignment_preparations", [])
         validate_owner_reassignment_registry(payload)
+        if payload.get("schema_version") == SAFE_CUSTODY_SCHEMA_VERSION:
+            _seal_safe_custody_after_sha256(payload)
+            validate_safe_custody_registry(payload)
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(
         prefix=path.name + ".", suffix=".tmp", dir=path.parent
@@ -2829,18 +3094,173 @@ def _assert_same_repository(context: RepoContext, worktree: Path) -> None:
 
 
 def _claim_from_origin_main(context: RepoContext, package: str) -> dict[str, Any]:
+    return _claim_from_ref(context, "origin/main", package)
+
+
+def _claim_from_ref(
+    context: RepoContext, ref: str, package: str
+) -> dict[str, Any]:
     _validate_package(package)
     path = f"docs/governance/lane_claims/{package}.json"
-    raw = _git_optional(context.root, "show", f"origin/main:{path}")
+    raw = _git_optional(context.root, "show", f"{ref}:{path}")
     if raw is None:
-        raise Refusal(f"active claim is missing from fetched origin/main: {package}")
+        raise Refusal(f"claim is missing from {ref}: {package}")
     try:
         claim = json.loads(raw)
     except json.JSONDecodeError as error:
-        raise Refusal(f"claim on origin/main is invalid JSON: {package}") from error
+        raise Refusal(f"claim on {ref} is invalid JSON: {package}") from error
     if claim.get("package") != package:
         raise Refusal("claim package identity does not match its filename")
     return claim
+
+
+def _require_accepted_safe_custody_tools(
+    context: RepoContext, *, fetch: bool
+) -> str:
+    """Bind an executable custody mutation to accepted delivery-tool bytes."""
+
+    if fetch:
+        _fetch_origin_main(context)
+    accepted_main = _ref_sha(context, "origin/main")
+    if accepted_main is None:
+        raise Refusal("accepted origin/main cannot be resolved")
+    executable_paths = {
+        "scripts/delivery_preflight.py": Path(__file__).resolve().with_name(
+            "delivery_preflight.py"
+        ),
+        "scripts/worktree_lifecycle.py": Path(__file__).resolve(),
+    }
+    for relative, executable_path in executable_paths.items():
+        accepted_blob = _git_optional(
+            context.root, "rev-parse", f"{accepted_main}:{relative}"
+        )
+        local_blob = _git_optional(
+            context.root, "hash-object", str(executable_path)
+        )
+        if not accepted_blob or accepted_blob != local_blob:
+            raise Refusal(
+                f"safe-custody operation requires the accepted origin/main {relative} bytes"
+            )
+    return accepted_main
+
+
+def _scope_release_transition_is_accepted(
+    context: RepoContext,
+    *,
+    package: str,
+    prepared_main: str,
+    current_main: str,
+    prior_claim_sha256: str,
+    intended_claim_sha256: str,
+) -> None:
+    """Prove the recorded old-to-new claim transition exists on main ancestry."""
+
+    if not _is_ancestor(context, prepared_main, current_main):
+        raise Refusal(
+            "scope-release prepared main is not an ancestor of current main; freeze is preserved"
+        )
+    if _canonical_json_sha256(
+        _claim_from_ref(context, prepared_main, package)
+    ) != prior_claim_sha256:
+        raise Refusal(
+            "scope-release prepared-main claim differs from its recorded digest; freeze is preserved"
+        )
+    if _canonical_json_sha256(
+        _claim_from_ref(context, current_main, package)
+    ) != intended_claim_sha256:
+        raise Refusal(
+            "accepted scope release is not exact on current main; freeze is preserved"
+        )
+    claim_path = f"docs/governance/lane_claims/{package}.json"
+    commits = _git(
+        context.root,
+        "rev-list",
+        "--reverse",
+        f"{prepared_main}..{current_main}",
+        "--",
+        claim_path,
+    ).splitlines()
+    found_transition = False
+    for commit in commits:
+        try:
+            commit_claim_sha = _canonical_json_sha256(
+                _claim_from_ref(context, commit, package)
+            )
+            if commit_claim_sha not in {
+                prior_claim_sha256,
+                intended_claim_sha256,
+            }:
+                raise Refusal(
+                    "scope-release claim lineage contains unrecorded bytes; freeze is preserved"
+                )
+            if commit_claim_sha != intended_claim_sha256:
+                continue
+        except Refusal:
+            raise
+        parents = _git(
+            context.root, "show", "-s", "--format=%P", commit
+        ).split()
+        for parent in parents:
+            if not _is_ancestor(context, prepared_main, parent):
+                continue
+            try:
+                parent_sha = _canonical_json_sha256(
+                    _claim_from_ref(context, parent, package)
+                )
+            except Refusal:
+                continue
+            if parent_sha == prior_claim_sha256:
+                found_transition = True
+    if not found_transition:
+        raise Refusal(
+            "current main lacks the exact recorded scope-release transition lineage; freeze is preserved"
+        )
+
+
+def _require_safe_custody_capability(
+    context: RepoContext, registry: dict[str, Any]
+) -> dict[str, Any]:
+    """Require both future fences and accepted-main tool identity."""
+
+    validate_safe_custody_registry(registry)
+    raw_index = _git_optional(
+        context.root, "show", "origin/main:docs/governance/CURRENT_LANES.json"
+    )
+    if raw_index is None:
+        raise Refusal("safe-custody index is missing from fetched origin/main")
+    try:
+        index = json.loads(raw_index)
+    except json.JSONDecodeError as error:
+        raise Refusal("safe-custody index is invalid JSON") from error
+    if (
+        index.get("schema_version") != SAFE_CUSTODY_INDEX_SCHEMA_VERSION
+        or index.get("capabilities")
+        != {
+            "scope_release": "safe_custody_v1",
+            "main_reconciliation": "safe_custody_v1",
+            "registry_schema": SAFE_CUSTODY_SCHEMA_VERSION,
+        }
+    ):
+        raise Refusal(
+            "safe-custody operations remain disabled until index schema 4 and registry schema 2"
+        )
+    try:
+        from scripts import delivery_preflight as delivery_contract
+    except ModuleNotFoundError:
+        import delivery_preflight as delivery_contract
+    index_errors = delivery_contract.validate_index(index)
+    if index_errors:
+        raise Refusal("safe-custody index validation failed", blockers=index_errors)
+    live_claims = _strict_live_claims(context)
+    claim_map = {
+        str(claim.get("package", "")).casefold(): claim
+        for claim in live_claims
+    }
+    claim_errors = delivery_contract.validate_claim_set(claim_map)
+    if claim_errors:
+        raise Refusal("safe-custody authoritative claim set is invalid", blockers=claim_errors)
+    _require_accepted_safe_custody_tools(context, fetch=False)
+    return index
 
 
 def _ordinary_retirement_claim(
@@ -3658,6 +4078,1074 @@ def command_init(context: RepoContext, args: argparse.Namespace) -> dict[str, An
     }
 
 
+def _load_registry_migration_qualification(
+    path: Path, registry: dict[str, Any]
+) -> dict[str, Any]:
+    try:
+        qualification = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise Refusal(f"registry migration qualification is unreadable: {error}") from error
+    if not isinstance(qualification, dict) or set(qualification) != {
+        "schema_version", "owner_authorization_ref", "qualified_at", "writers"
+    }:
+        raise Refusal("registry migration qualification has an unsupported field set")
+    if qualification.get("schema_version") != 1:
+        raise Refusal("registry migration qualification schema_version must be 1")
+    _validate_task_ref(qualification.get("owner_authorization_ref"))
+    _validate_utc_timestamp(qualification.get("qualified_at"), field="migration qualified_at")
+    writers = qualification.get("writers")
+    if not isinstance(writers, list):
+        raise Refusal("registry migration writers must be a list")
+    expected: dict[tuple[str, str, str, str], None] = {}
+    for record in registry.get("worktrees", []):
+        if (
+            isinstance(record, dict)
+            and record.get("kind") == "durable"
+            and record.get("state") == "active"
+        ):
+            key = (
+                _validate_package(record.get("package")),
+                _validate_task_ref(record.get("task_ref")),
+                _validate_work_branch(record.get("branch")),
+                _validate_preparation_sha(record.get("head"), field="qualified writer head"),
+            )
+            expected[key] = None
+    observed: dict[tuple[str, str, str, str], str] = {}
+    for writer in writers:
+        if not isinstance(writer, dict) or set(writer) != {
+            "package", "task_ref", "branch", "head", "quiescence_ref"
+        }:
+            raise Refusal("migration writer qualification has an unsupported field set")
+        key = (
+            _validate_package(writer.get("package")),
+            _validate_task_ref(writer.get("task_ref")),
+            _validate_work_branch(writer.get("branch")),
+            _validate_preparation_sha(writer.get("head"), field="migration writer head"),
+        )
+        if key in observed:
+            raise Refusal("migration writer qualification is duplicated")
+        observed[key] = _validate_task_ref(writer.get("quiescence_ref"))
+    if set(observed) != set(expected):
+        raise Refusal("migration qualification does not exactly cover active durable writers")
+    return qualification
+
+
+def command_migrate_registry_v2(
+    context: RepoContext, args: argparse.Namespace
+) -> dict[str, Any]:
+    """Atomically advance the one live registry after exact quiescence proof."""
+
+    _require_execute(args.execute)
+    task_ref = _validate_task_ref(args.task_ref)
+    qualification_path = _canonical(args.qualification_file)
+    with _registry_lock(context.registry_path):
+        registry = _load_registry(context.registry_path)
+        assert registry is not None
+        _assert_registry_identity(context, registry)
+        resolve_caller_ref(
+            registry=registry,
+            repository_common_dir=context.common_dir,
+            caller_context=getattr(args, "caller_context", ""),
+            task_ref=task_ref,
+            package=None,
+            allow_registry_wide_context=True,
+        )
+        _require_accepted_safe_custody_tools(context, fetch=True)
+        raw = context.registry_path.read_bytes()
+        if registry.get("schema_version") == SAFE_CUSTODY_SCHEMA_VERSION:
+            validate_safe_custody_registry(registry)
+            migration = registry["safe_custody"]["migration"]
+            before_sha = migration["before_sha256"]
+            backup = context.registry_path.with_name(
+                f"{context.registry_path.stem}.schema1.{before_sha}.json"
+            )
+            if (
+                not backup.is_file()
+                or hashlib.sha256(backup.read_bytes()).hexdigest() != before_sha
+            ):
+                raise Refusal(
+                    "already-migrated registry lacks its exact deterministic schema-1 backup"
+                )
+            return {
+                "status": "already_migrated",
+                "registry": str(context.registry_path),
+                "backup": str(backup),
+                "schema_version": SAFE_CUSTODY_SCHEMA_VERSION,
+                "after_sha256": migration["after_sha256"],
+            }
+        if registry.get("schema_version") != SCHEMA_VERSION:
+            raise Refusal("registry migration requires exact schema 1 input")
+        if registry.get("pending") is not None:
+            raise Refusal("registry migration refuses unresolved pending state")
+        if any(
+            isinstance(record, dict) and record.get("state") == "pending"
+            for record in registry.get("worktrees", [])
+        ):
+            raise Refusal("registry migration refuses pending worktree records")
+        controls = [
+            record for record in registry.get("worktrees", [])
+            if isinstance(record, dict) and record.get("kind") == "control_singleton"
+        ]
+        if any(record.get("lease") is not None for record in controls):
+            raise Refusal("registry migration requires released control custody")
+        qualification = _load_registry_migration_qualification(
+            qualification_path, registry
+        )
+        before_sha = hashlib.sha256(raw).hexdigest()
+        backup = context.registry_path.with_name(
+            f"{context.registry_path.stem}.schema1.{before_sha}.json"
+        )
+        if backup.exists():
+            if backup.read_bytes() != raw:
+                raise Refusal("registry migration backup path contains different bytes")
+        else:
+            descriptor = os.open(backup, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(descriptor, "wb") as stream:
+                stream.write(raw)
+                stream.flush()
+                os.fsync(stream.fileno())
+        migrated = json.loads(json.dumps(registry))
+        migrated["schema_version"] = SAFE_CUSTODY_SCHEMA_VERSION
+        migrated["safe_custody"] = {
+            "schema_version": SAFE_CUSTODY_CONTRACT_VERSION,
+            "migration": {
+                "from_schema": SCHEMA_VERSION,
+                "to_schema": SAFE_CUSTODY_SCHEMA_VERSION,
+                "before_sha256": before_sha,
+                "after_sha256": "",
+                "migrated_at": _utc_now(),
+            },
+            "scope_releases": [],
+            "reconciliations": [],
+            "package_blocks": {},
+        }
+        _seal_safe_custody_after_sha256(migrated)
+        validate_safe_custody_registry(migrated)
+        _atomic_write(context.registry_path, migrated)
+    return {
+        "status": "migrated",
+        "registry": str(context.registry_path),
+        "backup": str(backup),
+        "before_sha256": before_sha,
+        "after_sha256": migrated["safe_custody"]["migration"]["after_sha256"],
+        "qualified_writers": len(qualification["writers"]),
+    }
+
+
+def _safe_custody_control_record(
+    context: RepoContext,
+    registry: dict[str, Any],
+    *,
+    task_ref: str,
+    package: str,
+    lease_token: str,
+    control_branch: str,
+) -> dict[str, Any]:
+    matches = [
+        record
+        for record in registry.get("worktrees", [])
+        if isinstance(record, dict) and record.get("kind") == "control_singleton"
+    ]
+    if len(matches) != 1:
+        raise Refusal("safe-custody operation requires one control singleton")
+    record = matches[0]
+    require_control_custody_fence(
+        registry, record, task_ref=task_ref, lease_token=lease_token
+    )
+    if (
+        record.get("package") != package
+        or record.get("branch") != control_branch
+        or record.get("state") != "active"
+        or record.get("lease", {}).get("package") != package
+        or record.get("lease", {}).get("purpose") != "control"
+    ):
+        raise Refusal("safe-custody operation lost exact control branch custody")
+    control_path = _canonical(record.get("path"))
+    live = _worktree_at(context.root, control_path)
+    pristine, residue = _is_pristine(control_path)
+    if (
+        live is None
+        or live.get("branch") != control_branch
+        or live.get("head") != record.get("head")
+    ):
+        raise Refusal("safe-custody control worktree no longer matches its lease")
+    if not pristine:
+        raise Refusal("safe-custody control worktree must be pristine", blockers=residue)
+    return record
+
+
+def _safe_custody_durable_record(
+    context: RepoContext,
+    registry: dict[str, Any],
+    *,
+    package: str,
+    task_ref: str,
+    claim: dict[str, Any],
+) -> dict[str, Any]:
+    current_path = _canonical(context.root)
+    matches = [
+        record
+        for record in registry.get("worktrees", [])
+        if isinstance(record, dict)
+        and record.get("kind") == "durable"
+        and record.get("state") == "active"
+        and record.get("package") == package
+        and record.get("task_ref") == task_ref
+        and _path_key(record.get("path", "")) == _path_key(current_path)
+    ]
+    if len(matches) != 1:
+        raise Refusal("safe-custody operation requires one exact current durable record")
+    record = matches[0]
+    if record.get("branch") != claim.get("branch"):
+        raise Refusal("durable record branch differs from the active claim")
+    return record
+
+
+def _load_scope_release_proposal(path: Path) -> dict[str, Any]:
+    try:
+        proposal = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise Refusal(f"scope-release proposal is unreadable: {error}") from error
+    if not isinstance(proposal, dict) or set(proposal) != {
+        "surfaces", "domains", "retained_responsibilities", "release_rationale",
+        "accepted_introductions", "quiescence_ref",
+    }:
+        raise Refusal("scope-release proposal has an unsupported field set")
+    return proposal
+
+
+def command_scope_release(
+    context: RepoContext, args: argparse.Namespace
+) -> dict[str, Any]:
+    """Prepare, complete, or safely cancel one durable monotonic release."""
+
+    _require_execute(args.execute)
+    package = _validate_package(args.package)
+    task_ref = _validate_task_ref(args.task_ref)
+    with _registry_lock(context.registry_path):
+        registry = _load_registry(context.registry_path)
+        assert registry is not None
+        _assert_registry_identity(context, registry)
+        resolve_caller_ref(
+            registry=registry,
+            repository_common_dir=context.common_dir,
+            caller_context=getattr(args, "caller_context", ""),
+            task_ref=task_ref,
+            package=package,
+        )
+        _fetch_origin_main(context)
+        claim = _active_claim(context, package, task_ref)
+        _require_safe_custody_capability(context, registry)
+        custody = _safe_custody_state(registry)
+        releases = custody["scope_releases"]
+        if args.action == "prepare":
+            if not args.proposal_file or not args.control_branch or not args.lease_token:
+                raise Refusal(
+                    "scope-release prepare requires proposal-file, control-branch, and lease-token"
+                )
+            require_package_mutation_unblocked(
+                registry, package, operation="scope-release preparation"
+            )
+            control_branch = _validate_work_branch(args.control_branch)
+            if "delivery-release-surfaces-" not in control_branch:
+                raise Refusal("scope release requires a delivery-release-surfaces branch")
+            _safe_custody_control_record(
+                context,
+                registry,
+                task_ref=task_ref,
+                package=package,
+                lease_token=args.lease_token,
+                control_branch=control_branch,
+            )
+            durable = _safe_custody_durable_record(
+                context,
+                registry,
+                package=package,
+                task_ref=task_ref,
+                claim=claim,
+            )
+            pristine, residue = _is_pristine(context.root)
+            if not pristine:
+                raise Refusal(
+                    "scope-release preparation requires a pristine implementation worktree",
+                    blockers=residue,
+                )
+            branch = _validate_work_branch(str(claim.get("branch", "")))
+            checkpoint = _validate_preparation_sha(
+                durable.get("head"), field="scope-release checkpoint"
+            )
+            if (
+                _current_branch(context.root) != branch
+                or _ref_sha(context, "HEAD") != checkpoint
+                or _ref_sha(context, f"refs/heads/{branch}") != checkpoint
+                or _fetch_origin_branch(context, branch) != checkpoint
+            ):
+                raise Refusal("scope-release preparation requires exact local/remote checkpoint C")
+            proposal = _load_scope_release_proposal(_canonical(args.proposal_file))
+            quiescence_ref = _validate_delivery_ref(proposal["quiescence_ref"])
+            candidate = json.loads(json.dumps(claim))
+            candidate["surfaces"] = proposal["surfaces"]
+            candidate["domains"] = proposal["domains"]
+            prior_sha = _canonical_json_sha256(claim)
+            try:
+                from scripts import delivery_preflight as delivery_contract
+            except ModuleNotFoundError:
+                import delivery_preflight as delivery_contract
+            try:
+                released_file_proofs = delivery_contract.build_scope_release_file_proofs(
+                    root=context.root,
+                    before_surfaces=claim.get("surfaces", []),
+                    after_surfaces=proposal["surfaces"],
+                    checkpoint_sha=checkpoint,
+                    prepared_from_main=_ref_sha(context, "origin/main"),
+                    accepted_introductions=proposal["accepted_introductions"],
+                )
+            except delivery_contract.PreflightError as error:
+                raise Refusal(str(error)) from error
+            fixed_evidence_ref = (
+                f"docs/governance/lane_claims/evidence/{package}.md"
+            )
+            reduction_sha = delivery_contract.scope_reduction_sha256(
+                before_surfaces=claim.get("surfaces", []),
+                after_surfaces=proposal["surfaces"],
+                before_domains=claim.get("domains", []),
+                after_domains=proposal["domains"],
+                retained_responsibilities=proposal["retained_responsibilities"],
+                release_rationale=proposal["release_rationale"],
+                released_file_proofs=released_file_proofs,
+                fixed_evidence_ref=fixed_evidence_ref,
+            )
+            operation_id = _canonical_json_sha256(
+                {
+                    "package": package,
+                    "task_ref": task_ref,
+                    "checkpoint": checkpoint,
+                    "main": _ref_sha(context, "origin/main"),
+                    "prior_claim": prior_sha,
+                    "reduction": reduction_sha,
+                    "nonce": secrets.token_hex(16),
+                }
+            )
+            proof = {
+                "schema_version": 1,
+                "operation_id": operation_id,
+                "control_branch": control_branch,
+                "control_lease_sha256": hashlib.sha256(
+                    args.lease_token.encode("utf-8")
+                ).hexdigest(),
+                "quiescence_ref": quiescence_ref,
+                "prior_claim_sha256": prior_sha,
+                "reduction_sha256": reduction_sha,
+                "checkpoint_sha": checkpoint,
+                "prepared_from_main": _ref_sha(context, "origin/main"),
+                "released_surfaces": [
+                    path for path in claim.get("surfaces", [])
+                    if path not in set(proposal["surfaces"])
+                ],
+                "released_file_proofs": released_file_proofs,
+                "prior_domains": claim.get("domains", []),
+                "new_domains": proposal["domains"],
+                "retained_responsibilities": proposal["retained_responsibilities"],
+                "release_rationale": proposal["release_rationale"],
+                "fixed_evidence_ref": fixed_evidence_ref,
+                "registry_schema": SAFE_CUSTODY_SCHEMA_VERSION,
+                "index_schema": SAFE_CUSTODY_INDEX_SCHEMA_VERSION,
+            }
+            candidate["scope_release"] = proof
+            transition_errors = delivery_contract.validate_scope_release_transition(
+                claim, candidate, root=context.root
+            )
+            if transition_errors:
+                raise Refusal(
+                    "scope-release proposal is invalid",
+                    blockers=transition_errors,
+                )
+            record = {
+                "operation_id": operation_id,
+                "package": package,
+                "task_ref": task_ref,
+                "worktree": str(_canonical(context.root)),
+                "branch": branch,
+                "control_branch": proof["control_branch"],
+                "control_lease_sha256": proof["control_lease_sha256"],
+                "quiescence_ref": proof["quiescence_ref"],
+                "checkpoint_sha": checkpoint,
+                "prior_claim_sha256": prior_sha,
+                "reduction_sha256": reduction_sha,
+                "intended_claim_sha256": _canonical_json_sha256(candidate),
+                "prepared_from_main": proof["prepared_from_main"],
+                "prepared_at": _utc_now(),
+                "state": "pending",
+                "terminal_at": None,
+            }
+            releases.append(record)
+            custody["package_blocks"][package.casefold()] = {
+                "kind": "scope_release",
+                "operation_id": operation_id,
+            }
+            _atomic_write(context.registry_path, registry)
+            return {
+                "status": "prepared",
+                "operation_id": operation_id,
+                "checkpoint_sha": checkpoint,
+                "scope_release": proof,
+                "intended_claim_sha256": record["intended_claim_sha256"],
+            }
+
+        operation_id = str(args.operation_id or "")
+        if not operation_id:
+            raise Refusal("scope-release complete/cancel requires operation-id")
+        if not args.control_branch or not args.lease_token:
+            raise Refusal(
+                "scope-release complete/cancel requires control-branch and lease-token"
+            )
+        control_branch = _validate_work_branch(args.control_branch)
+        if "delivery-release-surfaces-" not in control_branch:
+            raise Refusal("scope release requires a delivery-release-surfaces branch")
+        _safe_custody_control_record(
+            context,
+            registry,
+            task_ref=task_ref,
+            package=package,
+            lease_token=args.lease_token,
+            control_branch=control_branch,
+        )
+        matches = [item for item in releases if item.get("operation_id") == operation_id]
+        if len(matches) != 1:
+            raise Refusal("scope-release operation_id does not select one journal")
+        record = matches[0]
+        if (
+            record.get("package") != package
+            or record.get("task_ref") != task_ref
+            or record.get("state") != "pending"
+        ):
+            raise Refusal("scope-release journal is not pending for this writer")
+        require_package_mutation_unblocked(
+            registry,
+            package,
+            operation=f"scope-release {args.action}",
+            allowed_operation_id=operation_id,
+        )
+        branch = str(record["branch"])
+        if _fetch_origin_branch(context, branch) != record["checkpoint_sha"]:
+            raise Refusal("scope-release checkpoint moved; freeze is preserved")
+        authoritative = _claim_from_origin_main(context, package)
+        authoritative_sha = _canonical_json_sha256(authoritative)
+        if args.action == "complete":
+            if authoritative_sha != record["intended_claim_sha256"]:
+                raise Refusal(
+                    "accepted scope release is not exact on origin/main; freeze is preserved"
+                )
+            current_main = _validate_preparation_sha(
+                _ref_sha(context, "origin/main"), field="scope-release current main"
+            )
+            _scope_release_transition_is_accepted(
+                context,
+                package=package,
+                prepared_main=str(record["prepared_from_main"]),
+                current_main=current_main,
+                prior_claim_sha256=str(record["prior_claim_sha256"]),
+                intended_claim_sha256=str(record["intended_claim_sha256"]),
+            )
+            record["state"] = "scope_sync_required"
+            # The block remains atomic with the accepted transition.
+            _atomic_write(context.registry_path, registry)
+            return {"status": "scope_sync_required", "operation_id": operation_id}
+        if args.action != "cancel":
+            raise Refusal("unsupported scope-release action")
+        if authoritative_sha != record["prior_claim_sha256"]:
+            raise Refusal(
+                "scope-release cancellation cannot prove the old claim remains authoritative"
+            )
+        record["state"] = "cancelled"
+        record["terminal_at"] = _utc_now()
+        custody["package_blocks"].pop(package.casefold(), None)
+        _atomic_write(context.registry_path, registry)
+        return {"status": "cancelled", "operation_id": operation_id}
+
+
+def _reconciliation_owned_paths(claim: dict[str, Any]) -> set[str]:
+    package = str(claim.get("package", ""))
+    fixed = {
+        f"docs/governance/lane_claims/{package}.json",
+        f"docs/governance/lane_claims/receipts/{package}.json",
+        f"docs/governance/lane_claims/evidence/{package}.md",
+    }
+    return {str(path) for path in claim.get("surfaces", []) if path not in fixed}
+
+
+def _reconciliation_path_is_owned(path: str, claim: dict[str, Any]) -> bool:
+    """Apply claim ancestor ownership while excluding fixed control records."""
+
+    package = str(claim.get("package", ""))
+    fixed = {
+        f"docs/governance/lane_claims/{package}.json",
+        f"docs/governance/lane_claims/receipts/{package}.json",
+        f"docs/governance/lane_claims/evidence/{package}.md",
+    }
+    if path in fixed:
+        return False
+    return any(
+        path == surface or path.startswith(surface.rstrip("/") + "/")
+        for surface in _reconciliation_owned_paths(claim)
+    )
+
+
+def _reconciliation_changed_from_target(
+    context: RepoContext, target_main: str, treeish: str
+) -> list[str]:
+    raw = _git(context.root, "diff", "--name-only", "-z", target_main, treeish)
+    return sorted(item for item in raw.split("\0") if item)
+
+
+def _reconciliation_nonconflicted_index_sha256(
+    context: RepoContext, allowed_conflict_paths: Sequence[str]
+) -> str:
+    """Digest every index entry except the exact journaled conflict paths."""
+
+    allowed = set(allowed_conflict_paths)
+    raw = _git(context.root, "ls-files", "--stage", "-z")
+    entries: list[str] = []
+    for entry in raw.split("\0"):
+        if not entry:
+            continue
+        _, separator, path = entry.partition("\t")
+        if not separator:
+            raise Refusal("reconciliation index contains an unparseable entry")
+        if path not in allowed:
+            entries.append(entry)
+    return hashlib.sha256("\0".join(entries).encode("utf-8")).hexdigest()
+
+
+def _record_reconciliation_phase(
+    registry_path: Path,
+    registry: dict[str, Any],
+    record: dict[str, Any],
+    phase: str,
+    persist: bool = True,
+    **updates: Any,
+) -> None:
+    now = _utc_now()
+    record.update(updates)
+    record["phase"] = phase
+    record["updated_at"] = now
+    record["history"].append({"phase": phase, "at": now})
+    custody = _safe_custody_state(registry)
+    if phase in {"completed", "aborted"}:
+        custody["package_blocks"].pop(str(record["package"]).casefold(), None)
+    elif phase == "refresh_required":
+        custody["package_blocks"][str(record["package"]).casefold()] = {
+            "kind": "refresh_required",
+            "operation_id": record["operation_id"],
+        }
+    else:
+        custody["package_blocks"][str(record["package"]).casefold()] = {
+            "kind": "reconcile_main",
+            "operation_id": record["operation_id"],
+        }
+    if persist:
+        _atomic_write(registry_path, registry)
+
+
+def _restore_superseded_block(
+    registry: dict[str, Any], record: dict[str, Any]
+) -> None:
+    previous_id = record.get("supersedes_operation_id")
+    if previous_id is None:
+        return
+    custody = _safe_custody_state(registry)
+    release_matches = [
+        item for item in custody["scope_releases"]
+        if item.get("operation_id") == previous_id
+    ]
+    reconcile_matches = [
+        item for item in custody["reconciliations"]
+        if item.get("operation_id") == previous_id
+    ]
+    if len(release_matches) == 1:
+        release_matches[0]["state"] = "scope_sync_required"
+        release_matches[0]["terminal_at"] = None
+        custody["package_blocks"][str(record["package"]).casefold()] = {
+            "kind": "scope_release",
+            "operation_id": previous_id,
+        }
+    elif len(reconcile_matches) == 1:
+        previous = reconcile_matches[0]
+        previous["phase"] = "refresh_required"
+        previous["updated_at"] = _utc_now()
+        previous["history"].append(
+            {"phase": "refresh_required", "at": previous["updated_at"]}
+        )
+        custody["package_blocks"][str(record["package"]).casefold()] = {
+            "kind": "refresh_required",
+            "operation_id": previous_id,
+        }
+    else:
+        raise Refusal("reconciliation cannot restore its prior custody block")
+
+
+def _reprove_reconciliation_authority(
+    context: RepoContext, registry: dict[str, Any], record: dict[str, Any]
+) -> None:
+    """Refresh authority without requiring pinned M to remain current."""
+
+    _fetch_origin_main(context)
+    claim = _claim_from_origin_main(context, str(record["package"]))
+    if (
+        claim.get("state") != "active"
+        or claim.get("writer_ref") != record.get("task_ref")
+        or claim.get("branch") != record.get("branch")
+        or _canonical_json_sha256(claim) != record.get("authoritative_claim_sha256")
+    ):
+        raise Refusal("reconciliation authority changed; journal and bytes are preserved")
+    durable = _record_by_path(registry, context.root)
+    if (
+        durable is None
+        or durable.get("state") != "active"
+        or durable.get("kind") != "durable"
+        or durable.get("package") != record.get("package")
+        or durable.get("task_ref") != record.get("task_ref")
+        or durable.get("branch") != record.get("branch")
+    ):
+        raise Refusal("reconciliation durable custody changed; journal is preserved")
+
+
+def _complete_reconciliation(
+    context: RepoContext,
+    registry: dict[str, Any],
+    record: dict[str, Any],
+    claim: dict[str, Any],
+) -> dict[str, Any]:
+    """Continue an exact recorded merge without replaying completed effects."""
+
+    source = str(record["source_checkpoint"])
+    target = str(record["target_main"])
+    branch = str(record["branch"])
+    phase = str(record["phase"])
+    head = _ref_sha(context, "HEAD")
+    merge_head = _git_optional(
+        context.root, "rev-parse", "-q", "--verify", "MERGE_HEAD"
+    )
+    if (
+        phase == "merging"
+        and merge_head is not None
+        and record.get("nonconflicted_index_sha256") is None
+    ):
+        raise Refusal(
+            "reconciliation initial auto-merge index was not durably journaled; abort is required"
+        )
+    if phase in {"prepared", "merging"} and merge_head is None and head == source:
+        pristine, residue = _is_pristine(context.root)
+        if not pristine:
+            raise Refusal(
+                "pre-merge reconciliation recovery found unjournaled residue",
+                blockers=residue,
+            )
+        if phase == "prepared":
+            _record_reconciliation_phase(
+                context.registry_path, registry, record, "merging"
+            )
+            phase = "merging"
+        merge = _git_result(
+            context.root, "merge", "--no-commit", "--no-ff", target
+        )
+        conflicts_raw = _git(
+            context.root, "diff", "--name-only", "--diff-filter=U", "-z"
+        )
+        conflicts = sorted(item for item in conflicts_raw.split("\0") if item)
+        unowned = sorted(
+            path
+            for path in set(conflicts)
+            if not _reconciliation_path_is_owned(path, claim)
+        )
+        if unowned or (merge.returncode and not conflicts):
+            abort = _git_result(context.root, "merge", "--abort")
+            if abort.returncode:
+                raise Refusal(
+                    "reconcile-main failed and exact precommit abort failed; journal preserved",
+                    blockers=unowned,
+                )
+            _record_reconciliation_phase(
+                context.registry_path,
+                registry,
+                record,
+                "aborted",
+                persist=False,
+            )
+            _restore_superseded_block(registry, record)
+            _atomic_write(context.registry_path, registry)
+            raise Refusal(
+                "reconcile-main refused an unowned conflict or merge failure",
+                blockers=unowned,
+            )
+        record["allowed_conflict_paths"] = conflicts
+        record["nonconflicted_index_sha256"] = (
+            _reconciliation_nonconflicted_index_sha256(context, conflicts)
+        )
+        _atomic_write(context.registry_path, registry)
+        if conflicts:
+            return {
+                "status": "resolution_required",
+                "operation_id": record["operation_id"],
+                "allowed_conflict_paths": conflicts,
+            }
+    if phase in {"prepared", "merging"}:
+        unmerged_raw = _git(context.root, "diff", "--name-only", "--diff-filter=U", "-z")
+        unmerged = sorted(item for item in unmerged_raw.split("\0") if item)
+        if unmerged:
+            if not set(unmerged) <= set(record["allowed_conflict_paths"]):
+                raise Refusal("reconciliation contains an unowned conflict")
+            raise Refusal(
+                "reconciliation requires resolution of only the recorded owned conflicts",
+                blockers=unmerged,
+            )
+        unstaged_raw = _git(context.root, "diff", "--name-only", "-z")
+        unstaged = sorted(item for item in unstaged_raw.split("\0") if item)
+        if unstaged:
+            raise Refusal(
+                "reconciliation contains unstaged resolution bytes",
+                blockers=unstaged,
+            )
+        expected_index_sha = record.get("nonconflicted_index_sha256")
+        if expected_index_sha is None or (
+            _reconciliation_nonconflicted_index_sha256(
+                context, record["allowed_conflict_paths"]
+            )
+            != expected_index_sha
+        ):
+            raise Refusal(
+                "reconciliation changed a non-conflicted index path; journal is preserved"
+            )
+        tree = _git(context.root, "write-tree")
+        changed = _reconciliation_changed_from_target(context, target, tree)
+        outside = sorted(
+            path
+            for path in set(changed)
+            if not _reconciliation_path_is_owned(path, claim)
+        )
+        if outside:
+            raise Refusal(
+                "reconciliation final tree changes unowned paths relative to pinned main",
+                blockers=outside,
+            )
+        _record_reconciliation_phase(
+            context.registry_path,
+            registry,
+            record,
+            "resolved",
+            expected_tree=tree,
+        )
+        phase = "resolved"
+    if phase == "resolved":
+        _reprove_reconciliation_authority(context, registry, record)
+        tree = _git(context.root, "write-tree")
+        if tree != record.get("expected_tree"):
+            raise Refusal("reconciliation resolved tree changed after it was recorded")
+        current_head = _ref_sha(context, "HEAD")
+        if current_head != source:
+            if current_head is None:
+                raise Refusal("reconciliation HEAD is unavailable after resolved phase")
+            parents = _git(
+                context.root, "show", "-s", "--format=%P", current_head
+            ).split()
+            committed_tree = _git(
+                context.root, "rev-parse", f"{current_head}^{{tree}}"
+            )
+            if parents != [source, target] or committed_tree != record["expected_tree"]:
+                raise Refusal(
+                    "post-resolution HEAD is not the exact recorded merge commit"
+                )
+            durable = _record_by_path(registry, context.root)
+            if durable is None:
+                raise Refusal("reconciliation durable registry record disappeared")
+            durable["head"] = current_head
+            durable["updated_at"] = _utc_now()
+            _record_reconciliation_phase(
+                context.registry_path,
+                registry,
+                record,
+                "committed",
+                result_sha=current_head,
+            )
+            phase = "committed"
+        else:
+            remote = _fetch_origin_branch(context, branch)
+            if remote != source:
+                raise Refusal("reconciliation source branch moved before commit")
+            result = _git_result(context.root, "commit", "--no-edit", "--no-verify")
+            if result.returncode:
+                detail = result.stderr.strip() or result.stdout.strip() or "git commit failed"
+                raise Refusal("reconciliation merge commit failed: " + detail)
+            head = _ref_sha(context, "HEAD")
+            if head is None:
+                raise Refusal("reconciliation merge commit cannot be resolved")
+            parents = _git(context.root, "show", "-s", "--format=%P", head).split()
+            if parents != [source, target] or _git(context.root, "rev-parse", f"{head}^{{tree}}") != record["expected_tree"]:
+                raise Refusal("reconciliation commit has unexpected parents or tree")
+            durable = _record_by_path(registry, context.root)
+            if durable is None:
+                raise Refusal("reconciliation durable registry record disappeared")
+            durable["head"] = head
+            durable["updated_at"] = _utc_now()
+            _record_reconciliation_phase(
+                context.registry_path,
+                registry,
+                record,
+                "committed",
+                result_sha=head,
+            )
+            phase = "committed"
+    if phase == "committed":
+        _reprove_reconciliation_authority(context, registry, record)
+        result_sha = str(record["result_sha"])
+        head = _ref_sha(context, "HEAD")
+        if head != result_sha:
+            raise Refusal("reconciliation committed checkpoint is not current HEAD")
+        parents = _git(context.root, "show", "-s", "--format=%P", head).split()
+        tree = _git(context.root, "rev-parse", f"{head}^{{tree}}")
+        if parents != [source, target] or tree != record.get("expected_tree"):
+            raise Refusal("recorded reconciliation commit identity changed")
+        remote = _fetch_origin_branch(context, branch)
+        if remote == source:
+            push = _git_result(
+                context.root,
+                "push",
+                "--porcelain",
+                "origin",
+                f"{result_sha}:refs/heads/{branch}",
+            )
+            if push.returncode:
+                observed = _fetch_origin_branch(context, branch)
+                if observed != result_sha:
+                    detail = push.stderr.strip() or push.stdout.strip() or "git push failed"
+                    raise Refusal(
+                        "reconciliation push outcome is not exact; journal and commit preserved: "
+                        + detail
+                    )
+        elif remote != result_sha:
+            raise Refusal("reconciliation remote tip is neither C nor recorded R")
+        _record_reconciliation_phase(
+            context.registry_path, registry, record, "pushed"
+        )
+        phase = "pushed"
+    if phase == "pushed":
+        result_sha = str(record["result_sha"])
+        if _fetch_origin_branch(context, branch) != result_sha:
+            raise Refusal("reconciliation pushed phase lacks exact remote R")
+        _fetch_origin_main(context)
+        current_claim = _claim_from_origin_main(context, str(record["package"]))
+        if (
+            current_claim.get("state") != "active"
+            or current_claim.get("writer_ref") != record.get("task_ref")
+            or current_claim.get("branch") != record.get("branch")
+            or _canonical_json_sha256(current_claim)
+            != record.get("authoritative_claim_sha256")
+        ):
+            raise Refusal(
+                "reconciliation authority changed after push; exact R remains preserved"
+            )
+        terminal = (
+            "completed"
+            if _ref_sha(context, "origin/main") == target
+            else "refresh_required"
+        )
+        _record_reconciliation_phase(
+            context.registry_path, registry, record, terminal
+        )
+        return {
+            "status": terminal,
+            "operation_id": record["operation_id"],
+            "source_checkpoint": source,
+            "target_main": target,
+            "result_sha": result_sha,
+        }
+    if phase in {"completed", "refresh_required"}:
+        return {
+            "status": phase,
+            "operation_id": record["operation_id"],
+            "source_checkpoint": source,
+            "target_main": target,
+            "result_sha": record.get("result_sha"),
+        }
+    raise Refusal(f"reconciliation cannot continue from phase {phase}")
+
+
+def command_reconcile_main(
+    context: RepoContext, args: argparse.Namespace
+) -> dict[str, Any]:
+    """Run or continue the one journaled non-rewriting main merge."""
+
+    _require_execute(args.execute)
+    package = _validate_package(args.package)
+    task_ref = _validate_task_ref(args.task_ref)
+    with _registry_lock(context.registry_path):
+        registry = _load_registry(context.registry_path)
+        assert registry is not None
+        _assert_registry_identity(context, registry)
+        resolve_caller_ref(
+            registry=registry,
+            repository_common_dir=context.common_dir,
+            caller_context=getattr(args, "caller_context", ""),
+            task_ref=task_ref,
+            package=package,
+        )
+        _fetch_origin_main(context)
+        claim = _active_claim(context, package, task_ref)
+        _require_safe_custody_capability(context, registry)
+        custody = _safe_custody_state(registry)
+        if args.action == "start":
+            durable = _safe_custody_durable_record(
+                context,
+                registry,
+                package=package,
+                task_ref=task_ref,
+                claim=claim,
+            )
+            block = safe_custody_block_for_package(registry, package)
+            supersedes = block.get("operation_id") if block else None
+            if block and block.get("kind") not in {"scope_release", "refresh_required"}:
+                raise Refusal("another reconciliation already blocks this package")
+            if block and block.get("kind") == "scope_release":
+                release = next(
+                    item for item in custody["scope_releases"]
+                    if item.get("operation_id") == supersedes
+                )
+                if release.get("state") != "scope_sync_required":
+                    raise Refusal("scope release is not ready for reconciliation")
+                release["state"] = "completed"
+                release["terminal_at"] = _utc_now()
+            elif block and block.get("kind") == "refresh_required":
+                previous = next(
+                    item for item in custody["reconciliations"]
+                    if item.get("operation_id") == supersedes
+                )
+                previous["phase"] = "completed"
+                previous["updated_at"] = _utc_now()
+                previous["history"].append(
+                    {"phase": "completed", "at": previous["updated_at"]}
+                )
+            pristine, residue = _is_pristine(context.root)
+            if not pristine:
+                raise Refusal("reconcile-main requires a pristine worktree", blockers=residue)
+            if _git_optional(context.root, "rev-parse", "-q", "--verify", "MERGE_HEAD"):
+                raise Refusal("reconcile-main refuses an existing merge")
+            for marker in ("rebase-merge", "rebase-apply", "CHERRY_PICK_HEAD"):
+                marker_path = Path(
+                    _git(context.root, "rev-parse", "--git-path", marker)
+                )
+                if not marker_path.is_absolute():
+                    marker_path = context.root / marker_path
+                if marker_path.exists():
+                    raise Refusal("reconcile-main refuses existing Git operation residue")
+            source = _validate_preparation_sha(durable.get("head"), field="reconciliation C")
+            branch = _validate_work_branch(str(claim.get("branch", "")))
+            if (
+                _current_branch(context.root) != branch
+                or _ref_sha(context, "HEAD") != source
+                or _ref_sha(context, f"refs/heads/{branch}") != source
+                or _fetch_origin_branch(context, branch) != source
+            ):
+                raise Refusal("reconcile-main requires exact local/remote checkpoint C")
+            target = _validate_preparation_sha(
+                _ref_sha(context, "origin/main"), field="reconciliation M"
+            )
+            if source == target or _is_ancestor(context, target, source):
+                raise Refusal("reconcile-main has no newer pinned main to import")
+            operation_id = _canonical_json_sha256(
+                {
+                    "package": package,
+                    "task_ref": task_ref,
+                    "source": source,
+                    "target": target,
+                    "claim": _canonical_json_sha256(claim),
+                    "nonce": secrets.token_hex(16),
+                }
+            )
+            now = _utc_now()
+            record = {
+                "operation_id": operation_id,
+                "package": package,
+                "task_ref": task_ref,
+                "worktree": str(_canonical(context.root)),
+                "branch": branch,
+                "source_checkpoint": source,
+                "target_main": target,
+                "authoritative_claim_sha256": _canonical_json_sha256(claim),
+                "allowed_conflict_paths": [],
+                "nonconflicted_index_sha256": None,
+                "preoperation_tree": _git(context.root, "rev-parse", f"{source}^{{tree}}"),
+                "preoperation_ref": source,
+                "phase": "prepared",
+                "expected_tree": None,
+                "result_sha": None,
+                "remote_before": source,
+                "started_at": now,
+                "updated_at": now,
+                "history": [{"phase": "prepared", "at": now}],
+                "supersedes_operation_id": supersedes,
+            }
+            custody["reconciliations"].append(record)
+            custody["package_blocks"][package.casefold()] = {
+                "kind": "reconcile_main",
+                "operation_id": operation_id,
+            }
+            _atomic_write(context.registry_path, registry)
+            return _complete_reconciliation(context, registry, record, claim)
+
+        operation_id = str(args.operation_id or "")
+        if not operation_id:
+            raise Refusal("reconcile-main continue/abort requires operation-id")
+        matches = [
+            item for item in custody["reconciliations"]
+            if item.get("operation_id") == operation_id
+        ]
+        if len(matches) != 1:
+            raise Refusal("reconciliation operation_id does not select one journal")
+        record = matches[0]
+        if record.get("package") != package or record.get("task_ref") != task_ref:
+            raise Refusal("reconciliation journal belongs to another package or writer")
+        require_package_mutation_unblocked(
+            registry,
+            package,
+            operation=f"reconcile-main {args.action}",
+            allowed_operation_id=operation_id,
+        )
+        if _canonical(record.get("worktree")) != _canonical(context.root):
+            raise Refusal("reconciliation continuation requires its exact durable worktree")
+        if _canonical_json_sha256(claim) != record.get("authoritative_claim_sha256"):
+            raise Refusal("reconciliation authoritative claim changed; journal preserved")
+        if args.action == "continue":
+            return _complete_reconciliation(context, registry, record, claim)
+        if args.action != "abort":
+            raise Refusal("unsupported reconcile-main action")
+        if record.get("phase") not in {"prepared", "merging", "resolved"}:
+            raise Refusal("a committed reconciliation cannot be aborted or reset")
+        merge_head = _git_optional(
+            context.root, "rev-parse", "-q", "--verify", "MERGE_HEAD"
+        )
+        if merge_head is not None:
+            abort = _git_result(context.root, "merge", "--abort")
+            if abort.returncode:
+                raise Refusal(
+                    "reconciliation abort could not restore exact C; journal preserved"
+                )
+        else:
+            pristine, residue = _is_pristine(context.root)
+            if not pristine:
+                raise Refusal(
+                    "reconciliation abort found unjournaled residue; journal preserved",
+                    blockers=residue,
+                )
+        if _ref_sha(context, "HEAD") != record.get("source_checkpoint"):
+            raise Refusal("reconciliation abort could not restore exact C; journal preserved")
+        _record_reconciliation_phase(
+            context.registry_path, registry, record, "aborted", persist=False
+        )
+        _restore_superseded_block(registry, record)
+        _atomic_write(context.registry_path, registry)
+        return {"status": "aborted", "operation_id": operation_id}
+
+
 def command_adopt(context: RepoContext, args: argparse.Namespace) -> dict[str, Any]:
     _require_execute(args.execute)
     package = _validate_package(args.package)
@@ -3673,6 +5161,9 @@ def command_adopt(context: RepoContext, args: argparse.Namespace) -> dict[str, A
             context, registry, args, task_ref=task_ref, package=package
         )
         recovered = _reconcile_pending(context, registry)
+        require_package_mutation_unblocked(
+            registry, package, operation="durable adoption"
+        )
         if _path_key(path) == _path_key(context.primary_root):
             raise Refusal("the primary worktree cannot be adopted as package-durable")
         entry = _worktree_at(context.root, path)
@@ -3789,6 +5280,9 @@ def command_ensure(context: RepoContext, args: argparse.Namespace) -> dict[str, 
             context, registry, args, task_ref=task_ref, package=package
         )
         recovered = _reconcile_pending(context, registry)
+        require_package_mutation_unblocked(
+            registry, package, operation="durable ensure"
+        )
         durable = _existing_durable(registry, package)
         if len(durable) > 1:
             raise Refusal("registry has duplicate durable worktrees for the package")
@@ -5409,6 +6903,9 @@ def command_prepare_owner_reassignment(
             raise Refusal(
                 "a prior pending operation was reconciled; rerun from freshly verified state"
             )
+        require_package_mutation_unblocked(
+            registry, package, operation="owner-reassignment preparation"
+        )
         control = _owner_reassignment_control_admission(
             context,
             registry,
@@ -5873,6 +7370,9 @@ def command_retire(context: RepoContext, args: argparse.Namespace) -> dict[str, 
             context, registry, args, task_ref=task_ref, package=package
         )
         recovered = _reconcile_pending(context, registry)
+        require_package_mutation_unblocked(
+            registry, package, operation="worktree retirement"
+        )
         record = _record_by_path(registry, path)
         if record is None:
             raise Refusal("retirement target is not an exact managed registry entry")
@@ -7564,6 +9064,18 @@ def command_finalize_task(
                 "invocation lease is active",
                 blockers=[str(record.get("path")) for record in locked_leased],
             )
+        blocked_packages: dict[str, dict[str, str]] = {}
+        for active_record in registry["worktrees"]:
+            active_package = active_record.get("package")
+            if (
+                active_record.get("state") != "active"
+                or active_record.get("task_ref") != task_ref
+                or not isinstance(active_package, str)
+            ):
+                continue
+            block = safe_custody_block_for_package(registry, active_package)
+            if block is not None:
+                blocked_packages[active_package] = block
         for record in list(registry["worktrees"]):
             if record.get("state") != "active":
                 continue
@@ -7598,6 +9110,19 @@ def command_finalize_task(
                 else:
                     retained.append({"path": record["path"], "blockers": residue})
             elif record.get("kind") == "ephemeral" and record.get("task_ref") == task_ref:
+                record_package = str(record.get("package", ""))
+                if record_package in blocked_packages:
+                    block = blocked_packages[record_package]
+                    retained.append(
+                        {
+                            "path": record["path"],
+                            "blockers": [
+                                "finalize-task is blocked by safe-custody "
+                                f"{block['kind']} operation {block['operation_id']}"
+                            ],
+                        }
+                    )
+                    continue
                 proof_key = _path_key(record["path"])
                 proof_error = proof_errors.get(proof_key)
                 server_proof = server_proofs.get(proof_key)
@@ -7627,6 +9152,34 @@ def command_finalize_task(
                     retained.append(
                         {"path": record["path"], "blockers": error.blockers or [str(error)]}
                     )
+        retained_packages = {
+            str(record.get("package"))
+            for record in registry["worktrees"]
+            if any(item.get("path") == record.get("path") for item in retained)
+        }
+        for blocked_package, block in blocked_packages.items():
+            if blocked_package in retained_packages:
+                continue
+            durable = next(
+                (
+                    record
+                    for record in registry["worktrees"]
+                    if record.get("state") == "active"
+                    and record.get("kind") == "durable"
+                    and record.get("task_ref") == task_ref
+                    and record.get("package") == blocked_package
+                ),
+                None,
+            )
+            retained.append(
+                {
+                    "path": durable.get("path") if durable else str(context.root),
+                    "blockers": [
+                        "finalize-task is blocked by safe-custody "
+                        f"{block['kind']} operation {block['operation_id']}"
+                    ],
+                }
+            )
     return (
         {
             "status": "complete" if not retained else "incomplete",
@@ -8061,6 +9614,40 @@ def _parser() -> argparse.ArgumentParser:
     init.add_argument("--execute", action="store_true")
     add_caller_context(init)
 
+    migrate = subparsers.add_parser(
+        "migrate-registry-v2",
+        help="atomically migrate the one quiescent registry to safe-custody schema 2",
+    )
+    migrate.add_argument("--task-ref", required=True)
+    migrate.add_argument("--qualification-file", required=True)
+    migrate.add_argument("--execute", action="store_true")
+    add_caller_context(migrate)
+
+    scope_release = subparsers.add_parser(
+        "scope-release",
+        help="prepare, complete, or cancel one monotonic claim reduction",
+    )
+    scope_release.add_argument("action", choices=["prepare", "complete", "cancel"])
+    scope_release.add_argument("--package", required=True)
+    scope_release.add_argument("--task-ref", required=True)
+    scope_release.add_argument("--proposal-file")
+    scope_release.add_argument("--operation-id")
+    scope_release.add_argument("--control-branch")
+    scope_release.add_argument("--lease-token", default="")
+    scope_release.add_argument("--execute", action="store_true")
+    add_caller_context(scope_release)
+
+    reconcile_main = subparsers.add_parser(
+        "reconcile-main",
+        help="start, continue, or safely abort one journaled main merge",
+    )
+    reconcile_main.add_argument("action", choices=["start", "continue", "abort"])
+    reconcile_main.add_argument("--package", required=True)
+    reconcile_main.add_argument("--task-ref", required=True)
+    reconcile_main.add_argument("--operation-id")
+    reconcile_main.add_argument("--execute", action="store_true")
+    add_caller_context(reconcile_main)
+
     adopt = subparsers.add_parser("adopt", help="adopt an exact existing worktree")
     adopt.add_argument("--package", required=True)
     adopt.add_argument("--path", required=True)
@@ -8218,6 +9805,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             payload, code = command_audit(context, args), 0
         elif args.subcommand == "init":
             payload, code = command_init(context, args), 0
+        elif args.subcommand == "migrate-registry-v2":
+            payload, code = command_migrate_registry_v2(context, args), 0
+        elif args.subcommand == "scope-release":
+            payload, code = command_scope_release(context, args), 0
+        elif args.subcommand == "reconcile-main":
+            payload, code = command_reconcile_main(context, args), 0
         elif args.subcommand == "adopt":
             payload, code = command_adopt(context, args), 0
         elif args.subcommand == "ensure":
