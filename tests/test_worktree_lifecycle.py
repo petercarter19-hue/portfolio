@@ -7133,6 +7133,150 @@ class LifecycleReportingHookTests(unittest.TestCase):
 
 
 class SafeCustodyRegistryTests(unittest.TestCase):
+    def claim_path_fixture(self):
+        from scripts import delivery_preflight as preflight
+
+        fixture = RepositoryFixture()
+        self.addCleanup(fixture.temporary.cleanup)
+        claim_path = preflight.claim_relative_path(fixture.package)
+        claim = {
+            "schema_version": 1,
+            "package": fixture.package,
+            "state": "active",
+            "outcome": "Exercise authoritative claim path validation in a temporary Git repository.",
+            "assignment": "implementation",
+            "writer_ref": fixture.writer,
+            "branch": fixture.branch,
+            "delivery_path": "Protected",
+            "repository_authority": "through_merge",
+            "production_authority": "withheld",
+            "activated_from_main": fixture.main_sha,
+            "owner_outcome_ref": "task:owner/claim-path-fixture",
+            "surfaces": [
+                claim_path,
+                preflight.evidence_relative_path(fixture.package),
+                preflight.receipt_relative_path(fixture.package),
+                "sample.txt",
+            ],
+            "evidence_surfaces": [preflight.evidence_relative_path(fixture.package)],
+            "domains": ["testing:lifecycle:claim-path-fixture"],
+            "review_requirement": "independent",
+            "handoff": None,
+            "checkpoint_sha": None,
+            "merged_sha": None,
+            "closed_at": None,
+        }
+        (fixture.repo / claim_path).write_text(
+            json.dumps(claim, indent=2) + "\n", encoding="utf-8"
+        )
+        (fixture.repo / "docs/governance/CURRENT_LANES.json").write_bytes(
+            (ROOT / "docs/governance/CURRENT_LANES.json").read_bytes()
+        )
+        (fixture.repo / "scripts/delivery_preflight.py").write_bytes(
+            (ROOT / "scripts/delivery_preflight.py").read_bytes()
+        )
+        (fixture.repo / "scripts/worktree_lifecycle.py").write_bytes(
+            SCRIPT.read_bytes()
+        )
+        self.publish_claim_path_fixture(fixture)
+        context = LIFECYCLE._repo_context(fixture.repo)
+        return fixture, context, self.registry(), claim, preflight
+
+    def publish_claim_path_fixture(self, fixture):
+        git(fixture.repo, "add", "-A")
+        git(fixture.repo, "commit", "-m", "publish authoritative claim fixture")
+        git(fixture.repo, "push", "origin", "main")
+        LIFECYCLE._fetch_origin_main(LIFECYCLE._repo_context(fixture.repo))
+
+    def test_authoritative_claim_path_reaches_actual_validator(self):
+        fixture, context, registry, claim, preflight = self.claim_path_fixture()
+        raw = LIFECYCLE._strict_live_claims(context)
+        self.assertEqual([claim], raw)
+        with patch.object(
+            preflight, "validate_claim_set", wraps=preflight.validate_claim_set
+        ) as validator:
+            index = LIFECYCLE._require_safe_custody_capability(context, registry)
+        self.assertEqual(4, index["schema_version"])
+        validator.assert_called_once()
+        validated = validator.call_args.args[0]
+        expected_path = preflight.claim_relative_path(fixture.package)
+        self.assertEqual([expected_path], list(validated))
+        self.assertEqual(expected_path, validated[expected_path]["_relative_path"])
+        self.assertEqual([], preflight.validate_claim_set(validated))
+
+    def test_authoritative_claim_path_refuses_malformed_json(self):
+        fixture, context, registry, _claim, preflight = self.claim_path_fixture()
+        path = fixture.repo / preflight.claim_relative_path(fixture.package)
+        path.write_text("{not-json\n", encoding="utf-8")
+        self.publish_claim_path_fixture(fixture)
+        with patch.object(
+            preflight, "validate_claim_set", wraps=preflight.validate_claim_set
+        ) as validator:
+            with self.assertRaisesRegex(LIFECYCLE.Refusal, "invalid JSON"):
+                LIFECYCLE._require_safe_custody_capability(context, registry)
+        validator.assert_not_called()
+
+    def test_authoritative_claim_path_refuses_malformed_claim_in_actual_validator(self):
+        fixture, context, registry, claim, preflight = self.claim_path_fixture()
+        claim["review_requirement"] = "self"
+        (fixture.repo / preflight.claim_relative_path(fixture.package)).write_text(
+            json.dumps(claim, indent=2) + "\n", encoding="utf-8"
+        )
+        self.publish_claim_path_fixture(fixture)
+        with patch.object(
+            preflight, "validate_claim_set", wraps=preflight.validate_claim_set
+        ) as validator:
+            with self.assertRaisesRegex(LIFECYCLE.Refusal, "claim set is invalid"):
+                LIFECYCLE._require_safe_custody_capability(context, registry)
+        validator.assert_called_once()
+        self.assertTrue(
+            any("Protected claims require independent review" in error
+                for error in preflight.validate_claim_set(validator.call_args.args[0]))
+        )
+
+    def test_authoritative_claim_path_refuses_wrong_filename_before_mapping(self):
+        fixture, context, registry, _claim, preflight = self.claim_path_fixture()
+        original = preflight.claim_relative_path(fixture.package)
+        wrong = preflight.claim_relative_path("PS-TEST-WRONG-FILENAME-001")
+        git(fixture.repo, "mv", original, wrong)
+        self.publish_claim_path_fixture(fixture)
+        with patch.object(
+            preflight, "validate_claim_set", wraps=preflight.validate_claim_set
+        ) as validator:
+            with self.assertRaisesRegex(LIFECYCLE.Refusal, "filename does not match package"):
+                LIFECYCLE._require_safe_custody_capability(context, registry)
+        validator.assert_not_called()
+
+    def test_authoritative_claim_path_overwrites_forged_payload_path(self):
+        fixture, context, registry, claim, preflight = self.claim_path_fixture()
+        claim["_relative_path"] = preflight.claim_relative_path("PS-FORGED-001")
+        (fixture.repo / preflight.claim_relative_path(fixture.package)).write_text(
+            json.dumps(claim, indent=2) + "\n", encoding="utf-8"
+        )
+        self.publish_claim_path_fixture(fixture)
+        self.assertEqual([claim], LIFECYCLE._strict_live_claims(context))
+        with patch.object(
+            preflight, "validate_claim_set", wraps=preflight.validate_claim_set
+        ) as validator:
+            LIFECYCLE._require_safe_custody_capability(context, registry)
+        validated = validator.call_args.args[0]
+        actual = preflight.claim_relative_path(fixture.package)
+        self.assertEqual(actual, validated[actual]["_relative_path"])
+
+    def test_authoritative_claim_path_rejects_duplicate_package_before_mapping(self):
+        fixture, context, registry, claim, preflight = self.claim_path_fixture()
+        duplicate = preflight.claim_relative_path("PS-TEST-ZZZ-DUPLICATE-001")
+        (fixture.repo / duplicate).write_text(
+            json.dumps(claim, indent=2) + "\n", encoding="utf-8"
+        )
+        self.publish_claim_path_fixture(fixture)
+        with patch.object(
+            preflight, "validate_claim_set", wraps=preflight.validate_claim_set
+        ) as validator:
+            with self.assertRaisesRegex(LIFECYCLE.Refusal, "duplicate authoritative package claim"):
+                LIFECYCLE._require_safe_custody_capability(context, registry)
+        validator.assert_not_called()
+
     def install_accepted_safe_custody_tools(
         self, fixture, *, lifecycle_bytes=None
     ):

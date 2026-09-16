@@ -3251,9 +3251,9 @@ def _require_safe_custody_capability(
     index_errors = delivery_contract.validate_index(index)
     if index_errors:
         raise Refusal("safe-custody index validation failed", blockers=index_errors)
-    live_claims = _strict_live_claims(context)
+    live_claims = _strict_live_claims(context, attach_paths=True)
     claim_map = {
-        str(claim.get("package", "")).casefold(): claim
+        str(claim["_relative_path"]): claim
         for claim in live_claims
     }
     claim_errors = delivery_contract.validate_claim_set(claim_map)
@@ -6792,7 +6792,8 @@ def _finalize_owner_reassignment_worktree_create(
 
 
 def _strict_live_claims(
-    context: RepoContext, *, include_superseded: bool = False
+    context: RepoContext, *, include_superseded: bool = False,
+    attach_paths: bool = False,
 ) -> list[dict[str, Any]]:
     names = _git_optional(
         context.root,
@@ -6805,6 +6806,7 @@ def _strict_live_claims(
     if names is None:
         raise Refusal("could not enumerate authoritative lane claims")
     claims: list[dict[str, Any]] = []
+    seen_packages: set[str] = set()
     prefix = "docs/governance/lane_claims/"
     for name in names.splitlines():
         if not name.startswith(prefix) or "/" in name[len(prefix) :] or not name.endswith(
@@ -6824,12 +6826,22 @@ def _strict_live_claims(
         state = claim.get("state")
         if not isinstance(package, str) or not PACKAGE_RE.fullmatch(package):
             raise Refusal(f"authoritative claim has an invalid package: {name}")
+        package_key = package.casefold()
+        if package_key in seen_packages:
+            raise Refusal(f"duplicate authoritative package claim: {package}")
+        seen_packages.add(package_key)
+        if name != f"{prefix}{package}.json":
+            raise Refusal(
+                f"authoritative claim filename does not match package: {name}"
+            )
         if state not in {"active", "paused", "closed", "superseded"}:
             raise Refusal(f"authoritative claim has an invalid state: {name}")
         if state in {"active", "paused"} or (
             include_superseded and state == "superseded"
         ):
             _validate_work_branch(str(claim.get("branch", "")))
+            if attach_paths:
+                claim = {**claim, "_relative_path": name}
             claims.append(claim)
     return claims
 
