@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-AZURE-SPEECH-NUMERIC-SCORING-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Correct the offline Azure Speech qualification scorer so deterministic, conservative English numeric, date, and USD formatting equivalents receive the same evaluation credit without fuzzy matching or provider calls. Preserve exact contiguous required-term boundaries and distinguish wrong values, signs, decimals, dates, currencies, units, and unsupported numeric forms. Bind persisted progress to an explicit scoring contract version so aggregate results from older semantics are refused rather than reclassified. Keep all eight fictional profiles, quality thresholds, transport, spend/audio ceilings, one-use controls, markers, schedules, privacy, and spend-versus-quality behavior unchanged. No paid calls, audio generation, live Azure access, deployment, resource, role, secret, schema, production-data, or enablement action is authorized.",
   "assignment": "implementation",
   "writer_ref": "session:01a0a719-0e0b-73f0-9b82-4d135d71692a",
@@ -29,6 +29,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "99ea5b7e68c7ccecfee04b53354fc5aa07d7d2d9",
+  "closed_at": "2026-09-16T00:35:49Z"
 }
