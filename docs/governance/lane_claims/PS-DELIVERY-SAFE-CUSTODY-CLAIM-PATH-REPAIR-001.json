@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-DELIVERY-SAFE-CUSTODY-CLAIM-PATH-REPAIR-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Repair accepted lifecycle authoritative claim path attachment, filename/package binding, and duplicate-package safety so safe-custody reconcile-main can operate; prove the actual validator path with temporary-Git adversarial regression. Preserve the paused parent P1 branch and custody; no production or other package authority.",
   "assignment": "implementation",
   "writer_ref": "session:01a09dac-536f-7191-8ec6-25f5caaae0f2",
@@ -29,6 +29,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "17926f436d60f203db8ad5b7b5e31c12867686cc",
+  "closed_at": "2026-09-16T20:37:36Z"
 }
