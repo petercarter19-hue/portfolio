@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-DELIVERY-SAFE-CUSTODY-INDEX-CUTOVER-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Complete only the already-approved Candidate B repository index cutover dependency from current accepted main: advance CURRENT_LANES.json to strict schema 4 after the separately qualified atomic schema-2 migration of the existing machine registry, update only the baseline current_lanes.version pointer and relevant governance-pointer assertions, and prove old delivery and standalone lifecycle clients fail closed before side effects. This narrow route is necessary because the preserved PS-DELIVERY-CONTRACTS-SAFE-CUSTODY-001 branch cannot pass current-main movement gates before schema 4 enables guarded reconciliation. Preserve that paused parent claim, its full original scope, custody history, branch, and checkpoint unchanged; this dependency does not transfer or close Candidate B or authorize production, migration before qualification, or any other package work. Central delegated this scoped delivery under the existing P1 owner outcome.",
   "assignment": "implementation",
   "writer_ref": "session:01a09dac-536f-7191-8ec6-25f5caaae0f2",
@@ -29,6 +29,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "7fd5c19c3877f48865b832ecd80283c4af09e373",
+  "closed_at": "2026-09-16T18:14:37Z"
 }
