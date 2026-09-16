@@ -143,7 +143,7 @@ class ControlPlaneTests(unittest.TestCase):
 
     def test_current_lane_ledger_is_named_and_machine_readable(self):
         governing = self.data["governing_documents"]
-        self.assertEqual("3", governing["current_lanes"]["version"])
+        self.assertEqual("4", governing["current_lanes"]["version"])
         self.assertEqual(
             "docs/governance/CURRENT_LANES.json",
             governing["current_lanes"]["path"],
@@ -153,7 +153,15 @@ class ControlPlaneTests(unittest.TestCase):
             governing["owner_delivery_guide"]["path"],
         )
         ledger = json.loads(_read("docs", "governance", "CURRENT_LANES.json"))
-        self.assertEqual(3, ledger["schema_version"])
+        self.assertEqual(4, ledger["schema_version"])
+        self.assertEqual(
+            {
+                "scope_release": "safe_custody_v1",
+                "main_reconciliation": "safe_custody_v1",
+                "registry_schema": 2,
+            },
+            ledger["capabilities"],
+        )
         self.assertEqual("generic_package_claims_v1", ledger["model"])
         self.assertEqual("docs/governance/lane_claims", ledger["claims_path"])
         self.assertEqual("unbounded_while_disjoint", ledger["rules"]["writer_capacity"])

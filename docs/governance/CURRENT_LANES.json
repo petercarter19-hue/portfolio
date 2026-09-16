@@ -1,6 +1,6 @@
 {
-  "schema_version": 3,
-  "updated_at": "2026-08-23T01:01:00Z",
+  "schema_version": 4,
+  "updated_at": "2026-09-16T17:49:36Z",
   "model": "generic_package_claims_v1",
   "claims_path": "docs/governance/lane_claims",
   "rules": {
@@ -8,6 +8,11 @@
     "reviewers_consume_writer_claim": false,
     "assigned_repository_authority": "through_merge_unless_explicitly_write_only",
     "production_operations": "manual_exact_main_sha_plus_owner_reference"
+  },
+  "capabilities": {
+    "scope_release": "safe_custody_v1",
+    "main_reconciliation": "safe_custody_v1",
+    "registry_schema": 2
   },
   "legacy_snapshot": {
     "commit": "c024293d8b8dfee98bf973b25e6f33e70745e0cd",

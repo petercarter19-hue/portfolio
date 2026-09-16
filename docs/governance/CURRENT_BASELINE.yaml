@@ -51,7 +51,7 @@ governing_documents:
   model_and_role_routing:
     path: "docs/AI_MODEL_AND_ROLE_ROUTING.md"
   current_lanes:
-    version: "3"
+    version: "4"
     path: "docs/governance/CURRENT_LANES.json"
   owner_delivery_guide:
     version: "1"

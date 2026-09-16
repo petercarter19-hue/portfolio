@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-SAFE-CUSTODY-INDEX-CUTOVER-001",
+  "candidate_sha": "764078ae1ce796169440a472aead2942e3613006",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/production_guard_review",
+  "result": "pass",
+  "reviewed_at": "2026-09-16T17:57:08Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-DELIVERY-SAFE-CUSTODY-INDEX-CUTOVER-001.md"
+}
