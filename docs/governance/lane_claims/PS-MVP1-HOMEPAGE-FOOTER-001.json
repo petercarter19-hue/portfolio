@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-HOMEPAGE-FOOTER-001",
+  "state": "active",
+  "outcome": "Remove the obsolete /peerslate marketing entry points from the shared footer: the left PeerSlate logo/name link and the right Why PeerSlate link, including adjoining obsolete separators. On public pages, including the homepage and Pete's Slate, stop promoting unfinished Community and Opportunity Slate in desktop/mobile shell navigation and public search; keep Pete's Slate and Interview Studio as the public destinations and preserve member-only navigation and feature routes. Preserve the privacy line and copyright, header branding and account controls, homepage body, signup controls, flags, schema, identity, and providers. Verify anonymous desktop/mobile homepage and Pete's Slate, then deliver through normal repository and separately authorized manual exact-source production gates.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a08dfb-7229-75f0-8017-07dd590f1795",
+  "branch": "work/2026-09-16-mvp1-homepage-footer-001",
+  "delivery_path": "Bounded",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "8565e9d161b70d341ec6506340ea404502db1e69",
+  "owner_outcome_ref": "session:01a08dfb-7229-75f0-8017-07dd590f1795/pete-approval:2026-09-16/footer;session:01a0aa3f-a7fd-7b03-b66a-2cd9275a3697/pete-direction:2026-09-16/public-nav-reduction",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-MVP1-HOMEPAGE-FOOTER-001.json",
+    "docs/governance/lane_claims/evidence/PS-MVP1-HOMEPAGE-FOOTER-001.md",
+    "docs/governance/lane_claims/receipts/PS-MVP1-HOMEPAGE-FOOTER-001.json",
+    "app.py",
+    "templates/base.html",
+    "tests/test_site_rules.py",
+    "tests/test_navigation.py",
+    "tests/test_public_nav_route_truth.py"
+  ],
+  "domains": [
+    "navigation:shared-footer-legacy-marketing",
+    "navigation:public-shell-launch-visibility",
+    "testing:public-shell-launch-visibility"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MVP1-HOMEPAGE-FOOTER-001.md"
+  ],
+  "review_requirement": "self",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
