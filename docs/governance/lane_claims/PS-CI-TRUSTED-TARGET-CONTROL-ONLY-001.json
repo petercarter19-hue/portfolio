@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "package": "PS-CI-TRUSTED-TARGET-CONTROL-ONLY-001",
+  "state": "active",
+  "outcome": "Implement the bounded administrative CI trusted-target classifier for genuinely claim-only ordinary control transitions, while preserving the two real required jobs, full security scans, product and unknown full tests, strict browser suites, and separate production/schema gates. Prove eligible and product/unknown dispositions in normal Azure PR validation after the accepted P1 validator baseline; obtain independent Pete-operated Grok exact-candidate review before implementation delivery. Do not change P1 lifecycle/preflight tools, application/database surfaces, server branch policies, or production authority.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0abeb-98ac-7533-a797-1088c8f87e7d",
+  "branch": "work/2026-09-16-ci-trusted-target-control-only-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "d2e8c8715fe31031a4dade9a08cd442fb2085f5c",
+  "owner_outcome_ref": "session:01a0aa3f-a7fd-7b03-b66a-2cd9275a3697/delegation:2026-09-16/administrative-ci-control-only",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-CI-TRUSTED-TARGET-CONTROL-ONLY-001.json",
+    "docs/governance/lane_claims/evidence/PS-CI-TRUSTED-TARGET-CONTROL-ONLY-001.md",
+    "docs/governance/lane_claims/receipts/PS-CI-TRUSTED-TARGET-CONTROL-ONLY-001.json",
+    "azure-pipelines.yml",
+    "scripts/classify_delivery_change.py",
+    "tests/test_delivery_change_classification.py",
+    "tests/test_operational_readiness.py",
+    "tests/test_interview_browser_ci_runner.py",
+    "tests/test_interview_review_http_browser_ci.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-CI-TRUSTED-TARGET-CONTROL-ONLY-001.md"
+  ],
+  "domains": [
+    "infrastructure:ci:trusted-target-control-only",
+    "testing:ci:delivery-change-classification",
+    "governance:initiative:ci-trusted-target-control-only"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
