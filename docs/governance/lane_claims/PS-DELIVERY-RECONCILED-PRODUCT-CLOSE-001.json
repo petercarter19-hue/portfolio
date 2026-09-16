@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-DELIVERY-RECONCILED-PRODUCT-CLOSE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Add one fail-closed reconciled-product close path that recognizes an independently reviewed product already accepted on main after a content-equivalent synchronization merge, while preserving ordinary nonempty close, operations-only close, exact-candidate review, and cleanup controls.",
   "assignment": "implementation",
   "writer_ref": "session:01a0aac7-a5d5-7020-a573-ff9b1c13c5aa",
@@ -34,6 +34,6 @@
     "relinquished": true
   },
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "50d19f799134159008ca0420a9e6e62a7e333965",
+  "closed_at": "2026-09-16T16:13:24Z"
 }
