@@ -15,7 +15,6 @@
     "docs/governance/lane_claims/PS-CI-TRUSTED-TARGET-CONTROL-ONLY-001.json",
     "docs/governance/lane_claims/evidence/PS-CI-TRUSTED-TARGET-CONTROL-ONLY-001.md",
     "docs/governance/lane_claims/receipts/PS-CI-TRUSTED-TARGET-CONTROL-ONLY-001.json",
-    "azure-pipelines.yml",
     "scripts/classify_delivery_change.py",
     "tests/test_delivery_change_classification.py",
     "tests/test_operational_readiness.py",
@@ -34,5 +33,63 @@
   "handoff": null,
   "checkpoint_sha": null,
   "merged_sha": null,
-  "closed_at": null
+  "closed_at": null,
+  "scope_release": {
+    "schema_version": 1,
+    "operation_id": "1c858d276919ff5d494031c799bfbe4333ffc2e864e6448a14255d5646be7ce8",
+    "control_branch": "work/2026-09-17-delivery-release-surfaces-ci-trusted-target-001",
+    "control_lease_sha256": "5cfccd92b63fa658503fbad4b856f53d8c2d5aaa99e187a283649ee8b0936224",
+    "quiescence_ref": "session:01a0ad33-c843-7780-a637-241d4c28e974",
+    "prior_claim_sha256": "c82eb19b82b0fe9804b7e8fbdf28cee2b98a279ef7d561c5342b56679d633e51",
+    "reduction_sha256": "472762b7a34626c4fb6cec0fcce9913f228f1972af83366d33e06d578acb3768",
+    "checkpoint_sha": "b46022faecaf7b4776b62f83ca10a670337f52cb",
+    "prepared_from_main": "a4f89b2804830490e235dbdc961f4594311e7f79",
+    "released_surfaces": [
+      "azure-pipelines.yml"
+    ],
+    "released_file_proofs": [
+      {
+        "path": "azure-pipelines.yml",
+        "main_mode": "100644",
+        "main_blob": "46ab720997be9595976b70d5dbd207f5aa5f5e05",
+        "checkpoint_mode": "100644",
+        "checkpoint_blob": "46ab720997be9595976b70d5dbd207f5aa5f5e05",
+        "unpublished_delta": true,
+        "accepted_introduction": {
+          "package": "PS-CI-TRUSTED-TARGET-CONTROL-ONLY-001",
+          "candidate_sha": "85e99967e1dd990286af67eed4b6bd45df3e40fa",
+          "merged_sha": "5d99a7b3459d2560cd72e70a22c5456bc14e69f3",
+          "receipt_ref": "docs/governance/lane_claims/receipts/PS-CI-TRUSTED-TARGET-CONTROL-ONLY-001.json"
+        }
+      }
+    ],
+    "prior_domains": [
+      "infrastructure:ci:trusted-target-control-only",
+      "testing:ci:delivery-change-classification",
+      "governance:initiative:ci-trusted-target-control-only"
+    ],
+    "new_domains": [
+      "infrastructure:ci:trusted-target-control-only",
+      "testing:ci:delivery-change-classification",
+      "governance:initiative:ci-trusted-target-control-only"
+    ],
+    "retained_responsibilities": [
+      {
+        "responsibility": "Maintain the retained trusted-target classifier and verify genuine eligible claim-only and product/unknown dispositions in normal Azure PR validation without further CI pipeline edits under this claim.",
+        "domain": "infrastructure:ci:trusted-target-control-only"
+      },
+      {
+        "responsibility": "Maintain the four retained CI test surfaces and their fail-closed product, unknown, repair, fork, drift, and trusted-target coverage; verify both real Build jobs, scans, and final coherence in the outstanding Azure proofs.",
+        "domain": "testing:ci:delivery-change-classification"
+      },
+      {
+        "responsibility": "Preserve the active claim, fixed evidence and review receipt, complete the remaining normal Azure proof before claim close, and keep production authority withheld.",
+        "domain": "governance:initiative:ci-trusted-target-control-only"
+      }
+    ],
+    "release_rationale": "Release exactly azure-pipelines.yml, whose reviewed candidate 85e99967e1dd990286af67eed4b6bd45df3e40fa was accepted in PR1094 at 5d99a7b3459d2560cd72e70a22c5456bc14e69f3 and has identical checkpoint/current-main bytes, for separately admitted E hosted-browser integration. The actual E writer session:01a0ad33-c843-7780-a637-241d4c28e974 attested this path quiescent until accepted scope release and exact custody handoff. CI retains its other surfaces, domains, independent-review lineage, and outstanding Azure proof obligation; this transfers no production or policy authority.",
+    "fixed_evidence_ref": "docs/governance/lane_claims/evidence/PS-CI-TRUSTED-TARGET-CONTROL-ONLY-001.md",
+    "registry_schema": 2,
+    "index_schema": 4
+  }
 }
