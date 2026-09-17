@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-PUBLIC-RESUME-PDF-FLOW-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Repair the existing public Pete Carter resume PDF without changing its accepted factual wording: generate valid cross-reference structure and wrap every line within printable letter-page margins, then expose the same PDF affordance in the existing mobile Sections menu. Preserve the canonical public resume routes, desktop rail, no-JavaScript reading, quiet-preview response policy, private application, and unrelated shared or homepage surfaces. Verify desktop, mobile, no-JavaScript, download, print, PDF text and rendered-page completeness. Production deployment remains the separate homepage release owner's authority.",
   "assignment": "implementation",
   "writer_ref": "session:01a09dbf-a3f2-7f70-baad-eb98729de1ac",
@@ -33,6 +33,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "6b0625d177a093023073e6623e20f8ef2f2f9434",
+  "closed_at": "2026-09-17T06:20:18Z"
 }
