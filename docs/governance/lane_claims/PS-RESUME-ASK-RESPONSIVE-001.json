@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-RESUME-ASK-RESPONSIVE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Keep the public Resume and Ask Pete AI companion visible together at common 14-inch laptop and landscape iPad widths, including 1024, 1180, 1194, 1280, 1366 and larger desktop CSS widths. Reclaim outer margin and adjust the existing rails and breakpoints while preserving readable Resume content, accessible navigation and at least 44px Ask controls. At portrait, phone and zoom widths retain the existing accessible sheet. No horizontal page clipping, new product behavior, schema, identity, provider, flag or unrelated visual change. Verify affected Story and shared public layout consumers, then deliver through normal PR and accepted merge; production release belongs to the MVP owner.",
   "assignment": "implementation",
   "writer_ref": "session:01a0af5a-4513-7f53-8254-a6452df179e6",
@@ -29,6 +29,6 @@
   "review_requirement": "self",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "48ac9c28b75c387efaeded0a7238b3c34d519ef7",
+  "closed_at": "2026-09-17T15:17:58Z"
 }
