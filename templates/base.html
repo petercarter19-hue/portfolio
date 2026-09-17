@@ -239,8 +239,6 @@
 
                 <ul class="platform-nav__links" data-platform-links>{% for destination in shell_destinations %}
                     <li><a href="{{ destination.href }}" {% if destination.current %}aria-current="page"{% endif %}>{{ destination.label }}</a></li>{% endfor %}
-                    {# The company/mission link moved to the footer as
-                       "Why PeerSlate" (v1.2 rule 66 / PS-BRAND-NAV-001). #}
                 </ul>{# PS-SHELL-001 room switcher (approved direction 2, medium width only).
                    Between 64.01rem and 73.75rem the five inline destinations
                    collapse into this one pill, which names the room the viewer
@@ -481,19 +479,11 @@
             </svg>
             Your data is private. You control what you share.
         </p>
-        <div class="footer-container{% if not is_portfolio_path %} footer-container--brand{% endif %}">
+        <div class="footer-container">
             {% if not is_portfolio_path %}
-            <a class="footer-brand" href="{{ peerslate_home_url }}" aria-label="PeerSlate home">
-                <img
-                    src="{{ url_for('static', filename='images/peerslate-mark.png') }}"
-                    alt=""
-                    aria-hidden="true"
-                >
-                <span>{{ platform_brand_name }}</span>
-            </a>
-            <p>&copy; 2026 {{ platform_brand_name }} <span>|</span> Your Work. Your Story. Your Future. <span>|</span> <a class="footer-why-link" href="{{ url_for('peerslate_home') }}">Why PeerSlate</a></p>
+            <p>&copy; 2026 {{ platform_brand_name }} <span>|</span> Your Work. Your Story. Your Future.</p>
             {% else %}
-            <p>&copy; 2026 Pete Carter <span>|</span> Athens, Alabama <span>|</span> <a class="footer-why-link" href="{{ url_for('peerslate_home') }}">Why PeerSlate</a></p>
+            <p>&copy; 2026 Pete Carter <span>|</span> Athens, Alabama</p>
             {% endif %}
         </div>
     </footer>

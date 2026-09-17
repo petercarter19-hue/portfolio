@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-HOMEPAGE-FOOTER-001",
+  "candidate_sha": "10ce57a58829767771bebb1dc3b5a18c26c8f78d",
+  "review_type": "self",
+  "reviewer_ref": "session:01a08dfb-7229-75f0-8017-07dd590f1795",
+  "reviewed_at": "2026-09-17T01:17:23Z",
+  "result": "pass",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MVP1-HOMEPAGE-FOOTER-001.md"
+}

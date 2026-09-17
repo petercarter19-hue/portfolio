@@ -629,14 +629,15 @@ class StaticVersioningTests(unittest.TestCase):
                 response.close()
 
     def test_template_images_are_content_versioned(self):
-        version = _static_file_version("images/peerslate-mark.png")
+        version = _static_file_version("images/peerslate-logo-header.png")
         self.assertRegex(version, r"^[0-9a-f]{12}$")
 
         html = self.client.get("/").get_data(as_text=True)
         self.assertIn(
-            f"/static/images/peerslate-mark.png?v={version}",
+            f"/static/images/peerslate-logo-header.png?v={version}",
             html,
         )
+        self.assertNotIn("/static/images/peerslate-mark.png", html)
 
     def test_editing_a_file_changes_its_token(self):
         # Different bytes must produce a different URL, or a cache could serve

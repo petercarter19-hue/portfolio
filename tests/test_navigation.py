@@ -49,8 +49,8 @@ class NavigationTests(unittest.TestCase):
         parser.feed(response.get_data(as_text=True))
         return parser.links
 
-    def search_records(self, path='/', base_url='http://localhost'):
-        response = self.client.get(path, base_url=base_url)
+    def search_records(self, path='/', base_url='http://localhost', client=None):
+        response = (client or self.client).get(path, base_url=base_url)
         self.assertEqual(response.status_code, 200)
         html = response.get_data(as_text=True)
         match = re.search(
@@ -135,10 +135,9 @@ class NavigationTests(unittest.TestCase):
                 for link in self.parse_platform_links('/interview-studio')
             }
             records = self.search_records('/interview-studio')
-        self.assertEqual(links['Community']['attributes']['href'], '/the-slate')
+        self.assertNotIn('Community', links)
         self.assertEqual(links['Interview Studio']['attributes']['href'], '/interview-studio')
-        # v1.2 (PS-BRAND-NAV-001): About left the header; the footer link
-        # 'Why PeerSlate' points at the same route instead.
+        self.assertNotIn('Opportunity Slate', links)
         self.assertNotIn('About PeerSlate', links)
         self.assertEqual(
             links['Interview Studio']['attributes'].get('aria-current'),
@@ -149,13 +148,8 @@ class NavigationTests(unittest.TestCase):
         self.assertNotIn('About', links)
 
         records_by_title = {record['title']: record for record in records}
-        # PS-COMMUNITY-AUTH-WALL-001: the search entry is simply "Community"
-        # and is honest about its members-only audience.
-        self.assertEqual(records_by_title['Community']['href'], '/the-slate')
-        self.assertEqual(
-            records_by_title['Community']['sub'],
-            'Visible to signed-in PeerSlate members',
-        )
+        self.assertNotIn('Community', records_by_title)
+        self.assertNotIn('Opportunity Slate', records_by_title)
         self.assertNotIn('Community Feed', records_by_title)
         self.assertEqual(records_by_title['Interview Studio']['href'], '/interview-studio')
         self.assertNotIn('The Slate', records_by_title)
@@ -221,8 +215,10 @@ class NavigationTests(unittest.TestCase):
         self.assertIn('data-platform-menu-toggle', html)
         self.assertIn('id="platform-mobile-menu"', html)
         menu = html.split('id="platform-mobile-menu"', 1)[1].split('</nav>', 1)[0]
-        for label in ('Pete&#39;s Slate', 'Community', 'Interview Studio'):
+        for label in ('Pete&#39;s Slate', 'Interview Studio'):
             self.assertEqual(menu.count(f'>{label}</a>'), 1)
+        self.assertNotIn('>Community</a>', menu)
+        self.assertNotIn('>Opportunity Slate</a>', menu)
         # PS-SHELL-001: the sheet no longer carries its own search field. The
         # header field is present at every width, so a second one here meant
         # two visible inputs with the same accessible name whenever the sheet
@@ -301,8 +297,8 @@ class NavigationTests(unittest.TestCase):
         self.assertNotIn('Ask Pete', source)
         self.assertNotIn('data-ask-url', self.client.get('/').get_data(as_text=True))
 
-    def test_opportunity_slate_availability_is_shared_by_both_menus(self):
-        """A flag-off route is absent from every shared-shell affordance."""
+    def test_opportunity_slate_is_not_promoted_from_public_shell(self):
+        """Availability does not make an unfinished room a public link."""
         for enabled in (False, True):
             with self.subTest(opportunity_enabled=enabled), self.destination_flags(
                 workshop=True, opportunity=enabled
@@ -316,13 +312,9 @@ class NavigationTests(unittest.TestCase):
                 menu = html.split('id="platform-mobile-menu"', 1)[1].split(
                     '</nav>', 1
                 )[0]
-                self.assertEqual('Opportunity Slate' in links, enabled)
-                self.assertEqual(menu.count('>Opportunity Slate</a>'), int(enabled))
+                self.assertNotIn('Opportunity Slate', links)
+                self.assertNotIn('>Opportunity Slate</a>', menu)
                 if enabled:
-                    self.assertEqual(
-                        links['Opportunity Slate']['attributes']['href'],
-                        '/opportunity-slate',
-                    )
                     self.assertNotIn('>Workshop</a>', menu)
 
     def test_opportunity_slate_link_shows_aria_current_on_its_own_room(self):
@@ -339,12 +331,12 @@ class NavigationTests(unittest.TestCase):
         )
 
     def test_header_search_json_ignores_workshop_navigation_flag(self):
-        """Workshop stays absent while Opportunity Slate remains valid."""
+        """Member search keeps the available room without offering Workshop."""
         for workshop_enabled in (True, False):
             with self.subTest(workshop_nav_enabled=workshop_enabled), self.destination_flags(
                 workshop=workshop_enabled, opportunity=True
             ):
-                records = self.search_records()
+                records = self.search_records('/app', client=self.signed_in_client())
                 titles = [record['title'] for record in records]
                 self.assertIn('Opportunity Slate', titles)
                 self.assertEqual(titles.count('Opportunity Slate'), 1)
@@ -632,21 +624,21 @@ class NavigationTests(unittest.TestCase):
         self.assertIn(f'href="{"/petec/resume"}#overview" ', source)
         self.assertIn('>Pete&#39;s Slate</span>', source)
         self.assertNotIn('>Profile<', source)
-        self.assertIn('href="/the-slate"', source)
-        self.assertIn('>Community</span>', source)
+        self.assertNotIn('href="/the-slate"', source)
+        self.assertNotIn('>Community</span>', source)
         self.assertIn('href="/interview-studio"', source)
         # Short visible label, full accessible name (WCAG 2.2 SC 2.5.3).
         self.assertIn('aria-label="Interview Studio"', source)
         self.assertIn('>Interview</span>', source)
-        # Three destinations plus the More slot, which is a button rather
+        # Two public destinations plus the More slot, which is a button rather
         # than a destination and so carries no href.
-        self.assertEqual(source.count('<li>'), 3)
+        self.assertEqual(source.count('<li>'), 2)
         self.assertEqual(source.count('<li data-global-more>'), 1)
-        self.assertEqual(source.count('href='), 3)
+        self.assertEqual(source.count('href='), 2)
         # Every slot carries a server-rendered mark; nothing is built in
         # script from data.
-        self.assertEqual(source.count('class="mobile-tabbar__mark"'), 4)
-        self.assertEqual(source.count('class="mobile-tabbar__label"'), 4)
+        self.assertEqual(source.count('class="mobile-tabbar__mark"'), 3)
+        self.assertEqual(source.count('class="mobile-tabbar__label"'), 3)
 
     def test_more_sheet_offers_settings_and_omits_a_help_route_that_does_not_exist(self):
         """The direction's More list names Help, but no Help route is
@@ -664,9 +656,10 @@ class NavigationTests(unittest.TestCase):
         self.assertIn('href="/app/settings"', menu)
         self.assertNotIn('>Help<', menu)
         # Every promoted destination is reachable from the sheet.
-        for label in ('Pete&#39;s Slate', 'Community', 'Interview Studio',
-                      'Opportunity Slate'):
+        for label in ('Pete&#39;s Slate', 'Interview Studio'):
             self.assertEqual(menu.count(f'>{label}</a>'), 1)
+        self.assertNotIn('>Community</a>', menu)
+        self.assertNotIn('>Opportunity Slate</a>', menu)
         self.assertNotIn('>Workshop</a>', menu)
 
     def test_shell_offers_no_notification_or_add_control(self):

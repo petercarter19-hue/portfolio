@@ -225,6 +225,7 @@ body.sky-reveal-on [data-reveal].is-revealed {
 
 /* Footer floats as glass instead of a solid slab. */
 body.slate-light .footer {
+    color: var(--text-muted);
     background: rgb(250 253 255 / 72%);
     border-top: var(--glass-border);
     backdrop-filter: var(--glass-blur);

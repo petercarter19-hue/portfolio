@@ -1328,8 +1328,20 @@ def shared_navigation_urls():
 
         return f'{portfolio_base_url}/{path.lstrip("/")}'
 
+    # The launch-facing shell offers the two ready public destinations. Keep
+    # the existing full destination set inside authenticated product rooms.
+    private_room = any(
+        request.path == root or request.path.startswith(root + '/')
+        for root in ('/app', '/the-slate', '/opportunity-slate')
+    )
+
     def destination_group(surface, order=()):
         records = navigation_destinations(surface, request.path)
+        if not private_room and surface in ('shell', 'phone', 'public_search'):
+            records = [
+                record for record in records
+                if record['key'] not in ('community', 'opportunity')
+            ]
         if order:
             positions = {key: position for position, key in enumerate(order)}
             records.sort(key=lambda item: positions.get(item['key'], len(positions)))

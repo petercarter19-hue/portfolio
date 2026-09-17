@@ -81,24 +81,37 @@ class PublicNavigationRouteTruthTests(unittest.TestCase):
         return response.get_data(as_text=True)
 
     def test_every_shell_representation_uses_the_same_promoted_routes(self):
-        html = self.render("/interview-studio")
-        expected = (
-            "/petec/resume#overview",
-            "/the-slate",
-            "/interview-studio",
-            "/opportunity-slate",
-        )
-        for marker in (
-            '<ul class="platform-nav__links"',
-            '<ul class="platform-roomswitcher__list"',
-            '<ul class="platform-menu__links"',
-            '<ul class="platform-nojs-navigation__links"',
-        ):
-            with self.subTest(marker=marker):
-                block = html.split(marker, 1)[1].split("</ul>", 1)[0]
-                self.assertEqual(expected, tuple(re.findall(r'href="([^"]+)"', block)))
-        for removed in ("Workshop", "Capture", "Slate Board"):
-            self.assertNotIn(removed, html.split("</header>", 1)[0])
+        expected = ("/petec/resume#overview", "/interview-studio")
+        for path in ("/", "/petec/resume", "/interview-studio"):
+            with self.subTest(path=path):
+                html = self.render(path)
+                for marker in (
+                    '<ul class="platform-nav__links"',
+                    '<ul class="platform-roomswitcher__list"',
+                    '<ul class="platform-menu__links"',
+                    '<ul class="platform-nojs-navigation__links"',
+                ):
+                    with self.subTest(marker=marker):
+                        block = html.split(marker, 1)[1].split("</ul>", 1)[0]
+                        self.assertEqual(
+                            expected, tuple(re.findall(r'href="([^"]+)"', block))
+                        )
+                for removed in ("Workshop", "Capture", "Slate Board"):
+                    self.assertNotIn(removed, html.split("</header>", 1)[0])
+
+    def test_public_footer_keeps_privacy_and_copyright_without_old_marketing_links(self):
+        for path in ("/", "/petec/resume"):
+            with self.subTest(path=path):
+                html = self.render(path)
+                footer = html.split('<footer class="footer">', 1)[1].split(
+                    "</footer>", 1
+                )[0]
+                self.assertIn("Your data is private. You control what you share.", footer)
+                self.assertIn("&copy; 2026", footer)
+                self.assertNotIn('href="/peerslate"', footer)
+                self.assertNotIn('class="footer-brand"', footer)
+                self.assertNotIn('class="footer-why-link"', footer)
+                self.assertIn('class="platform-brand__logo" href="/"', html)
 
     def test_member_launchpad_is_neutral_and_uses_available_destinations(self):
         html = self.render("/app")
@@ -135,8 +148,10 @@ class PublicNavigationRouteTruthTests(unittest.TestCase):
         self.assertIn("My Story", public_titles)
         self.assertIn("My PeerSlate", member_titles)
         self.assertIn("Settings", member_titles)
+        self.assertIn("Interview Studio", public_titles)
+        self.assertTrue({"Community", "Opportunity Slate"}.isdisjoint(public_titles))
+        self.assertTrue({"Interview Studio", "Community", "Opportunity Slate"} <= member_titles)
         for titles in (public_titles, member_titles):
-            self.assertTrue({"Interview Studio", "Opportunity Slate"} <= titles)
             self.assertTrue({"Capture", "Workshop", "Slate Board"}.isdisjoint(titles))
 
     def test_opportunity_promotion_follows_the_registered_blueprint_flag(self):

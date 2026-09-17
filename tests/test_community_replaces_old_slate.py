@@ -134,8 +134,14 @@ class NewCommunityReplacesOldTests(ConfigSnapshotTestCase):
             with self.subTest(entry=title):
                 self.assertNotIn(title, body)
 
-    def test_search_offers_exactly_one_community_entry(self):
-        entries = _search_index_entries(self.client.get("/").get_data(as_text=True))
+    def test_search_offers_community_only_inside_the_member_room(self):
+        public_entries = _search_index_entries(self.client.get("/").get_data(as_text=True))
+        self.assertFalse(any(entry["title"] == "Community" for entry in public_entries))
+
+        app.config["PEERSLATE_DEV_USER_KEY"] = str(uuid4())
+        member = self.client.get("/the-slate")
+        self.assertEqual(member.status_code, 200)
+        entries = _search_index_entries(member.get_data(as_text=True))
         community = [entry for entry in entries if entry["title"] == "Community"]
         self.assertEqual(len(community), 1)
         self.assertEqual(community[0]["href"], "/the-slate")

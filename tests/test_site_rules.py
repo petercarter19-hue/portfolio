@@ -296,7 +296,8 @@ class NavigationLanguageTests(unittest.TestCase):
             '</ul>', 1
         )[0]
         self.assertNotIn('About PeerSlate', nav)
-        self.assertIn('footer-why-link', content)
+        self.assertNotIn('footer-why-link', content)
+        self.assertNotIn('class="footer-brand"', content)
 
 
 if __name__ == '__main__':
