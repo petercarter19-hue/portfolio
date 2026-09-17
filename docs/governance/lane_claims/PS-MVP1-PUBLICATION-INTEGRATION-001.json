@@ -84,7 +84,8 @@
     "docs/initiatives/PS-MVP1-PUBLICATION-INTEGRATION-001/README.md",
     "docs/governance/lane_claims/PS-MVP1-PUBLICATION-INTEGRATION-001.json",
     "docs/governance/lane_claims/receipts/PS-MVP1-PUBLICATION-INTEGRATION-001.json",
-    "docs/governance/lane_claims/evidence/PS-MVP1-PUBLICATION-INTEGRATION-001.md"
+    "docs/governance/lane_claims/evidence/PS-MVP1-PUBLICATION-INTEGRATION-001.md",
+    "azure-pipelines.yml"
   ],
   "domains": [
     "resume:publication:integration",
