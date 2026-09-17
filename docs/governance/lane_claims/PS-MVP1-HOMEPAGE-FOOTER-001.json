@@ -20,7 +20,9 @@
     "tests/test_site_rules.py",
     "tests/test_navigation.py",
     "tests/test_public_nav_route_truth.py",
-    "static/css/sky-glass.css"
+    "static/css/sky-glass.css",
+    "tests/test_community_replaces_old_slate.py",
+    "tests/test_http_edge_security.py"
   ],
   "domains": [
     "navigation:shared-footer-legacy-marketing",
