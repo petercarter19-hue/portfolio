@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-PUBLICATION-COMPONENTS-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver an inactive E-only checkpoint: versioned Resume publication contracts, pure reviewed-candidate validation with separate display and visitor-AI manifests, deterministic digest and complete version binding, and focused synthetic conformance tests. Stop before F source/provider/citation orchestration and before full permission/database/publication/outward-reader integration. This bounded checkpoint does not complete E. No transaction, routes, schema, provider calls, flags, production or enabled visitor use.",
   "assignment": "implementation",
   "writer_ref": "session:01a0ad33-c843-7780-a637-241d4c28e974",
@@ -31,6 +31,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "b22f9a31ad5cbf48dd2fc555c2fb825c19927511",
+  "closed_at": "2026-09-17T12:09:29Z"
 }
