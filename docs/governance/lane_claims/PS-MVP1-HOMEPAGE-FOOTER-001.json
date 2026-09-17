@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-HOMEPAGE-FOOTER-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Remove the obsolete /peerslate marketing entry points from the shared footer: the left PeerSlate logo/name link and the right Why PeerSlate link, including adjoining obsolete separators. On public pages, including the homepage and Pete's Slate, stop promoting unfinished Community and Opportunity Slate in desktop/mobile shell navigation and public search; keep Pete's Slate and Interview Studio as the public destinations and preserve member-only navigation and feature routes. Preserve the privacy line and copyright, header branding and account controls, homepage body, signup controls, flags, schema, identity, and providers. Verify anonymous desktop/mobile homepage and Pete's Slate, then deliver through normal repository and separately authorized manual exact-source production gates.",
   "assignment": "implementation",
   "writer_ref": "session:01a08dfb-7229-75f0-8017-07dd590f1795",
@@ -35,6 +35,6 @@
   "review_requirement": "self",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "b82315cfaf904a13c1da0050d2291352882467b3",
+  "closed_at": "2026-09-17T01:51:42Z"
 }
