@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "package": "PS-RESUME-ASK-RESPONSIVE-001",
+  "state": "active",
+  "outcome": "Keep the public Resume and Ask Pete AI companion visible together at common 14-inch laptop and landscape iPad widths, including 1024, 1180, 1194, 1280, 1366 and larger desktop CSS widths. Reclaim outer margin and adjust the existing rails and breakpoints while preserving readable Resume content, accessible navigation and at least 44px Ask controls. At portrait, phone and zoom widths retain the existing accessible sheet. No horizontal page clipping, new product behavior, schema, identity, provider, flag or unrelated visual change. Verify affected Story and shared public layout consumers, then deliver through normal PR and accepted merge; production release belongs to the MVP owner.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0af5a-4513-7f53-8254-a6452df179e6",
+  "branch": "work/2026-09-17-resume-ask-responsive-001",
+  "delivery_path": "Bounded",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "9f9b6ffe8ca629dc168df39f491e292a726c5540",
+  "owner_outcome_ref": "session:01a0aa3f-a7fd-7b03-b66a-2cd9275a3697/event:evt-38791576-5140-4b8b-bb25-40989c6a1a5b",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-RESUME-ASK-RESPONSIVE-001.json",
+    "docs/governance/lane_claims/evidence/PS-RESUME-ASK-RESPONSIVE-001.md",
+    "docs/governance/lane_claims/receipts/PS-RESUME-ASK-RESPONSIVE-001.json",
+    "static/css/ask-pete-resume-evidence.css",
+    "static/css/resume2.css",
+    "static/js/ask-pete-evidence-companion.js",
+    "tests/ask_pete/test_resume_evidence_companion.py",
+    "tests/ask_pete/run_recruiter_evidence_browser.py"
+  ],
+  "domains": [
+    "ui:public-resume:ask-responsive",
+    "testing:public-resume:ask-responsive"
+  ],
+  "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-RESUME-ASK-RESPONSIVE-001.md"],
+  "review_requirement": "self",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
