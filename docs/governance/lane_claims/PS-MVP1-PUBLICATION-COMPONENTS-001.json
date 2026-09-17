@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-PUBLICATION-COMPONENTS-001",
+  "state": "active",
+  "outcome": "Deliver an inactive E-only checkpoint: versioned Resume publication contracts, pure reviewed-candidate validation with separate display and visitor-AI manifests, deterministic digest and complete version binding, and focused synthetic conformance tests. Stop before F source/provider/citation orchestration and before full permission/database/publication/outward-reader integration. This bounded checkpoint does not complete E. No transaction, routes, schema, provider calls, flags, production or enabled visitor use.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0ad33-c843-7780-a637-241d4c28e974",
+  "branch": "work/2026-09-16-mvp1-publication-components-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "a90762d8bf7c2a1a732916ab86422f42e1d4251e",
+  "owner_outcome_ref": "session:01a08dfb-7229-75f0-8017-07dd590f1795/owner-direction:2026-09-16/coherent-E-only-checkpoint-and-stop;session:01a0aa3f-a7fd-7b03-b66a-2cd9275a3697/owner-scope-reduction:2026-09-16/half-of-E",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-MVP1-PUBLICATION-COMPONENTS-001.json",
+    "docs/governance/lane_claims/evidence/PS-MVP1-PUBLICATION-COMPONENTS-001.md",
+    "docs/governance/lane_claims/receipts/PS-MVP1-PUBLICATION-COMPONENTS-001.json",
+    "services/resume_publication_contracts.py",
+    "services/resume_publication_validation.py",
+    "tests/test_resume_publication_contracts.py",
+    "docs/initiatives/PS-MVP1-PUBLICATION-COMPONENTS-001/README.md",
+    "docs/governance/PACKAGE_REGISTRY.json"
+  ],
+  "domains": [
+    "resume:publication:deterministic-components",
+    "governance:initiative:mvp1-publication-components"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MVP1-PUBLICATION-COMPONENTS-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
