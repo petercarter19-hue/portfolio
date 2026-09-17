@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-PUBLIC-RESUME-PDF-FLOW-001",
+  "candidate_sha": "21256b1f83a0550850ca5341c622e08d640f3e9d",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/exact_candidate_reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-09-17T05:39:46Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-PUBLIC-RESUME-PDF-FLOW-001.md"
+}

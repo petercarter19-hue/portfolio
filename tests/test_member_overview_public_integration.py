@@ -135,7 +135,7 @@ class MemberOverviewPublicIntegrationTests(unittest.TestCase):
         self.assertNotIn("r2-context-ask-primary", page_html)
         self.assertEqual(
             page_html.count("/static/files/pete-carter-resume.pdf"),
-            1,
+            2,
         )
         self.assertEqual(overview_html.count(">Connect</a>"), 1)
         self.assertEqual(overview_html.count(">View résumé</a>"), 1)

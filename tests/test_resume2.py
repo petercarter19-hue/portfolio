@@ -1,3 +1,4 @@
+import hashlib
 import json
 import unittest
 from html.parser import HTMLParser
@@ -68,6 +69,36 @@ class Resume2Tests(unittest.TestCase):
             ):
                 with self.subTest(base_url=base_url, path=path):
                     self.assert_direct_redirect(path, base_url, expected)
+
+    def test_desktop_rail_and_mobile_sections_offer_the_same_versioned_pdf(self):
+        response = self.client.get('/petec/resume', base_url='https://peerslate.com')
+        self.assertEqual(response.status_code, 200)
+        body = response.get_data(as_text=True)
+        pdf = (
+            Path(__file__).resolve().parents[1]
+            / 'static/files/pete-carter-resume.pdf'
+        ).read_bytes()
+        pdf_url = (
+            '/static/files/pete-carter-resume.pdf?v='
+            + hashlib.sha256(pdf).hexdigest()[:12]
+        )
+
+        desktop_rail = body.split(
+            '<div class="overview-rail-tool r2-context-actions">', 1
+        )[1].split('</div>', 1)[0]
+        mobile_sections = body.split(
+            '<nav aria-label="Résumé sections and tools">', 1
+        )[1].split('</nav>', 1)[0]
+        for surface in (desktop_rail, mobile_sections):
+            with self.subTest(surface=surface[:40]):
+                self.assertIn(f'href="{pdf_url}"', surface)
+                self.assertIn('target="_blank" rel="noopener noreferrer"', surface)
+                self.assertIn('<span>Résumé PDF</span>', surface)
+
+        # The mobile affordance is actual server-rendered markup, so it is
+        # available before scripts load and when JavaScript is disabled.
+        self.assertIn('<a href="#impact" data-resume-nav>', mobile_sections)
+        self.assertIn('<a href="#credentials" data-resume-nav>', mobile_sections)
 
     def test_old_profile_host_redirects_directly_to_canonical_resume(self):
         for path, expected in (
