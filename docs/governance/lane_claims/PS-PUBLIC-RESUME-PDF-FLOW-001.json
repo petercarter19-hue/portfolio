@@ -19,7 +19,8 @@
     "static/files/pete-carter-resume.pdf",
     "templates/resume2.html",
     "tests/test_public_resume_pdf.py",
-    "tests/test_resume2.py"
+    "tests/test_resume2.py",
+    "tests/test_member_overview_public_integration.py"
   ],
   "domains": [
     "content:public-resume-pdf",
