@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "package": "PS-PUBLIC-RESUME-PDF-FLOW-001",
+  "state": "active",
+  "outcome": "Repair the existing public Pete Carter resume PDF without changing its accepted factual wording: generate valid cross-reference structure and wrap every line within printable letter-page margins, then expose the same PDF affordance in the existing mobile Sections menu. Preserve the canonical public resume routes, desktop rail, no-JavaScript reading, quiet-preview response policy, private application, and unrelated shared or homepage surfaces. Verify desktop, mobile, no-JavaScript, download, print, PDF text and rendered-page completeness. Production deployment remains the separate homepage release owner's authority.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a09dbf-a3f2-7f70-baad-eb98729de1ac",
+  "branch": "work/2026-09-16-public-resume-pdf-flow-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "4a4ef0aef4d2d4248846f08bd6f88dbd3720ec99",
+  "owner_outcome_ref": "session:01a0aa3f-a7fd-7b03-b66a-2cd9275a3697/event:evt-ca2e5fd4-90a4-42f6-87b5-ba3caeffe3ed",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-PUBLIC-RESUME-PDF-FLOW-001.json",
+    "docs/governance/lane_claims/evidence/PS-PUBLIC-RESUME-PDF-FLOW-001.md",
+    "docs/governance/lane_claims/receipts/PS-PUBLIC-RESUME-PDF-FLOW-001.json",
+    "scripts/generate_public_resume_pdf.py",
+    "static/files/pete-carter-resume.pdf",
+    "templates/resume2.html",
+    "tests/test_public_resume_pdf.py",
+    "tests/test_resume2.py"
+  ],
+  "domains": [
+    "content:public-resume-pdf",
+    "ui:public-resume-mobile-pdf",
+    "testing:public-resume-pdf-flow"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-PUBLIC-RESUME-PDF-FLOW-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
