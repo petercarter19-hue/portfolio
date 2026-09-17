@@ -43,10 +43,10 @@ body.ask-pete-evidence-enabled .profile-tabs {
 .ask-pete-evidence-enabled .profile-tabs__ask-btn--resume { display: none; }
 
 .ask-pete-evidence-enabled .resume-v2 .r2-page-grid {
-    width: min(97vw, 110rem);
-    grid-template-columns: minmax(10.5rem, 12.25rem) minmax(0, 1fr) clamp(23.75rem, 26vw, 26.25rem);
+    width: min(calc(100% - 1rem), 110rem);
+    grid-template-columns: clamp(8.5rem, 11vw, 10.5rem) minmax(0, 1fr) clamp(19rem, 23vw, 23.75rem);
     align-items: start;
-    gap: clamp(1rem, 1.55vw, 1.75rem);
+    gap: clamp(0.75rem, 1.25vw, 1.5rem);
 }
 .ask-pete-evidence-enabled .resume-v2 .r2-content { grid-column: 2; }
 .ask-pete-evidence-enabled .r2-overview-context-rail {
@@ -90,7 +90,7 @@ body.ask-pete-evidence-enabled .profile-tabs {
 .ask-pete-evidence-enabled .r2-exp-card__impacts strong,
 .ask-pete-evidence-enabled .r2-exp-key-impact strong { color: var(--ape-gold); }
 
-/* One component, three responsive containers. The panel is a column: the
+/* One component, responsive rail and mobile sheet. The panel is a column: the
    scroll region takes what is left after the docked composer, which is how
    the ask box stays on screen under an answer of any height (owner direction,
    Pete, 2026-08-09). */
@@ -636,27 +636,75 @@ button.ask-pete-evidence-claim__face:hover { background: #f3f7f3; }
     }
 }
 
-@media (max-width: 90rem) {
-    .ask-pete-evidence-enabled .resume-v2 .r2-page-grid { width: min(97vw, 79rem); grid-template-columns: 10.5rem minmax(0, 1fr); }
-    .ask-pete-evidence-enabled .ask-pete-evidence-companion {
-        position: fixed;
-        z-index: 80;
-        top: 7.9rem;
-        right: 1rem;
-        width: min(25.5rem, calc(100vw - 2rem));
-        max-height: calc(100dvh - 9rem);
-        grid-column: auto;
-        transform: translateX(calc(100% + 2rem));
-        transition: transform 180ms ease, box-shadow 180ms ease;
+/* At laptop and landscape tablet widths, put the existing context links in a
+   compact top row so the résumé and Ask panel keep readable side-by-side rooms. */
+@media (min-width: 60.01rem) and (max-width: 82rem) {
+    .ask-pete-evidence-enabled .resume-v2 .r2-page-grid {
+        grid-template-columns: minmax(0, 1fr) clamp(19rem, 30vw, 21rem);
+        gap: clamp(0.75rem, 1.4vw, 1.25rem);
     }
-    .ask-pete-evidence-companion.is-open { transform: translateX(0); }
-    .ask-pete-evidence-companion__close { display: inline-flex; }
-    .ask-pete-evidence-enabled .profile-tabs__ask-btn--resume { display: inline-flex; }
+    .ask-pete-evidence-enabled .resume-v2[data-public-overview] .r2-overview-context-rail {
+        position: sticky;
+        top: 6.4rem;
+        display: flex;
+        width: 100%;
+        max-height: none;
+        grid-column: 1 / -1;
+        grid-row: 1;
+        align-items: center;
+        gap: 0.65rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        padding: 0.35rem 0.65rem;
+    }
+    .ask-pete-evidence-enabled .r2-overview-context-rail .overview-context-person,
+    .ask-pete-evidence-enabled .r2-overview-context-rail .overview-rail-label,
+    .ask-pete-evidence-enabled .r2-overview-style-picker > span { display: none; }
+    .ask-pete-evidence-enabled .r2-overview-context-rail nav,
+    .ask-pete-evidence-enabled .r2-overview-context-rail .r2-context-actions {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: center;
+        gap: 0.2rem;
+    }
+    .ask-pete-evidence-enabled .resume-v2[data-public-overview] .r2-overview-style-picker {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: center;
+        gap: 0.25rem;
+        margin: 0;
+        border: 0;
+        padding: 0;
+    }
+    .ask-pete-evidence-enabled .resume-v2[data-public-overview] .r2-context-actions {
+        margin: 0;
+        border: 0;
+        padding: 0;
+    }
+    .ask-pete-evidence-enabled .resume-v2[data-public-overview] .r2-overview-context-rail :is(nav a, .r2-context-actions a, .r2-context-actions button, .r2-overview-style-picker a) {
+        min-height: 2.75rem;
+        flex: 0 0 auto;
+    }
+    .ask-pete-evidence-enabled .resume-v2 .r2-content {
+        grid-column: 1;
+        grid-row: 2;
+    }
+    .ask-pete-evidence-enabled .ask-pete-evidence-companion {
+        top: 10rem;
+        /* This row begins below the compact context links, so reserve their
+           height as well as the header to keep the docked composer in view. */
+        max-height: calc(100dvh - 13rem);
+        grid-column: 2;
+        grid-row: 2;
+    }
 }
 @media (max-width: 60rem) {
     .ask-pete-evidence-enabled .resume-v2 .r2-page-grid { width: 100%; grid-template-columns: minmax(0, 1fr); }
     .ask-pete-evidence-enabled .r2-overview-context-rail { display: none; }
     .ask-pete-evidence-enabled .ask-pete-evidence-companion {
+        position: fixed;
+        z-index: 80;
         top: auto;
         right: 0;
         bottom: 0;
@@ -665,9 +713,11 @@ button.ask-pete-evidence-claim__face:hover { background: #f3f7f3; }
         max-height: min(74dvh, 43rem);
         border-radius: 1.2rem 1.2rem 0 0;
         transform: translateY(calc(100% + 2rem));
+        transition: transform 180ms ease, box-shadow 180ms ease;
         padding-bottom: env(safe-area-inset-bottom);
     }
     .ask-pete-evidence-companion.is-open { transform: translateY(0); }
+    .ask-pete-evidence-companion__close { display: inline-flex; }
     .ask-pete-evidence-companion__scroll { padding: 1rem max(1rem, env(safe-area-inset-right)) 1rem max(1rem, env(safe-area-inset-left)); }
     .ask-pete-evidence-companion__dock { padding: 0.6rem max(1.1rem, env(safe-area-inset-right)) 0.95rem max(1.1rem, env(safe-area-inset-left)); }
 }

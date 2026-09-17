@@ -746,27 +746,79 @@ def close_sheet_if_open(page: Page) -> None:
         companion.wait_for(state="hidden")
 
 
-def check_narrow_and_mobile(page: Page, stub: ApiStub) -> None:
-    page.set_viewport_size({"width": 1435, "height": 1096})
-    wait_for_layout(page, "narrow_sheet")
-    close_sheet_if_open(page)
-    trigger = page.locator(".profile-tabs__ask-btn--resume")
-    trigger.click()
-    page.locator("[data-ask-pete-companion]").wait_for(state="visible")
+def check_responsive_rail_geometry(page: Page) -> None:
     companion = page.locator("[data-ask-pete-companion]")
-    assert companion.get_attribute("data-ask-pete-layout") == "narrow_sheet"
-    assert companion.get_attribute("aria-modal") is None
-    page.screenshot(path=EVIDENCE_DIR / "narrow-side-sheet.png", full_page=False)
-    page.keyboard.press("Escape")
-    companion.wait_for(state="hidden")
-    page.wait_for_function(
-        "selector => document.activeElement === document.querySelector(selector)",
-        arg=".profile-tabs__ask-btn--resume",
-    )
-    assert page.evaluate(
-        "selector => document.activeElement === document.querySelector(selector)",
-        ".profile-tabs__ask-btn--resume",
-    )
+    for width in (961, 1024, 1180, 1194, 1280, 1366, 1435, 1600):
+        page.set_viewport_size({"width": width, "height": 900})
+        wait_for_layout(page, "wide_rail")
+        assert companion.is_visible(), f"Ask rail hidden at {width}px"
+        geometry = page.evaluate("""() => {
+            const content = document.querySelector('.resume-v2 .r2-content').getBoundingClientRect();
+            const rail = document.querySelector('[data-ask-pete-companion]').getBoundingClientRect();
+            return {
+                viewport: document.documentElement.clientWidth,
+                scroll: document.documentElement.scrollWidth,
+                contentRight: content.right,
+                contentWidth: content.width,
+                railLeft: rail.left,
+                railRight: rail.right,
+                railWidth: rail.width,
+            };
+        }""")
+        assert geometry["scroll"] <= geometry["viewport"] + 1, (width, geometry)
+        assert geometry["contentWidth"] >= 500, (width, geometry)
+        assert geometry["railWidth"] >= 300, (width, geometry)
+        assert geometry["contentRight"] + 8 <= geometry["railLeft"], (width, geometry)
+        assert geometry["railRight"] <= geometry["viewport"], (width, geometry)
+        if width == 1024:
+            assert page.locator(".r2-overview-context-rail nav a").first.bounding_box()["height"] >= 44
+            assert page.locator(".r2-overview-style-picker a").first.bounding_box()["height"] >= 44
+
+
+def check_composer_reachability(page: Page) -> None:
+    for width, height in ((1024, 768), (1180, 820), (1366, 768), (512, 384)):
+        page.set_viewport_size({"width": width, "height": height})
+        wait_for_layout(page, "mobile_sheet" if width <= 960 else "wide_rail")
+        if width <= 960:
+            page.locator(".r2-overview-mobile-ask-pete").click()
+        for scroll_top in (0, 400):
+            page.evaluate("top => window.scrollTo(0, top)", scroll_top)
+            geometry = page.evaluate("""() => {
+                const rect = selector => document.querySelector(selector).getBoundingClientRect();
+                const panel = rect('[data-ask-pete-companion]');
+                const context = rect('.r2-overview-context-rail');
+                const composer = rect('[data-ask-pete-form]');
+                const submit = rect('[data-ask-pete-submit]');
+                return {
+                    viewportHeight: window.innerHeight,
+                    panelTop: panel.top,
+                    panelBottom: panel.bottom,
+                    contextBottom: context.bottom,
+                    composerBottom: composer.bottom,
+                    submitTop: submit.top,
+                    submitBottom: submit.bottom,
+                };
+            }""")
+            assert geometry["panelTop"] >= 0, (width, height, scroll_top, geometry)
+            if 960 < width <= 1312:
+                assert geometry["panelTop"] >= geometry["contextBottom"], (
+                    width, height, scroll_top, geometry
+                )
+            assert geometry["panelBottom"] <= height + 1, (width, height, scroll_top, geometry)
+            assert geometry["composerBottom"] <= height + 1, (width, height, scroll_top, geometry)
+            assert geometry["submitTop"] >= 0 and geometry["submitBottom"] <= height + 1, (
+                width, height, scroll_top, geometry
+            )
+        if width <= 960:
+            page.locator("[data-ask-pete-close]").click()
+
+
+def check_narrow_and_mobile(page: Page, stub: ApiStub) -> None:
+    companion = page.locator("[data-ask-pete-companion]")
+    check_responsive_rail_geometry(page)
+    page.set_viewport_size({"width": 1366, "height": 900})
+    wait_for_layout(page, "wide_rail")
+    page.screenshot(path=EVIDENCE_DIR / "laptop-rail.png", full_page=False)
 
     page.set_viewport_size({"width": 390, "height": 844})
     wait_for_layout(page, "mobile_sheet")
@@ -1014,7 +1066,9 @@ def check_recovery_and_request_lifecycle(page: Page, stub: ApiStub) -> None:
         restore_fetch_override(page)
 
 def main() -> None:
-    EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
+    responsive_only = "--responsive-only" in sys.argv[1:]
+    if not responsive_only:
+        EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
     process, base_url = start_server()
     try:
         with sync_playwright() as playwright:
@@ -1024,6 +1078,22 @@ def main() -> None:
             browser = playwright.chromium.launch(**launch_options)
             try:
                 stub = ApiStub()
+                if responsive_only:
+                    page = new_page(browser, base_url, stub, 1024, 900)
+                    try:
+                        check_responsive_rail_geometry(page)
+                        check_composer_reachability(page)
+                        for width in (390, 834, 960):
+                            page.set_viewport_size({"width": width, "height": 844})
+                            wait_for_layout(page, "mobile_sheet")
+                            page.locator(".r2-overview-mobile-ask-pete").click()
+                            page.locator("[data-ask-pete-companion]").wait_for(state="visible")
+                            page.locator("[data-ask-pete-close]").click()
+                            page.locator("[data-ask-pete-companion]").wait_for(state="hidden")
+                    finally:
+                        page.close()
+                    print("Responsive Ask rail and mobile sheet passed.")
+                    return
                 page = check_master_source_contextual(browser, base_url, stub)
                 try:
                     check_narrow_and_mobile(page, stub)
@@ -1040,7 +1110,7 @@ def main() -> None:
         "master-answer.png",
         "source-open.png",
         "contextual-mbse.png",
-        "narrow-side-sheet.png",
+        "laptop-rail.png",
         "mobile-bottom-sheet.png",
         "critical-states.png",
     ):

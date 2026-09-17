@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-RESUME-ASK-RESPONSIVE-001",
+  "candidate_sha": "e99c961ab4c41e65c5c4ee082f0e79ab9c3d96d9",
+  "review_type": "self",
+  "reviewer_ref": "session:01a0af5a-4513-7f53-8254-a6452df179e6",
+  "reviewed_at": "2026-09-17T14:35:40Z",
+  "result": "pass",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-RESUME-ASK-RESPONSIVE-001.md"
+}

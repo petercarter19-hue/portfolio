@@ -228,7 +228,6 @@
 
         function currentLayout() {
             if (window.matchMedia('(max-width: 60rem)').matches) return 'mobile_sheet';
-            if (window.matchMedia('(max-width: 90rem)').matches) return 'narrow_sheet';
             return 'wide_rail';
         }
 
