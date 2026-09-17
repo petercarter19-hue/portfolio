@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-PUBLICATION-COMPONENTS-001",
+  "candidate_sha": "ebfc1dfd6f41cbcfb33d5ab1a6287389eaaee74d",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a0ad36-b4e1-7d21-a167-6557fd2a7069",
+  "review_ref": "session:01a0ad36-b4e1-7d21-a167-6557fd2a7069/review:ebfc1dfd6f41cbcfb33d5ab1a6287389eaaee74d",
+  "result": "pass",
+  "reviewed_at": "2026-09-17T03:57:54Z",
+  "findings": [
+    {
+      "priority": "P2",
+      "status": "resolved",
+      "summary": "Media review now reuses bounded alt/caption validators, derives provenance from authoritative media evidence, rejects changed normalization, and enforces generated catalog claim safeguards."
+    },
+    {
+      "priority": "P2",
+      "status": "resolved",
+      "summary": "Both dependency placement versions and reviewed presentation versions require positive producer-supported integers."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MVP1-PUBLICATION-COMPONENTS-001.md"
+}

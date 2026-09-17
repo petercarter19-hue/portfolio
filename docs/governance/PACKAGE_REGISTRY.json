@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-15",
+  "updated_at": "2026-09-16",
   "classification_checkpoint": "c0450dbd675554e7363c8fc262a6d4f8bf2c6921",
   "current_checkpoint_at_creation": "fdb71c604f81d305b971775bd28aeac964231ebe",
   "authority_note": "This is a complete rationalization index, not delivery authority. CURRENT_LANES.json and CURRENT_BASELINE.yaml remain authoritative for current lifecycle and release state.",
@@ -64,6 +64,7 @@
       "PS-LEGACY-PROJECTS-RUNTIME-RETIREMENT-001",
       "PS-MOMENT-001",
       "PS-MVP1-MY-DATA-INTAKE-AI-001",
+      "PS-MVP1-PUBLICATION-COMPONENTS-001",
       "PS-OPPORTUNITY-SLATE-001",
       "PS-OPPORTUNITY-SLATE-002",
       "PS-OWNER-HOME-RETIREMENT-001",
@@ -174,11 +175,11 @@
     ]
   },
   "counts": {
-    "current_protect": 82,
+    "current_protect": 83,
     "future_finish": 33,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 150
+    "total": 151
   }
 }
