@@ -114,7 +114,7 @@ stages:
           vmImage: $(vmImageName)
         steps:
           - checkout: self
-            fetchDepth: 1
+            fetchDepth: 0
             persistCredentials: false
             clean: true
 
@@ -123,25 +123,77 @@ stages:
               versionSpec: '$(pythonVersion)'
             displayName: Use Python $(pythonVersion)
 
+          # The target branch supplies the executable classifier. The first
+          # rollout has no target classifier and is forcibly full validation.
+          - script: |
+              set -euo pipefail
+              target=''
+              if [ "$BUILD_REASON" = PullRequest ]; then
+                if ! target="$(git rev-parse "${BUILD_SOURCEVERSION}^1" 2>/dev/null)"; then
+                  target=''
+                fi
+              fi
+              if [ -n "$target" ] && git cat-file -e "$target:scripts/classify_delivery_change.py" 2>/dev/null; then
+                git show "$target:scripts/classify_delivery_change.py" > "$(Agent.TempDirectory)/trusted-delivery-classifier.py"
+                python -I -B "$(Agent.TempDirectory)/trusted-delivery-classifier.py" classify \
+                  --job InterviewStudioBrowserCI --output "$(Pipeline.Workspace)/browser-disposition.json"
+              else
+                echo '##vso[task.setvariable variable=deliveryControlOnly;isOutput=true;isReadOnly=true]false'
+                python -I -B scripts/classify_delivery_change.py classify --force-full --no-vso \
+                  --job InterviewStudioBrowserCI --output "$(Pipeline.Workspace)/browser-disposition.json"
+              fi
+            name: ProveBrowserDisposition
+            displayName: Prove target-trusted browser validation disposition
+            env:
+              BUILD_REASON: $(Build.Reason)
+              BUILD_SOURCEBRANCH: $(Build.SourceBranch)
+              BUILD_SOURCEVERSION: $(Build.SourceVersion)
+              BUILD_SOURCESDIRECTORY: $(Build.SourcesDirectory)
+              SYSTEM_PULLREQUEST_SOURCECOMMITID: $(System.PullRequest.SourceCommitId)
+              SYSTEM_PULLREQUEST_TARGETBRANCH: $(System.PullRequest.TargetBranch)
+              SYSTEM_PULLREQUEST_ISFORK: $(System.PullRequest.IsFork)
+              SYSTEM_PULLREQUEST_PULLREQUESTID: $(System.PullRequest.PullRequestId)
+              SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI: $(System.PullRequest.SourceRepositoryUri)
+              BUILD_REPOSITORY_URI: $(Build.Repository.Uri)
+              BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+              SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+              SYSTEM_TEAMPROJECTID: $(System.TeamProjectId)
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+          - script: >-
+              python -B -m unittest
+              tests.test_delivery_change_classification
+              tests.test_delivery_preflight.ClaimValidationTests
+              tests.test_delivery_preflight.EvaluationTests
+              tests.test_worktree_lifecycle.SafeCustodyRegistryTests
+              tests.test_package_registry
+              tests.test_governance_pointers -q
+            displayName: Run required control transition and claim invariant tests in browser job
+            condition: and(succeeded(), eq(variables['ProveBrowserDisposition.deliveryControlOnly'], 'true'))
+
           - script: |
               python -m pip install --upgrade pip
               pip install -r requirements.txt -r requirements-browser-ci.txt
               python -m pip check
             displayName: Install pinned browser CI dependencies
+            condition: and(succeeded(), ne(variables['ProveBrowserDisposition.deliveryControlOnly'], 'true'))
 
           - script: python -m playwright install --with-deps chromium --no-shell
             displayName: Install pinned Playwright Chromium
+            condition: and(succeeded(), ne(variables['ProveBrowserDisposition.deliveryControlOnly'], 'true'))
             env:
               PLAYWRIGHT_BROWSERS_PATH: $(Pipeline.Workspace)/ms-playwright
 
           - script: python scripts/run_interview_browser_ci.py
             displayName: Run required Interview Studio browser suite
+            condition: and(succeeded(), ne(variables['ProveBrowserDisposition.deliveryControlOnly'], 'true'))
             env:
               ANTHROPIC_API_KEY: test-key-for-ci-only
               PLAYWRIGHT_BROWSERS_PATH: $(Pipeline.Workspace)/ms-playwright
 
           - script: python scripts/run_interview_review_http_browser.py
             displayName: Run required Interview Review HTTP browser suite
+            condition: and(succeeded(), ne(variables['ProveBrowserDisposition.deliveryControlOnly'], 'true'))
             env:
               ANTHROPIC_API_KEY: test-key-for-ci-only
               PLAYWRIGHT_BROWSERS_PATH: $(Pipeline.Workspace)/ms-playwright
@@ -152,9 +204,14 @@ stages:
           # requirements-browser-ci.txt and Playwright Chromium.
           - script: python scripts/run_resume_media_browser_tests.py
             displayName: Run required Resume media browser suite
+            condition: and(succeeded(), ne(variables['ProveBrowserDisposition.deliveryControlOnly'], 'true'))
             env:
               ANTHROPIC_API_KEY: test-key-for-ci-only
               PLAYWRIGHT_BROWSERS_PATH: $(Pipeline.Workspace)/ms-playwright
+
+          - publish: '$(Pipeline.Workspace)/browser-disposition.json'
+            artifact: BrowserDeliveryDisposition
+            displayName: Publish executed browser-job disposition
 
       - job: BuildJob
         pool:
@@ -169,6 +226,41 @@ stages:
             inputs:
               versionSpec: '$(pythonVersion)'
             displayName: Use Python $(pythonVersion)
+
+          - script: |
+              set -euo pipefail
+              target=''
+              if [ "$BUILD_REASON" = PullRequest ]; then
+                if ! target="$(git rev-parse "${BUILD_SOURCEVERSION}^1" 2>/dev/null)"; then
+                  target=''
+                fi
+              fi
+              if [ -n "$target" ] && git cat-file -e "$target:scripts/classify_delivery_change.py" 2>/dev/null; then
+                git show "$target:scripts/classify_delivery_change.py" > "$(Agent.TempDirectory)/trusted-delivery-classifier.py"
+                python -I -B "$(Agent.TempDirectory)/trusted-delivery-classifier.py" classify \
+                  --job BuildJob --output "$(Pipeline.Workspace)/build-disposition.json"
+              else
+                echo '##vso[task.setvariable variable=deliveryControlOnly;isOutput=true;isReadOnly=true]false'
+                python -I -B scripts/classify_delivery_change.py classify --force-full --no-vso \
+                  --job BuildJob --output "$(Pipeline.Workspace)/build-disposition.json"
+              fi
+            name: ProveBuildDisposition
+            displayName: Prove target-trusted build validation disposition
+            env:
+              BUILD_REASON: $(Build.Reason)
+              BUILD_SOURCEBRANCH: $(Build.SourceBranch)
+              BUILD_SOURCEVERSION: $(Build.SourceVersion)
+              BUILD_SOURCESDIRECTORY: $(Build.SourcesDirectory)
+              SYSTEM_PULLREQUEST_SOURCECOMMITID: $(System.PullRequest.SourceCommitId)
+              SYSTEM_PULLREQUEST_TARGETBRANCH: $(System.PullRequest.TargetBranch)
+              SYSTEM_PULLREQUEST_ISFORK: $(System.PullRequest.IsFork)
+              SYSTEM_PULLREQUEST_PULLREQUESTID: $(System.PullRequest.PullRequestId)
+              SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI: $(System.PullRequest.SourceRepositoryUri)
+              BUILD_REPOSITORY_URI: $(Build.Repository.Uri)
+              BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+              SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+              SYSTEM_TEAMPROJECTID: $(System.TeamProjectId)
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
           - script: |
               python -m pip install --upgrade pip
@@ -219,8 +311,20 @@ stages:
 
           - script: python -m unittest discover -s tests -q
             displayName: Run application and security tests
+            condition: and(succeeded(), ne(variables['ProveBuildDisposition.deliveryControlOnly'], 'true'))
             env:
               ANTHROPIC_API_KEY: test-key-for-ci-only
+
+          - script: >-
+              python -B -m unittest
+              tests.test_delivery_change_classification
+              tests.test_delivery_preflight.ClaimValidationTests
+              tests.test_delivery_preflight.EvaluationTests
+              tests.test_worktree_lifecycle.SafeCustodyRegistryTests
+              tests.test_package_registry
+              tests.test_governance_pointers -q
+            displayName: Run required control transition and claim invariant tests in build job
+            condition: and(succeeded(), eq(variables['ProveBuildDisposition.deliveryControlOnly'], 'true'))
 
           - script: python scripts/govern_sql_migrations.py check
             displayName: Validate migration registry before any approval
@@ -310,6 +414,69 @@ stages:
           - upload: '$(Build.ArtifactStagingDirectory)/evidence'
             artifact: CandidateEvidence
             displayName: Upload redacted scanner evidence
+
+          - publish: '$(Pipeline.Workspace)/build-disposition.json'
+            artifact: BuildDeliveryDisposition
+            displayName: Publish executed build-job disposition
+
+      # The two existing required jobs remain independent and execute in
+      # parallel. This small final job fails when either executed job lacks a
+      # matching source/target/classifier-bound disposition.
+      - job: ValidateDeliveryDispositions
+        displayName: Validate both required delivery dispositions
+        dependsOn:
+          - BuildJob
+          - InterviewStudioBrowserCI
+        condition: always()
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - checkout: self
+            fetchDepth: 0
+            persistCredentials: false
+            clean: true
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(pythonVersion)'
+            displayName: Use Python $(pythonVersion)
+          - download: current
+            artifact: BuildDeliveryDisposition
+          - download: current
+            artifact: BrowserDeliveryDisposition
+          - script: |
+              set -euo pipefail
+              target=''
+              if [ "$BUILD_REASON" = PullRequest ]; then
+                if ! target="$(git rev-parse "${BUILD_SOURCEVERSION}^1" 2>/dev/null)"; then
+                  target=''
+                fi
+              fi
+              if [ -n "$target" ] && git cat-file -e "$target:scripts/classify_delivery_change.py" 2>/dev/null; then
+                git show "$target:scripts/classify_delivery_change.py" > "$(Agent.TempDirectory)/trusted-delivery-classifier.py"
+                python -I -B "$(Agent.TempDirectory)/trusted-delivery-classifier.py" verify \
+                  --build "$(Pipeline.Workspace)/BuildDeliveryDisposition/build-disposition.json" \
+                  --browser "$(Pipeline.Workspace)/BrowserDeliveryDisposition/browser-disposition.json"
+              else
+                python -I -B scripts/classify_delivery_change.py verify --bootstrap-full \
+                  --build "$(Pipeline.Workspace)/BuildDeliveryDisposition/build-disposition.json" \
+                  --browser "$(Pipeline.Workspace)/BrowserDeliveryDisposition/browser-disposition.json"
+              fi
+            displayName: Refuse missing or mixed required-job results
+            env:
+              BUILD_REASON: $(Build.Reason)
+              BUILD_SOURCEBRANCH: $(Build.SourceBranch)
+              BUILD_SOURCEVERSION: $(Build.SourceVersion)
+              BUILD_SOURCESDIRECTORY: $(Build.SourcesDirectory)
+              SYSTEM_PULLREQUEST_SOURCECOMMITID: $(System.PullRequest.SourceCommitId)
+              SYSTEM_PULLREQUEST_TARGETBRANCH: $(System.PullRequest.TargetBranch)
+              SYSTEM_PULLREQUEST_ISFORK: $(System.PullRequest.IsFork)
+              SYSTEM_PULLREQUEST_PULLREQUESTID: $(System.PullRequest.PullRequestId)
+              SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI: $(System.PullRequest.SourceRepositoryUri)
+              BUILD_REPOSITORY_URI: $(Build.Repository.Uri)
+              BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+              SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+              SYSTEM_TEAMPROJECTID: $(System.TeamProjectId)
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
   # Azure evaluates the checks of every environment a stage references before
   # that stage starts, and it does so from the stage's static text -- a job

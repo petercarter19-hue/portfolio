@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-CI-TRUSTED-TARGET-CONTROL-ONLY-001",
+  "candidate_sha": "85e99967e1dd990286af67eed4b6bd45df3e40fa",
+  "review_type": "independent",
+  "reviewer_ref": "role:pete-operated-grok-independent-reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-09-17T02:11:08Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-CI-TRUSTED-TARGET-CONTROL-ONLY-001.md"
+}

@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PIPELINE_FILE = ROOT / "azure-pipelines.yml"
 BROWSER_JOB = "InterviewStudioBrowserCI"
 RUNNER_COMMAND = "python scripts/run_interview_browser_ci.py"
+FULL_PRODUCT_CONDITION = "and(succeeded(), ne(variables['ProveBrowserDisposition.deliveryControlOnly'], 'true'))"
 
 
 def _meaningful_yaml_lines(path: Path) -> list[tuple[int, str]]:
@@ -134,7 +135,7 @@ class InterviewBrowserCiRunnerTests(unittest.TestCase):
         )
 
         runner_step = next(step for step in steps if step.get("script", "").strip() == RUNNER_COMMAND)
-        self.assertNotIn("condition", runner_step)
+        self.assertEqual(FULL_PRODUCT_CONDITION, runner_step.get("condition"))
         self.assertIn(
             runner_step.get("continueOnError", "false").lower(),
             {"false", "no", "off"},
@@ -150,6 +151,18 @@ class InterviewBrowserCiRunnerTests(unittest.TestCase):
                 {"false", "no", "off"},
                 f"browser CI step can ignore failure: {step}",
             )
+        for command in (
+            "python scripts/run_interview_browser_ci.py",
+            "python scripts/run_interview_review_http_browser.py",
+            "python scripts/run_resume_media_browser_tests.py",
+        ):
+            required = next(step for step in steps if step.get("script", "").strip() == command)
+            self.assertEqual(FULL_PRODUCT_CONDITION, required.get("condition"))
+        self.assertTrue(any(
+            "tests.test_delivery_change_classification" in step.get("script", "")
+            and step.get("condition") == "and(succeeded(), eq(variables['ProveBrowserDisposition.deliveryControlOnly'], 'true'))"
+            for step in steps
+        ))
 
     def test_actual_suite_import_matches_contract_without_execution_or_live_access(self):
         probe = textwrap.dedent(

@@ -7,16 +7,20 @@ from pathlib import Path
 
 from tests.test_interview_browser_ci_runner import (
     BROWSER_JOB,
+    FULL_PRODUCT_CONDITION,
     PIPELINE_FILE,
     RUNNER_COMMAND as ELEVEN_TEST_RUNNER,
     _browser_job_contract,
     _exact_yaml_block,
+    _mapping,
     _meaningful_yaml_lines,
 )
 
 
 REVIEW_HTTP_RUNNER = "python scripts/run_interview_review_http_browser.py"
 BACKEND_DISCOVERY = "python -m unittest discover -s tests -q"
+BUILD_FULL_CONDITION = "and(succeeded(), ne(variables['ProveBuildDisposition.deliveryControlOnly'], 'true'))"
+BUILD_CONTROL_CONDITION = "and(succeeded(), eq(variables['ProveBuildDisposition.deliveryControlOnly'], 'true'))"
 
 
 def _job_contents(job_marker: str) -> list[str]:
@@ -24,6 +28,21 @@ def _job_contents(job_marker: str) -> list[str]:
     build_stage = _exact_yaml_block(pipeline, 2, "- stage: Build")
     job = _exact_yaml_block(build_stage, 6, job_marker)
     return [content for _indent, content in job]
+
+
+def _build_steps() -> list[dict[str, str]]:
+    pipeline = _meaningful_yaml_lines(PIPELINE_FILE)
+    build_stage = _exact_yaml_block(pipeline, 2, "- stage: Build")
+    job = _exact_yaml_block(build_stage, 6, "- job: BuildJob")
+    block = _exact_yaml_block(job, 8, "steps:")
+    starts = [index for index, (indent, content) in enumerate(block)
+              if indent == 10 and content.startswith("- ")]
+    steps = []
+    for position, start in enumerate(starts):
+        end = starts[position + 1] if position + 1 < len(starts) else len(block)
+        indent, content = block[start]
+        steps.append(_mapping([(indent + 2, content[2:]), *block[start + 1:end]], 12))
+    return steps
 
 
 class InterviewReviewHttpBrowserCiTests(unittest.TestCase):
@@ -57,7 +76,7 @@ class InterviewReviewHttpBrowserCiTests(unittest.TestCase):
         runner_step = next(
             step for step in steps if step.get("script", "").strip() == REVIEW_HTTP_RUNNER
         )
-        self.assertNotIn("condition", runner_step)
+        self.assertEqual(FULL_PRODUCT_CONDITION, runner_step.get("condition"))
         self.assertIn(
             runner_step.get("continueOnError", "false").lower(),
             {"false", "no", "off"},
@@ -85,6 +104,14 @@ class InterviewReviewHttpBrowserCiTests(unittest.TestCase):
             any(REVIEW_HTTP_RUNNER in content for content in contents),
             "the Review HTTP runner belongs in InterviewStudioBrowserCI, not BuildJob",
         )
+        steps = _build_steps()
+        discovery = [step for step in steps if step.get("script") == BACKEND_DISCOVERY]
+        self.assertEqual(1, len(discovery))
+        self.assertEqual(BUILD_FULL_CONDITION, discovery[0].get("condition"))
+        focused = [step for step in steps if "tests.test_delivery_change_classification"
+                   in step.get("script", "")]
+        self.assertEqual(1, len(focused))
+        self.assertEqual(BUILD_CONTROL_CONDITION, focused[0].get("condition"))
 
 
 if __name__ == "__main__":
