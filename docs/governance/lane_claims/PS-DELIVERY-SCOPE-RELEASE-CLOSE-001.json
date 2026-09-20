@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-DELIVERY-SCOPE-RELEASE-CLOSE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Repair the delivery close validator so an accepted package with a governed partial scope release can close after its reviewed product merge. Preserve the immutable scope-release attestation, original candidate and merge identity, exact review receipt, Git mode/blob provenance, retained-surface checks, and ordinary close transition. This is a bounded prerequisite for the original CI writer to close PS-CI-TRUSTED-TARGET-CONTROL-ONLY-001; it does not transfer that package or change production, schema, identity, provider, CI policy, or custody authority.",
   "assignment": "implementation",
   "writer_ref": "session:01a0bc90-6ec9-72f0-8be8-cb0bd56355fe",
@@ -27,6 +27,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "93bb33aeaef2a70e57f71f89871aee5ecab18bda",
+  "closed_at": "2026-09-20T04:35:39Z"
 }
