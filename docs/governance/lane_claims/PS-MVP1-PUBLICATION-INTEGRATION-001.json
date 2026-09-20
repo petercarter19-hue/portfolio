@@ -4,7 +4,7 @@
   "state": "active",
   "outcome": "Complete remaining E Resume publication integration under accepted ChatGPT architecture: strict authoritative policy/draft mapping; neutral saved review evidence for explicit first AI grants; one atomic publication, canonical correction and restriction consistency boundary; durable media/catalog fences; all enabled outward readers; reviewed proposed SQL, complete dependency real-driver race/rollback proof, and focused browser/CI validation. Grok implements, tests, self-reviews and corrects; a separate fresh Grok independently reviews the exact candidate, followed by mandatory final independent ChatGPT/Astra High PASS before merge. Exclude all responsive-repair claimed surfaces and azure-pipelines.yml until separate lawful admission; required E browser CI wiring remains a completion dependency. No F/provider implementation, feature enablement, production schema/permissions, identity or deployment; exact protected SQL resource execution requires separate reviewed authorization.",
   "assignment": "implementation",
-  "writer_ref": "session:01a0bc79-6dd9-7541-b022-2be4104d98b8",
+  "writer_ref": "session:01a0c0a4-0c58-7b22-8f10-eb7d05bd2775",
   "branch": "work/2026-09-19-mvp1-publication-integration-sol-repair-001",
   "delivery_path": "Protected",
   "repository_authority": "through_merge",
@@ -104,13 +104,10 @@
   ],
   "review_requirement": "independent",
   "handoff": {
-    "type": "owner_reassignment",
-    "from_ref": "session:41d85d22-4a94-47d8-b1bf-865a591d89c7",
-    "to_ref": "session:01a0bc79-6dd9-7541-b022-2be4104d98b8",
-    "from_branch": "work/2026-09-17-mvp1-publication-integration-001",
-    "to_branch": "work/2026-09-19-mvp1-publication-integration-sol-repair-001",
-    "checkpoint_sha": "029b464149a163f60f25d019bc03c341aa499f73",
-    "owner_authorization_ref": "session:01a08dfb-7229-75f0-8017-07dd590f1795/owner-direction:evt-4f8c76fd-62bd-4457-af9a-f8d3a5b5186b"
+    "from_ref": "session:01a0bc79-6dd9-7541-b022-2be4104d98b8",
+    "to_ref": "session:01a0c0a4-0c58-7b22-8f10-eb7d05bd2775",
+    "checkpoint_sha": "4c87a7e930c8619ccee238b1b6b9c1524a9d11e9",
+    "relinquished": true
   },
   "checkpoint_sha": null,
   "merged_sha": null,
