@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKTREE-OWNER-REASSIGNMENT-SCHEMA2-001",
+  "state": "active",
+  "outcome": "Repair only the lifecycle owner-reassignment admission mismatch that rejects the accepted machine-local schema-2 registry during Pete's authorized Grok-to-Sol replacement for PS-MVP1-PUBLICATION-INTEGRATION-001. Admit the already-supported schema 1 and schema 2 types while preserving strict registry integrity, accepted-main safe-custody tool and index capability checks, package-block fences, and every existing owner-reassignment proof. Add focused normal, recovery, and refusal regressions. Preserve Package E's source writer, branch, checkout, pending receiver, product scope, and separate review and production gates; do not perform Package E's transition in this package.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0bc79-6dd9-7541-b022-2be4104d98b8",
+  "branch": "work/2026-09-19-worktree-owner-reassignment-schema2-sol-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "2c671bacdf5e6f4784f25ef06bdcc6e05c234654",
+  "owner_outcome_ref": "session:01a08dfb-7229-75f0-8017-07dd590f1795/owner-direction:evt-4f8c76fd-62bd-4457-af9a-f8d3a5b5186b",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-WORKTREE-OWNER-REASSIGNMENT-SCHEMA2-001.json",
+    "docs/governance/lane_claims/evidence/PS-WORKTREE-OWNER-REASSIGNMENT-SCHEMA2-001.md",
+    "docs/governance/lane_claims/receipts/PS-WORKTREE-OWNER-REASSIGNMENT-SCHEMA2-001.json",
+    "scripts/worktree_lifecycle.py",
+    "tests/test_worktree_lifecycle.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-WORKTREE-OWNER-REASSIGNMENT-SCHEMA2-001.md"
+  ],
+  "domains": [
+    "governance:worktree-owner-reassignment-schema2-compatibility",
+    "testing:worktree-owner-reassignment-schema2-compatibility"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
