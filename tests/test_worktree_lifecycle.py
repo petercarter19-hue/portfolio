@@ -7315,6 +7315,155 @@ class SafeCustodyRegistryTests(unittest.TestCase):
         LIFECYCLE._seal_safe_custody_after_sha256(registry)
         return registry
 
+    def owner_reassignment_schema_two_fixture(self, label):
+        fixture, context, _registry, _claim, _preflight = self.claim_path_fixture()
+        fixture.main_sha = git(fixture.repo, "rev-parse", "HEAD")
+        git(
+            fixture.repo, "push", "origin",
+            f"{fixture.main_sha}:refs/heads/{fixture.branch}",
+        )
+        fixture.initialize()
+        code, source = fixture.run(
+            "ensure", "--package", fixture.package,
+            "--task-ref", fixture.writer, "--execute",
+        )
+        self.assertEqual(code, 0, source)
+        receiver = "agent:schema-two-receiver"
+        code, control = fixture.run(
+            "control", "--package", fixture.package,
+            "--task-ref", receiver,
+            "--branch", f"work/2026-09-19-delivery-owner-reassignment-{label}",
+            "--base", "origin/main", "--execute",
+        )
+        self.assertEqual(code, 0, control)
+        registry = json.loads(fixture.registry_path.read_text(encoding="utf-8"))
+        registry["schema_version"] = LIFECYCLE.SAFE_CUSTODY_SCHEMA_VERSION
+        registry["safe_custody"] = self.registry()["safe_custody"]
+        self.seal(registry)
+        fixture.registry_path.write_text(json.dumps(registry) + "\n", encoding="utf-8")
+        successor = f"work/2026-09-19-schema-two-{label}"
+        return fixture, context, Path(source["path"]), Path(control["path"]), receiver, successor
+
+    def prepare_schema_two_successor(
+        self, fixture, control_path, receiver, successor, checkpoint, *,
+        source_unavailable_ref=None,
+    ):
+        arguments = [
+            "prepare-owner-reassignment", "--package", fixture.package,
+            "--task-ref", receiver, "--successor-branch", successor,
+            "--expected-checkpoint", checkpoint,
+            "--owner-authorization-ref", "session:owner/schema-two-replacement",
+        ]
+        if source_unavailable_ref:
+            arguments.extend(("--source-unavailable-ref", source_unavailable_ref))
+        return fixture.run(*arguments, "--execute", cwd=control_path)
+
+    def test_schema_two_owner_reassignment_prepares_successor(self):
+        fixture, _context, source_path, control_path, receiver, successor = (
+            self.owner_reassignment_schema_two_fixture("normal")
+        )
+        code, prepared = self.prepare_schema_two_successor(
+            fixture, control_path, receiver, successor, fixture.main_sha,
+        )
+        self.assertEqual(code, 0, prepared)
+        self.assertEqual("successor_prepared", prepared["status"])
+        self.assertFalse(prepared["source_registry_head_reconciled"])
+        self.assertEqual(fixture.main_sha, git(source_path, "rev-parse", "HEAD"))
+        self.assertEqual(
+            fixture.main_sha,
+            git(fixture.repo, "ls-remote", "origin", f"refs/heads/{successor}").split()[0],
+        )
+        registry = LIFECYCLE._load_registry(fixture.registry_path)
+        self.assertIsNone(registry["pending"])
+        self.assertEqual("completed", registry["owner_reassignment_preparations"][0]["status"])
+
+    def test_schema_two_owner_reassignment_reconciles_stale_source_head(self):
+        fixture, _context, source_path, control_path, receiver, successor = (
+            self.owner_reassignment_schema_two_fixture("stale-head")
+        )
+        (source_path / "sample.txt").write_text("source advanced\n", encoding="utf-8")
+        git(source_path, "add", "sample.txt")
+        git(source_path, "commit", "-m", "advance source")
+        checkpoint = git(source_path, "rev-parse", "HEAD")
+        git(source_path, "push", "origin", fixture.branch)
+        code, prepared = self.prepare_schema_two_successor(
+            fixture, control_path, receiver, successor, checkpoint,
+            source_unavailable_ref="session:orchestrator/source-unavailable-schema-two",
+        )
+        self.assertEqual(code, 0, prepared)
+        self.assertTrue(prepared["source_registry_head_reconciled"])
+        registry = LIFECYCLE._load_registry(fixture.registry_path)
+        source_record = next(
+            record for record in registry["worktrees"]
+            if record.get("kind") == "durable" and record.get("package") == fixture.package
+        )
+        self.assertEqual(checkpoint, source_record["head"])
+        self.assertEqual(fixture.main_sha, source_record["previous_head"])
+        self.assertEqual(
+            "session:orchestrator/source-unavailable-schema-two",
+            source_record["owner_reassignment_head_reconciliation"]["source_unavailable_ref"],
+        )
+
+    def test_schema_two_owner_reassignment_recovers_interrupted_preparation(self):
+        fixture, context, _source_path, control_path, receiver, successor = (
+            self.owner_reassignment_schema_two_fixture("interrupted")
+        )
+        arguments = SimpleNamespace(
+            execute=True,
+            package=fixture.package,
+            task_ref=receiver,
+            successor_branch=successor,
+            expected_checkpoint=fixture.main_sha,
+            owner_authorization_ref="session:owner/schema-two-replacement",
+            source_unavailable_ref=None,
+        )
+        original_git_result = LIFECYCLE._git_result
+
+        def crash_before_push(root: Path, *git_arguments: str):
+            if git_arguments[:2] == ("push", "--porcelain"):
+                raise RuntimeError("simulated process death before successor push")
+            return original_git_result(root, *git_arguments)
+
+        with patch.object(LIFECYCLE.Path, "cwd", return_value=control_path), patch.object(
+            LIFECYCLE, "_git_result", side_effect=crash_before_push
+        ):
+            with self.assertRaisesRegex(RuntimeError, "simulated process death"):
+                LIFECYCLE.command_prepare_owner_reassignment(context, arguments)
+        pending = LIFECYCLE._load_registry(fixture.registry_path)
+        self.assertIsNotNone(pending["pending"])
+        code, recovered = self.prepare_schema_two_successor(
+            fixture, control_path, receiver, successor, fixture.main_sha,
+        )
+        self.assertEqual(LIFECYCLE.REFUSAL_EXIT, code, recovered)
+        self.assertIn("prior pending operation was reconciled", recovered["error"])
+        self.assertIsNone(LIFECYCLE._load_registry(fixture.registry_path)["pending"])
+        self.assertEqual(
+            "", git(fixture.repo, "ls-remote", "origin", f"refs/heads/{successor}"),
+        )
+        code, prepared = self.prepare_schema_two_successor(
+            fixture, control_path, receiver, successor, fixture.main_sha,
+        )
+        self.assertEqual(code, 0, prepared)
+        self.assertEqual("successor_prepared", prepared["status"])
+
+    def test_schema_two_owner_reassignment_refuses_unsealed_registry(self):
+        fixture, _context, _source_path, control_path, receiver, successor = (
+            self.owner_reassignment_schema_two_fixture("invalid-seal")
+        )
+        registry = json.loads(fixture.registry_path.read_text(encoding="utf-8"))
+        registry["safe_custody"]["migration"]["after_sha256"] = "0" * 64
+        fixture.registry_path.write_text(json.dumps(registry) + "\n", encoding="utf-8")
+        before = fixture.registry_path.read_bytes()
+        code, refused = self.prepare_schema_two_successor(
+            fixture, control_path, receiver, successor, fixture.main_sha,
+        )
+        self.assertEqual(LIFECYCLE.REFUSAL_EXIT, code, refused)
+        self.assertIn("after_sha256 does not match", refused["error"])
+        self.assertEqual(before, fixture.registry_path.read_bytes())
+        self.assertEqual(
+            "", git(fixture.repo, "ls-remote", "origin", f"refs/heads/{successor}"),
+        )
+
     def reconciliation(self, *, phase="prepared"):
         order = ["prepared", "merging", "resolved", "committed", "pushed"]
         phases = order[: order.index(phase) + 1] if phase in order else [*order, phase]

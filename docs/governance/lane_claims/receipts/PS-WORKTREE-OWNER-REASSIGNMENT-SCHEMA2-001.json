@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKTREE-OWNER-REASSIGNMENT-SCHEMA2-001",
+  "candidate_sha": "e12f8db92488bed8bd1d7d0afde8d7769dcdb37a",
+  "review_type": "independent",
+  "reviewer_ref": "agent:mvp1-e-final-astra-review",
+  "result": "pass",
+  "reviewed_at": "2026-09-20T02:43:24Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-WORKTREE-OWNER-REASSIGNMENT-SCHEMA2-001.md"
+}

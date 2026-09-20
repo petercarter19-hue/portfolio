@@ -5687,10 +5687,14 @@ def _owner_reassignment_control_admission(
         raise Refusal(
             "owner reassignment requires a complete initialized lifecycle registry"
         )
-    if type(registry.get("schema_version")) is not int or registry.get(
-        "schema_version"
-    ) != SCHEMA_VERSION:
-        raise Refusal("owner reassignment requires exact registry schema 1")
+    schema_version = registry.get("schema_version")
+    if type(schema_version) is not int or schema_version not in SUPPORTED_SCHEMA_VERSIONS:
+        raise Refusal("owner reassignment requires a supported registry schema")
+    if schema_version == SAFE_CUSTODY_SCHEMA_VERSION:
+        _require_safe_custody_capability(context, registry)
+        require_package_mutation_unblocked(
+            registry, package, operation="owner-reassignment preparation"
+        )
     _validate_utc_timestamp(registry.get("initialized_at"), field="initialized_at")
     initialized_by = registry.get("initialized_by")
     if not isinstance(initialized_by, str):
