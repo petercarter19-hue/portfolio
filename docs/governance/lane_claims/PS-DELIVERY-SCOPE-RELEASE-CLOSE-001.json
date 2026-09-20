@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-SCOPE-RELEASE-CLOSE-001",
+  "state": "active",
+  "outcome": "Repair the delivery close validator so an accepted package with a governed partial scope release can close after its reviewed product merge. Preserve the immutable scope-release attestation, original candidate and merge identity, exact review receipt, Git mode/blob provenance, retained-surface checks, and ordinary close transition. This is a bounded prerequisite for the original CI writer to close PS-CI-TRUSTED-TARGET-CONTROL-ONLY-001; it does not transfer that package or change production, schema, identity, provider, CI policy, or custody authority.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0bc90-6ec9-72f0-8be8-cb0bd56355fe",
+  "branch": "work/2026-09-19-delivery-scope-release-close-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "028e966431d9520b2a39cd007dbd96910554e532",
+  "owner_outcome_ref": "session:01a0aa3f-a7fd-7b03-b66a-2cd9275a3697/event:evt-67b7708d-302b-42fd-ae54-6cca34a22940",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-DELIVERY-SCOPE-RELEASE-CLOSE-001.json",
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-SCOPE-RELEASE-CLOSE-001.md",
+    "docs/governance/lane_claims/receipts/PS-DELIVERY-SCOPE-RELEASE-CLOSE-001.json",
+    "scripts/delivery_preflight.py",
+    "tests/test_delivery_preflight.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-SCOPE-RELEASE-CLOSE-001.md"
+  ],
+  "domains": [
+    "governance:delivery-control:scope-release-close"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
