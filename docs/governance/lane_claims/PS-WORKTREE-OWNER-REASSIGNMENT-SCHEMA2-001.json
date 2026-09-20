@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-WORKTREE-OWNER-REASSIGNMENT-SCHEMA2-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Repair only the lifecycle owner-reassignment admission mismatch that rejects the accepted machine-local schema-2 registry during Pete's authorized Grok-to-Sol replacement for PS-MVP1-PUBLICATION-INTEGRATION-001. Admit the already-supported schema 1 and schema 2 types while preserving strict registry integrity, accepted-main safe-custody tool and index capability checks, package-block fences, and every existing owner-reassignment proof. Add focused normal, recovery, and refusal regressions. Preserve Package E's source writer, branch, checkout, pending receiver, product scope, and separate review and production gates; do not perform Package E's transition in this package.",
   "assignment": "implementation",
   "writer_ref": "session:01a0bc79-6dd9-7541-b022-2be4104d98b8",
@@ -28,6 +28,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "23d854a5cac17009e6443dac804bbd42c9ae5615",
+  "closed_at": "2026-09-20T03:24:40Z"
 }
