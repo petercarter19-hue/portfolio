@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKTREE-TRANSFER-LINEAGE-001",
+  "state": "active",
+  "outcome": "Correct consumed owner-reassignment lifecycle validation for a later accepted voluntary writer transfer. Preserve immutable reassignment preparation, source custody, current claim and branch/head proof, registry integrity and native caller controls. Add exact accepted-lineage and refusal regressions. Deliver reviewed lifecycle correction through accepted merge and close so the E owner can use the supported adoption path. Do not mutate E custody, branch, product, schema, production or deployment.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0c0fb-5f6e-7bc0-aaae-cd66ca1038a3",
+  "branch": "work/2026-09-20-worktree-transfer-lineage-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "ee2b32c7dd9c1d89018826e18ae982fb99c000be",
+  "owner_outcome_ref": "session:01a0c0a9-a194-71f2-9c9b-7e665fe79193/owner-authorized-E-blocker-correction;session:01a08dfb-7229-75f0-8017-07dd590f1795/delegated-crosspackage-correction",
+  "surfaces": [
+    "scripts/worktree_lifecycle.py",
+    "tests/test_worktree_lifecycle.py",
+    "docs/governance/WORKTREE_LIFECYCLE.md",
+    "docs/governance/lane_claims/PS-WORKTREE-TRANSFER-LINEAGE-001.json",
+    "docs/governance/lane_claims/receipts/PS-WORKTREE-TRANSFER-LINEAGE-001.json",
+    "docs/governance/lane_claims/evidence/PS-WORKTREE-TRANSFER-LINEAGE-001.md"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-WORKTREE-TRANSFER-LINEAGE-001.md"
+  ],
+  "domains": [
+    "governance:worktree-transfer-lineage",
+    "tooling:worktree-transfer-lineage",
+    "testing:worktree-transfer-lineage"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
