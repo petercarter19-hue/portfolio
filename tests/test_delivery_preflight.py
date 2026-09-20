@@ -1178,6 +1178,213 @@ class SafeCustodyClaimTests(unittest.TestCase):
             self.assertEqual(before, run_git(repo, "status", "--porcelain=v1"))
 
 
+class ScopeReleaseCloseGitTests(unittest.TestCase):
+    def run_git(self, repo, *arguments):
+        result = subprocess.run(
+            ["git", *arguments], cwd=repo, text=True, encoding="utf-8",
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+        )
+        self.assertEqual(0, result.returncode, result.stderr or result.stdout)
+        return result.stdout.strip()
+
+    def make_history(self, repo, *, receipt_candidate=None, wrong_blob=False):
+        self.run_git(repo, "init", "--initial-branch=main")
+        self.run_git(repo, "config", "user.email", "tests@peerslate.invalid")
+        self.run_git(repo, "config", "user.name", "PeerSlate Tests")
+        before, after = SafeCustodyClaimTests()._transition()
+        package = before["package"]
+        claim_path = preflight.claim_relative_path(package)
+        receipt_path = preflight.receipt_relative_path(package)
+        evidence_path = preflight.evidence_relative_path(package)
+
+        def write_claim(value):
+            (repo / claim_path).write_text(
+                json.dumps({key: item for key, item in value.items()
+                            if key != "_relative_path"}, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+        (repo / claim_path).parent.mkdir(parents=True)
+        (repo / evidence_path).parent.mkdir(parents=True)
+        (repo / receipt_path).parent.mkdir(parents=True)
+        (repo / "src").mkdir()
+        write_claim(before)
+        (repo / evidence_path).write_text("Review evidence\n", encoding="utf-8")
+        (repo / "src/released.py").write_text("old\n", encoding="utf-8")
+        (repo / "src/retained.py").write_text("old\n", encoding="utf-8")
+        self.run_git(repo, "add", ".")
+        self.run_git(repo, "commit", "-m", "base claim and product")
+
+        self.run_git(repo, "checkout", "-b", before["branch"])
+        (repo / "src/released.py").write_text("reviewed\n", encoding="utf-8")
+        (repo / "src/retained.py").write_text("reviewed\n", encoding="utf-8")
+        self.run_git(repo, "add", "src")
+        self.run_git(repo, "commit", "-m", "reviewed product candidate")
+        candidate = self.run_git(repo, "rev-parse", "HEAD")
+
+        self.run_git(repo, "checkout", "main")
+        self.run_git(repo, "checkout", candidate, "--", "src/released.py", "src/retained.py")
+        (repo / receipt_path).write_text(
+            json.dumps(receipt(
+                candidate_sha=receipt_candidate or candidate,
+                evidence_ref=evidence_path,
+            ), indent=2) + "\n", encoding="utf-8",
+        )
+        self.run_git(repo, "add", ".")
+        self.run_git(repo, "commit", "-m", "accept reviewed product")
+        merged = self.run_git(repo, "rev-parse", "HEAD")
+
+        proof = after["scope_release"]
+        proof["checkpoint_sha"] = candidate
+        proof["prepared_from_main"] = merged
+        proof["released_file_proofs"] = preflight.build_scope_release_file_proofs(
+            root=repo,
+            before_surfaces=before["surfaces"],
+            after_surfaces=after["surfaces"],
+            checkpoint_sha=candidate,
+            prepared_from_main=merged,
+            accepted_introductions=[{
+                "path": "src/released.py",
+                "package": package,
+                "candidate_sha": candidate,
+                "merged_sha": merged,
+                "receipt_ref": receipt_path,
+            }],
+        )
+        if wrong_blob:
+            proof["released_file_proofs"][0]["checkpoint_blob"] = "0" * 40
+        proof["reduction_sha256"] = preflight.scope_reduction_sha256(
+            before_surfaces=before["surfaces"],
+            after_surfaces=after["surfaces"],
+            before_domains=before["domains"],
+            after_domains=after["domains"],
+            retained_responsibilities=proof["retained_responsibilities"],
+            release_rationale=proof["release_rationale"],
+            released_file_proofs=proof["released_file_proofs"],
+            fixed_evidence_ref=proof["fixed_evidence_ref"],
+        )
+        write_claim(after)
+        self.run_git(repo, "add", claim_path)
+        self.run_git(repo, "commit", "-m", "accept partial scope release")
+        self.run_git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+        return before, after, candidate, merged, claim_path
+
+    def test_close_accepts_only_exact_reviewed_released_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            before, after, candidate, merged, claim_path = self.make_history(repo)
+            candidate_paths = ("src/released.py", "src/retained.py")
+            allowed, errors = preflight._close_released_candidate_paths(
+                repo, after, candidate, merged, candidate_paths
+            )
+            self.assertEqual([], errors)
+            self.assertEqual({"src/released.py"}, allowed)
+            self.assertEqual(
+                [], [path for path in preflight._scope_errors(
+                    candidate_paths, after["surfaces"]
+                ) if path not in allowed],
+            )
+            closed = copy.deepcopy(after)
+            closed.update(state="closed", merged_sha=merged,
+                          closed_at="2026-09-20T00:00:00Z")
+            self.assertEqual([], preflight.validate_claim(closed))
+            self.assertTrue(any("scope_release" in error for error in
+                                preflight.validate_claim({**after, "state": "paused",
+                                                          "checkpoint_sha": candidate})))
+            transition_errors = []
+            preflight._require_control_delta(
+                root=repo, claim=closed,
+                facts=SimpleNamespace(branch_paths=(claim_path,)),
+                allowed_fields={"state", "merged_sha", "closed_at"},
+                errors=transition_errors,
+            )
+            self.assertEqual([], transition_errors)
+
+            unrelated = ("src/released.py", "src/unrelated.py")
+            allowed, errors = preflight._close_released_candidate_paths(
+                repo, after, candidate, merged, unrelated
+            )
+            self.assertEqual([], errors)
+            self.assertEqual(
+                ["src/unrelated.py"],
+                [path for path in preflight._scope_errors(
+                    unrelated, after["surfaces"]
+                ) if path not in allowed],
+            )
+
+    def test_close_rejects_changed_or_ambiguous_release_and_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            before, after, candidate, merged, claim_path = self.make_history(repo)
+            for reviewed, accepted in (("f" * 40, merged), (candidate, "e" * 40)):
+                with self.subTest(reviewed=reviewed, accepted=accepted):
+                    allowed, errors = preflight._close_released_candidate_paths(
+                        repo, after, reviewed, accepted, ("src/released.py",)
+                    )
+                    self.assertEqual(set(), allowed)
+                    self.assertTrue(any("candidate, merge, and receipt" in error
+                                        for error in errors), errors)
+
+            changed = copy.deepcopy(after)
+            changed["scope_release"]["release_rationale"] = "Changed after acceptance"
+            allowed, errors = preflight._close_released_candidate_paths(
+                repo, changed, candidate, merged, ("src/released.py",)
+            )
+            self.assertEqual(set(), allowed)
+            self.assertTrue(any("one exact accepted main proof introduction" in error
+                                for error in errors), errors)
+            closed = copy.deepcopy(changed)
+            closed.update(state="closed", merged_sha=merged,
+                          closed_at="2026-09-20T00:00:00Z")
+            transition_errors = []
+            preflight._require_control_delta(
+                root=repo, claim=closed,
+                facts=SimpleNamespace(branch_paths=(claim_path,)),
+                allowed_fields={"state", "merged_sha", "closed_at"},
+                errors=transition_errors,
+            )
+            self.assertTrue(any("outside" in error for error in transition_errors))
+
+            (repo / claim_path).write_text(
+                json.dumps({key: item for key, item in before.items()
+                            if key != "_relative_path"}, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            self.run_git(repo, "add", claim_path)
+            self.run_git(repo, "commit", "-m", "restore prior claim")
+            (repo / claim_path).write_text(
+                json.dumps({key: item for key, item in after.items()
+                            if key != "_relative_path"}, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            self.run_git(repo, "add", claim_path)
+            self.run_git(repo, "commit", "-m", "repeat release proof")
+            self.run_git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+            allowed, errors = preflight._close_released_candidate_paths(
+                repo, after, candidate, merged, ("src/released.py",)
+            )
+            self.assertEqual(set(), allowed)
+            self.assertTrue(any("one exact accepted main proof introduction" in error
+                                for error in errors), errors)
+
+    def test_close_rejects_forged_review_and_git_blob(self):
+        for change in ("receipt", "blob"):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
+                repo = Path(directory)
+                _, after, candidate, merged, _ = self.make_history(
+                    repo,
+                    receipt_candidate="f" * 40 if change == "receipt" else None,
+                    wrong_blob=change == "blob",
+                )
+                allowed, errors = preflight._close_released_candidate_paths(
+                    repo, after, candidate, merged, ("src/released.py",)
+                )
+                self.assertEqual(set(), allowed)
+                self.assertTrue(any("accepted introduction" in error or
+                                    "released file proofs do not match exact Git objects" in error
+                                    for error in errors), errors)
+
+
 class ConcurrencyTests(unittest.TestCase):
     def test_disjoint_writers_have_no_numeric_cap(self):
         claims = {

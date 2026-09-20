@@ -2319,6 +2319,78 @@ def validate_scope_release_transition(
     return errors
 
 
+def _close_released_candidate_paths(
+    root: Path,
+    claim: dict,
+    candidate_sha: str,
+    merged_sha: str,
+    candidate_paths: Iterable[str],
+) -> tuple[set[str], list[str]]:
+    """Reprove a historical release before admitting reviewed paths it removed."""
+
+    proof = claim.get("scope_release")
+    if proof is None:
+        return set(), []
+    if not isinstance(proof, dict):
+        return set(), ["close scope release proof is invalid"]
+
+    package = str(claim.get("package", ""))
+    claim_path = claim_relative_path(package)
+    try:
+        # Only this claim's first-parent main changes can introduce its release.
+        commits = _git(
+            root, "log", "--first-parent", "--format=%H", "origin/main", "--", claim_path
+        ).splitlines()
+        introductions: list[tuple[dict, dict]] = []
+        for commit in commits:
+            released = _json_at_ref(root, commit, claim_path)
+            if released.get("scope_release") != proof:
+                continue
+            previous = _json_at_ref(root, f"{commit}^1", claim_path)
+            if previous.get("scope_release") is None:
+                introductions.append((previous, released))
+        if len(introductions) != 1:
+            raise ValueError("requires one exact accepted main proof introduction")
+        previous, released = introductions[0]
+        errors = [
+            *validate_claim(previous),
+            *validate_claim(released),
+            *validate_scope_release_transition(previous, released, root=root),
+        ]
+        if errors:
+            return set(), ["close scope release: " + error for error in errors]
+
+        released_files = {
+            item["path"]: item for item in proof["released_file_proofs"]
+        }
+        expected_introduction = {
+            "package": package,
+            "candidate_sha": candidate_sha,
+            "merged_sha": merged_sha,
+            "receipt_ref": receipt_relative_path(package),
+        }
+        allowed: set[str] = set()
+        for path in candidate_paths:
+            if path_is_claimed(path, claim.get("surfaces", [])):
+                continue
+            item = released_files.get(path)
+            if item is None:
+                continue
+            if (
+                item.get("unpublished_delta") is True
+                and item.get("accepted_introduction") == expected_introduction
+            ):
+                allowed.add(path)
+            else:
+                errors.append(
+                    "reviewed released path lacks this package's exact accepted "
+                    f"candidate, merge, and receipt: {path}"
+                )
+        return allowed, ["close scope release: " + error for error in errors]
+    except (PreflightError, ValueError, KeyError, TypeError) as exc:
+        return set(), ["close scope release: " + str(exc)]
+
+
 def _string_field(
     claim: dict, field: str, errors: list[str], *, maximum: int = 1000
 ) -> str:
@@ -2554,8 +2626,8 @@ def validate_claim(claim: dict, *, expected_package: str | None = None) -> list[
             )
     scope_release = claim.get("scope_release")
     errors.extend(validate_scope_release_proof(scope_release))
-    if scope_release is not None and state != ACTIVE_STATE:
-        errors.append("only active claims may carry a scope_release proof")
+    if scope_release is not None and state not in {ACTIVE_STATE, "closed"}:
+        errors.append("only active or closed claims may carry a scope_release proof")
     return errors
 
 
@@ -4076,9 +4148,14 @@ def evaluate(
                                 ))
                             else:
                                 errors.extend(reconciled)
+                        released_paths, release_errors = _close_released_candidate_paths(
+                            root, before, candidate_sha, merged_sha, candidate_paths
+                        )
+                        errors.extend(release_errors)
                         outside = _scope_errors(
                             candidate_paths, before.get("surfaces", [])
                         )
+                        outside = [path for path in outside if path not in released_paths]
                         tolerated = HISTORICAL_BOOTSTRAP_CLOSE_TOLERATED_PATHS.get(
                             (
                                 str(before.get("package", "")),

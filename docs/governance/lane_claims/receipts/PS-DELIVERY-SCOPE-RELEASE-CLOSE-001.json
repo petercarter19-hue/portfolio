@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-SCOPE-RELEASE-CLOSE-001",
+  "candidate_sha": "fa47cf6828c12637e0a59eb4921ae6734b7be8b6",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a0bcb7-7969-7413-952f-8b6ed2262651",
+  "result": "pass",
+  "reviewed_at": "2026-09-20T02:54:08Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-DELIVERY-SCOPE-RELEASE-CLOSE-001.md"
+}
