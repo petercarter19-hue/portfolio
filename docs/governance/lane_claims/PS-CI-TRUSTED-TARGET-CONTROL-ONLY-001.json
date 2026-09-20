@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-CI-TRUSTED-TARGET-CONTROL-ONLY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Implement the bounded administrative CI trusted-target classifier for genuinely claim-only ordinary control transitions, while preserving the two real required jobs, full security scans, product and unknown full tests, strict browser suites, and separate production/schema gates. Prove eligible and product/unknown dispositions in normal Azure PR validation after the accepted P1 validator baseline; obtain independent Pete-operated Grok exact-candidate review before implementation delivery. Do not change P1 lifecycle/preflight tools, application/database surfaces, server branch policies, or production authority.",
   "assignment": "implementation",
   "writer_ref": "session:01a0abeb-98ac-7533-a797-1088c8f87e7d",
@@ -32,8 +32,8 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null,
+  "merged_sha": "5d99a7b3459d2560cd72e70a22c5456bc14e69f3",
+  "closed_at": "2026-09-20T17:41:49Z",
   "scope_release": {
     "schema_version": 1,
     "operation_id": "1c858d276919ff5d494031c799bfbe4333ffc2e864e6448a14255d5646be7ce8",
