@@ -104,6 +104,10 @@ OWNER_REASSIGNMENT_PREPARATION_STATE_FIELDS = {
     },
     "consumed": {"consumed_at", "consumed_on_main"},
 }
+VOLUNTARY_TRANSFER_PROOF_FIELDS = {
+    "accepted_main", "previous_main", "preparation_id", "path", "branch",
+    "from_ref", "to_ref", "checkpoint_sha",
+}
 OWNER_REASSIGNMENT_SOURCE_SNAPSHOT_FIELDS = {
     "local_branch_sha",
     "worktrees",
@@ -1026,6 +1030,43 @@ def _validate_consuming_preparation_transition(
         )
 
 
+def _validated_voluntary_transfer_receiver(
+    receiver: dict[str, Any], preparation: dict[str, Any]
+) -> str:
+    """Keep the original recipient immutable while validating later custody."""
+
+    lineage = receiver.get("voluntary_transfer_lineage", [])
+    if not isinstance(lineage, list) or ("voluntary_transfer_lineage" in receiver and not lineage):
+        raise Refusal("consumed receiver voluntary-transfer lineage is invalid")
+    current = preparation["to_ref"]
+    accepted: set[str] = set()
+    identities = {current}
+    for proof in lineage:
+        if not isinstance(proof, dict) or set(proof) != VOLUNTARY_TRANSFER_PROOF_FIELDS:
+            raise Refusal("consumed receiver voluntary-transfer proof has inexact fields")
+        for key in ("accepted_main", "previous_main", "checkpoint_sha"):
+            _validate_preparation_sha(proof[key], field=key)
+        from_ref = _validate_delivery_ref(proof["from_ref"])
+        to_ref = _validate_delivery_ref(proof["to_ref"])
+        branch = _validate_work_branch(proof["branch"])
+        path = _validate_preparation_path(proof["path"], field="transfer path")
+        if (
+            proof["preparation_id"] != preparation["preparation_id"]
+            or path != receiver.get("path")
+            or branch != preparation["to_branch"]
+            or branch != receiver.get("branch")
+            or from_ref != current
+            or to_ref in identities
+            or proof["accepted_main"] == proof["previous_main"]
+            or proof["accepted_main"] in accepted
+        ):
+            raise Refusal("consumed receiver voluntary-transfer lineage is incompatible")
+        accepted.add(proof["accepted_main"])
+        identities.add(to_ref)
+        current = to_ref
+    return current
+
+
 def _validate_owner_reassignment_preparations(registry: dict[str, Any]) -> None:
     preparations = registry.get("owner_reassignment_preparations")
     if not isinstance(preparations, list):
@@ -1182,8 +1223,21 @@ def _validate_owner_reassignment_preparations(registry: dict[str, Any]) -> None:
     for positions in package_positions.values():
         package_history = [preparations[index] for index in positions]
         for previous, current in zip(package_history, package_history[1:]):
+            previous_recipient = previous["to_ref"]
+            if previous["status"] == "consumed":
+                linked = [
+                    record for record in registry["worktrees"]
+                    if isinstance(record, dict)
+                    and record.get("owner_reassignment_preparation_id")
+                    == previous["preparation_id"]
+                ]
+                if len(linked) != 1:
+                    raise Refusal("prior owner-reassignment receiver custody is ambiguous")
+                previous_recipient = _validated_voluntary_transfer_receiver(
+                    linked[0], previous
+                )
             if (
-                current["from_ref"] != previous["to_ref"]
+                current["from_ref"] != previous_recipient
                 or current["from_branch"] != previous["to_branch"]
             ):
                 raise Refusal(
@@ -1243,11 +1297,14 @@ def _validate_owner_reassignment_preparations(registry: dict[str, Any]) -> None:
                 "consumed owner-reassignment preparation has ambiguous receiver custody"
             )
         receiver = receivers[0]
+        current_recipient = _validated_voluntary_transfer_receiver(
+            receiver, preparation
+        )
         if (
             receiver.get("kind") not in {"durable", "reassignment_source"}
             or receiver.get("state") not in {"active", "retired"}
             or receiver.get("package") != preparation["package"]
-            or receiver.get("task_ref") != preparation["to_ref"]
+            or receiver.get("task_ref") != current_recipient
             or receiver.get("branch") != preparation["to_branch"]
             or not isinstance(receiver.get("head"), str)
             or not SHA_RE.fullmatch(receiver["head"])
@@ -2083,9 +2140,20 @@ def validate_owner_reassignment_registry(registry: dict[str, Any]) -> None:
     worktrees = registry.get("worktrees", [])
     if not isinstance(worktrees, list):
         raise Refusal("registry worktrees must be a list")
+    preparations = registry.get("owner_reassignment_preparations", [])
+    if not isinstance(preparations, list):
+        raise Refusal("registry owner-reassignment preparations must be a list")
     for record in worktrees:
         if isinstance(record, dict):
             _validate_owner_reassignment_head_reconciliation_record(record)
+            if "voluntary_transfer_lineage" in record and not any(
+                isinstance(preparation, dict)
+                and preparation.get("status") == "consumed"
+                and preparation.get("preparation_id")
+                == record.get("owner_reassignment_preparation_id")
+                for preparation in preparations
+            ):
+                raise Refusal("voluntary-transfer lineage has no consumed preparation")
     _validate_owner_reassignment_preparations(registry)
     _validate_pending_operation(registry)
     _validate_head_reconciliation_custody(registry)
@@ -3317,6 +3385,195 @@ def _active_claim(
     if not isinstance(branch, str) or not WORK_BRANCH_RE.fullmatch(branch):
         raise Refusal("active claim has an invalid work branch")
     return claim
+
+
+def _voluntary_transfer_handoff(proof: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "from_ref": proof["from_ref"],
+        "to_ref": proof["to_ref"],
+        "checkpoint_sha": proof["checkpoint_sha"],
+        "relinquished": True,
+    }
+
+
+def _prove_accepted_voluntary_transfer(
+    context: RepoContext, package: str, proof: dict[str, Any]
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Recheck the actual first-parent main commit that changed only custody."""
+
+    accepted = proof["accepted_main"]
+    main = _ref_sha(context, "origin/main")
+    if main is None or accepted not in _git(
+        context.root, "rev-list", "--first-parent", "origin/main"
+    ).splitlines():
+        raise Refusal("voluntary-transfer proof is not accepted on main")
+    parents = _git(context.root, "rev-list", "--parents", "-n", "1", accepted).split()
+    if len(parents) < 2 or parents[0] != accepted or parents[1] != proof["previous_main"]:
+        raise Refusal("voluntary-transfer proof has a wrong main parent")
+    before = _claim_from_ref(context, proof["previous_main"], package)
+    after = _claim_from_ref(context, accepted, package)
+    if (
+        before.get("state") != "active"
+        or after.get("state") != "active"
+        or before.get("writer_ref") != proof["from_ref"]
+        or after.get("writer_ref") != proof["to_ref"]
+        or before.get("branch") != proof["branch"]
+        or after.get("branch") != proof["branch"]
+        or after.get("handoff") != _voluntary_transfer_handoff(proof)
+        or {k: v for k, v in before.items() if k not in {"writer_ref", "handoff"}}
+        != {k: v for k, v in after.items() if k not in {"writer_ref", "handoff"}}
+    ):
+        raise Refusal("voluntary-transfer proof does not match an exact accepted claim transition")
+    return before, after
+
+
+def _reprove_voluntary_transfer_lineage(
+    context: RepoContext,
+    registry: dict[str, Any],
+    receiver: dict[str, Any],
+    claim: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Bind a consumed receiver's recorded chain to immutable main history."""
+
+    lineage = receiver.get("voluntary_transfer_lineage", [])
+    if not lineage:
+        return None
+    matching = [
+        item for item in registry["owner_reassignment_preparations"]
+        if item["preparation_id"] == receiver.get("owner_reassignment_preparation_id")
+        and item["status"] == "consumed"
+    ]
+    if len(matching) != 1:
+        raise Refusal("voluntary-transfer receiver lacks one consumed preparation")
+    preparation = matching[0]
+    if _validated_voluntary_transfer_receiver(receiver, preparation) != receiver["task_ref"]:
+        raise Refusal("voluntary-transfer receiver has a broken custody chain")
+    prior_commit = preparation["consumed_on_main"]
+    prior_handoff = _expected_owner_reassignment_handoff(preparation)
+    for proof in lineage:
+        if not _is_ancestor(context, prior_commit, proof["previous_main"]):
+            raise Refusal("voluntary-transfer accepted history is out of order")
+        before, _after = _prove_accepted_voluntary_transfer(context, preparation["package"], proof)
+        if before.get("handoff") != prior_handoff:
+            raise Refusal("voluntary-transfer accepted history does not join prior custody")
+        prior_commit = proof["accepted_main"]
+        prior_handoff = _voluntary_transfer_handoff(proof)
+    if (
+        claim.get("package") != preparation["package"]
+        or claim.get("state") != "active"
+        or claim.get("branch") != preparation["to_branch"]
+        or claim.get("writer_ref") != receiver["task_ref"]
+        or claim.get("handoff") != prior_handoff
+    ):
+        raise Refusal("current accepted claim does not match voluntary-transfer custody")
+    return preparation
+
+
+def _next_accepted_voluntary_transfer(
+    context: RepoContext,
+    registry: dict[str, Any],
+    receiver: dict[str, Any],
+    claim: dict[str, Any],
+) -> dict[str, Any]:
+    preparation_id = receiver.get("owner_reassignment_preparation_id")
+    matches = [
+        item for item in registry["owner_reassignment_preparations"]
+        if item["preparation_id"] == preparation_id and item["status"] == "consumed"
+    ]
+    if len(matches) != 1:
+        raise Refusal("receiver transfer requires one consumed owner-reassignment preparation")
+    preparation = matches[0]
+    previous = receiver.get("voluntary_transfer_lineage", [])
+    if previous:
+        prior_claim = _claim_from_ref(context, previous[-1]["accepted_main"], preparation["package"])
+        _reprove_voluntary_transfer_lineage(context, registry, receiver, prior_claim)
+    path = f"docs/governance/lane_claims/{preparation['package']}.json"
+    current_handoff = claim.get("handoff")
+    for accepted in _git(
+        context.root, "log", "--first-parent", "--format=%H", "origin/main", "--", path
+    ).splitlines():
+        after = _claim_from_ref(context, accepted, preparation["package"])
+        if after.get("writer_ref") != claim.get("writer_ref") or after.get("handoff") != current_handoff:
+            continue
+        parents = _git(context.root, "rev-list", "--parents", "-n", "1", accepted).split()
+        if len(parents) < 2:
+            break
+        before = _claim_from_ref(context, parents[1], preparation["package"])
+        if (
+            before.get("writer_ref") == after.get("writer_ref")
+            and before.get("handoff") == after.get("handoff")
+        ):
+            # A later claim-only metadata change may retain this handoff. It
+            # cannot be the commit that actually transferred writer custody.
+            continue
+        proof = {
+            "accepted_main": accepted,
+            "previous_main": parents[1],
+            "preparation_id": preparation_id,
+            "path": receiver["path"],
+            "branch": preparation["to_branch"],
+            "from_ref": receiver["task_ref"],
+            "to_ref": claim["writer_ref"],
+            "checkpoint_sha": current_handoff.get("checkpoint_sha") if isinstance(current_handoff, dict) else None,
+        }
+        synthetic = dict(receiver, voluntary_transfer_lineage=[*previous, proof], task_ref=claim["writer_ref"])
+        _validated_voluntary_transfer_receiver(synthetic, preparation)
+        before, _ = _prove_accepted_voluntary_transfer(context, preparation["package"], proof)
+        prior_handoff = (
+            _voluntary_transfer_handoff(previous[-1])
+            if previous else _expected_owner_reassignment_handoff(preparation)
+        )
+        prior_main = previous[-1]["accepted_main"] if previous else preparation["consumed_on_main"]
+        if (
+            before.get("handoff") != prior_handoff
+            or not _is_ancestor(context, prior_main, proof["previous_main"])
+            or claim.get("branch") != proof["branch"]
+            or claim.get("state") != "active"
+        ):
+            raise Refusal("voluntary-transfer claim is not connected to consumed custody")
+        return proof
+    raise Refusal("current claim has no accepted voluntary-transfer transition")
+
+
+def _reprove_consumed_transfer_source(
+    context: RepoContext, registry: dict[str, Any], preparation: dict[str, Any]
+) -> None:
+    checkpoint = preparation["checkpoint_sha"]
+    branch = preparation["from_branch"]
+    if (
+        _fetch_origin_branch(context, branch) != checkpoint
+        or _ref_sha(context, f"refs/heads/{branch}") not in {None, checkpoint}
+        or preparation["source_snapshot"]["worktrees"]
+        != _snapshot_branch_worktrees(context, branch, checkpoint)
+    ):
+        raise Refusal("preserved owner-reassignment source Git proof changed")
+    snapshots = preparation["source_snapshot"]["durable_records"]
+    for snapshot in snapshots:
+        matching = [
+            record for record in registry["worktrees"]
+            if isinstance(record, dict)
+            and _path_key(str(record.get("path", ""))) == _path_key(snapshot["path"])
+        ]
+        if len(matching) != 1:
+            raise Refusal("preserved owner-reassignment source record is ambiguous")
+        source = matching[0]
+        path = _canonical(source["path"])
+        entry = _worktree_at(context.root, path)
+        pristine, residue = _is_pristine(path)
+        if (
+            source.get("kind") != "reassignment_source"
+            or source.get("state") != "active"
+            or source.get("task_ref") != snapshot["task_ref"]
+            or source.get("branch") != branch
+            or source.get("head") != checkpoint
+            or source.get("preserved_by_owner_reassignment")
+            != _expected_owner_reassignment_handoff(preparation)
+            or entry is None
+            or entry.get("branch") != branch
+            or entry.get("head") != checkpoint
+            or not pristine
+        ):
+            raise Refusal("preserved owner-reassignment source identity changed", blockers=residue)
 
 
 def _owner_reassignment_handoff(
@@ -5199,6 +5456,45 @@ def command_adopt(context: RepoContext, args: argparse.Namespace) -> dict[str, A
             "durable",
         }:
             raise Refusal("registry path has a non-durable managed role")
+        transfer_proof = None
+        if record is not None and record.get("owner_reassignment_preparation_id"):
+            matching_preparations = [
+                item for item in registry["owner_reassignment_preparations"]
+                if item["preparation_id"]
+                == record["owner_reassignment_preparation_id"]
+                and item["status"] == "consumed"
+            ]
+            if (
+                len(matching_preparations) != 1
+                or record.get("kind") != "durable"
+                or record.get("state") != "active"
+                or record.get("package") != package
+                or record.get("branch") != claim["branch"]
+                or record.get("head") != entry.get("head")
+            ):
+                raise Refusal("consumed receiver adoption lost its exact custody")
+            preparation = matching_preparations[0]
+            _reprove_consumed_transfer_source(context, registry, preparation)
+            if record.get("task_ref") != task_ref:
+                transfer_proof = _next_accepted_voluntary_transfer(
+                    context, registry, record, claim
+                )
+                checkpoint = transfer_proof["checkpoint_sha"]
+                if (
+                    entry.get("head") != checkpoint
+                    or _ref_sha(context, f"refs/heads/{claim['branch']}") != checkpoint
+                    or _fetch_origin_branch(context, claim["branch"]) != checkpoint
+                ):
+                    raise Refusal("voluntary-transfer receiver moved from its accepted checkpoint")
+                accepted_main = _ref_sha(context, "origin/main")
+                _fetch_origin_main(context)
+                if (
+                    accepted_main != _ref_sha(context, "origin/main")
+                    or claim != _claim_from_origin_main(context, package)
+                ):
+                    raise Refusal("accepted claim changed during voluntary-transfer adoption")
+            elif record.get("voluntary_transfer_lineage"):
+                _reprove_voluntary_transfer_lineage(context, registry, record, claim)
         if record is None:
             record = _new_record(
                 path=path,
@@ -5225,6 +5521,10 @@ def command_adopt(context: RepoContext, args: argparse.Namespace) -> dict[str, A
                     "updated_at": _utc_now(),
                 }
             )
+        if transfer_proof is not None:
+            record["voluntary_transfer_lineage"] = [
+                *record.get("voluntary_transfer_lineage", []), transfer_proof
+            ]
         _atomic_write(context.registry_path, registry)
     return {
         "status": "adopted",
@@ -5391,6 +5691,23 @@ def command_ensure(context: RepoContext, args: argparse.Namespace) -> dict[str, 
                         )
         if durable:
             record = durable[0]
+            if record.get("voluntary_transfer_lineage"):
+                historical_claim = (
+                    _claim_from_ref(
+                        context,
+                        record["voluntary_transfer_lineage"][-1]["accepted_main"],
+                        package,
+                    )
+                    if reassignment is not None else claim
+                )
+                historical_preparation = _reprove_voluntary_transfer_lineage(
+                    context, registry, record, historical_claim
+                )
+                if historical_preparation is None:
+                    raise Refusal("transferred receiver lost its consumed preparation")
+                _reprove_consumed_transfer_source(
+                    context, registry, historical_preparation
+                )
             if record.get("task_ref") != task_ref or record.get("branch") != claim["branch"]:
                 if reassignment is None:
                     raise Refusal("registered durable worktree identity does not match claim")

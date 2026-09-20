@@ -745,6 +745,58 @@ class WorktreeLifecycleTests(unittest.TestCase):
             cwd=control_path,
         )
 
+    def consumed_reassignment_for_transfer(self, label: str):
+        fixture, receiver, successor, owner_ref, source_path, control_path = (
+            self.owner_reassignment_setup(label)
+        )
+        code, prepared = self.run_owner_reassignment_prepare(
+            fixture, receiver, successor, owner_ref, control_path
+        )
+        self.assertEqual(code, 0, prepared)
+        claim_path = (
+            fixture.repo / "docs" / "governance" / "lane_claims"
+            / f"{fixture.package}.json"
+        )
+        claim = json.loads(claim_path.read_text(encoding="utf-8"))
+        claim.update({
+            "writer_ref": receiver,
+            "branch": successor,
+            "handoff": {
+                "type": "owner_reassignment",
+                "from_ref": fixture.writer,
+                "to_ref": receiver,
+                "from_branch": fixture.branch,
+                "to_branch": successor,
+                "checkpoint_sha": fixture.main_sha,
+                "owner_authorization_ref": owner_ref,
+            },
+        })
+        claim_path.write_text(json.dumps(claim, indent=2) + "\n", encoding="utf-8")
+        git(fixture.repo, "add", str(claim_path.relative_to(fixture.repo)))
+        git(fixture.repo, "commit", "-m", "accept original owner reassignment")
+        git(fixture.repo, "push", "origin", "main")
+        code, created = fixture.run(
+            "ensure", "--package", fixture.package, "--task-ref", receiver,
+            "--execute",
+        )
+        self.assertEqual(code, 0, created)
+        return fixture, receiver, successor, source_path, Path(created["path"]), claim_path, prepared
+
+    def accept_voluntary_transfer(self, fixture, claim_path, from_ref, to_ref, checkpoint):
+        claim = json.loads(claim_path.read_text(encoding="utf-8"))
+        claim["writer_ref"] = to_ref
+        claim["handoff"] = {
+            "from_ref": from_ref,
+            "to_ref": to_ref,
+            "checkpoint_sha": checkpoint,
+            "relinquished": True,
+        }
+        claim_path.write_text(json.dumps(claim, indent=2) + "\n", encoding="utf-8")
+        git(fixture.repo, "add", str(claim_path.relative_to(fixture.repo)))
+        git(fixture.repo, "commit", "-m", "accept voluntary transfer")
+        git(fixture.repo, "push", "origin", "main")
+        return git(fixture.repo, "rev-parse", "HEAD")
+
     def closed_custody_setup(
         self, label: str, *, advance_target: bool = False, completion: bool = False
     ) -> tuple[RepositoryFixture, Path, Path, dict[str, str]]:
@@ -4888,6 +4940,272 @@ class WorktreeLifecycleTests(unittest.TestCase):
         self.assertTrue(any(item.startswith("worktree:") for item in blockers))
         self.assertTrue(any(item.startswith("registry:") for item in blockers))
         self.assert_remote_branch_absent(fixture, successor)
+
+    def test_consumed_reassignment_accepts_two_proven_voluntary_transfers(self):
+        (
+            fixture, original, branch, source_path, receiver_path, claim_path, prepared,
+        ) = self.consumed_reassignment_for_transfer("voluntary-lineage")
+        first = "agent:voluntary-next-writer"
+        first_main = self.accept_voluntary_transfer(
+            fixture, claim_path, original, first, fixture.main_sha
+        )
+        code, adopted = fixture.run(
+            "adopt", "--package", fixture.package, "--path", str(receiver_path),
+            "--task-ref", first, "--execute",
+        )
+        self.assertEqual(code, 0, adopted)
+        registry = LIFECYCLE._load_registry(fixture.registry_path)
+        receiver = next(record for record in registry["worktrees"] if record.get("path") == str(receiver_path))
+        historical = registry["owner_reassignment_preparations"][0]
+        self.assertEqual(historical["to_ref"], original)
+        self.assertEqual(historical["preparation_id"], prepared["preparation_id"])
+        self.assertEqual(historical["status"], "consumed")
+        self.assertEqual(receiver["task_ref"], first)
+        self.assertEqual(receiver["voluntary_transfer_lineage"][0]["accepted_main"], first_main)
+        self.assertEqual(receiver["voluntary_transfer_lineage"][0]["preparation_id"], prepared["preparation_id"])
+        self.assertEqual(git(source_path, "rev-parse", "HEAD"), fixture.main_sha)
+
+        code, reused = fixture.run(
+            "ensure", "--package", fixture.package, "--task-ref", first, "--execute"
+        )
+        self.assertEqual(code, 0, reused)
+        self.assertEqual(reused["status"], "reused")
+        second = "agent:voluntary-third-writer"
+        second_main = self.accept_voluntary_transfer(
+            fixture, claim_path, first, second, fixture.main_sha
+        )
+        code, adopted_again = fixture.run(
+            "adopt", "--package", fixture.package, "--path", str(receiver_path),
+            "--task-ref", second, "--execute",
+        )
+        self.assertEqual(code, 0, adopted_again)
+        code, reused_again = fixture.run(
+            "ensure", "--package", fixture.package, "--task-ref", second,
+            "--execute",
+        )
+        self.assertEqual(code, 0, reused_again)
+        self.assertEqual(reused_again["status"], "reused")
+        registry = LIFECYCLE._load_registry(fixture.registry_path)
+        receiver = next(record for record in registry["worktrees"] if record.get("path") == str(receiver_path))
+        self.assertEqual([p["accepted_main"] for p in receiver["voluntary_transfer_lineage"]], [first_main, second_main])
+        self.assertEqual(registry["owner_reassignment_preparations"][0]["to_ref"], original)
+
+    def test_consumed_reassignment_rejects_unaccepted_and_forged_transfer(self):
+        fixture, original, branch, _source, receiver_path, claim_path, _prepared = (
+            self.consumed_reassignment_for_transfer("voluntary-refusal")
+        )
+        next_writer = "agent:voluntary-next-writer"
+        claim = json.loads(claim_path.read_text(encoding="utf-8"))
+        claim["writer_ref"] = next_writer
+        claim["handoff"] = {
+            "from_ref": original, "to_ref": next_writer,
+            "checkpoint_sha": fixture.main_sha, "relinquished": True,
+        }
+        claim_path.write_text(json.dumps(claim, indent=2) + "\n", encoding="utf-8")
+        code, unaccepted = fixture.run(
+            "adopt", "--package", fixture.package, "--path", str(receiver_path),
+            "--task-ref", next_writer, "--execute",
+        )
+        self.assertEqual(code, 2, unaccepted)
+        self.assertIn("writer_ref", unaccepted["error"])
+        claim_path.write_text(json.dumps({**claim, "handoff": {**claim["handoff"], "from_ref": "agent:forged"}}, indent=2) + "\n", encoding="utf-8")
+        git(fixture.repo, "add", str(claim_path.relative_to(fixture.repo)))
+        git(fixture.repo, "commit", "-m", "forged accepted claim in fixture")
+        git(fixture.repo, "push", "origin", "main")
+        code, forged = fixture.run(
+            "adopt", "--package", fixture.package, "--path", str(receiver_path),
+            "--task-ref", next_writer, "--execute",
+        )
+        self.assertEqual(code, 2, forged)
+        self.assertIn("exact accepted claim transition", forged["error"])
+        registry = LIFECYCLE._load_registry(fixture.registry_path)
+        receiver = next(record for record in registry["worktrees"] if record.get("path") == str(receiver_path))
+        self.assertEqual(receiver["task_ref"], original)
+        self.assertNotIn("voluntary_transfer_lineage", receiver)
+
+    def test_consumed_reassignment_rejects_poisoned_transfer_lineage(self):
+        fixture, original, branch, _source, receiver_path, claim_path, prepared = (
+            self.consumed_reassignment_for_transfer("voluntary-poison")
+        )
+        next_writer = "agent:voluntary-next-writer"
+        self.accept_voluntary_transfer(
+            fixture, claim_path, original, next_writer, fixture.main_sha
+        )
+        code, adopted = fixture.run(
+            "adopt", "--package", fixture.package, "--path", str(receiver_path),
+            "--task-ref", next_writer, "--execute",
+        )
+        self.assertEqual(code, 0, adopted)
+        baseline = LIFECYCLE._load_registry(fixture.registry_path)
+        for field, value in (
+            ("preparation_id", "f" * 64),
+            ("path", str(fixture.repo)),
+            ("branch", fixture.branch),
+            ("from_ref", "agent:forged"),
+            ("to_ref", "agent:forged"),
+            ("checkpoint_sha", "f" * 40),
+            ("accepted_main", "f" * 40),
+            ("previous_main", "f" * 40),
+        ):
+            with self.subTest(field=field):
+                registry = json.loads(json.dumps(baseline))
+                receiver = next(record for record in registry["worktrees"] if record.get("path") == str(receiver_path))
+                receiver["voluntary_transfer_lineage"][0][field] = value
+                if field in {"checkpoint_sha", "accepted_main", "previous_main"}:
+                    LIFECYCLE.validate_owner_reassignment_registry(registry)
+                    context = LIFECYCLE._repo_context(fixture.repo)
+                    current_claim = LIFECYCLE._claim_from_origin_main(context, fixture.package)
+                    with self.assertRaises(LIFECYCLE.Refusal):
+                        LIFECYCLE._reprove_voluntary_transfer_lineage(
+                            context, registry, receiver, current_claim
+                        )
+                else:
+                    with self.assertRaises(LIFECYCLE.Refusal):
+                        LIFECYCLE.validate_owner_reassignment_registry(registry)
+        self.assertEqual(baseline["owner_reassignment_preparations"][0]["preparation_id"], prepared["preparation_id"])
+
+    def test_consumed_reassignment_rejects_wrong_accepted_transfer_tuple(self):
+        for case in ("checkpoint", "branch", "to_ref"):
+            with self.subTest(case=case):
+                fixture, original, branch, _source, receiver_path, claim_path, _prepared = (
+                    self.consumed_reassignment_for_transfer(f"wrong-{case.replace('_', '-')}")
+                )
+                next_writer = "agent:voluntary-next-writer"
+                claim = json.loads(claim_path.read_text(encoding="utf-8"))
+                claim["writer_ref"] = next_writer
+                claim["handoff"] = {
+                    "from_ref": original, "to_ref": next_writer,
+                    "checkpoint_sha": fixture.main_sha, "relinquished": True,
+                }
+                if case == "checkpoint":
+                    claim["handoff"]["checkpoint_sha"] = "f" * 40
+                elif case == "branch":
+                    claim["branch"] = "work/2026-08-27-forged-branch"
+                else:
+                    claim["handoff"]["to_ref"] = "agent:wrong-target"
+                claim_path.write_text(json.dumps(claim, indent=2) + "\n", encoding="utf-8")
+                git(fixture.repo, "add", str(claim_path.relative_to(fixture.repo)))
+                git(fixture.repo, "commit", "-m", f"wrong {case} transfer fixture")
+                git(fixture.repo, "push", "origin", "main")
+                code, refused = fixture.run(
+                    "adopt", "--package", fixture.package,
+                    "--path", str(receiver_path), "--task-ref", next_writer,
+                    "--execute",
+                )
+                self.assertEqual(code, 2, refused)
+                retained = LIFECYCLE._load_registry(fixture.registry_path)
+                receiver = next(record for record in retained["worktrees"] if record.get("path") == str(receiver_path))
+                self.assertEqual(receiver["task_ref"], original)
+                self.assertNotIn("voluntary_transfer_lineage", receiver)
+
+    def test_transferred_receiver_reuse_refuses_changed_preserved_source(self):
+        fixture, original, _branch, source_path, receiver_path, claim_path, _prepared = (
+            self.consumed_reassignment_for_transfer("source-drift")
+        )
+        next_writer = "agent:voluntary-next-writer"
+        self.accept_voluntary_transfer(
+            fixture, claim_path, original, next_writer, fixture.main_sha
+        )
+        code, adopted = fixture.run(
+            "adopt", "--package", fixture.package, "--path", str(receiver_path),
+            "--task-ref", next_writer, "--execute",
+        )
+        self.assertEqual(code, 0, adopted)
+        (source_path / "unexpected-untracked.txt").write_text("source residue\n", encoding="utf-8")
+        code, refused = fixture.run(
+            "ensure", "--package", fixture.package, "--task-ref", next_writer,
+            "--execute",
+        )
+        self.assertEqual(code, 2, refused)
+        self.assertIn("source-branch worktree is not pristine", refused["error"])
+
+    def test_adopt_finds_transfer_before_later_accepted_claim_metadata(self):
+        fixture, original, _branch, _source, receiver_path, claim_path, _prepared = (
+            self.consumed_reassignment_for_transfer("later-metadata")
+        )
+        next_writer = "agent:voluntary-next-writer"
+        transfer_main = self.accept_voluntary_transfer(
+            fixture, claim_path, original, next_writer, fixture.main_sha
+        )
+        claim = json.loads(claim_path.read_text(encoding="utf-8"))
+        claim["owner_outcome_ref"] = "session:owner/accepted-metadata"
+        claim_path.write_text(json.dumps(claim, indent=2) + "\n", encoding="utf-8")
+        git(fixture.repo, "add", str(claim_path.relative_to(fixture.repo)))
+        git(fixture.repo, "commit", "-m", "later accepted claim metadata")
+        git(fixture.repo, "push", "origin", "main")
+        code, adopted = fixture.run(
+            "adopt", "--package", fixture.package, "--path", str(receiver_path),
+            "--task-ref", next_writer, "--execute",
+        )
+        self.assertEqual(code, 0, adopted)
+        registry = LIFECYCLE._load_registry(fixture.registry_path)
+        record = next(item for item in registry["worktrees"] if item.get("path") == str(receiver_path))
+        self.assertEqual(record["voluntary_transfer_lineage"][0]["accepted_main"], transfer_main)
+
+    def test_later_owner_reassignment_after_voluntary_transfer_preserves_chain(self):
+        fixture, original, branch, source_path, receiver_path, claim_path, _prepared = (
+            self.consumed_reassignment_for_transfer("transfer-then-reassign")
+        )
+        current_writer = "agent:voluntary-next-writer"
+        self.accept_voluntary_transfer(
+            fixture, claim_path, original, current_writer, fixture.main_sha
+        )
+        code, adopted = fixture.run(
+            "adopt", "--package", fixture.package, "--path", str(receiver_path),
+            "--task-ref", current_writer, "--execute",
+        )
+        self.assertEqual(code, 0, adopted)
+        code, finalized = fixture.run(
+            "finalize-task", "--task-ref", original, "--execute"
+        )
+        self.assertEqual(code, 0, finalized)
+        successor_writer = "agent:later-owner-replacement"
+        successor_branch = "work/2026-08-27-test-lifecycle-later-owner-recovery"
+        owner_ref = "session:owner/decision:later-owner-reassignment"
+        code, control = fixture.run(
+            "control", "--package", fixture.package, "--task-ref", successor_writer,
+            "--branch", "work/2026-08-27-delivery-owner-reassignment-after-transfer",
+            "--base", "origin/main", "--execute",
+        )
+        self.assertEqual(code, 0, control)
+        code, prepared = fixture.run(
+            "prepare-owner-reassignment", "--package", fixture.package,
+            "--task-ref", successor_writer, "--successor-branch", successor_branch,
+            "--expected-checkpoint", fixture.main_sha,
+            "--owner-authorization-ref", owner_ref, "--execute",
+            cwd=Path(control["path"]),
+        )
+        self.assertEqual(code, 0, prepared)
+        claim = json.loads(claim_path.read_text(encoding="utf-8"))
+        claim.update({
+            "writer_ref": successor_writer,
+            "branch": successor_branch,
+            "handoff": {
+                "type": "owner_reassignment",
+                "from_ref": current_writer,
+                "to_ref": successor_writer,
+                "from_branch": branch,
+                "to_branch": successor_branch,
+                "checkpoint_sha": fixture.main_sha,
+                "owner_authorization_ref": owner_ref,
+            },
+        })
+        claim_path.write_text(json.dumps(claim, indent=2) + "\n", encoding="utf-8")
+        git(fixture.repo, "add", str(claim_path.relative_to(fixture.repo)))
+        git(fixture.repo, "commit", "-m", "accept later owner reassignment")
+        git(fixture.repo, "push", "origin", "main")
+        code, ensured = fixture.run(
+            "ensure", "--package", fixture.package,
+            "--task-ref", successor_writer, "--execute",
+        )
+        self.assertEqual(code, 0, ensured)
+        registry = LIFECYCLE._load_registry(fixture.registry_path)
+        self.assertEqual([item["status"] for item in registry["owner_reassignment_preparations"]], ["consumed", "consumed"])
+        prior = next(item for item in registry["worktrees"] if item.get("path") == str(receiver_path))
+        self.assertEqual(prior["kind"], "reassignment_source")
+        self.assertEqual(prior["task_ref"], current_writer)
+        self.assertEqual(len(prior["voluntary_transfer_lineage"]), 1)
+        self.assertEqual(git(source_path, "rev-parse", "HEAD"), fixture.main_sha)
 
     def test_two_successive_owner_reassignments_preserve_each_source_history(self):
         (

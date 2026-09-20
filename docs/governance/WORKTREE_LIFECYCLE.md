@@ -431,6 +431,23 @@ A later authorized reassignment keeps all older `reassignment_source` records
 and consumed tuples under their own preparation handoffs, while matching and
 preserving only the current preparation's durable source for the new receiver.
 
+If that receiver later voluntarily relinquishes the package through an accepted
+`delivery-transfer` claim, the new writer adopts the existing durable path with
+their own native caller identity. Adoption requires the accepted main claim to
+change only `writer_ref` and the exact relinquished handoff, with the same
+package and branch, from the recorded receiver to the current writer. The
+handoff checkpoint must equal the receiver worktree's live HEAD and its local
+and fetched remote branch tip. The historical reassignment source remains at
+its separate preparation checkpoint. The tool appends a strictly linked transfer proof to the
+existing receiver record in the same sealed registry write that changes its
+current `task_ref`; the consumed preparation's original `to_ref`, digest and
+preserved reassignment source stay unchanged. Each proof binds the preparation,
+canonical receiver path, branch, from/to refs, checkpoint and the accepted
+first-parent main commit and its parent. Further transfers append to that
+chain. Registry validation rejects missing, orphaned, malformed or broken
+lineage; adoption and later `ensure` recheck its accepted Git history and the
+preserved source. A claim handoff alone never grants custody of another path.
+
 ### Run isolated verification only when necessary
 
 The normal reviewer reads the immutable Azure/pushed diff. The optional

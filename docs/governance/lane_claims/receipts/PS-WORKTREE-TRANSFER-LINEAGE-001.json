@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKTREE-TRANSFER-LINEAGE-001",
+  "candidate_sha": "ca3b7399fa5c74f5f2464b65ccaea495148a65d9",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/custody_review",
+  "result": "pass",
+  "reviewed_at": "2026-09-20T23:24:41Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-WORKTREE-TRANSFER-LINEAGE-001.md"
+}
