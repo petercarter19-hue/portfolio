@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-WORKTREE-TRANSFER-LINEAGE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Correct consumed owner-reassignment lifecycle validation for a later accepted voluntary writer transfer. Preserve immutable reassignment preparation, source custody, current claim and branch/head proof, registry integrity and native caller controls. Add exact accepted-lineage and refusal regressions. Deliver reviewed lifecycle correction through accepted merge and close so the E owner can use the supported adoption path. Do not mutate E custody, branch, product, schema, production or deployment.",
   "assignment": "implementation",
   "writer_ref": "session:01a0c0fb-5f6e-7bc0-aaae-cd66ca1038a3",
@@ -30,6 +30,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "8bf25777cd4d3e6b10d4be811eae919aeee9ae14",
+  "closed_at": "2026-09-20T23:41:35Z"
 }
