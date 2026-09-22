@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-RECONCILE-REVIEW-TAIL-001",
+  "state": "active",
+  "outcome": "Repair safe-custody reconcile-main for an active writer whose existing branch contains its own fixed review receipt or evidence before a later claim-only main update. Permit only exact pinned-source review-record blobs to pass through the merge when main has not changed those paths; continue importing the authoritative claim and all other fixed controls from main, refusing unowned conflicts, changed review bytes, stale custody, and unrelated paths. Prove the E-shaped success and adversarial refusals. This is a delivery-control dependency for MVP1 Package E; it grants no E product write, SQL execution, production, schema, identity, deployment, or broader reconciliation bypass.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0c0a9-a194-71f2-9c9b-7e665fe79193",
+  "branch": "work/2026-09-22-delivery-reconcile-review-tail-fix-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "09d10fe7fe760c4d2a4f4e5af91da1701c279580",
+  "owner_outcome_ref": "session:01a0c0a9-a194-71f2-9c9b-7e665fe79193/owner-direction:2026-09-22/finish-mvp1-e-package",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-DELIVERY-RECONCILE-REVIEW-TAIL-001.json",
+    "docs/governance/lane_claims/receipts/PS-DELIVERY-RECONCILE-REVIEW-TAIL-001.json",
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-RECONCILE-REVIEW-TAIL-001.md",
+    "scripts/worktree_lifecycle.py",
+    "tests/test_worktree_lifecycle.py",
+    "docs/governance/WORKTREE_LIFECYCLE.md",
+    "START_HERE.md"
+  ],
+  "domains": [
+    "governance:delivery:reconcile-review-tail",
+    "tooling:worktree-lifecycle:reconcile-review-tail",
+    "testing:worktree-lifecycle:reconcile-review-tail"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-RECONCILE-REVIEW-TAIL-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
