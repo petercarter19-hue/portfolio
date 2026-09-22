@@ -86,7 +86,11 @@
     "docs/governance/lane_claims/receipts/PS-MVP1-PUBLICATION-INTEGRATION-001.json",
     "docs/governance/lane_claims/evidence/PS-MVP1-PUBLICATION-INTEGRATION-001.md",
     "azure-pipelines.yml",
-    "static/js/my-data.js"
+    "static/js/my-data.js",
+    "SQL FIles/Migrations/proposed/PS-RESUME-EDIT-001_private_commands.sql",
+    "SQL FIles/Migrations/proposed/PS-RESUME-EDIT-001_private_commands_rollback.sql",
+    "SQL FIles/Verification/PS-RESUME-EDIT-001_private_commands_verify.sql",
+    "tests/test_living_resume_editor_migration.py"
   ],
   "domains": [
     "resume:publication:integration",
