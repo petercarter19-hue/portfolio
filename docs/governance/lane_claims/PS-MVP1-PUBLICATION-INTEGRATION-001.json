@@ -95,7 +95,12 @@
     "SQL FIles/Migrations/proposed/PS-RESUME-EDIT-002_education_commands_rollback.sql",
     "SQL FIles/Migrations/proposed/PS-RESUME-DRAFT-001_resume_drafts.sql",
     "SQL FIles/Migrations/proposed/PS-RESUME-INTAKE-001_resume_intake.sql",
-    "SQL FIles/Migrations/proposed/PS-RESUME-MEDIA-001_resume_media.sql"
+    "SQL FIles/Migrations/proposed/PS-RESUME-MEDIA-001_resume_media.sql",
+    "SQL FIles/Verification/PS-RESUME-EDIT-002_education_commands_verify.sql",
+    "SQL FIles/Verification/PS-ENTRY-POLICY-001_entry_metadata_verify.sql",
+    "SQL FIles/Verification/PS-RESUME-DRAFT-001_resume_drafts_verify.sql",
+    "SQL FIles/Verification/PS-RESUME-INTAKE-001_resume_intake_verify.sql",
+    "SQL FIles/Verification/PS-RESUME-MEDIA-001_resume_media_verify.sql"
   ],
   "domains": [
     "resume:publication:integration",
