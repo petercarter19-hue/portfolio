@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-DELIVERY-RECONCILE-REVIEW-TAIL-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Repair safe-custody reconcile-main for an active writer whose existing branch contains its own fixed review receipt or evidence before a later claim-only main update. Permit only exact pinned-source review-record blobs to pass through the merge when main has not changed those paths; continue importing the authoritative claim and all other fixed controls from main, refusing unowned conflicts, changed review bytes, stale custody, and unrelated paths. Prove the E-shaped success and adversarial refusals. This is a delivery-control dependency for MVP1 Package E; it grants no E product write, SQL execution, production, schema, identity, deployment, or broader reconciliation bypass.",
   "assignment": "implementation",
   "writer_ref": "session:01a0c0a9-a194-71f2-9c9b-7e665fe79193",
@@ -31,6 +31,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "97a91c6d5527cc1ef8fe34ff393fd84c5dd62398",
+  "closed_at": "2026-09-24T11:57:41Z"
 }
