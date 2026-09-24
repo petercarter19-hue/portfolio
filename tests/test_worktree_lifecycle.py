@@ -7836,7 +7836,9 @@ class SafeCustodyRegistryTests(unittest.TestCase):
                 )
 
     def reconciliation_git_fixture(
-        self, *, unowned_conflict=False, owned_conflict=False
+        self, *, unowned_conflict=False, owned_conflict=False,
+        review_tail=False, review_tail_main_conflict=False,
+        foreign_review=False, rename_unowned_to_review=False,
     ):
         temporary = tempfile.TemporaryDirectory(prefix="safe-custody-reconcile-")
         self.addCleanup(temporary.cleanup)
@@ -7860,18 +7862,39 @@ class SafeCustodyRegistryTests(unittest.TestCase):
             "branch": branch,
             "surfaces": ["owned.txt", "owned-stable.txt"],
         }
+        receipt_path = f"docs/governance/lane_claims/receipts/{package}.json"
+        evidence_path = f"docs/governance/lane_claims/evidence/{package}.md"
+        if review_tail:
+            claim["surfaces"].extend([receipt_path, evidence_path])
         claim_path = repo / "docs" / "governance" / "lane_claims" / f"{package}.json"
         claim_path.parent.mkdir(parents=True)
         claim_path.write_text(json.dumps(claim) + "\n", encoding="utf-8")
         (repo / "owned.txt").write_text("base\n", encoding="utf-8")
         (repo / "owned-stable.txt").write_text("base\n", encoding="utf-8")
-        (repo / "unowned.txt").write_text("base\n", encoding="utf-8")
+        (repo / "unowned.txt").write_text(
+            '{"result":"pass"}\n' if rename_unowned_to_review else "base\n",
+            encoding="utf-8",
+        )
         git(repo, "add", ".")
         git(repo, "commit", "-m", "base")
         git(repo, "remote", "add", "origin", str(remote))
         git(repo, "push", "-u", "origin", "main")
         git(repo, "checkout", "-b", branch)
         (repo / "owned.txt").write_text("candidate\n", encoding="utf-8")
+        if review_tail:
+            for path, contents in (
+                (receipt_path, '{"result":"pass"}\n'),
+                (evidence_path, "Reviewed candidate evidence\n"),
+            ):
+                (repo / path).parent.mkdir(parents=True, exist_ok=True)
+                if rename_unowned_to_review and path == receipt_path:
+                    git(repo, "mv", "unowned.txt", path)
+                else:
+                    (repo / path).write_text(contents, encoding="utf-8")
+        if foreign_review:
+            foreign_path = repo / "docs/governance/lane_claims/receipts/PS-OTHER-001.json"
+            foreign_path.parent.mkdir(parents=True, exist_ok=True)
+            foreign_path.write_text('{"result":"pass"}\n', encoding="utf-8")
         if unowned_conflict:
             (repo / "unowned.txt").write_text("candidate conflict\n", encoding="utf-8")
         git(repo, "add", ".")
@@ -7881,9 +7904,21 @@ class SafeCustodyRegistryTests(unittest.TestCase):
         git(base, "clone", "--branch", "main", str(remote), str(publisher))
         git(publisher, "config", "user.email", "publisher@peerslate.invalid")
         git(publisher, "config", "user.name", "PeerSlate Publisher")
-        (publisher / "unowned.txt").write_text("main change\n", encoding="utf-8")
+        if rename_unowned_to_review:
+            (publisher / "main-only.txt").write_text("main change\n", encoding="utf-8")
+        else:
+            (publisher / "unowned.txt").write_text("main change\n", encoding="utf-8")
         if owned_conflict:
             (publisher / "owned.txt").write_text("main conflict\n", encoding="utf-8")
+        if review_tail:
+            claim["surfaces"].append("new-owned.txt")
+            (publisher / "new-owned.txt").write_text("main addition\n", encoding="utf-8")
+            (publisher / "docs" / "governance" / "lane_claims" / f"{package}.json").write_text(
+                json.dumps(claim) + "\n", encoding="utf-8"
+            )
+        if review_tail_main_conflict:
+            (publisher / receipt_path).parent.mkdir(parents=True, exist_ok=True)
+            (publisher / receipt_path).write_text('{"result":"different"}\n', encoding="utf-8")
         git(publisher, "add", ".")
         git(publisher, "commit", "-m", "advance main")
         target = git(publisher, "rev-parse", "HEAD")
@@ -8347,6 +8382,88 @@ class SafeCustodyRegistryTests(unittest.TestCase):
         self.assertEqual("main change", (repo / "unowned.txt").read_text(encoding="utf-8").strip())
         self.assertEqual(merged, git(repo, "ls-remote", "origin", f"refs/heads/{branch}").split()[0])
         self.assertEqual({}, registry["safe_custody"]["package_blocks"])
+
+    def test_reconciliation_preserves_own_review_tail_after_claim_extension(self):
+        repo, _publisher, context, registry, record, claim, source, target, _branch = (
+            self.reconciliation_git_fixture(review_tail=True)
+        )
+        with patch.object(LIFECYCLE, "_atomic_write"):
+            result = LIFECYCLE._complete_reconciliation(
+                context, registry, record, claim
+            )
+        self.assertEqual("completed", result["status"])
+        merged = git(repo, "rev-parse", "HEAD")
+        self.assertEqual([source, target], git(repo, "show", "-s", "--format=%P", merged).split())
+        self.assertEqual(
+            git(repo, "rev-parse", f"{target}:docs/governance/lane_claims/{claim['package']}.json"),
+            git(repo, "rev-parse", f"{merged}:docs/governance/lane_claims/{claim['package']}.json"),
+        )
+        for path in (
+            f"docs/governance/lane_claims/receipts/{claim['package']}.json",
+            f"docs/governance/lane_claims/evidence/{claim['package']}.md",
+        ):
+            with self.subTest(path=path):
+                self.assertEqual(
+                    git(repo, "rev-parse", f"{source}:{path}"),
+                    git(repo, "rev-parse", f"{merged}:{path}"),
+                )
+        self.assertEqual("main addition", (repo / "new-owned.txt").read_text(encoding="utf-8").strip())
+
+    def test_reconciliation_refuses_main_changed_review_record(self):
+        repo, _publisher, context, registry, record, claim, source, _target, _branch = (
+            self.reconciliation_git_fixture(
+                review_tail=True, review_tail_main_conflict=True
+            )
+        )
+        with (
+            patch.object(LIFECYCLE, "_atomic_write"),
+            self.assertRaisesRegex(LIFECYCLE.Refusal, "unowned conflict"),
+        ):
+            LIFECYCLE._complete_reconciliation(context, registry, record, claim)
+        self.assertEqual(source, git(repo, "rev-parse", "HEAD"))
+        self.assertEqual("aborted", record["phase"])
+
+    def test_reconciliation_refuses_foreign_review_record(self):
+        repo, _publisher, context, registry, record, claim, source, _target, _branch = (
+            self.reconciliation_git_fixture(foreign_review=True)
+        )
+        with (
+            patch.object(LIFECYCLE, "_atomic_write"),
+            self.assertRaisesRegex(LIFECYCLE.Refusal, "unowned paths relative to pinned main"),
+        ):
+            LIFECYCLE._complete_reconciliation(context, registry, record, claim)
+        self.assertEqual(source, git(repo, "rev-parse", "HEAD"))
+
+    def test_reconciliation_refuses_unowned_deletion_disguised_as_review_rename(self):
+        repo, _publisher, context, registry, record, claim, source, _target, _branch = (
+            self.reconciliation_git_fixture(
+                review_tail=True, rename_unowned_to_review=True
+            )
+        )
+        with (
+            patch.object(LIFECYCLE, "_atomic_write"),
+            self.assertRaisesRegex(LIFECYCLE.Refusal, "unowned paths relative to pinned main"),
+        ):
+            LIFECYCLE._complete_reconciliation(context, registry, record, claim)
+        self.assertEqual(source, git(repo, "rev-parse", "HEAD"))
+
+    def test_reconciliation_refuses_edited_review_record_during_resolution(self):
+        repo, _publisher, context, registry, record, claim, source, _target, _branch = (
+            self.reconciliation_git_fixture(review_tail=True, owned_conflict=True)
+        )
+        with patch.object(LIFECYCLE, "_atomic_write"):
+            result = LIFECYCLE._complete_reconciliation(context, registry, record, claim)
+        self.assertEqual("resolution_required", result["status"])
+        (repo / "owned.txt").write_text("resolved\n", encoding="utf-8")
+        receipt = f"docs/governance/lane_claims/receipts/{claim['package']}.json"
+        (repo / receipt).write_text('{"result":"edited"}\n', encoding="utf-8")
+        git(repo, "add", "owned.txt", receipt)
+        with (
+            patch.object(LIFECYCLE, "_atomic_write"),
+            self.assertRaisesRegex(LIFECYCLE.Refusal, "non-conflicted index path"),
+        ):
+            LIFECYCLE._complete_reconciliation(context, registry, record, claim)
+        self.assertEqual(source, git(repo, "rev-parse", "HEAD"))
 
     def test_reconciliation_aborts_unowned_conflict_and_restores_exact_checkpoint(self):
         repo, _publisher, context, registry, record, claim, source, _target, _branch = (

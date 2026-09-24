@@ -398,8 +398,10 @@ Merge that control PR before implementation merge.
   writer whose owned paths intersect newer main uses lifecycle
   `reconcile-main start`. The operation pins source C and target M in the
   registry before a normal non-rewriting merge, imports unowned paths exactly
-  from M, exposes only owned conflicts for resolution, digests every other
-  initial index entry so resolution cannot edit an owned non-conflicted path,
+  from M, and retains only the package's exact unchanged C review receipt and
+  evidence when main has not changed them. It exposes only owned conflicts for
+  resolution and digests every other initial index entry so resolution cannot
+  edit an owned non-conflicted path,
   and records
   `prepared`, `merging`, `resolved`, `committed`, `pushed`, then `completed` or
   `refresh_required`. Continue only the exact operation ID. Never reset,

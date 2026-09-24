@@ -4848,10 +4848,42 @@ def _reconciliation_path_is_owned(path: str, claim: dict[str, Any]) -> bool:
     )
 
 
+def _reconciliation_preserves_review_record(
+    context: RepoContext,
+    path: str,
+    claim: dict[str, Any],
+    source: str,
+    target: str,
+    result_tree: str,
+) -> bool:
+    """Allow only this package's unchanged, preexisting review record from C."""
+
+    package = str(claim.get("package", ""))
+    fixed_review = {
+        f"docs/governance/lane_claims/receipts/{package}.json",
+        f"docs/governance/lane_claims/evidence/{package}.md",
+    }
+    if path not in fixed_review or path not in claim.get("surfaces", []):
+        return False
+    source_entry = _git(context.root, "ls-tree", source, "--", path)
+    if not source_entry.startswith("100644 blob "):
+        return False
+    merge_base = _git(context.root, "merge-base", source, target)
+    # Main must not have added, removed, or edited this record since C forked.
+    if _git(context.root, "ls-tree", merge_base, "--", path) != _git(
+        context.root, "ls-tree", target, "--", path
+    ):
+        return False
+    return _git(context.root, "ls-tree", result_tree, "--", path) == source_entry
+
+
 def _reconciliation_changed_from_target(
     context: RepoContext, target_main: str, treeish: str
 ) -> list[str]:
-    raw = _git(context.root, "diff", "--name-only", "-z", target_main, treeish)
+    # Rename detection can hide an unowned deletion behind an allowed addition.
+    raw = _git(
+        context.root, "diff", "--no-renames", "--name-only", "-z", target_main, treeish
+    )
     return sorted(item for item in raw.split("\0") if item)
 
 
@@ -5079,6 +5111,9 @@ def _complete_reconciliation(
             path
             for path in set(changed)
             if not _reconciliation_path_is_owned(path, claim)
+            and not _reconciliation_preserves_review_record(
+                context, path, claim, source, target, tree
+            )
         )
         if outside:
             raise Refusal(

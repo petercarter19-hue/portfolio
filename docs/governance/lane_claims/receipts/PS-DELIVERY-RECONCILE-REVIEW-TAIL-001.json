@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-RECONCILE-REVIEW-TAIL-001",
+  "candidate_sha": "e398aa7d3563d4022259d5cb0de917227fb10c69",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a0cb75-8579-7442-b511-1abb0c9fce3b",
+  "result": "pass",
+  "reviewed_at": "2026-09-22T23:37:45Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-DELIVERY-RECONCILE-REVIEW-TAIL-001.md"
+}

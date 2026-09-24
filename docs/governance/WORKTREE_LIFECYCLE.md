@@ -122,9 +122,13 @@ conflict paths; staged or unstaged edits to any non-conflicted path refuse.
 Phases are monotonic:
 `prepared`, `merging`, `resolved` with exact tree, `committed` with exact
 two-parent R, `pushed`, and `completed` or `refresh_required`. Final bytes may
-differ from M only in currently retained product surfaces; fixed controls,
-released files and all unowned paths import M exactly. Unowned conflicts
-refuse. Push is non-force and a remote tip other than C or exact R refuses.
+differ from M only in currently retained product surfaces and this package's
+fixed review receipt/evidence already present at C. Those review records carry
+forward only with the exact C blobs and modes, only when M has not changed
+them since C forked, and only when they are listed in the current claim.
+The claim, all other fixed controls, released files and unowned paths import M
+exactly. Unowned conflicts refuse. Push is non-force and a remote tip other
+than C or exact R refuses.
 
 Recovery continues only the recorded tuple and phase. It recognizes exact R
 after a crash before the journal write and recognizes an already successful
