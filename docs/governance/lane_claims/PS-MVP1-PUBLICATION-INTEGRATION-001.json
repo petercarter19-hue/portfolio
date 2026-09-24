@@ -91,7 +91,8 @@
     "SQL FIles/Migrations/proposed/PS-RESUME-EDIT-001_private_commands_rollback.sql",
     "SQL FIles/Verification/PS-RESUME-EDIT-001_private_commands_verify.sql",
     "tests/test_living_resume_editor_migration.py",
-    "SQL FIles/Migrations/proposed/PS-RESUME-EDIT-002_education_commands.sql"
+    "SQL FIles/Migrations/proposed/PS-RESUME-EDIT-002_education_commands.sql",
+    "SQL FIles/Migrations/proposed/PS-RESUME-EDIT-002_education_commands_rollback.sql"
   ],
   "domains": [
     "resume:publication:integration",
