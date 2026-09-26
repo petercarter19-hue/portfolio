@@ -285,6 +285,47 @@ scope. Before adding an artifact, package or review pass, identify the unresolve
 requirement it closes; if there is none, do not add it. After three materially
 identical failures, stop retrying and report the blocker.
 
+### Jev development assistance
+
+Consider Jev for useful bounded semantic judgments across management,
+architecture, implementation, debugging and review. This is development tooling,
+not a website feature. Use the installed official `typesafe-ai` skill for question
+design ([official guide](https://docs.typesafe.ai/agent-skill)), then
+`jev-decisions` for local connection, purposes and limits. Resolve both skills
+through the current host's skill catalog; the latter links
+`references/peerslate-development.md`. Each environment verifies its own access.
+
+Include this pointer at natural boundaries in relevant new assignments; preserve
+active workers, models, effort, ownership and independent reviews. Supply concise
+observed evidence and explicit eligible candidates. Jev does not know the live
+agent roster: retain actual roles, session identities, ownership, availability
+and policy. Skip exact lookups, settled assignments and deterministic checks.
+
+Use free local `jev_status` when needed. Availability does not override task/host
+restrictions or authorize spending. Pilot mode permits only task classification
+and relevance ranking; expanded purposes require verified operator activation
+and supported tools. The local Jev owner retains runtime and allowance changes;
+this pointer does not activate ongoing mode or renew/reset a ledger. Do not make
+paid demonstration calls or bypass limits. No-fit, uncertainty, unavailable tools
+or cooldown returns immediately to normal work without polling or paid retries.
+
+Rank inspection order while preserving required sources and plausible conflicting
+evidence. Ask one judgment per question; batch independent shared-state questions.
+Jev never grants permission, dispatches workers, waives tests or establishes final
+acceptance. Keep credentials, private transcripts and unnecessary source text out
+of requests and central logs.
+
+For Pete's September 26-October 17, 2026 evaluation, document **every use**, not
+only helpful results. Link attempt/question IDs to task and evidence references,
+purpose, result/uncertainty, latency, reported usage/cost, followed/modified/rejected
+or fallback decision, and subsequent observed outcome. Separate free status
+checks, blocked/no-network attempts and paid requests; expose logging gaps and
+pending/unknown outcomes. Preserve append-only corrections and source references.
+Use the operator's verified accounting and existing task records; do not claim
+complete capture before it is verified. Weekly assessment compares helpfulness,
+missed evidence and rework by use case; claim savings only with actual comparative
+evidence. Do not create a separate benchmark or monitoring agent.
+
 ## Current OpenAI model routing
 
 | Assigned work or decision | Current choice | Use |

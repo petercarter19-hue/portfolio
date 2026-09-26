@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-JEV-DEVELOPMENT-GUIDANCE-001",
+  "candidate_sha": "7d8f418d40536ddcb016298ae1b8fd0df7551a76",
+  "review_type": "self",
+  "reviewer_ref": "session:01a0c0a9-a194-71f2-9c9b-7e665fe79193",
+  "result": "pass",
+  "reviewed_at": "2026-09-26T21:59:01Z",
+  "findings": [],
+  "evidence_ref": "lane_claims/evidence/PS-JEV-DEVELOPMENT-GUIDANCE-001.md"
+}
