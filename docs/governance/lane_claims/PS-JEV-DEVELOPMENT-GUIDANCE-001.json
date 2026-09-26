@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-JEV-DEVELOPMENT-GUIDANCE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Adopt concise official TypeSafe and local Jev development-tooling guidance in the authoritative capability routing instructions. Preserve current roles, models, effort, ownership, required reviews, task authority and ordinary fallback. Include pointer at natural assignment boundaries; no website integration, paid inference, runtime or allowance changes.",
   "assignment": "implementation",
   "writer_ref": "session:01a0c0a9-a194-71f2-9c9b-7e665fe79193",
@@ -26,6 +26,6 @@
   "review_requirement": "self",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "738bf302eeebf5d0c928730869baf3736ae0c8ac",
+  "closed_at": "2026-09-26T22:33:10Z"
 }
