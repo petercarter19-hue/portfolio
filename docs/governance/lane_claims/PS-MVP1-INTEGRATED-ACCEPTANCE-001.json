@@ -79,7 +79,14 @@
     "services/resume_publication_projection.py",
     "tests/test_resume_publication_adapters.py",
     "tests/test_resume_publication_validation.py",
-    "tests/test_resume_publication_projection.py"
+    "tests/test_resume_publication_projection.py",
+    "services/entry_policy_service.py",
+    "tests/test_entry_policy_service.py",
+    "services/resume_draft_repository.py",
+    "services/resume_draft_service.py",
+    "tests/test_resume_draft_service.py",
+    "tests/test_navigation.py",
+    "tests/test_shared_shell_convergence.py"
   ],
   "domains": [
     "mvp1:integrated-acceptance",
