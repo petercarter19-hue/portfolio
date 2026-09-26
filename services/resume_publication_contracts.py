@@ -202,6 +202,8 @@ class UsePurpose(str, Enum):
     PUBLICATION_REVIEW = "publication_review"
     PUBLIC_DISPLAY = "public_display"
     OWNER_PREVIEW = "owner_preview"
+    VISITOR_AI = "visitor_ai"
+    OWNER_VISITOR_AI_PREVIEW = "owner_visitor_ai_preview"
 
 
 _CONTEXT_SEAL = object()
@@ -224,10 +226,10 @@ class TrustedUseContext:
         if type(self.audience) is not UseAudience or type(self.purpose) is not UsePurpose:
             raise ContractError("closed audience and purpose required")
         if self.audience is UseAudience.GUEST:
-            if self.purpose is not UsePurpose.PUBLIC_DISPLAY or self.authenticated_owner_key is not None:
+            if self.purpose not in {UsePurpose.PUBLIC_DISPLAY, UsePurpose.VISITOR_AI} or self.authenticated_owner_key is not None:
                 raise ContractError("guest context cannot attest owner preview")
         elif self.authenticated_owner_key != self.subject_key or self.purpose not in {
-            UsePurpose.OWNER_PREVIEW, UsePurpose.PUBLICATION_REVIEW,
+            UsePurpose.OWNER_PREVIEW, UsePurpose.PUBLICATION_REVIEW, UsePurpose.OWNER_VISITOR_AI_PREVIEW,
         }:
             raise ContractError("authenticated owner and owner purpose required")
 

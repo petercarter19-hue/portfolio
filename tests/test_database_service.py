@@ -522,6 +522,7 @@ class DatabaseServiceTests(unittest.TestCase):
             "usp_GetResumeCatalogAsset",
             "usp_CommitResumeCatalogCommandForOwner",
         }
+        visitor_ai = {"usp_GetMemberVisitorAiBySlug", "usp_GetMemberVisitorAiPreviewForOwner"}
         expected = (
             base
             | oppslate_os1
@@ -541,6 +542,7 @@ class DatabaseServiceTests(unittest.TestCase):
             | resume_intake
             | resume_media
             | resume_publication
+            | visitor_ai
         )
         # The groups above must not overlap each other — a name counted
         # twice would silently shrink the real union below the true count
@@ -564,10 +566,17 @@ class DatabaseServiceTests(unittest.TestCase):
             resume_intake,
             resume_media,
             resume_publication,
+            visitor_ai,
         )
         self.assertEqual(sum(len(group) for group in groups), len(expected))
-        self.assertEqual(len(expected), 169)
+        self.assertEqual(len(expected), 171)
         self.assertEqual(set(ALLOWED_PROCEDURES), expected)
+
+    def test_visitor_ai_internal_helper_is_not_browser_executable(self):
+        with patch("services.database_service.get_connection") as connection:
+            with self.assertRaises(ValueError):
+                self.service.execute_procedure("usp_MemberVisitorAiSnapshotInternal", [("@OwnerPreview", True)])
+        connection.assert_not_called()
 
     def test_living_resume_editor_procedures_are_exactly_allowlisted(self):
         expected = {

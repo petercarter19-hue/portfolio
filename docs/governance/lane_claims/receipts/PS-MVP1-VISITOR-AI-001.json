@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-VISITOR-AI-001",
+  "candidate_sha": "70055a946573c7e9030a159bf26f14f1783d87d0",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a0c0a4-9342-7163-9052-f16ea0eee843",
+  "result": "pass",
+  "reviewed_at": "2026-09-26T10:28:12Z",
+  "findings": [
+    {
+      "summary": "Local CRLF proof-plan mismatch corrected; all209 committed source hashes independently match final hosted plan and artifact.",
+      "severity": "major",
+      "status": "resolved"
+    },
+    {
+      "summary": "F launcher preserves inherited source-hash filename operands and selects only its oracle invocation; real adapter regressions and actual3571 execution pass.",
+      "severity": "major",
+      "status": "resolved"
+    },
+    {
+      "summary": "Media timestamp conversion uses varchar16 hexadecimal representation; actual forward/verify/rollback/reapply and media dependency oracles pass.",
+      "severity": "major",
+      "status": "resolved"
+    },
+    {
+      "summary": "Exact hosted SQL3571 passed all15 required cases and four-resource identity-bound cleanup. Independent reviewer accepted actual source, plan, authority, artifact and current CI3570. Acceptance is limited to F areas1 and2; fullF and production are not complete.",
+      "severity": "informational",
+      "status": "informational"
+    }
+  ],
+  "evidence_ref": "lane_claims/evidence/PS-MVP1-VISITOR-AI-001.md"
+}

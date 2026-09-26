@@ -2750,6 +2750,16 @@
       ],
       "summary": "Proposed complete Resume publication consistency boundary: one owner-keyed command for publish, canonical correction, restriction, restore-private and sharing, SQL-produced canonical-source codec helpers, separate display and visitor-AI manifests, immutable receipts, media authorization reader, and wrappers through the existing entry-policy command. Repository candidate only; no database application or runtime proof.",
       "gate": null
+    },
+    {
+      "id": "PS-VISITOR-AI-001",
+      "forward": "SQL FIles/Migrations/proposed/PS-VISITOR-AI-001_readers.sql",
+      "rollback": "SQL FIles/Migrations/proposed/PS-VISITOR-AI-001_readers_rollback.sql",
+      "requires": [
+        "PS-RESUME-PUBLICATION-001"
+      ],
+      "summary": "Proposed read-only visitor AI eligibility and owner preview snapshots over existing canonical, publication, evidence, draft and media authorities. No new truth store; no production application or enablement.",
+      "gate": null
     }
   ]
 }

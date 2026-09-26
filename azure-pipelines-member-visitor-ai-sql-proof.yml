@@ -1,0 +1,56 @@
+# F isolated synthetic proof. No automatic trigger and no production connection.
+# Queue consistency does not authenticate Pete; dispatcher verifies a fresh,
+# one-use exact-source/plan authorization before setting executeAuthorized.
+trigger: none
+pr: none
+schedules: []
+parameters:
+  - name: expectedSourceSha
+    type: string
+    default: ''
+  - name: executeAuthorized
+    type: boolean
+    default: false
+  - name: authorizationRef
+    type: string
+    default: ''
+jobs:
+  - job: MemberVisitorAiSqlProof
+    timeoutInMinutes: 45
+    cancelTimeoutInMinutes: 5
+    pool:
+      vmImage: ubuntu-22.04
+    steps:
+      - checkout: self
+        clean: true
+        fetchDepth: 1
+        persistCredentials: false
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: '3.12'
+      - bash: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_SOURCE_SHA}"
+          test "${BUILD_SOURCEVERSION}" = "${EXPECTED_SOURCE_SHA}"
+          python -B scripts/run_member_visitor_ai_sql_proof.py --plan > "${BUILD_ARTIFACTSTAGINGDIRECTORY}/plan.json"
+          python -B scripts/configure_member_visitor_ai_sql_authority.py > "${BUILD_ARTIFACTSTAGINGDIRECTORY}/privilege-plan.json"
+        displayName: Verify exact checkout and emit F plan
+        env:
+          EXPECTED_SOURCE_SHA: ${{ parameters.expectedSourceSha }}
+      - bash: |
+          set -euo pipefail
+          python -B scripts/run_member_visitor_ai_sql_proof.py --execute \
+            --source-sha "${PEERSLATE_MEMBER_VISITOR_AI_EXPECTED_SHA}" \
+            --authorization-ref "${PEERSLATE_MEMBER_VISITOR_AI_AUTHORIZATION_REF}" \
+            --evidence "${BUILD_ARTIFACTSTAGINGDIRECTORY}/evidence.json"
+        displayName: Execute separately authorized F proof and cleanup
+        condition: and(succeeded(), eq('${{ parameters.executeAuthorized }}', 'True'), ne('${{ parameters.authorizationRef }}', ''))
+        env:
+          PEERSLATE_MEMBER_VISITOR_AI_EXECUTE: authorized
+          PEERSLATE_MEMBER_VISITOR_AI_EXPECTED_SHA: ${{ parameters.expectedSourceSha }}
+          PEERSLATE_MEMBER_VISITOR_AI_AUTHORIZATION_REF: ${{ parameters.authorizationRef }}
+      - task: PublishPipelineArtifact@1
+        condition: always()
+        inputs:
+          targetPath: $(Build.ArtifactStagingDirectory)
+          artifact: member-visitor-ai-sql-proof

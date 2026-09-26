@@ -97,6 +97,16 @@ def review(candidate, policy, media):
 
 
 class PublicationContractTests(unittest.TestCase):
+    def test_visitor_ai_purposes_cannot_cross_guest_and_owner_contexts(self):
+        for audience,purpose,owner in (
+            (UseAudience.GUEST,UsePurpose.OWNER_VISITOR_AI_PREVIEW,None),
+            (UseAudience.OWNER_PREVIEW,UsePurpose.VISITOR_AI,'member-a'),
+            (UseAudience.GUEST,UsePurpose.VISITOR_AI,'member-a'),
+        ):
+            with self.subTest(purpose=purpose),self.assertRaises(ContractError):
+                _context_from_authorized_server(subject_key='member-a',resume_key='resume-a',
+                    audience=audience,purpose=purpose,authenticated_owner_key=owner)
+
     def test_review_returns_separate_manifests_without_writes(self):
         candidate, policy, media = fixture(media=True)
         p, m = Mock(), Mock()

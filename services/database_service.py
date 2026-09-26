@@ -13,6 +13,9 @@ _DATABASE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
 
 ALLOWED_PROCEDURES = frozenset(
     {
+        # Read-only F guest and authenticated-owner preview entry points.
+        "usp_GetMemberVisitorAiBySlug",
+        "usp_GetMemberVisitorAiPreviewForOwner",
         "usp_AddSlateItem",
         # PS-SETTINGS-ACCOUNT-EXPORT-EXPERIENCE-001 (C3). ONLY the three
         # member-facing account-export procedures. Each resolves @UserKey

@@ -66,6 +66,7 @@
       "PS-MVP1-MY-DATA-INTAKE-AI-001",
       "PS-MVP1-PUBLICATION-COMPONENTS-001",
       "PS-MVP1-PUBLICATION-INTEGRATION-001",
+      "PS-MVP1-VISITOR-AI-001",
       "PS-OPPORTUNITY-SLATE-001",
       "PS-OPPORTUNITY-SLATE-002",
       "PS-OWNER-HOME-RETIREMENT-001",
@@ -176,11 +177,11 @@
     ]
   },
   "counts": {
-    "current_protect": 84,
+    "current_protect": 85,
     "future_finish": 33,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 152
+    "total": 153
   }
 }
