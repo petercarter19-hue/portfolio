@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "package": "PS-JEV-DEVELOPMENT-GUIDANCE-001",
+  "state": "active",
+  "outcome": "Adopt concise official TypeSafe and local Jev development-tooling guidance in the authoritative capability routing instructions. Preserve current roles, models, effort, ownership, required reviews, task authority and ordinary fallback. Include pointer at natural assignment boundaries; no website integration, paid inference, runtime or allowance changes.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0c0a9-a194-71f2-9c9b-7e665fe79193",
+  "branch": "codex/2026-09-26-jev-development-guidance-001",
+  "delivery_path": "Routine",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "16b8fe3fae624eced3f99db00465c12ea5ad4de9",
+  "owner_outcome_ref": "session:01a0d478-229e-75b3-9624-c4f2ebbb551a/handoff:2026-09-26/jev-development-guidance-adoption",
+  "surfaces": [
+    "docs/AI_MODEL_AND_ROLE_ROUTING.md",
+    "docs/governance/lane_claims/PS-JEV-DEVELOPMENT-GUIDANCE-001.json",
+    "docs/governance/lane_claims/receipts/PS-JEV-DEVELOPMENT-GUIDANCE-001.json",
+    "docs/governance/lane_claims/evidence/PS-JEV-DEVELOPMENT-GUIDANCE-001.md"
+  ],
+  "domains": [
+    "governance:development:jev-guidance"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-JEV-DEVELOPMENT-GUIDANCE-001.md"
+  ],
+  "review_requirement": "self",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
