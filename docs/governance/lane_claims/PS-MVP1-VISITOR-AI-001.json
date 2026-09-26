@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-VISITOR-AI-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Implement F acceptance areas 1 and 2 under outputs/12_PACKAGE_F_ASSIGNMENT.md: authoritative read-only eligibility over existing E records, independent visitor AI permissions, server-bound owner preview, complete live version fence, buffered actual-question orchestration through the existing foundation, citation and bounded factual-support validation, failure states and synthetic adversarial tests. Include separately reviewed exact-candidate isolated SQL proof with fresh authorization. Preserve existing publication and foundation truth. Astra High writer and same separate Astra Extra High reviewer. Route/UI, independent citation endpoints, live provider calls, production schema/deployment/enablement and Package G are excluded; this is a substantive checkpoint within F, not full F completion.",
   "assignment": "implementation",
   "writer_ref": "session:01a0c0a4-0c58-7b22-8f10-eb7d05bd2775",
@@ -61,6 +61,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "74cc9eeb4e89b071827b5f13fe53e2ffb73b1cf4",
+  "closed_at": "2026-09-26T12:50:45Z"
 }
