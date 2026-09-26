@@ -16,6 +16,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MIGRATIONS = ROOT / "SQL FIles" / "Migrations" / "proposed"
 FORWARD = MIGRATIONS / "PS-RESUME-EDIT-001_private_commands.sql"
+EDUCATION_FORWARD = MIGRATIONS / "PS-RESUME-EDIT-002_education_commands.sql"
+EDUCATION_ROLLBACK = MIGRATIONS / "PS-RESUME-EDIT-002_education_commands_rollback.sql"
 ROLLBACK = MIGRATIONS / "PS-RESUME-EDIT-001_private_commands_rollback.sql"
 VERIFY = ROOT / "SQL FIles" / "Verification" / "PS-RESUME-EDIT-001_private_commands_verify.sql"
 REGISTRY = ROOT / "SQL FIles" / "Migrations" / "registry.json"
@@ -232,8 +234,31 @@ class LivingResumeEditorMigrationTests(unittest.TestCase):
     def test_credential_status_is_nullable_only_for_legacy_rows(self):
         self.assertIn("credential_completion_status nvarchar(30) NULL", self.forward)
         self.assertIn("credential_completion_status IS NULL OR", self.forward)
+        addition = self.forward.split(
+            "IF COL_LENGTH(N'dbo.career_credentials', N'credential_completion_status') IS NULL", 1
+        )[1].split("END;", 1)[0]
+        self.assertEqual(addition.count("ALTER TABLE dbo.career_credentials"), 1)
+        self.assertRegex(
+            addition,
+            r"ADD credential_completion_status nvarchar\(30\) NULL\s+"
+            r"CONSTRAINT CK_career_credentials_completion_status CHECK",
+        )
         self.assertIn("N''planned'',N''in_progress'',N''completed''", self.command)
         self.assertIn("@CompletionStatus = N''completed'' AND @IssueDate IS NULL", self.command)
+
+    def test_editor_json_field_allowlists_use_matching_binary_collation(self):
+        comparison = re.compile(
+            r"allowed\.field_name\s+COLLATE Latin1_General_100_BIN2\s*=\s*"
+            r"supplied\.\[key\]\s+COLLATE Latin1_General_100_BIN2\s+AND\s+"
+            r"DATALENGTH\(allowed\.field_name\)\s*=\s*DATALENGTH\(supplied\.\[key\]\)"
+        )
+        for path in (FORWARD, EDUCATION_FORWARD, EDUCATION_ROLLBACK):
+            with self.subTest(migration=path.name):
+                command = procedure_batches(path.read_text(encoding="utf-8"))[
+                    "usp_CommitLivingResumeCommandForOwner"
+                ]
+                self.assertRegex(command, comparison)
+                self.assertNotIn("allowed.field_name = supplied.[key]", command)
 
     def test_editor_read_returns_row_versions_and_block_reasons(self):
         self.assertEqual(self.reader.count("row_version"), 4)

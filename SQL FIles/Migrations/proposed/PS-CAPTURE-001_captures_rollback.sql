@@ -33,10 +33,71 @@ BEGIN TRY
        AND EXISTS
        (
            SELECT 1
-           FROM sys.sql_expression_dependencies
-           WHERE referenced_id = OBJECT_ID(N'dbo.captures')
+           FROM sys.indexes
+           WHERE object_id = OBJECT_ID(N'dbo.captures')
+             AND index_id > 0
+             AND name NOT IN
+                 (N'PK_captures', N'UQ_captures_key', N'IX_captures_owner_created')
        )
-        THROW 52022, 'Rollback blocked: a later programmable object depends on captures.', 1;
+        THROW 52022, 'Rollback blocked: a later object depends on captures.', 1;
+
+    IF OBJECT_ID(N'dbo.captures', N'U') IS NOT NULL
+       AND EXISTS
+       (
+           SELECT 1
+           FROM sys.computed_columns
+           WHERE object_id = OBJECT_ID(N'dbo.captures')
+       )
+        THROW 52022, 'Rollback blocked: a later object depends on captures.', 1;
+
+    -- Standalone user statistics have no sys.indexes row. A later filtered
+    -- statistic can create the same table-self dependency as the owned index.
+    IF OBJECT_ID(N'dbo.captures', N'U') IS NOT NULL
+       AND EXISTS
+       (
+           SELECT 1
+           FROM sys.stats AS statistic
+           WHERE statistic.object_id = OBJECT_ID(N'dbo.captures')
+             AND statistic.user_created = 1
+             AND NOT EXISTS
+             (
+                 SELECT 1
+                 FROM sys.indexes AS capture_index
+                 WHERE capture_index.object_id = statistic.object_id
+                   AND capture_index.index_id = statistic.stats_id
+             )
+       )
+        THROW 52022, 'Rollback blocked: a later object depends on captures.', 1;
+
+    -- This migration's filtered index contributes a same-table dependency.
+    -- Remove only that owned index; later indexes were checked above.
+    IF EXISTS (SELECT 1 FROM sys.indexes
+               WHERE object_id = OBJECT_ID(N'dbo.captures')
+                 AND name = N'IX_captures_owner_created')
+        DROP INDEX IX_captures_owner_created ON dbo.captures;
+
+    IF OBJECT_ID(N'dbo.captures', N'U') IS NOT NULL
+       AND EXISTS
+       (
+           SELECT 1
+           FROM sys.sql_expression_dependencies AS dependency
+           WHERE dependency.referenced_id = OBJECT_ID(N'dbo.captures')
+             -- The owned filtered index can reference its own table. Later
+             -- indexes, computed columns, and standalone statistics were
+             -- checked above. The four CHECK constraints are owned here.
+             AND dependency.referencing_id <> OBJECT_ID(N'dbo.captures')
+             AND NOT EXISTS
+             (
+                 SELECT 1
+                 FROM sys.check_constraints AS own_check
+                 WHERE own_check.object_id = dependency.referencing_id
+                   AND own_check.parent_object_id = OBJECT_ID(N'dbo.captures')
+                   AND own_check.name IN
+                       (N'CK_captures_type', N'CK_captures_visibility',
+                        N'CK_captures_status', N'CK_captures_deleted_state')
+             )
+       )
+        THROW 52022, 'Rollback blocked: a later object depends on captures.', 1;
 
     IF OBJECT_ID(N'dbo.captures', N'U') IS NOT NULL
         DROP TABLE dbo.captures;

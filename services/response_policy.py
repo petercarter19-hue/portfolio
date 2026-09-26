@@ -19,6 +19,8 @@ PUBLIC_STATIC_FALLBACK_CACHE_CONTROL = (
     "public, max-age=3600, stale-while-revalidate=86400"
 )
 
+MEMBER_PUBLICATION_CACHE_CONTROL = "private, no-store"
+
 PUBLIC_RESUME_DATA_STATIC_FILENAME = "data/resume_data.json"
 PUBLIC_RESUME_PDF_STATIC_FILENAME = "files/pete-carter-resume.pdf"
 PUBLIC_RESUME_STATIC_FILENAMES = frozenset(

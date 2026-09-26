@@ -40,6 +40,13 @@
     margin: 1.25rem 0 0;
 }
 
+.resume-editor__toolbar a.resume-editor__button {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+
 .resume-editor__button {
     min-height: 2.75rem;
     padding: 0.5rem 1rem;

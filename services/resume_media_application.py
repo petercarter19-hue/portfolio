@@ -855,6 +855,31 @@ class ResumeMediaApplicationService:
 
     def keep_words_only(self, *, owner_id: str, payload: Any) -> dict[str, Any]:
         body = _authority_free(payload)
+        publication = getattr(self, "publication_service", None)
+        if publication is not None:
+            from services.resume_publication_repository import PublicationStoreUnavailable
+            from services.resume_publication_service import PublicationUnavailableError
+
+            try:
+                snapshot = publication.repository.load_owner(str(owner_id))
+            except (PublicationStoreUnavailable, PublicationUnavailableError) as error:
+                raise ResumeMediaError("publication-unavailable") from error
+            if not isinstance(snapshot, dict):
+                raise ResumeMediaError("publication-unavailable")
+            revision = snapshot.get("current_revision")
+            sharing = bool(snapshot.get("sharing_enabled"))
+            publications = snapshot.get("publications") or {}
+            current = publications.get(revision)
+            slot = body.get("slot")
+            if sharing and revision is not None:
+                if not isinstance(current, dict) or "media" not in current:
+                    raise ResumeMediaError("publication-unavailable")
+                media = current.get("media") or {}
+                names = [slot] if slot else list(media)
+                for name in names:
+                    item = media.get(name)
+                    if isinstance(item, dict) and item.get("active"):
+                        raise ResumeMediaError("publication-restrict-required")
         return self._media.keep_words_only(
             owner_id=owner_id,
             request_uuid=_request_uuid(body),
@@ -896,6 +921,7 @@ def build_resume_media_application(
     persistence_label: str = "unknown",
     catalog_label: str = "synthetic_test_catalog",
     lock: Any = None,
+    publication_service: Any = None,
 ) -> ResumeMediaApplicationService:
     """Explicitly wire the media application. Never an implicit test fallback."""
 
@@ -907,11 +933,13 @@ def build_resume_media_application(
     media = ResumeMediaService(
         repository=repository, storage=storage, photo_readiness=photo_readiness
     )
-    return ResumeMediaApplicationService(
+    application = ResumeMediaApplicationService(
         media=media,
         persistence_label=persistence_label,
         catalog_label=catalog_label,
     )
+    application.publication_service = publication_service
+    return application
 
 
 def configured_resume_media_application(config_value: Any) -> ResumeMediaApplicationService:
@@ -925,3 +953,14 @@ def configured_resume_media_application(config_value: Any) -> ResumeMediaApplica
     if not isinstance(config_value, ResumeMediaApplicationService):
         raise ResumeMediaApplicationUnavailable("media-unavailable")
     return config_value
+
+
+def recheck_catalog_for_publication(catalog, asset_id: str, version: int, digest: str):
+    """Publication readers recheck the durable catalog before returning bytes."""
+
+    if catalog is None:
+        raise ResumeMediaApplicationUnavailable("media-unavailable")
+    record = catalog.get_active(str(asset_id), int(version))
+    if record.digest != str(digest) or record.lifecycle != "active":
+        raise ResumeMediaApplicationUnavailable("media-unavailable")
+    return record

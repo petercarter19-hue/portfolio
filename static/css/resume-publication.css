@@ -1,0 +1,59 @@
+.resume-publication {
+    color: #0a1b36;
+}
+
+.resume-publication__panel {
+    width: min(100%, 880px);
+}
+
+.resume-publication__intro > p {
+    max-width: 65ch;
+    margin: 1rem 0 0;
+    color: #33445f;
+    font: 400 1.05rem/1.7 Inter, sans-serif;
+}
+
+.resume-publication-review {
+    margin: 2rem 0 0;
+    padding: 1.25rem 1.25rem 1.5rem;
+    border: 2px solid #0a1b36;
+    border-radius: 1rem;
+    background: #ffffff;
+}
+
+.resume-publication-review h2 {
+    margin: 0 0 0.75rem;
+    font: 650 1.35rem/1.3 Inter, sans-serif;
+}
+
+.resume-publication-review input {
+    min-height: 2.75rem;
+    width: min(100%, 24rem);
+    margin: 0.35rem 0 0;
+    padding: 0.5rem 0.75rem;
+    border: 2px solid #0a1b36;
+    border-radius: 0.5rem;
+    font: 400 1rem/1.4 Inter, sans-serif;
+}
+
+.resume-publication__digest {
+    margin: 1rem 0 0;
+    padding: 0.75rem;
+    overflow-x: auto;
+    background: #eef3fb;
+    font: 500 0.9rem/1.5 ui-monospace, Consolas, monospace;
+}
+
+.resume-publication__entry {
+    margin: 1.5rem 0 0;
+}
+
+.resume-publication__entry h2 {
+    margin: 0 0 0.5rem;
+    font: 650 1.25rem/1.3 Inter, sans-serif;
+}
+
+.resume-publication-review button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}

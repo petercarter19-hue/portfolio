@@ -1,0 +1,32 @@
+{# Owner publication review. Review writes nothing. Publish is a separate command. #}
+<aside
+    class="resume-publication-review"
+    id="resume-publication-review"
+    aria-labelledby="resume-publication-review-title"
+    data-review-url="{{ review_url }}"
+    data-commands-url="{{ commands_url }}"
+    data-preview-url="{{ preview_url }}"
+>
+    <h2 id="resume-publication-review-title">Review before publishing</h2>
+    <p>
+        Review confirms the current wording, independent display and visitor-AI choices,
+        and media catalog fences. It does not save, publish, or grant permission.
+    </p>
+    <p>
+        <label for="resume-publication-slug">Public slug</label>
+        <input id="resume-publication-slug" name="slug" type="text" maxlength="100" autocomplete="off" required>
+    </p>
+    <p id="resume-publication-status" class="resume-editor__status" role="status" aria-live="polite"></p>
+    <p class="resume-editor__toolbar">
+        <button type="button" class="resume-editor__button resume-editor__button--secondary" id="resume-publication-review-button">
+            Review without publishing
+        </button>
+        <button type="button" class="resume-editor__button" id="resume-publication-publish-button" disabled>
+            Publish reviewed Resume
+        </button>
+        <button type="button" class="resume-editor__button resume-editor__button--quiet" id="resume-publication-sharing-off-button">
+            Stop sharing
+        </button>
+    </p>
+    <pre id="resume-publication-digest" class="resume-publication__digest" hidden></pre>
+</aside>

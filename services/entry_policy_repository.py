@@ -36,12 +36,26 @@ ENTRY_POLICY_WORKER_PROCEDURES = frozenset(
 )
 
 
+class EntryPolicyStoreUnavailable(RuntimeError):
+    """Raised when the SQL port cannot run (unapplied schema or missing objects)."""
+
+
+class EntryPolicyRowInvalid(EntryPolicyStoreUnavailable):
+    """Raised when a list/get row is missing required versions or lifecycle."""
+
+
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
 def _as_bool(value: object) -> bool:
-    return value in (True, 1, "1", b"\x01")
+    if type(value) is bool:
+        return value
+    if value in (1, "1", b"\x01"):
+        return True
+    if value in (0, "0", b"\x00"):
+        return False
+    raise EntryPolicyRowInvalid("Entry policy storage is unavailable.")
 
 
 def _as_key(value: object) -> str | None:
@@ -53,31 +67,69 @@ def _as_key(value: object) -> str | None:
         return str(value)
 
 
+def _as_positive_int(row: Mapping[str, Any], name: str) -> int:
+    if name not in row or row[name] is None:
+        raise EntryPolicyRowInvalid("Entry policy storage is unavailable.")
+    try:
+        value = int(row[name])
+    except (TypeError, ValueError) as error:
+        raise EntryPolicyRowInvalid("Entry policy storage is unavailable.") from error
+    if value < 1:
+        raise EntryPolicyRowInvalid("Entry policy storage is unavailable.")
+    return value
+
+
 def map_entry_policy_row(row: Mapping[str, Any]) -> dict[str, Any]:
     """Map SQL list/get columns onto the Python snapshot vocabulary.
 
-    Proposed SQL uses parent_entry_key and recover_until_utc. The in-memory
-    service snapshot uses parent_key and recover_until.
+    Missing, null, or unsupported version/lifecycle values are refused.
     """
 
     if not isinstance(row, Mapping):
-        raise EntryPolicyStoreUnavailable("Entry policy storage is unavailable.")
+        raise EntryPolicyRowInvalid("Entry policy storage is unavailable.")
+    required = (
+        "entry_key",
+        "canonical_type",
+        "canonical_key",
+        "category",
+        "content_version",
+        "access_revision",
+        "resume_display",
+        "visitor_ai",
+        "private_assistance_excluded",
+        "lifecycle",
+    )
+    if any(name not in row or row[name] in (None, "") for name in required):
+        raise EntryPolicyRowInvalid("Entry policy storage is unavailable.")
+    lifecycle = row["lifecycle"]
+    if lifecycle not in {"active", "deleted", "permanently_deleted"}:
+        raise EntryPolicyRowInvalid("Entry policy storage is unavailable.")
     parent = row.get("parent_entry_key", row.get("parent_key"))
     recover = row.get("recover_until_utc", row.get("recover_until"))
+    values = row.get("values")
+    if values is None and row.get("values_json") is not None:
+        try:
+            values = json.loads(row["values_json"])
+        except (TypeError, ValueError) as error:
+            raise EntryPolicyRowInvalid("Entry policy storage is unavailable.") from error
+    if values is None:
+        values = {}
+    if type(values) is not dict:
+        raise EntryPolicyRowInvalid("Entry policy storage is unavailable.")
     return {
         "entry_key": _as_key(row.get("entry_key")),
-        "canonical_type": row.get("canonical_type"),
+        "canonical_type": row["canonical_type"],
         "canonical_key": _as_key(row.get("canonical_key")),
-        "category": row.get("category"),
+        "category": row["category"],
         "parent_key": _as_key(parent) if parent is not None else None,
-        "content_version": int(row["content_version"]) if row.get("content_version") is not None else 1,
-        "access_revision": int(row["access_revision"]) if row.get("access_revision") is not None else 1,
+        "content_version": _as_positive_int(row, "content_version"),
+        "access_revision": _as_positive_int(row, "access_revision"),
         "resume_display": _as_bool(row.get("resume_display")),
         "visitor_ai": _as_bool(row.get("visitor_ai")),
         "private_assistance_excluded": _as_bool(row.get("private_assistance_excluded")),
-        "lifecycle": row.get("lifecycle") or "active",
+        "lifecycle": lifecycle,
         "recover_until": recover,
-        "values": dict(row.get("values") or {}),
+        "values": dict(values),
     }
 
 
@@ -106,6 +158,15 @@ class InMemoryEntryPolicyRepository:
 
     def save_owner(self, owner_user_key: str, snapshot: dict[str, Any]) -> None:
         self._owners[owner_user_key] = copy.deepcopy(snapshot)
+
+    def list_entries(self, owner_user_key: str) -> list[dict[str, Any]]:
+        snapshot = self.load_owner(owner_user_key)
+        return [copy.deepcopy(item) for item in snapshot.get("entries", {}).values()]
+
+    def get_entry(self, owner_user_key: str, entry_key: str) -> dict[str, Any] | None:
+        snapshot = self.load_owner(owner_user_key)
+        item = snapshot.get("entries", {}).get(entry_key)
+        return copy.deepcopy(item) if item is not None else None
 
 
 class SqlEntryPolicyRepository:
@@ -144,7 +205,19 @@ class SqlEntryPolicyRepository:
                 "usp_ListEntryPolicyEntriesForOwner",
                 [("@UserKey", owner_user_key)],
             )
-        except (DatabaseServiceError, ValueError) as error:
+        except (DatabaseServiceError, ValueError, EntryPolicyRowInvalid) as error:
+            raise EntryPolicyStoreUnavailable("Entry policy storage is unavailable.") from error
+        return [map_entry_policy_row(row) for row in rows or []]
+
+    def list_publication_entries(self, owner_user_key: str) -> list[dict[str, Any]]:
+        """Publication review reads canonical wording through the E owner-scoped SQL view."""
+
+        try:
+            rows = self.database.first_result(
+                "usp_ListResumePublicationPolicyForOwner",
+                [("@UserKey", owner_user_key)],
+            )
+        except (DatabaseServiceError, ValueError, EntryPolicyRowInvalid) as error:
             raise EntryPolicyStoreUnavailable("Entry policy storage is unavailable.") from error
         return [map_entry_policy_row(row) for row in rows or []]
 
@@ -154,7 +227,7 @@ class SqlEntryPolicyRepository:
                 "usp_GetEntryPolicyEntryForOwner",
                 [("@UserKey", owner_user_key), ("@EntryKey", entry_key)],
             )
-        except (DatabaseServiceError, ValueError) as error:
+        except (DatabaseServiceError, ValueError, EntryPolicyRowInvalid) as error:
             raise EntryPolicyStoreUnavailable("Entry policy storage is unavailable.") from error
         if row is None:
             return None
@@ -189,7 +262,3 @@ class SqlEntryPolicyRepository:
             "outcome": row.get("outcome"),
             "request_digest": row.get("request_digest"),
         }
-
-
-class EntryPolicyStoreUnavailable(RuntimeError):
-    """Raised when the SQL port cannot run (unapplied schema or missing objects)."""

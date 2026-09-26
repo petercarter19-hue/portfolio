@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} | PeerSlate{% endblock %}
+
+{% block meta_description %}
+{% if is_public_reader %}Member Resume publication. Private cache. Not a directory listing.{% else %}Private Resume publication review. Review does not publish.{% endif %}
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resume-editor.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resume-publication.css') }}">
+<meta name="robots" content="noindex, nofollow, noarchive, noimageindex">
+{% endblock %}
+
+{% block content %}
+{% if is_public_reader %}
+<section class="owner-app resume-publication resume-publication--public" aria-labelledby="resume-publication-title">
+    <div class="owner-app__panel resume-publication__panel">
+        <header class="resume-publication__intro">
+            <p class="owner-app__eyebrow">Resume</p>
+            <h1 id="resume-publication-title">Published Resume</h1>
+            <p>This page shows the current published Resume for this member. It is not a search result and is not the labeled Pete example.</p>
+        </header>
+        <div class="resume-publication__guest" data-publication-revision="{{ public_publication.publication_revision }}">
+            {% for entry_key, item in (public_publication.display or {}).items() %}
+            <article class="resume-publication__entry">
+                <h2>{{ item.wording.role_title or item.wording.title or item.wording.name or 'Entry' }}</h2>
+                <p>{{ item.wording.summary or item.wording.skill_summary or item.wording.wording or '' }}</p>
+            </article>
+            {% else %}
+            <p>No display entries are currently published.</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% else %}
+<section class="owner-app resume-publication" aria-labelledby="resume-publication-title">
+    <div class="owner-app__panel resume-publication__panel">
+        <header class="resume-publication__intro">
+            <p class="owner-app__eyebrow">Private Resume</p>
+            <h1 id="resume-publication-title">Publish Resume</h1>
+            <p>
+                Welcome, {{ member.display_name or 'PeerSlate member' }}.
+                Review checks the current facts. Review does not publish, share, or grant visitor AI.
+                Publishing uses the reviewed digest and does not keep a private draft as the public copy.
+            </p>
+            <p class="resume-editor__privacy-note">
+                Display and visitor AI stay independent. Restoring a deleted fact stays private.
+                Turning sharing off hides the public page immediately.
+            </p>
+        </header>
+        {% include "partials/resume/_publication_review.html" %}
+    </div>
+</section>
+<script src="{{ url_for('static', filename='js/resume-publication.js') }}" defer></script>
+{% endif %}
+{% endblock %}

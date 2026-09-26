@@ -1185,10 +1185,9 @@ BEGIN TRY
                            WHERE owner_profile_id = @ProfileId AND source_key = @SourceKey)
                 THROW 52310, ''RESUME_INTAKE_NOT_FOUND'', 1;
 
-            -- Purge drops the member's words and advances the source version so
-            -- late work is fenced. It never touches dbo.slate_entities /
-            -- career_* / entry_policy_records: independently accepted canonical
-            -- content survives its source. The immutable receipts are untouched
+            -- Purge drops the member''s words and advances the source version so
+            -- late work is fenced. Independently accepted canonical content
+            -- survives its source and is never modified by this purge. The immutable receipts are untouched
             -- because they never carried the words in the first place.
             UPDATE dbo.resume_intake_sources
             SET state = N''purged'', source_text = NULL, structured_values_json = NULL,
@@ -1495,8 +1494,11 @@ BEGIN TRY
         END;
     ');
 
-    INSERT dbo.schema_migrations (migration_id)
-    VALUES (N'PS-RESUME-INTAKE-001');
+    IF NOT EXISTS (SELECT 1 FROM dbo.schema_migrations WHERE migration_id = N'PS-RESUME-INTAKE-001')
+    BEGIN
+        INSERT dbo.schema_migrations (migration_id, description)
+        VALUES (N'PS-RESUME-INTAKE-001', N'Proposed owner-scoped Resume composer intake and reviewed canonical intents');
+    END;
 
     COMMIT TRANSACTION;
 END TRY

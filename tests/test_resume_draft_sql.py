@@ -70,6 +70,17 @@ class ResumeDraftSqlTests(unittest.TestCase):
         self.assertIn("verified", self.verify)
         self.assertIn("runtime proof remains outstanding", self.verify)
 
+    def test_reader_orders_receipts_by_the_recorded_commit_time(self):
+        receipt_table = self.forward.split(
+            "CREATE TABLE dbo.resume_draft_command_receipts", 1
+        )[1].split("EXEC(N'", 1)[0]
+        reader = self.forward.split(
+            "CREATE OR ALTER PROCEDURE dbo.usp_GetResumeDraftForOwner", 1
+        )[1].split("CREATE OR ALTER PROCEDURE dbo.usp_CommitResumeDraftCommandForOwner", 1)[0]
+        self.assertIn("committed_at_utc datetime2(7) NOT NULL", receipt_table)
+        self.assertIn("ORDER BY receipt.committed_at_utc, receipt.request_id", reader)
+        self.assertNotIn("receipt.created_at_utc", reader)
+
     def test_browser_procedures_are_allowlisted_and_workers_are_absent(self):
         for name in RESUME_DRAFT_BROWSER_PROCEDURES:
             self.assertIn(name, self.forward)

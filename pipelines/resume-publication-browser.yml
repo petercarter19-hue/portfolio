@@ -1,0 +1,25 @@
+# Standalone publication browser template. Required CI now also runs
+# scripts/run_resume_publication_browser_tests.py fail-closed from
+# azure-pipelines.yml InterviewStudioBrowserCI after lawful YAML admission.
+# This file is not auto-triggered.
+trigger: none
+pr: none
+
+jobs:
+  - job: ResumePublicationBrowser
+    displayName: Resume publication browser suite
+    pool:
+      vmImage: ubuntu-22.04
+    steps:
+      - checkout: self
+        clean: true
+        fetchDepth: 1
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "3.12"
+      - bash: |
+          set -euo pipefail
+          python -m pip install -r requirements.txt
+          python -B -m playwright install chromium
+          python -B scripts/run_resume_publication_browser_tests.py
+        displayName: Run required publication browser suite

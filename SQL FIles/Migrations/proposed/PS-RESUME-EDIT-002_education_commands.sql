@@ -354,7 +354,10 @@ BEGIN TRY
                 IF JSON_QUERY(@CommandJson, ''$.values'') IS NULL
                    OR EXISTS
                       (SELECT 1 FROM OPENJSON(@CommandJson, ''$.values'') AS supplied
-                       WHERE NOT EXISTS (SELECT 1 FROM @AllowedValues AS allowed WHERE allowed.field_name = supplied.[key]))
+                       WHERE NOT EXISTS (SELECT 1 FROM @AllowedValues AS allowed
+                                         WHERE allowed.field_name COLLATE Latin1_General_100_BIN2
+                                             = supplied.[key] COLLATE Latin1_General_100_BIN2
+                                           AND DATALENGTH(allowed.field_name) = DATALENGTH(supplied.[key])))
                     THROW 52003, ''RESUME_EDITOR_VALIDATION'', 1;
             END;
 

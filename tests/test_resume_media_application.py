@@ -812,6 +812,116 @@ class DraftAtomicityTests(MediaApplicationTestCase):
         self.assertEqual(workspace["staged"], {})
         self.assertTrue(workspace["slots"]["story_banner"])
 
+    def test_sql_shaped_published_media_refuses_keep_words_only_like_memory(self):
+        from services.resume_publication_repository import (
+            InMemoryResumePublicationRepository,
+            SqlResumePublicationRepository,
+            empty_publication_snapshot,
+        )
+        from services.resume_publication_service import ResumePublicationService
+
+        memory = InMemoryResumePublicationRepository()
+        snapshot = empty_publication_snapshot()
+        snapshot["sharing_enabled"] = True
+        snapshot["publication_revision"] = 2
+        snapshot["current_revision"] = 2
+        snapshot["publications"][2] = {"media": {"portrait": {"active": True}}}
+        memory.save_owner(OWNER_A, snapshot)
+        memory_app = build_resume_media_application(
+            draft_store=self.draft_store,
+            sources=self.sources,
+            storage=self.storage,
+            persistence_label="in_memory_not_live_db",
+            catalog_label="synthetic_test_catalog",
+            publication_service=ResumePublicationService(
+                repository=memory, sql_repository=None, catalog=None
+            ),
+        )
+        with self.assertRaises(ResumeMediaError) as refused:
+            memory_app.keep_words_only(
+                owner_id=OWNER_A,
+                payload={
+                    "type": "keep_words_only",
+                    "request_id": str(uuid4()),
+                    "expected_draft_version": 0,
+                    "slot": "portrait",
+                },
+            )
+        self.assertEqual(str(refused.exception), "publication-restrict-required")
+
+        class OwnerRowDatabase:
+            def first_row(self, procedure, parameters=None):
+                self.procedure = procedure
+                self.parameters = parameters
+                return {
+                    "sharing_enabled": 1,
+                    "sharing_epoch": 1,
+                    "publication_revision": 2,
+                    "current_revision": 2,
+                    "public_slug": "alice",
+                    "media_json": '{"portrait": {"active": true}}',
+                }
+
+        sql_repo = SqlResumePublicationRepository(database=OwnerRowDatabase())
+        sql_app = build_resume_media_application(
+            draft_store=self.draft_store,
+            sources=self.sources,
+            storage=self.storage,
+            persistence_label="sql_shaped",
+            catalog_label="synthetic_test_catalog",
+            publication_service=ResumePublicationService(
+                repository=sql_repo,
+                sql_repository=sql_repo,
+                catalog=None,
+            ),
+        )
+        with self.assertRaises(ResumeMediaError) as sql_refused:
+            sql_app.keep_words_only(
+                owner_id=OWNER_A,
+                payload={
+                    "type": "keep_words_only",
+                    "request_id": str(uuid4()),
+                    "expected_draft_version": 0,
+                    "slot": "portrait",
+                },
+            )
+        self.assertEqual(str(sql_refused.exception), "publication-restrict-required")
+
+    def test_empty_sql_publication_snapshot_does_not_authorize_keep_words_only(self):
+        from services.resume_publication_repository import SqlResumePublicationRepository
+        from services.resume_publication_service import ResumePublicationService
+
+        class EmptyOwnerRowDatabase:
+            def first_row(self, procedure, parameters=None):
+                return {
+                    "sharing_enabled": 1,
+                    "sharing_epoch": 1,
+                    "publication_revision": 2,
+                    "current_revision": 2,
+                    "public_slug": "alice",
+                }
+
+        sql_repo = SqlResumePublicationRepository(database=EmptyOwnerRowDatabase())
+        self.application.publication_service = ResumePublicationService(
+            repository=sql_repo,
+            sql_repository=sql_repo,
+            catalog=None,
+        )
+        with self.assertRaises(ResumeMediaError) as refused:
+            self.application.keep_words_only(
+                owner_id=OWNER_A,
+                payload={
+                    "type": "keep_words_only",
+                    "request_id": str(uuid4()),
+                    "expected_draft_version": 0,
+                    "slot": "portrait",
+                },
+            )
+        self.assertIn(
+            str(refused.exception),
+            {"publication-unavailable", "publication-restrict-required"},
+        )
+
     def test_swap_recomputes_a_valid_crop_for_each_target_slot(self):
         source_id = self.upload_ready_photo()
         self.seed_art()
@@ -1792,6 +1902,24 @@ class PersistedDraftMediaReadTests(MediaApplicationTestCase):
             owner_id=OWNER_A, slot="experience_support"
         )
         self.assertEqual(opened["stream"].read(), b"catalog-bytes-experience_support")
+
+    def test_publication_catalog_recheck_refuses_withdrawn_or_mismatched_digest(self):
+        from services.resume_media_application import recheck_catalog_for_publication
+        from services.resume_media_catalog_repository import InMemoryResumeCatalogRepository
+        from services.resume_media_repository import CatalogAssetRecord
+
+        catalog = InMemoryResumeCatalogRepository()
+        record = CatalogAssetRecord(
+            "art-forest", 1, "b" * 64, "Forest", "scene", ("trees",), 1600, 900
+        )
+        catalog.put(record)
+        self.assertEqual(
+            recheck_catalog_for_publication(catalog, "art-forest", 1, "b" * 64).asset_id,
+            "art-forest",
+        )
+        catalog.withdraw("art-forest", 1)
+        with self.assertRaises(Exception):
+            recheck_catalog_for_publication(catalog, "art-forest", 1, "b" * 64)
 
 
 if __name__ == "__main__":

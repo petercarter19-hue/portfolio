@@ -9,6 +9,8 @@ This module performs no writes, owns no store, derives identity from its
 caller (the route layer passes the server-derived user key), and never
 accepts owner identifiers, table names, or permission bypass flags. Every
 saved fact starts private; this layer only reports the stored flags.
+Mutations stay on entry-policy commands, which share the publication
+consistency boundary when a current publication exists.
 
 Feature gate ``PEERSLATE_MY_DATA_ENABLED`` is enforced by the route layer.
 Missing configuration behaves as disabled.

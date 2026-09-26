@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-PUBLICATION-INTEGRATION-001",
+  "candidate_sha": "054015c3af57c5b154c841a1ad81471e0ab99a39",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a0c0a4-9342-7163-9052-f16ea0eee843",
+  "result": "pass",
+  "reviewed_at": "2026-09-26T06:36:44Z",
+  "findings": [
+    {
+      "summary": "B2 permission target validation delimiter corrected and checked in the decoded dynamic SQL predicate; Hosted SQL Server compilation passed in proof 3552.",
+      "severity": "blocker",
+      "status": "resolved"
+    },
+    {
+      "summary": "B1 exact Summary and Wording alias selection corrected for capitalization-only edits and covered through the service and reader proof paths.",
+      "severity": "major",
+      "status": "resolved"
+    },
+    {
+      "summary": "B3 rollback permission correction and earlier R1, R2, R3 and R5 source findings retain accepted source/protocol evidence.",
+      "severity": "informational",
+      "status": "informational"
+    },
+    {
+      "summary": "H2 failed-plan execution and H3 contradictory client exit are corrected; H4 resource provenance and exact-ID cleanup absence have independent source/protocol PASS.",
+      "severity": "blocker",
+      "status": "resolved"
+    },
+    {
+      "summary": "H1 is documented as a dispatcher-controlled process boundary; queue inputs do not independently authenticate owner approval, which remains required before the one protected run.",
+      "severity": "informational",
+      "status": "informational"
+    },
+    {
+      "summary": "Full hosted synthetic SQL proof 3552 passed 30 mandatory cases, migration/race/permission/rollback and exact four-resource cleanup; same independent reviewer accepted the exact artifact and source. Repository merge and deployment remain separate.",
+      "severity": "informational",
+      "status": "informational"
+    }
+  ],
+  "evidence_ref": "lane_claims/evidence/PS-MVP1-PUBLICATION-INTEGRATION-001.md"
+}

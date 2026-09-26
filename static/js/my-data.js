@@ -598,6 +598,7 @@
                 type: 'edit',
                 entry_key: entry.entry_key,
                 expected_content_version: entry.content_version,
+                expected_access_revision: entry.access_revision,
                 values: next
             }, 'Correction saved everywhere it is already permitted.');
         });

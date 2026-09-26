@@ -402,7 +402,8 @@ class LivingResumeCanonicalCatalog:
     """Reads the existing private editor. Fail-closed when that source is down.
 
     This is not engine proof for proposed draft SQL. Access revisions come from
-    the entry-policy adapter when that read succeeds; otherwise they default to 1.
+    the entry-policy adapter when that read succeeds. Missing policy rows or an
+    unavailable snapshot cannot authorize publication or review.
     """
 
     persistence_label = "living_resume_editor_sql"
@@ -414,11 +415,30 @@ class LivingResumeCanonicalCatalog:
     def _policy_index(self, owner_user_key: str) -> dict[str, dict[str, Any]]:
         if self._policy is None:
             self._policy = SqlEntryPolicyRepository()
-        try:
-            snapshot = self._policy.load_owner(owner_user_key)
-        except EntryPolicyStoreUnavailable:
-            return {}
-        return snapshot.get("entries") or {}
+        rows: list[dict[str, Any]] = []
+        if hasattr(self._policy, "list_entries"):
+            try:
+                payload = self._policy.list_entries(owner_user_key)
+            except EntryPolicyStoreUnavailable:
+                payload = []
+            if isinstance(payload, dict):
+                rows = list(payload.get("entries") or [])
+            else:
+                rows = list(payload or [])
+        else:
+            try:
+                snapshot = self._policy.load_owner(owner_user_key)
+            except EntryPolicyStoreUnavailable:
+                snapshot = {}
+            rows = list((snapshot.get("entries") or {}).values())
+        index = {}
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            key = str(row.get("entry_key") or "")
+            if key:
+                index[key] = row
+        return index
 
     def _editor_items(self, owner_user_key: str) -> list[dict[str, Any]]:
         try:
@@ -437,22 +457,40 @@ class LivingResumeCanonicalCatalog:
                 if not isinstance(row, dict):
                     continue
                 key = str(row["record_key"])
-                access = policy.get(key) or {}
+                access = policy.get(key)
+                access_revision = None
+                content_version = None
+                if isinstance(access, dict):
+                    if access.get("access_revision") is not None:
+                        try:
+                            access_revision = int(access["access_revision"])
+                        except (TypeError, ValueError):
+                            access_revision = None
+                    if access.get("content_version") is not None:
+                        try:
+                            content_version = int(access["content_version"])
+                        except (TypeError, ValueError):
+                            content_version = None
                 items.append(
                     {
                         "record_key": key,
                         "record_type": record_type,
                         "content_token": str(row.get("row_version") or ""),
-                        "access_revision": int(access.get("access_revision") or 1),
+                        "access_revision": access_revision,
+                        "content_version": content_version,
                         "editable": bool(row.get("editable")),
                         "blocked_reason": row.get("blocked_reason"),
                         "save_mode": save_mode_for_record(row),
                         "values": _row_values(row),
-                        "resume_display": bool(access.get("resume_display", False)),
-                        "visitor_ai": bool(access.get("visitor_ai", False)),
+                        "resume_display": bool(access.get("resume_display")) if access else False,
+                        "visitor_ai": bool(access.get("visitor_ai")) if access else False,
                         "private_assistance_excluded": bool(
-                            access.get("private_assistance_excluded", False)
-                        ),
+                            access.get("private_assistance_excluded")
+                        )
+                        if access
+                        else False,
+                        "publication_eligible": access_revision is not None
+                        and content_version is not None,
                     }
                 )
         return items

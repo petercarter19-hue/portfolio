@@ -2,6 +2,7 @@ import unittest
 import xml.etree.ElementTree as ET
 
 from services.response_policy import (
+    MEMBER_PUBLICATION_CACHE_CONTROL,
     PUBLIC_RESUME_DATA_STATIC_FILENAME,
     PUBLIC_RESUME_PDF_STATIC_FILENAME,
     PUBLIC_STATIC_FALLBACK_CACHE_CONTROL,
@@ -15,6 +16,9 @@ from services.response_policy import (
 
 
 class QuietPreviewClassificationTests(unittest.TestCase):
+    def test_member_publication_cache_is_private_no_store(self):
+        self.assertEqual(MEMBER_PUBLICATION_CACHE_CONTROL, "private, no-store")
+
     def test_every_public_html_response_is_selected_by_mimetype(self):
         for request_path in (
             "/",

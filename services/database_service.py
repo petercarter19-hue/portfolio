@@ -231,6 +231,7 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_CommitEntryPolicyCommandForOwner",
         "usp_GetEntryPolicyEntryForOwner",
         "usp_ListEntryPolicyEntriesForOwner",
+        "usp_ListResumePublicationPolicyForOwner",
         "usp_CommitResumeDraftCommandForOwner",
         "usp_GetResumeDraftForOwner",
         # PS-MVP1-INTAKE-GUIDE-001: owner-scoped composer submissions,
@@ -253,6 +254,17 @@ ALLOWED_PROCEDURES = frozenset(
         # allowlisting a proposed name does not apply PS-RESUME-MEDIA-001.
         "usp_GetResumeMediaDraftForOwner",
         "usp_CommitResumeMediaCommandForOwner",
+        # PS-MVP1-PUBLICATION-INTEGRATION-001: owner-scoped complete
+        # publication command, owner/public/media readers, and catalog
+        # fence. Internal helpers stay unlisted. Allowlisting does not
+        # apply proposed schema or enable the feature flag.
+        "usp_CommitResumePublicationCommandForOwner",
+        "usp_GetResumePublicationForOwner",
+        "usp_GetResumePublicationReceiptForOwner",
+        "usp_GetPublicResumePublicationBySlug",
+        "usp_GetResumePublicationMediaAuthorization",
+        "usp_GetResumeCatalogAsset",
+        "usp_CommitResumeCatalogCommandForOwner",
     }
 )
 

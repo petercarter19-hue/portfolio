@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
+import copy
 import unittest
 
 from services.entry_policy_repository import InMemoryEntryPolicyRepository
@@ -717,6 +718,111 @@ class EntryPolicyServiceTests(unittest.TestCase):
             repository.load_owner(self.owner_a)
         with self.assertRaises(EntryPolicyStoreUnavailable):
             repository.save_owner(self.owner_a, {"entries": {}, "receipts": {}, "match_decisions": {}})
+
+    def test_publication_linked_write_updates_guest_without_split_store(self):
+        from services.resume_publication_service import memory_resume_publication_service
+
+        publication = memory_resume_publication_service()
+        publication.bind_slug(self.owner_a, "alice")
+        service = EntryPolicyService(
+            repository=InMemoryEntryPolicyRepository(),
+            clock=self.clock,
+            publication_service=publication,
+        )
+        publication.policy_service = service
+        entry = key(21)
+        service.commit(
+            self.owner_a,
+            {
+                "type": "create",
+                "request_id": str(uuid4()),
+                "entry_key": entry,
+                "canonical_type": "role",
+                "values": {"role_title": "Lead", "employer_name": "PeerSlate", "summary": "Led team 0."},
+            },
+        )
+        listed = service.list_entries(self.owner_a)["entries"]
+        created = next(item for item in listed if item["entry_key"] == entry)
+        service.commit(
+            self.owner_a,
+            {
+                "type": "change_permissions",
+                "request_id": str(uuid4()),
+                "entry_key": entry,
+                "expected_access_revision": created["access_revision"],
+                "permissions": {"resume_display": True, "visitor_ai": False},
+            },
+        )
+        reviewed = publication.review_for_owner(self.owner_a, {})
+        self.assertIsNotNone(reviewed.reviewed)
+        publication.commit(
+            self.owner_a,
+            {
+                "type": "publish",
+                "request_id": str(uuid4()),
+                "reviewed_digest": reviewed.reviewed.digest,
+                "slug": "alice",
+            },
+        )
+        edited = service.get_entry(self.owner_a, entry)["entry"]
+        service.commit(
+            self.owner_a,
+            {
+                "type": "edit",
+                "request_id": str(uuid4()),
+                "entry_key": entry,
+                "expected_content_version": edited["content_version"],
+                "values": {
+                    "role_title": "Lead",
+                    "employer_name": "PeerSlate",
+                    "summary": "Led a larger team.",
+                },
+            },
+        )
+        guest = publication.guest_read(slug="alice")
+        self.assertEqual(guest["display"][entry]["wording"]["summary"], "Led a larger team.")
+        self.assertNotIn("visitor_ai", guest)
+
+    def test_publication_linked_write_restores_both_stores_together(self):
+        from services.resume_publication_service import memory_resume_publication_service
+
+        class FailingPolicy:
+            def __init__(self, inner):
+                self.inner = inner
+                self.saved = []
+
+            def save_owner(self, owner, snapshot):
+                self.saved.append(copy.deepcopy(snapshot))
+                if len(self.saved) == 1:
+                    raise RuntimeError("forced linked-write failure")
+                self.inner.save_owner(owner, snapshot)
+
+            def load_owner(self, owner):
+                return self.inner.load_owner(owner)
+
+        publication = memory_resume_publication_service()
+        publication.bind_slug(self.owner_a, "alice")
+        inner = InMemoryEntryPolicyRepository()
+        failing = FailingPolicy(inner)
+        service = EntryPolicyService(
+            repository=failing,
+            clock=self.clock,
+            publication_service=publication,
+        )
+        publication.policy_service = service
+        with self.assertRaises(RuntimeError):
+            service.commit(
+                self.owner_a,
+                {
+                    "type": "create",
+                    "request_id": str(uuid4()),
+                    "entry_key": key(22),
+                    "canonical_type": "role",
+                    "values": {"role_title": "Lead", "employer_name": "PeerSlate", "summary": "Led team 0."},
+                },
+            )
+        self.assertEqual(inner.load_owner(self.owner_a)["entries"], {})
+        self.assertIsNone(publication.repository.load_owner(self.owner_a).get("current_revision"))
 
 
 if __name__ == "__main__":

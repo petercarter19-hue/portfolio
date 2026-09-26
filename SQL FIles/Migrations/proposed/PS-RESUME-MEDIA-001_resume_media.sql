@@ -150,7 +150,7 @@ BEGIN TRY
             /* Fix the same shared-resource lock order used by both command
                procedures: owner draft, receipt range, then placements. */
             DECLARE @ReadDraftVersion int;
-            DECLARE @ReadBasePublicationVersion int;
+            DECLARE @ReadBasePublicationVersion nvarchar(64);
             SELECT @ReadDraftVersion = draft.draft_version,
                    @ReadBasePublicationVersion = draft.base_publication_version
             FROM dbo.resume_drafts AS draft WITH (UPDLOCK, HOLDLOCK)
@@ -556,8 +556,11 @@ BEGIN TRY
         END;
     ');
 
-    INSERT dbo.schema_migrations (migration_id)
-    VALUES (N'PS-RESUME-MEDIA-001');
+    IF NOT EXISTS (SELECT 1 FROM dbo.schema_migrations WHERE migration_id = N'PS-RESUME-MEDIA-001')
+    BEGIN
+        INSERT dbo.schema_migrations (migration_id, description)
+        VALUES (N'PS-RESUME-MEDIA-001', N'Proposed owner-scoped private Resume media placements and command receipts');
+    END;
 
     COMMIT TRANSACTION;
 END TRY

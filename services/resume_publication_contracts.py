@@ -1,13 +1,14 @@
-"""Inactive E contract v1. Objects are data, never publication credentials.
+"""Resume publication contracts. Objects are data, never publication credentials.
 
-Only a future trusted application adapter may issue a use context after its
-own authentication/authorization. The private constructor seal prevents an
+Only a trusted application adapter may issue a use context after its own
+authentication/authorization. The private constructor seal prevents an
 accidental client-dictionary/boolean API, not malicious in-process Python.
-No adapter, persistence, route or provider is installed by this module.
+Review never grants permission or constructs a foundation SourceVersion.
 """
 
 from dataclasses import dataclass, field
 from enum import Enum
+import hashlib
 import math
 from typing import Protocol
 
@@ -47,6 +48,149 @@ def unique(values: tuple, key) -> None:
     keys = [key(value) for value in values]
     if len(keys) != len(set(keys)):
         raise ContractError("duplicate reference or field")
+
+
+CANONICAL_SOURCE_CODEC = "resume-canonical-source.v1"
+REVIEW_PAYLOAD_SCHEMA = "resume-publication-review.v2"
+CANONICAL_SOURCE_FIELDS = (
+    "canonical_type",
+    "role_title",
+    "employer_name",
+    "location_text",
+    "summary",
+    "start_date",
+    "end_date",
+    "date_precision",
+    "employment_type",
+    "current_role",
+    "title",
+    "institution_name",
+    "degree_name",
+    "field_of_study",
+    "education_status",
+    "grade_text",
+    "credential_name",
+    "issuer_name",
+    "credential_identifier",
+    "issue_date",
+    "expiration_date",
+    "name",
+    "skill_summary",
+    "wording",
+    "metric_value",
+    "metric_label",
+    "accomplishment_to_achievement",
+    "parent_canonical_type",
+)
+_BOOLEAN_SOURCE_FIELDS = frozenset({"current_role", "accomplishment_to_achievement"})
+
+
+def _utf8(value: str) -> bytes:
+    try:
+        encoded = value.encode("utf-8")
+    except UnicodeEncodeError as error:
+        raise ContractError("invalid UTF-8") from error
+    if encoded.decode("utf-8") != value:
+        raise ContractError("invalid UTF-8 round trip")
+    return encoded
+
+
+def encode_canonical_source(fields: dict[str, object]) -> bytes:
+    """Closed length-prefixed codec. No trim, normalize, or str() coercion."""
+    if type(fields) is not dict:
+        raise ContractError("typed codec fields required")
+    unknown = set(fields) - set(CANONICAL_SOURCE_FIELDS)
+    if unknown:
+        raise ContractError("unknown codec field")
+    parts = [_utf8(CANONICAL_SOURCE_CODEC)]
+    for name in CANONICAL_SOURCE_FIELDS:
+        name_bytes = _utf8(name)
+        parts.append(f"{len(name_bytes):d}:".encode("ascii") + name_bytes)
+        if name not in fields or fields[name] is None:
+            parts.append(b"N")
+            continue
+        value = fields[name]
+        if name in _BOOLEAN_SOURCE_FIELDS:
+            if type(value) is not bool:
+                raise ContractError("boolean codec field required")
+            parts.append(b"B1" if value else b"B0")
+            continue
+        if type(value) is not str:
+            raise ContractError("string codec field required")
+        raw = _utf8(value)
+        parts.append(b"S" + f"{len(raw):d}:".encode("ascii") + raw)
+    return b"".join(parts)
+
+
+def decode_canonical_source(payload: bytes) -> dict[str, object]:
+    if type(payload) is not bytes:
+        raise ContractError("codec bytes required")
+    try:
+        payload.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise ContractError("invalid UTF-8") from error
+
+    cursor = 0
+
+    def take_tag() -> str:
+        nonlocal cursor
+        if cursor >= len(payload):
+            raise ContractError("truncated codec")
+        tag = payload[cursor:cursor + 1]
+        cursor += 1
+        if tag not in (b"N", b"B", b"S"):
+            raise ContractError("unsupported codec tag")
+        return tag.decode("ascii")
+
+    def take_len_prefixed() -> bytes:
+        nonlocal cursor
+        start = cursor
+        while cursor < len(payload) and 48 <= payload[cursor] <= 57:
+            cursor += 1
+        if start == cursor or cursor >= len(payload) or payload[cursor:cursor + 1] != b":":
+            raise ContractError("malformed codec length")
+        length = int(payload[start:cursor].decode("ascii"))
+        cursor += 1
+        end = cursor + length
+        if length < 0 or end > len(payload):
+            raise ContractError("truncated codec")
+        chunk = payload[cursor:end]
+        cursor = end
+        return chunk
+
+    prefix = _utf8(CANONICAL_SOURCE_CODEC)
+    if payload[:len(prefix)] != prefix:
+        raise ContractError("unsupported codec")
+    cursor = len(prefix)
+    decoded: dict[str, object] = {}
+    for expected in CANONICAL_SOURCE_FIELDS:
+        name = take_len_prefixed().decode("utf-8")
+        if name != expected:
+            raise ContractError("codec field order")
+        kind = take_tag()
+        if kind == "N":
+            decoded[name] = None
+        elif kind == "B":
+            if cursor >= len(payload) or payload[cursor:cursor + 1] not in (b"0", b"1"):
+                raise ContractError("malformed boolean")
+            decoded[name] = payload[cursor:cursor + 1] == b"1"
+            cursor += 1
+            if expected not in _BOOLEAN_SOURCE_FIELDS:
+                raise ContractError("boolean codec field required")
+        else:
+            decoded[name] = take_len_prefixed().decode("utf-8")
+            if expected in _BOOLEAN_SOURCE_FIELDS:
+                raise ContractError("boolean codec field required")
+    if cursor != len(payload):
+        raise ContractError("trailing codec bytes")
+    return decoded
+
+
+def hash_canonical_source(payload: bytes) -> str:
+    if type(payload) is not bytes:
+        raise ContractError("codec bytes required")
+    decode_canonical_source(payload)
+    return hashlib.sha256(payload).hexdigest()
 
 
 class UseAudience(str, Enum):
@@ -270,6 +414,98 @@ def check_placement(item: MediaPlacement) -> None:
             raise ContractError("finite crop coordinates required")
 
 
+@dataclass(frozen=True, order=True)
+class NeutralReviewEvidence:
+    """Saved canonical review evidence. Zero AI uses are valid. Not a grant."""
+    entry: EntryRef
+    evidence_key: str
+    evidence_version_key: str
+    version: int
+    content_sha256: str
+    codec: str
+    canonical_token: str
+    policy_content_version: int
+    access_revision: int
+    lifecycle: str
+    owner_key: str
+    saved: bool
+    approved: bool
+    active: bool
+    canonical_evidence: bool
+    ai_use_count: int
+    content: str
+    dependency_versions: tuple[str, ...] = ()
+
+    def __post_init__(self):
+        if type(self.entry) is not EntryRef:
+            raise ContractError("owner-composite entry required")
+        for value in (self.evidence_key, self.evidence_version_key, self.codec, self.canonical_token, self.owner_key, self.lifecycle):
+            text(value)
+        if self.codec != CANONICAL_SOURCE_CODEC:
+            raise ContractError("unsupported evidence codec")
+        revision(self.version)
+        if self.version == 0:
+            raise ContractError("evidence version must be positive")
+        digest(self.content_sha256)
+        revision(self.policy_content_version)
+        if self.policy_content_version == 0:
+            raise ContractError("policy content version must be positive")
+        revision(self.access_revision)
+        if type(self.ai_use_count) is not int or self.ai_use_count < 0:
+            raise ContractError("explicit nonnegative AI-use count required")
+        for value in (self.saved, self.approved, self.active, self.canonical_evidence):
+            if type(value) is not bool:
+                raise ContractError("typed evidence eligibility required")
+        if type(self.content) is not str:
+            raise ContractError("exact saved canonical wording required")
+        members(self.dependency_versions, str)
+        unique(self.dependency_versions, lambda x: x)
+        object.__setattr__(self, "dependency_versions", tuple(sorted(self.dependency_versions)))
+
+
+@dataclass(frozen=True, order=True)
+class PublicationEvidenceVersion:
+    """Immutable committed source evidence produced after a write, never a review proposal."""
+    owner_key: str
+    entry_key: str
+    evidence_key: str
+    evidence_version_key: str
+    version: int
+    codec: str
+    canonical_token: str
+    policy_content_version: int
+    access_revision: int
+    content: bytes
+    content_sha256: str
+    display_eligible: bool
+    visitor_ai_eligible: bool
+    dependency_versions: tuple[str, ...] = ()
+
+    def __post_init__(self):
+        for value in (self.owner_key, self.entry_key, self.evidence_key, self.evidence_version_key, self.codec, self.canonical_token):
+            text(value)
+        if self.codec != CANONICAL_SOURCE_CODEC:
+            raise ContractError("unsupported evidence codec")
+        revision(self.version)
+        if self.version == 0:
+            raise ContractError("evidence version must be positive")
+        revision(self.policy_content_version)
+        if self.policy_content_version == 0:
+            raise ContractError("policy content version must be positive")
+        revision(self.access_revision)
+        if type(self.content) is not bytes:
+            raise ContractError("committed codec bytes required")
+        digest(self.content_sha256)
+        if hashlib.sha256(self.content).hexdigest() != self.content_sha256:
+            raise ContractError("evidence digest mismatch")
+        for value in (self.display_eligible, self.visitor_ai_eligible):
+            if type(value) is not bool:
+                raise ContractError("typed eligibility required")
+        members(self.dependency_versions, str)
+        unique(self.dependency_versions, lambda x: x)
+        object.__setattr__(self, "dependency_versions", tuple(sorted(self.dependency_versions)))
+
+
 @dataclass(frozen=True)
 class CandidateInput:
     context: TrustedUseContext
@@ -277,6 +513,7 @@ class CandidateInput:
     selections: tuple[EntrySelection, ...]
     placements: tuple[MediaPlacement, ...]
     schema_version: int = 1
+    review_evidence: tuple[NeutralReviewEvidence, ...] = ()
 
     def __post_init__(self):
         if type(self.schema_version) is not int or self.schema_version != 1:
@@ -285,12 +522,15 @@ class CandidateInput:
             raise ContractError("typed context and versions required")
         members(self.selections, EntrySelection)
         members(self.placements, MediaPlacement)
+        members(self.review_evidence, NeutralReviewEvidence)
         unique(self.selections, lambda x: x.entry.identity)
         unique(self.placements, lambda x: x.slot)
+        unique(self.review_evidence, lambda x: x.evidence_version_key)
         for placement in self.placements:
             check_placement(placement)
         object.__setattr__(self, "selections", tuple(sorted(self.selections, key=lambda x: x.entry)))
         object.__setattr__(self, "placements", tuple(sorted(self.placements, key=lambda x: x.slot)))
+        object.__setattr__(self, "review_evidence", tuple(sorted(self.review_evidence)))
 
 
 class ReadState(str, Enum):
@@ -308,13 +548,17 @@ class EntryState:
     visitor_ai_allowed: bool
     active: bool
     identity_resolved: bool
+    private_assistance_excluded: bool = False
 
     def __post_init__(self):
         if type(self.ref) is not EntryRef:
             raise ContractError("typed entry required")
         members(self.wording, Wording)
         unique(self.wording, lambda x: x.field)
-        for value in (self.display_allowed, self.visitor_ai_allowed, self.active, self.identity_resolved):
+        for value in (
+            self.display_allowed, self.visitor_ai_allowed, self.active,
+            self.identity_resolved, self.private_assistance_excluded,
+        ):
             if type(value) is not bool:
                 raise ContractError("typed policy required")
         object.__setattr__(self, "wording", tuple(sorted(self.wording)))

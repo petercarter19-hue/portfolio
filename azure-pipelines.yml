@@ -209,6 +209,18 @@ stages:
               ANTHROPIC_API_KEY: test-key-for-ci-only
               PLAYWRIGHT_BROWSERS_PATH: $(Pipeline.Workspace)/ms-playwright
 
+          # PS-MVP1-PUBLICATION-INTEGRATION-001. Strict fail-closed runner: a
+          # missing suite, empty discovery, changed required method set, any
+          # skip or any failure exits non-zero. It reuses this job's pinned
+          # requirements-browser-ci.txt and Playwright Chromium. Existing
+          # Interview, Review HTTP, and Resume media steps are unchanged.
+          - script: python scripts/run_resume_publication_browser_tests.py
+            displayName: Run required Resume publication browser suite
+            condition: and(succeeded(), ne(variables['ProveBrowserDisposition.deliveryControlOnly'], 'true'))
+            env:
+              ANTHROPIC_API_KEY: test-key-for-ci-only
+              PLAYWRIGHT_BROWSERS_PATH: $(Pipeline.Workspace)/ms-playwright
+
           - publish: '$(Pipeline.Workspace)/browser-disposition.json'
             artifact: BrowserDeliveryDisposition
             displayName: Publish executed browser-job disposition

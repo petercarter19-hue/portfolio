@@ -76,6 +76,33 @@ IF @ApplyDefinition LIKE N'%resume_display = 1%'
     INSERT @Failures VALUES (N'An intake path must never grant display permission.');
 
 DECLARE @SubmissionDefinition nvarchar(max) = OBJECT_DEFINITION(OBJECT_ID(N'dbo.usp_CommitResumeIntakeCommandForOwner'));
+-- Publication retains the predecessor implementation in Core. Check the real
+-- public dependency chain before applying the unchanged predecessor checks there.
+DECLARE @PublicationInstalled bit = CASE WHEN EXISTS
+    (SELECT 1 FROM dbo.schema_migrations WHERE migration_id=N'PS-RESUME-PUBLICATION-001') THEN 1 ELSE 0 END;
+IF @PublicationInstalled=1
+BEGIN
+    IF @SubmissionDefinition IS NULL
+       OR OBJECT_ID(N'dbo.usp_CommitResumeIntakeCommandForOwnerCore', N'P') IS NULL
+       OR OBJECT_ID(N'dbo.usp_ResumePublicationGuardLegacyMutator', N'P') IS NULL
+       OR NOT EXISTS (SELECT 1 FROM sys.sql_expression_dependencies
+           WHERE referencing_id=OBJECT_ID(N'dbo.usp_CommitResumeIntakeCommandForOwner')
+             AND referenced_id=OBJECT_ID(N'dbo.usp_CommitResumeIntakeCommandForOwnerCore'))
+       OR NOT EXISTS (SELECT 1 FROM sys.sql_expression_dependencies
+           WHERE referencing_id=OBJECT_ID(N'dbo.usp_CommitResumeIntakeCommandForOwner')
+             AND referenced_id=OBJECT_ID(N'dbo.usp_ResumePublicationGuardLegacyMutator'))
+       OR @SubmissionDefinition NOT LIKE N'%SET TRANSACTION ISOLATION LEVEL SERIALIZABLE%'
+       OR @SubmissionDefinition NOT LIKE N'%WITH (UPDLOCK, HOLDLOCK)%'
+       OR @SubmissionDefinition NOT LIKE N'%app_user.user_key = @UserKey%'
+       OR @SubmissionDefinition LIKE N'%@OwnerProfileId%'
+        THROW 52320, 'Publication wrapper or retained predecessor linkage is invalid.', 1;
+    SET @SubmissionDefinition=OBJECT_DEFINITION(OBJECT_ID(N'dbo.usp_CommitResumeIntakeCommandForOwnerCore'));
+END
+ELSE IF OBJECT_ID(N'dbo.usp_CommitResumeIntakeCommandForOwnerCore', N'P') IS NOT NULL
+    THROW 52320, 'Unexpected retained Core without Publication.', 1;
+IF @SubmissionDefinition IS NULL
+    THROW 52320, 'Predecessor command definition is inaccessible.', 1;
+
 IF @SubmissionDefinition NOT LIKE N'%SET TRANSACTION ISOLATION LEVEL SERIALIZABLE%'
     INSERT @Failures VALUES (N'Submission boundary is not serializable.');
 IF @SubmissionDefinition NOT LIKE N'%WITH (UPDLOCK, HOLDLOCK)%'
@@ -179,7 +206,8 @@ OPEN body_cursor;
 FETCH NEXT FROM body_cursor INTO @BodyName;
 WHILE @@FETCH_STATUS = 0
 BEGIN
-    SET @BodyDefinition = OBJECT_DEFINITION(OBJECT_ID(@BodyName));
+    SET @BodyDefinition = CASE WHEN @PublicationInstalled=1 AND @BodyName=N'usp_CommitResumeIntakeCommandForOwner'
+        THEN @SubmissionDefinition ELSE OBJECT_DEFINITION(OBJECT_ID(N'dbo.'+@BodyName)) END;
     IF @BodyDefinition IS NULL
         INSERT @Failures VALUES (N'A compound procedure body is absent.');
     ELSE IF @BodyDefinition NOT LIKE N'%BEGIN TRANSACTION%'

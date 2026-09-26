@@ -1,0 +1,52 @@
+# Published PyPI metadata lock for Linux x86_64 glibc CPython 3.12
+# (python:3.12-slim / manylinux compatible). extras are not included.
+# Digests are sha256 values published in PyPI JSON at pin time. They are not
+# independently verified downloaded bytes from this package.
+# Production-aligned mssql-python 1.11.0 wheel:
+#   mssql_python-1.11.0-cp312-cp312-manylinux_2_28_x86_64.whl
+#   SHA256 d9ed6e3a3b4bbfb8acb18946de0919ca7b83e8456fa8cf78f668ef89f476f093
+#   Source: https://pypi.org/pypi/mssql-python/1.11.0/json
+# cryptography 50.0.1 uses the published cp311-abi3 manylinux_2_28_x86_64 wheel,
+# which is the CPython 3.12-compatible glibc artifact (not an sdist).
+# Client installation must enforce this file offline inside the isolated
+# Linux client after hashed download:
+#   python -m pip install --require-hashes --no-index --find-links <wheelhouse> \
+#     -r requirements-resume-publication-sql-proof.txt
+# Published metadata hashes and independently hashed downloaded bytes are
+# labeled separately. Do not treat a host pip install as the client runtime.
+mssql-python==1.11.0 \
+    --hash=sha256:d9ed6e3a3b4bbfb8acb18946de0919ca7b83e8456fa8cf78f668ef89f476f093
+Jinja2==3.1.6 \
+    --hash=sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67
+MarkupSafe==3.0.3 \
+    --hash=sha256:d6dd0be5b5b189d31db7cda48b91d7e0a9795f31430b7f271219ab30f1d3ac9d
+python-dotenv==1.2.3 \
+    --hash=sha256:904552145e8bfed22162c09dab1c2b9b54fefa7b23ba780f4f26ca0316b0f0d9
+azure-identity==1.25.3 \
+    --hash=sha256:f4d0b956a8146f30333e071374171f3cfa7bdb8073adb8c3814b65567aa7447c
+azure-core==1.41.0 \
+    --hash=sha256:522b4011e8180b1a3dcd2024396a4e7fe9ac37fb8597db47163d230b5efe892d
+cryptography==50.0.1 \
+    --hash=sha256:51593d180cf6d179bde5c5d065bed81386b1f381656ae7d042b7ffc87a9895ad
+msal==1.39.0 \
+    --hash=sha256:2d2577886906cd7293850dffa2da29119966c213bfc6ec0cecf8bf7621e1ca77
+msal-extensions==1.3.1 \
+    --hash=sha256:96d3de4d034504e969ac5e85bae8106c8373b5c6568e4c8fa7af2eca9dbe6bca
+typing-extensions==4.16.0 \
+    --hash=sha256:481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8
+requests==2.34.2 \
+    --hash=sha256:2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0
+cffi==2.1.1 \
+    --hash=sha256:c1453022f490d2459a11819d83ad1d586e9ff65a12ac3e705ffebd46d3685dcf
+PyJWT==2.14.0 \
+    --hash=sha256:ad0cef71c756a56e74863c2919cf0985f72decbcfcb550ee2f422e7c62b5eedc
+charset-normalizer==3.5.1 \
+    --hash=sha256:b9af956078716df40d985fb0dfeb2c2120c5ca92ba4ff4b388acfd01cdc14d08
+idna==3.20 \
+    --hash=sha256:ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c
+urllib3==2.8.0 \
+    --hash=sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3
+certifi==2026.7.22 \
+    --hash=sha256:62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775
+pycparser==3.0 \
+    --hash=sha256:b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992

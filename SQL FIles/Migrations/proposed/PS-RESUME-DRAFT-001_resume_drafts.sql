@@ -130,7 +130,7 @@ BEGIN TRY
                result sets by carrying receipts in the header JSON column. */
             DECLARE @ReadDraftId bigint;
             DECLARE @ReadDraftVersion int;
-            DECLARE @ReadBasePublicationVersion int;
+            DECLARE @ReadBasePublicationVersion nvarchar(64);
             SELECT @ReadDraftId = draft.resume_draft_id,
                    @ReadDraftVersion = draft.draft_version,
                    @ReadBasePublicationVersion = draft.base_publication_version
@@ -145,7 +145,7 @@ BEGIN TRY
                     receipt.outcome
                 FROM dbo.resume_draft_command_receipts AS receipt WITH (UPDLOCK, HOLDLOCK)
                 WHERE receipt.owner_profile_id = @ProfileId
-                ORDER BY receipt.created_at_utc, receipt.request_id
+                ORDER BY receipt.committed_at_utc, receipt.request_id
                 FOR JSON PATH
             );
 
@@ -448,8 +448,11 @@ BEGIN TRY
         END;
     ');
 
-    INSERT dbo.schema_migrations (migration_id)
-    VALUES (N'PS-RESUME-DRAFT-001');
+    IF NOT EXISTS (SELECT 1 FROM dbo.schema_migrations WHERE migration_id = N'PS-RESUME-DRAFT-001')
+    BEGIN
+        INSERT dbo.schema_migrations (migration_id, description)
+        VALUES (N'PS-RESUME-DRAFT-001', N'Proposed owner-scoped private Resume draft overlay and command receipts');
+    END;
 
     COMMIT TRANSACTION;
 END TRY

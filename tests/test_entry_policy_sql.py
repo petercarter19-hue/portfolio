@@ -101,6 +101,31 @@ class EntryPolicySqlTests(unittest.TestCase):
         self.assertFalse(mapped["visitor_ai"])
         self.assertEqual(mapped["content_version"], 7)
 
+    def test_sql_row_mapping_refuses_missing_or_unsupported_versions(self):
+        from services.entry_policy_repository import EntryPolicyRowInvalid, map_entry_policy_row
+
+        base = {
+            "entry_key": "00000000-0000-4000-8000-000000000001",
+            "canonical_type": "role",
+            "canonical_key": "00000000-0000-4000-8000-000000000001",
+            "category": "experience",
+            "content_version": 7,
+            "access_revision": 3,
+            "resume_display": 1,
+            "visitor_ai": 0,
+            "private_assistance_excluded": 0,
+            "lifecycle": "active",
+        }
+        for broken in (
+            {**base, "access_revision": None},
+            {**base, "content_version": 0},
+            {**base, "lifecycle": "unknown"},
+            {k: v for k, v in base.items() if k != "access_revision"},
+        ):
+            with self.subTest(broken=broken.get("lifecycle") or broken.get("access_revision")):
+                with self.assertRaises(EntryPolicyRowInvalid):
+                    map_entry_policy_row(broken)
+
     def test_command_adapter_binds_owner_request_and_json(self):
         from unittest.mock import MagicMock
 
@@ -123,6 +148,92 @@ class EntryPolicySqlTests(unittest.TestCase):
         args = database.last_row.call_args[0]
         self.assertEqual(args[0], "usp_CommitEntryPolicyCommandForOwner")
         self.assertEqual(args[1][0], ("@UserKey", "owner-a"))
+
+    def test_service_sql_commit_reaches_command_and_skips_projection_on_replay(self):
+        from unittest.mock import MagicMock
+
+        from services.entry_policy_repository import SqlEntryPolicyRepository
+        from services.entry_policy_service import EntryPolicyService
+
+        database = MagicMock()
+        database.last_row.return_value = {
+            "committed": 1,
+            "replayed": 1,
+            "outcome": "updated",
+            "request_digest": "a" * 64,
+        }
+        database.first_result.return_value = []
+        publication = MagicMock()
+        service = EntryPolicyService(
+            repository=SqlEntryPolicyRepository(database),
+            publication_service=publication,
+        )
+        result = service.commit(
+            "owner-a",
+            {
+                "type": "create",
+                "request_id": "00000000-0000-4000-8000-000000000009",
+                "entry_key": "00000000-0000-4000-8000-000000000001",
+                "canonical_type": "role",
+                "values": {"role_title": "Lead", "employer_name": "PeerSlate"},
+            },
+        )
+        database.last_row.assert_called_once()
+        self.assertEqual(
+            database.last_row.call_args[0][0],
+            "usp_CommitEntryPolicyCommandForOwner",
+        )
+        self.assertTrue(result["replayed"])
+        publication.commit_linked_write.assert_not_called()
+        publication.apply_policy_command.assert_not_called()
+
+    def test_service_sql_first_apply_reaches_command_without_python_projection(self):
+        from unittest.mock import MagicMock
+
+        from services.entry_policy_repository import SqlEntryPolicyRepository
+        from services.entry_policy_service import EntryPolicyService
+
+        database = MagicMock()
+        database.last_row.return_value = {
+            "committed": 1,
+            "replayed": 0,
+            "outcome": "created",
+            "request_digest": "b" * 64,
+        }
+        database.first_result.return_value = [
+            {
+                "entry_key": "00000000-0000-4000-8000-000000000001",
+                "canonical_type": "role",
+                "canonical_key": "00000000-0000-4000-8000-000000000001",
+                "category": "experience",
+                "content_version": 1,
+                "access_revision": 1,
+                "resume_display": 0,
+                "visitor_ai": 0,
+                "private_assistance_excluded": 0,
+                "lifecycle": "active",
+                "values": {"role_title": "Lead", "employer_name": "PeerSlate"},
+            }
+        ]
+        publication = MagicMock()
+        service = EntryPolicyService(
+            repository=SqlEntryPolicyRepository(database),
+            publication_service=publication,
+        )
+        result = service.commit(
+            "owner-a",
+            {
+                "type": "create",
+                "request_id": "00000000-0000-4000-8000-00000000000a",
+                "entry_key": "00000000-0000-4000-8000-000000000001",
+                "canonical_type": "role",
+                "values": {"role_title": "Lead", "employer_name": "PeerSlate"},
+            },
+        )
+        database.last_row.assert_called_once()
+        self.assertFalse(result["replayed"])
+        self.assertEqual(result["receipt"]["outcome"], "created")
+        publication.commit_linked_write.assert_not_called()
 
 
 if __name__ == "__main__":

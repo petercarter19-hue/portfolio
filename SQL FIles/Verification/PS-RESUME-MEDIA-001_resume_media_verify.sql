@@ -32,6 +32,33 @@ IF NOT EXISTS (
     INSERT @Failures VALUES (N'Slot vocabulary constraint is absent.');
 
 DECLARE @CommandDefinition nvarchar(max) = OBJECT_DEFINITION(OBJECT_ID(N'dbo.usp_CommitResumeMediaCommandForOwner'));
+-- Publication retains the predecessor implementation in Core. Check the real
+-- public dependency chain before applying the unchanged predecessor checks there.
+DECLARE @PublicationInstalled bit = CASE WHEN EXISTS
+    (SELECT 1 FROM dbo.schema_migrations WHERE migration_id=N'PS-RESUME-PUBLICATION-001') THEN 1 ELSE 0 END;
+IF @PublicationInstalled=1
+BEGIN
+    IF @CommandDefinition IS NULL
+       OR OBJECT_ID(N'dbo.usp_CommitResumeMediaCommandForOwnerCore', N'P') IS NULL
+       OR OBJECT_ID(N'dbo.usp_ResumePublicationGuardLegacyMutator', N'P') IS NULL
+       OR NOT EXISTS (SELECT 1 FROM sys.sql_expression_dependencies
+           WHERE referencing_id=OBJECT_ID(N'dbo.usp_CommitResumeMediaCommandForOwner')
+             AND referenced_id=OBJECT_ID(N'dbo.usp_CommitResumeMediaCommandForOwnerCore'))
+       OR NOT EXISTS (SELECT 1 FROM sys.sql_expression_dependencies
+           WHERE referencing_id=OBJECT_ID(N'dbo.usp_CommitResumeMediaCommandForOwner')
+             AND referenced_id=OBJECT_ID(N'dbo.usp_ResumePublicationGuardLegacyMutator'))
+       OR @CommandDefinition NOT LIKE N'%SET TRANSACTION ISOLATION LEVEL SERIALIZABLE%'
+       OR @CommandDefinition NOT LIKE N'%WITH (UPDLOCK, HOLDLOCK)%'
+       OR @CommandDefinition NOT LIKE N'%app_user.user_key = @UserKey%'
+       OR @CommandDefinition LIKE N'%@OwnerProfileId%'
+        THROW 52310, 'Publication wrapper or retained predecessor linkage is invalid.', 1;
+    SET @CommandDefinition=OBJECT_DEFINITION(OBJECT_ID(N'dbo.usp_CommitResumeMediaCommandForOwnerCore'));
+END
+ELSE IF OBJECT_ID(N'dbo.usp_CommitResumeMediaCommandForOwnerCore', N'P') IS NOT NULL
+    THROW 52310, 'Unexpected retained Core without Publication.', 1;
+IF @CommandDefinition IS NULL
+    THROW 52310, 'Predecessor command definition is inaccessible.', 1;
+
 DECLARE @ReadDefinition nvarchar(max) = OBJECT_DEFINITION(OBJECT_ID(N'dbo.usp_GetResumeMediaDraftForOwner'));
 IF @CommandDefinition NOT LIKE N'%SET TRANSACTION ISOLATION LEVEL SERIALIZABLE%'
     INSERT @Failures VALUES (N'Command boundary is not serializable.');
@@ -53,7 +80,19 @@ IF @CommandDefinition NOT LIKE N'%@UserKey%'
     INSERT @Failures VALUES (N'Command identity boundary is not server-derived.');
 IF @CommandDefinition NOT LIKE N'%resume_drafts%'
     INSERT @Failures VALUES (N'Command does not fence the shared Resume draft version.');
-IF @CommandDefinition NOT LIKE N'%RESUME_MEDIA_IDEMPOTENCY_CONFLICT%'
+-- Media reports replay conflicts as a noncommitted structured outcome.
+-- Isolate its branch: later successful replay fields cannot satisfy this check.
+DECLARE @ReplayConflictStart int=CHARINDEX(N'IF @ExistingType <> @IncomingType', @CommandDefinition);
+DECLARE @ReplayConflictEnd int=CHARINDEX(N'END;', @CommandDefinition, @ReplayConflictStart);
+DECLARE @ReplayConflict nvarchar(max)=CASE
+    WHEN @ReplayConflictStart>0 AND @ReplayConflictEnd>@ReplayConflictStart
+    THEN SUBSTRING(@CommandDefinition, @ReplayConflictStart, @ReplayConflictEnd+4-@ReplayConflictStart)
+    ELSE NULL END;
+SET @ReplayConflict=LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(@ReplayConflict, CHAR(13), N' '), CHAR(10), N' '), CHAR(9), N' ')));
+WHILE CHARINDEX(N'  ', @ReplayConflict)>0
+    SET @ReplayConflict=REPLACE(@ReplayConflict, N'  ', N' ');
+IF @ReplayConflict IS NULL
+   OR @ReplayConflict <> N'IF @ExistingType <> @IncomingType OR @ExistingDigest <> @IncomingDigest BEGIN COMMIT TRANSACTION; SELECT CONVERT(bit, 0) AS committed, CONVERT(bit, 0) AS replayed, N''idempotency_conflict'' AS outcome, NULL AS outcome_json, CONVERT(bit, 0) AS publishes; RETURN; END;'
     INSERT @Failures VALUES (N'Payload-aware idempotency conflict is absent.');
 IF @CommandDefinition LIKE N'%usp_Publish%'
     INSERT @Failures VALUES (N'Publication procedure must not be part of this media migration.');

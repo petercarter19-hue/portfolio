@@ -13,6 +13,7 @@ calling unclaimed career/knowledge modules. Schema application remains separate.
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import re
@@ -323,21 +324,29 @@ def _get_own(snapshot: dict, entry_key: str) -> dict:
 
 
 class EntryPolicyService:
-    def __init__(self, repository=None, clock=None):
+    def __init__(self, repository=None, clock=None, publication_service=None):
         self.repository = repository or SqlEntryPolicyRepository()
         self.clock = clock or (lambda: datetime.now(timezone.utc))
+        self.publication_service = publication_service
 
     def list_entries(self, user_key: object) -> dict:
         owner = self._owner(user_key)
         now = self._now()
-        snapshot = self._load(owner)
-        if self._expire_snapshot(snapshot, now):
-            self._save(owner, snapshot)
-        visible = [
-            _present(entry, now=now)
-            for entry in snapshot["entries"].values()
-            if entry["lifecycle"] != LIFECYCLE_PERMANENT
-        ]
+        if self._sql_command_port():
+            visible = [
+                _present(entry, now=now)
+                for entry in self._list_sql(owner)
+                if entry.get("lifecycle") != LIFECYCLE_PERMANENT
+            ]
+        else:
+            snapshot = self._load(owner)
+            if self._expire_snapshot(snapshot, now):
+                self._save(owner, snapshot)
+            visible = [
+                _present(entry, now=now)
+                for entry in snapshot["entries"].values()
+                if entry["lifecycle"] != LIFECYCLE_PERMANENT
+            ]
         visible.sort(key=lambda item: item["entry_key"])
         return {
             "entries": visible,
@@ -349,10 +358,37 @@ class EntryPolicyService:
             },
         }
 
+    def list_publication_entries(self, user_key: object) -> dict:
+        """Use the E canonical read when the SQL publication boundary is active."""
+
+        if not self._sql_command_port():
+            return self.list_entries(user_key)
+        owner = self._owner(user_key)
+        now = self._now()
+        try:
+            rows = self.repository.list_publication_entries(owner)
+        except EntryPolicyStoreUnavailable as error:
+            raise EntryPolicyUnavailableError("Entry policy is unavailable.") from error
+        visible = [
+            _present(entry, now=now)
+            for entry in rows
+            if entry.get("lifecycle") != LIFECYCLE_PERMANENT
+        ]
+        visible.sort(key=lambda item: item["entry_key"])
+        return {"entries": visible}
+
     def get_entry(self, user_key: object, entry_key: object) -> dict:
         owner = self._owner(user_key)
         key = _as_uuid(entry_key, field="entry key")
         now = self._now()
+        if self._sql_command_port():
+            try:
+                item = self.repository.get_entry(owner, key)
+            except EntryPolicyStoreUnavailable as error:
+                raise EntryPolicyUnavailableError("Entry policy is unavailable.") from error
+            if item is None or item.get("lifecycle") == LIFECYCLE_PERMANENT:
+                raise EntryPolicyNotFoundError("That item is no longer available.")
+            return {"entry": _present(item, now=now)}
         snapshot = self._load(owner)
         if self._expire_snapshot(snapshot, now):
             self._save(owner, snapshot)
@@ -362,6 +398,8 @@ class EntryPolicyService:
         owner = self._owner(user_key)
         command = self._normalize_command(payload)
         now = self._now()
+        if self._sql_command_port():
+            return self._commit_sql(owner, command, now)
         snapshot = self._load(owner)
         self._expire_snapshot(snapshot, now)
         existing = snapshot["receipts"].get(command["request_id"])
@@ -377,6 +415,7 @@ class EntryPolicyService:
                 "replayed": True,
                 "entries": [_present(snapshot["entries"][key], now=now) for key in existing["affected"] if key in snapshot["entries"]],
             }
+        before = copy.deepcopy(snapshot)
         try:
             affected, presented = self._apply(snapshot, command, now)
         except Exception:
@@ -392,11 +431,60 @@ class EntryPolicyService:
             "receipt": receipt,
             "affected": affected,
         }
-        self._save(owner, snapshot)
+        if self.publication_service is not None:
+            from services.resume_publication_service import (
+                PublicationConflictError as PublicationBoundaryConflict,
+                PublicationDenied,
+                PublicationValidationError,
+            )
+            try:
+                self.publication_service.commit_linked_write(
+                    owner, self.repository, before, snapshot, command
+                )
+            except PublicationBoundaryConflict as error:
+                raise EntryPolicyConflictError(error.code) from error
+            except PublicationDenied as error:
+                raise EntryPolicyConflictError(getattr(error, "code", "denied")) from error
+            except PublicationValidationError as error:
+                raise EntryPolicyValidationError(str(error)) from error
+        else:
+            self._save(owner, snapshot)
         result = {"receipt": receipt, "replayed": False, "entries": presented["entries"]}
         if "match" in presented:
             result["match"] = presented["match"]
         return result
+
+    def _sql_command_port(self) -> bool:
+        return callable(getattr(self.repository, "commit_command", None))
+
+    def _list_sql(self, owner: str) -> list:
+        try:
+            return list(self.repository.list_entries(owner) or [])
+        except EntryPolicyStoreUnavailable as error:
+            raise EntryPolicyUnavailableError("Entry policy is unavailable.") from error
+
+    def _commit_sql(self, owner: str, command: dict, now: datetime) -> dict:
+        try:
+            result = self.repository.commit_command(owner, command["request_id"], command)
+        except EntryPolicyStoreUnavailable as error:
+            raise EntryPolicyUnavailableError("Entry policy is unavailable.") from error
+        replayed = bool(result.get("replayed"))
+        entries = []
+        try:
+            entries = [
+                _present(item, now=now)
+                for item in self._list_sql(owner)
+                if item.get("lifecycle") != LIFECYCLE_PERMANENT
+            ]
+        except EntryPolicyUnavailableError:
+            entries = []
+        receipt = {
+            "request_id": command["request_id"],
+            "request_digest": result.get("request_digest") or command.get("digest"),
+            "type": command["type"],
+            "outcome": result.get("outcome"),
+        }
+        return {"receipt": receipt, "replayed": replayed, "entries": entries}
 
     def sweep_expired(self, user_key: object) -> dict:
         owner = self._owner(user_key)

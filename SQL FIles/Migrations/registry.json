@@ -2728,6 +2728,28 @@
       ],
       "summary": "Proposed owner-scoped private Resume media placements: the two named decorative slots with per-slot crop, presentation version, alt/decorative and member caption semantics, plus closed add_media and keep_words_only command receipts. The command procedure opens its own transaction, fences the shared Resume draft version, re-validates each owner-photo placement's exact Photo Capture row version, lifecycle and derivative digest inside that transaction, and stores and compares one validated semantic digest so an exact retry replays instead of conflicting. Curated catalog placements have no authoritative catalog table in this proposal, so the durable path refuses them until the catalog fence arrives. Repository candidate only; no publication, storage, scan, or runtime proof.",
       "gate": null
+    },
+    {
+      "id": "PS-RESUME-CATALOG-001",
+      "forward": "SQL FIles/Migrations/proposed/PS-RESUME-CATALOG-001_curated_catalog.sql",
+      "rollback": "SQL FIles/Migrations/proposed/PS-RESUME-CATALOG-001_curated_catalog_rollback.sql",
+      "requires": [
+        "PS-RESUME-MEDIA-001"
+      ],
+      "summary": "Proposed durable curated catalog fence for generated Resume media: versioned catalog assets, closed withdraw command, internal apply helper denied to the application principal, and owner-keyed receipts. Repository candidate only; no database application or runtime proof.",
+      "gate": null
+    },
+    {
+      "id": "PS-RESUME-PUBLICATION-001",
+      "forward": "SQL FIles/Migrations/proposed/PS-RESUME-PUBLICATION-001_publication.sql",
+      "rollback": "SQL FIles/Migrations/proposed/PS-RESUME-PUBLICATION-001_publication_rollback.sql",
+      "requires": [
+        "PS-RESUME-CATALOG-001",
+        "PS-RESUME-DRAFT-001",
+        "PS-ENTRY-POLICY-001"
+      ],
+      "summary": "Proposed complete Resume publication consistency boundary: one owner-keyed command for publish, canonical correction, restriction, restore-private and sharing, SQL-produced canonical-source codec helpers, separate display and visitor-AI manifests, immutable receipts, media authorization reader, and wrappers through the existing entry-policy command. Repository candidate only; no database application or runtime proof.",
+      "gate": null
     }
   ]
 }

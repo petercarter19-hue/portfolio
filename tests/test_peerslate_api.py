@@ -415,14 +415,14 @@ class PeerSlateApiTests(unittest.TestCase):
     @patch("peerslate_api.database_service.execute_procedure")
     def test_public_living_resume_passes_only_clean_slug(self, execute):
         app.config["PEERSLATE_LIVING_RESUME_DB_ENABLED"] = True
-        execute.return_value = [[{"profile_slug": "sample-member"}]] + [[] for _ in range(5)]
+        execute.return_value = [[{"profile_slug": "petec"}]] + [[] for _ in range(5)]
 
-        response = self.client.get("/api/public/profiles/Sample-Member/living-resume")
+        response = self.client.get("/api/public/profiles/Petec/living-resume")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             execute.call_args.args[1],
-            [("@ProfileSlug", "sample-member")],
+            [("@ProfileSlug", "petec")],
         )
 
     @patch("identity.database_service.first_row")

@@ -195,6 +195,45 @@ class ResumeMediaSqlTests(unittest.TestCase):
             body,
         )
 
+    def test_verifier_accepts_real_replay_contract_and_rejects_weakened_guards(self):
+        body = procedure_body(self.forward, "usp_CommitResumeMediaCommandForOwner").replace("''", "'")
+        block = self.verify.split("-- Media reports replay conflicts", 1)[1].split(
+            "INSERT @Failures VALUES (N'Payload-aware idempotency conflict is absent.');", 1
+        )[0]
+        expected = re.search(r"@ReplayConflict <> N'((?:''|[^'])*)'", block).group(1).replace("''", "'")
+        start_text = "IF @ExistingType <> @IncomingType"
+
+        def accepted(definition):
+            start = definition.find(start_text)
+            end = definition.find("END;", start)
+            if start < 0 or end <= start:
+                return False
+            actual = " ".join(definition[start:end + 4].split())
+            return actual == expected
+
+        self.assertNotIn("RESUME_MEDIA_IDEMPOTENCY_CONFLICT", body)
+        self.assertTrue(accepted(body))
+        start = body.index(start_text)
+        end = body.index("END;", start) + 4
+        conflict = body[start:end]
+        later_replay = body[end:]
+        self.assertIn("CONVERT(bit, 0) AS publishes", later_replay)
+        self.assertIn("RETURN;", later_replay)
+        for old, new in (
+            ("@ExistingType <> @IncomingType", "1 = 0"),
+            ("@ExistingDigest <> @IncomingDigest", "1 = 0"),
+            ("N'idempotency_conflict' AS outcome", "N'replayed' AS outcome"),
+            ("CONVERT(bit, 0) AS committed", "CONVERT(bit, 1) AS committed"),
+            ("CONVERT(bit, 0) AS replayed", "CONVERT(bit, 1) AS replayed"),
+            ("CONVERT(bit, 0) AS publishes", "CONVERT(bit, 1) AS publishes"),
+            ("RETURN;", ""),
+        ):
+            with self.subTest(removed_protection=old):
+                self.assertIn(old, conflict)
+                changed = body[:start] + conflict.replace(old, new, 1) + later_replay
+                self.assertTrue(changed.endswith(later_replay))
+                self.assertFalse(accepted(changed))
+
     def test_command_body_fences_the_authoritative_source_inside_the_transaction(self):
         body = procedure_body(self.forward, "usp_CommitResumeMediaCommandForOwner")
         source_guard = body.index("dbo.capture_media_sources")

@@ -509,6 +509,19 @@ class DatabaseServiceTests(unittest.TestCase):
             "usp_GetResumeMediaDraftForOwner",
             "usp_CommitResumeMediaCommandForOwner",
         }
+        # PS-MVP1-PUBLICATION-INTEGRATION-001: complete publication command,
+        # readers and catalog fence. Internal helpers stay off this exact set,
+        # and allowlisting does not apply proposed schema.
+        resume_publication = {
+            "usp_CommitResumePublicationCommandForOwner",
+            "usp_GetResumePublicationForOwner",
+            "usp_GetResumePublicationReceiptForOwner",
+            "usp_ListResumePublicationPolicyForOwner",
+            "usp_GetPublicResumePublicationBySlug",
+            "usp_GetResumePublicationMediaAuthorization",
+            "usp_GetResumeCatalogAsset",
+            "usp_CommitResumeCatalogCommandForOwner",
+        }
         expected = (
             base
             | oppslate_os1
@@ -527,6 +540,7 @@ class DatabaseServiceTests(unittest.TestCase):
             | resume_draft
             | resume_intake
             | resume_media
+            | resume_publication
         )
         # The groups above must not overlap each other — a name counted
         # twice would silently shrink the real union below the true count
@@ -549,9 +563,10 @@ class DatabaseServiceTests(unittest.TestCase):
             resume_draft,
             resume_intake,
             resume_media,
+            resume_publication,
         )
         self.assertEqual(sum(len(group) for group in groups), len(expected))
-        self.assertEqual(len(expected), 161)
+        self.assertEqual(len(expected), 169)
         self.assertEqual(set(ALLOWED_PROCEDURES), expected)
 
     def test_living_resume_editor_procedures_are_exactly_allowlisted(self):

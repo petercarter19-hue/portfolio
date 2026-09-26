@@ -558,6 +558,16 @@ class ResumeIntakeSqlTests(unittest.TestCase):
             "SQL FIles/Migrations/proposed/PS-RESUME-INTAKE-001_resume_intake_rollback.sql",
         )
 
+    def test_dynamic_sql_literals_reject_an_unescaped_comment_apostrophe(self):
+        def broken_literals(source):
+            return [match.start() for match in re.finditer(r"\bEXEC\s*\(\s*N'(?:[^']|'')*'", source, re.I)
+                    if not re.match(r"\s*\);", source[match.end():])]
+
+        self.assertEqual(broken_literals(self.forward), [])
+        original_failure = self.forward.replace("-- Purge drops the member''s words", "-- Purge drops the member's words")
+        self.assertNotEqual(original_failure, self.forward)
+        self.assertTrue(broken_literals(original_failure))
+
     def test_forward_sql_is_owner_keyed_serializable_and_closed(self):
         self.assertIn("PROPOSED ONLY", self.forward)
         self.assertIn("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE", self.forward)
@@ -1685,6 +1695,19 @@ class ResumeIntakeSqlTests(unittest.TestCase):
         self.assertEqual(snapshot["submissions"], {})
         self.assertEqual(snapshot["sources"], {})
         self.assertEqual(simulator.intents, [])  # the canonical intent never survived
+
+    def test_publication_wrap_refuses_granting_intake_and_restores_core(self):
+        publication = (
+            ROOT / "SQL FIles" / "Migrations" / "proposed" / "PS-RESUME-PUBLICATION-001_publication.sql"
+        ).read_text(encoding="utf-8")
+        rollback = (
+            ROOT / "SQL FIles" / "Migrations" / "proposed" / "PS-RESUME-PUBLICATION-001_publication_rollback.sql"
+        ).read_text(encoding="utf-8")
+        self.assertIn("usp_CommitResumeIntakeCommandForOwnerCore", publication)
+        self.assertIn("@Mutator = N''intake''", publication)
+        self.assertIn("PUBLICATION_COMMAND_REQUIRED", publication)
+        self.assertIn("usp_CommitResumeIntakeCommandForOwnerCore", rollback)
+        self.assertIn("usp_CommitResumeIntakeCommandForOwner", self.forward)
 
 
 class _RecordingStub:

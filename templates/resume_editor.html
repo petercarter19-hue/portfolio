@@ -13,6 +13,9 @@
 {% if config.get('PEERSLATE_RESUME_MEDIA_ENABLED', false) %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/resume-media.css') }}">
 {% endif %}
+{% if config.get('PEERSLATE_RESUME_PUBLICATION_ENABLED', false) %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resume-publication.css') }}">
+{% endif %}
 <meta name="robots" content="noindex, nofollow">
 {% endblock %}
 
@@ -46,6 +49,11 @@
             <button type="button" class="resume-editor__button resume-editor__button--secondary" id="resume-editor-review">
                 Review without publishing
             </button>
+            {% if config.get('PEERSLATE_RESUME_PUBLICATION_ENABLED', false) %}
+            <a class="resume-editor__button resume-editor__button--secondary" href="{{ url_for('resume_publication.get_resume_publication_page') }}">
+                Publish reviewed Resume
+            </a>
+            {% endif %}
         </p>
 
         <div id="resume-editor-lists" data-workspace-url="{{ workspace_url }}" data-commands-url="{{ commands_url }}" data-review-url="{{ review_url }}"></div>

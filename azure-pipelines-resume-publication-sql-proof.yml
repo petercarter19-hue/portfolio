@@ -1,0 +1,140 @@
+# Plan-only by default. --execute is implemented and gated behind a new exact
+# authorization; this pipeline still only prints the hashed proposal unless an
+# execute is explicitly queued by a dispatcher who has checked Pete's exact
+# approval, source, resource plan, and one-run limit. Queue parameters and
+# mirrored environment values do not independently authenticate approval.
+# It never accepts a client DSN as the resource. Do not queue as schema apply.
+# Hosted definition identities are not invented here.
+#
+# Authorized execute selects Python 3.12, prepares a hashed Linux x86_64/glibc
+# CPython 3.12 wheelhouse on the network-capable agent, then runs the proof
+# script. The isolated client is the oracle runtime: wheels and source are
+# copied in, installed offline with --require-hashes --no-index --find-links,
+# and SQL is reached on the internal Docker network. Host pip install is not
+# the client runtime.
+trigger: none
+pr: none
+schedules: []
+
+parameters:
+  - name: expectedSourceSha
+    displayName: Exact reviewed source SHA
+    type: string
+    default: ""
+  - name: executeAuthorized
+    displayName: Queue authorized disposable execute (default plan only)
+    type: boolean
+    default: false
+  - name: authorizationRef
+    displayName: Exact reviewed authorization reference
+    type: string
+    default: ""
+
+jobs:
+  - job: ResumePublicationSqlProofPlan
+    displayName: Resume publication SQL proof plan only
+    timeoutInMinutes: 10
+    pool:
+      vmImage: ubuntu-22.04
+    steps:
+      - checkout: self
+        clean: true
+        fetchDepth: 1
+        persistCredentials: false
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "3.12"
+        displayName: Use Python 3.12
+      - bash: |
+          set -euo pipefail
+          EXPECTED="${EXPECTED_SOURCE_SHA}"
+          CHECKED="$(git rev-parse HEAD)"
+          BUILD="${BUILD_SOURCEVERSION:-}"
+          if [[ ! "${BUILD}" =~ ^[0-9a-fA-F]{40}$ || "${BUILD,,}" != "${CHECKED,,}" ]]; then
+            echo "build_checkout_mismatch" >&2
+            exit 1
+          fi
+          if [[ -n "${EXPECTED}" ]]; then
+            if [[ ! "${EXPECTED}" =~ ^[0-9a-fA-F]{40}$ ]]; then
+              echo "source_sha_required" >&2
+              exit 1
+            fi
+            if [[ "${EXPECTED,,}" != "${CHECKED,,}" ]]; then
+              echo "source_sha_mismatch checked=${CHECKED} expected=${EXPECTED}" >&2
+              exit 1
+            fi
+          fi
+          python3 scripts/run_resume_publication_sql_proof.py --plan
+          python3 scripts/configure_resume_publication_sql_authority.py --plan
+        displayName: Emit hashed source/resource proposal
+        env:
+          EXPECTED_SOURCE_SHA: ${{ parameters.expectedSourceSha }}
+          BUILD_SOURCEVERSION: $(Build.SourceVersion)
+
+  - job: ResumePublicationSqlProofExecute
+    displayName: Resume publication SQL proof authorized execute
+    dependsOn: ResumePublicationSqlProofPlan
+    condition: and(succeeded(), eq('${{ parameters.executeAuthorized }}', 'True'), ne('${{ parameters.authorizationRef }}', ''))
+    timeoutInMinutes: 45
+    cancelTimeoutInMinutes: 5
+    pool:
+      vmImage: ubuntu-22.04
+    steps:
+      - checkout: self
+        clean: true
+        fetchDepth: 1
+        persistCredentials: false
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "3.12"
+        displayName: Use Python 3.12
+      - bash: |
+          set -euo pipefail
+          EXPECTED="${EXPECTED_SOURCE_SHA}"
+          CHECKED="$(git rev-parse HEAD)"
+          BUILD="${BUILD_SOURCEVERSION:-}"
+          if [[ ! "${BUILD}" =~ ^[0-9a-fA-F]{40}$ || "${BUILD,,}" != "${CHECKED,,}" ]]; then
+            echo "build_checkout_mismatch" >&2
+            exit 1
+          fi
+          if [[ ! "${EXPECTED}" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "source_sha_required" >&2
+            exit 1
+          fi
+          if [[ "${EXPECTED,,}" != "${CHECKED,,}" ]]; then
+            echo "source_sha_mismatch checked=${CHECKED} expected=${EXPECTED}" >&2
+            exit 1
+          fi
+          EVIDENCE_DIR="$(Agent.TempDirectory)/resume-publication-evidence"
+          mkdir -p "$EVIDENCE_DIR"
+          WHEELHOUSE="$(Agent.TempDirectory)/resume-publication-wheels"
+          mkdir -p "$WHEELHOUSE"
+          python3 -m pip download \
+            --require-hashes \
+            --disable-pip-version-check \
+            --no-cache-dir \
+            --python-version 3.12 \
+            --implementation cp \
+            --platform manylinux_2_28_x86_64 \
+            --platform manylinux_2_17_x86_64 \
+            --platform manylinux2014_x86_64 \
+            --only-binary=:all: \
+            --dest "$WHEELHOUSE" \
+            -r requirements-resume-publication-sql-proof.txt
+          exec python3 scripts/run_resume_publication_sql_proof.py --execute --authorization-ref "${AUTHORIZATION_REF}" --source-sha "${EXPECTED}" --evidence "${EVIDENCE_DIR}/evidence.json"
+        displayName: Authorized isolated Docker SQL proof
+        env:
+          AUTHORIZATION_REF: ${{ parameters.authorizationRef }}
+          EXPECTED_SOURCE_SHA: ${{ parameters.expectedSourceSha }}
+          BUILD_SOURCEVERSION: $(Build.SourceVersion)
+          PEERSLATE_RESUME_PUBLICATION_WHEELHOUSE: $(Agent.TempDirectory)/resume-publication-wheels
+          PEERSLATE_RESUME_PUBLICATION_SQL_PROOF_EXECUTE: authorized
+          PEERSLATE_RESUME_PUBLICATION_SQL_PROOF_ID: ps-mvp1-ef-sql-proof-20260916-01
+          PEERSLATE_RESUME_PUBLICATION_SQL_PROOF_AUTHORIZATION: ${{ parameters.authorizationRef }}
+      - task: PublishPipelineArtifact@1
+        displayName: Publish sanitized SQL proof evidence
+        condition: always()
+        inputs:
+          targetPath: $(Agent.TempDirectory)/resume-publication-evidence
+          artifact: resume-publication-sql-proof
+          publishLocation: pipeline

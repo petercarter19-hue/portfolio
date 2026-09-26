@@ -146,13 +146,17 @@ def protect_json_writes():
 
 @peerslate_api.after_request
 def protect_owner_living_resume_responses(response):
-    """Never let any owner editor response enter a browser or proxy cache."""
+    """Never let any owner editor or member publication response enter a cache."""
 
-    if request.path == "/api/living-resume/me" or request.path.startswith(
-        "/api/living-resume/me/"
+    path = request.path
+    if (
+        path == "/api/living-resume/me"
+        or path.startswith("/api/living-resume/me/")
+        or path.startswith("/api/public/profiles/")
     ):
-        response.headers["Cache-Control"] = "private, no-store"
-        response.headers["X-Content-Type-Options"] = "nosniff"
+        if "/living-resume" in path:
+            response.headers["Cache-Control"] = "private, no-store"
+            response.headers["X-Content-Type-Options"] = "nosniff"
     return response
 
 
@@ -319,11 +323,44 @@ def commit_owner_living_resume_command():
 
 
 @peerslate_api.get("/public/profiles/<string:profile_slug>/living-resume")
-@require_living_resume_database
 def get_public_living_resume(profile_slug):
     clean_slug = profile_slug.strip().lower()
     if not clean_slug or len(clean_slug) > 100:
         raise ApiValidationError("profile_slug has an unsupported value.")
+    if clean_slug not in current_app.config["PEERSLATE_RESUME_FIXTURE_SLUGS"]:
+        from services.resume_publication_service import (
+            PublicationDenied,
+            resume_publication_service,
+        )
+        if current_app.config.get("PEERSLATE_RESUME_PUBLICATION_ENABLED", False) is not True:
+            return jsonify({"success": False, "message": "Living Resume not found."}), 404
+        service = current_app.config.get("RESUME_PUBLICATION_SERVICE") or resume_publication_service
+        try:
+            payload = service.guest_read(
+                slug=clean_slug,
+                if_none_match=request.headers.get("If-None-Match"),
+            )
+        except PublicationDenied:
+            return jsonify({"success": False, "message": "Living Resume not found."}), 404
+        if payload.get("read_state") == "not_modified":
+            response = current_app.response_class(status=304)
+            response.headers["ETag"] = f'"{payload["etag"]}"'
+            response.headers["Cache-Control"] = "private, no-store"
+            return response
+        living = {
+            "display": payload.get("display") or {},
+            "media": payload.get("media") or {},
+            "publication_revision": payload.get("publication_revision"),
+            "etag": payload.get("etag"),
+            "read_state": payload.get("read_state"),
+            "sharing_enabled": payload.get("sharing_enabled"),
+        }
+        body = jsonify({"success": True, "living_resume": living, "classification": "member_publication"})
+        body.headers["ETag"] = f'"{payload["etag"]}"'
+        body.headers["Cache-Control"] = "private, no-store"
+        return body
+    if not current_app.config.get("PEERSLATE_LIVING_RESUME_DB_ENABLED", False):
+        return jsonify({"success": False, "message": "Not found."}), 404
     try:
         result_sets = database_service.execute_procedure(
             "usp_GetPublicLivingResumeBySlug", [("@ProfileSlug", clean_slug)]
@@ -333,7 +370,7 @@ def get_public_living_resume(profile_slug):
             raise
         return jsonify({"success": False, "message": "Living Resume not found."}), 404
     resume = database_service.name_result_sets(result_sets, LIVING_RESUME_SECTIONS)
-    return jsonify({"success": True, "living_resume": resume})
+    return jsonify({"success": True, "living_resume": resume, "classification": "legacy_or_unavailable"})
 
 
 @peerslate_api.get("/feed/break")

@@ -22,7 +22,7 @@ from services.ai_foundation.contracts import Audience, Purpose, SourceVersion
 from services.resume_media_repository import CatalogAssetRecord, CropRect, MediaPlacement
 from services.resume_publication_contracts import (
     CandidateInput, ContractError, EditorialDelta, EntryRef, EntrySelection, EntryState,
-    MediaSnapshot, MediaState, MediaVersion, PolicySnapshot, ReadState, SourceRef,
+    MediaSnapshot, MediaState, MediaVersion, NeutralReviewEvidence, PolicySnapshot, ReadState, SourceRef,
     SourceState, TrustedUseContext, UseAudience, UsePurpose, VersionTuple, Wording,
     _context_from_authorized_server,
 )
@@ -63,6 +63,32 @@ def fixture(*, media=False, second=False):
     policy = PolicySnapshot(ReadState.CURRENT, versions, True, tuple(states), tuple(sources))
     media_snapshot = MediaSnapshot(ReadState.CURRENT, versions, media_states)
     return candidate, policy, media_snapshot
+
+
+def review_evidence_for(entry, wording, owner="member-a"):
+    content = "\n".join(
+        f"{item.field}={item.value if item.value is not None else ''}"
+        for item in sorted(wording)
+    )
+    return NeutralReviewEvidence(
+        entry=entry,
+        evidence_key=f"ev:{entry.entry_key}",
+        evidence_version_key=f"ev:{entry.entry_key}:1",
+        version=1,
+        content_sha256=sha256(content.encode("utf-8")).hexdigest(),
+        codec="resume-canonical-source.v1",
+        canonical_token=entry.content_revision,
+        policy_content_version=1,
+        access_revision=entry.access_revision,
+        lifecycle="active",
+        owner_key=owner,
+        saved=True,
+        approved=True,
+        active=True,
+        canonical_evidence=True,
+        ai_use_count=0,
+        content=content,
+    )
 
 
 def review(candidate, policy, media):
@@ -215,10 +241,52 @@ class PublicationContractTests(unittest.TestCase):
         candidate, policy, media = fixture()
         private = replace(policy, entries=(replace(policy.entries[0], display_allowed=False, visitor_ai_allowed=False),))
         assert review(candidate, private, media).reason == "invalid_permission_expansion"
-        candidate = replace(candidate, selections=(replace(candidate.selections[0], expand_display=True, expand_visitor_ai=True),))
+        evidence = review_evidence_for(candidate.prior.entries[0], policy.entries[0].wording)
+        candidate = replace(
+            candidate,
+            selections=(replace(candidate.selections[0], expand_display=True, expand_visitor_ai=True),),
+            review_evidence=(evidence,),
+        )
         assert review(candidate, private, media).state is ReadState.CURRENT
         assert private.entries[0].display_allowed is False
         assert review(candidate, policy, media).reason == "invalid_permission_expansion"
+
+
+    def test_first_ai_grant_uses_neutral_saved_evidence_and_does_not_write(self):
+        candidate, policy, media = fixture()
+        private = replace(policy, entries=(replace(policy.entries[0], display_allowed=True, visitor_ai_allowed=False),))
+        ports = Mock()
+        without_evidence = replace(
+            candidate,
+            selections=(replace(candidate.selections[0], expand_visitor_ai=True),),
+        )
+        assert review(without_evidence, private, media).reason == "missing_review_evidence"
+        stale = review_evidence_for(
+            replace(candidate.prior.entries[0], content_revision="old"),
+            policy.entries[0].wording,
+        )
+        stale_candidate = replace(
+            without_evidence,
+            review_evidence=(replace(stale, entry=candidate.prior.entries[0], canonical_token="old"),),
+        )
+        assert review(stale_candidate, private, media).state is ReadState.STALE
+        evidence = review_evidence_for(candidate.prior.entries[0], policy.entries[0].wording)
+        ready = replace(without_evidence, review_evidence=(evidence,))
+        p, m = Mock(), Mock()
+        p.read_current.return_value, m.read_current.return_value = private, media
+        result = validate_candidate(ready, p, m)
+        assert result.state is ReadState.CURRENT
+        assert result.reviewed.visitor_ai.entries
+        assert [x[0] for x in p.mock_calls] == ["read_current"]
+        assert [x[0] for x in m.mock_calls] == ["read_current"]
+        assert private.entries[0].visitor_ai_allowed is False
+
+
+    def test_review_evidence_does_not_invent_public_source_version(self):
+        candidate, policy, media = fixture()
+        evidence = review_evidence_for(candidate.prior.entries[0], policy.entries[0].wording)
+        assert evidence.ai_use_count == 0
+        assert "PUBLIC" not in repr(evidence)
 
 
     def test_exact_changed_fields_only_and_prose_unchanged(self):

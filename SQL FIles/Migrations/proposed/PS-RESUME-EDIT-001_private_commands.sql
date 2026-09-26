@@ -17,10 +17,10 @@ BEGIN TRY
 
     IF COL_LENGTH(N'dbo.career_credentials', N'credential_completion_status') IS NULL
     BEGIN
+        -- Define the CHECK with the new column so this single batch compiles on an empty schema.
         ALTER TABLE dbo.career_credentials
-            ADD credential_completion_status nvarchar(30) NULL;
-        ALTER TABLE dbo.career_credentials
-            ADD CONSTRAINT CK_career_credentials_completion_status CHECK
+            ADD credential_completion_status nvarchar(30) NULL
+                CONSTRAINT CK_career_credentials_completion_status CHECK
                 (credential_completion_status IS NULL OR credential_completion_status IN
                     (N'planned', N'in_progress', N'completed'));
     END;
@@ -361,7 +361,10 @@ BEGIN TRY
                 IF JSON_QUERY(@CommandJson, ''$.values'') IS NULL
                    OR EXISTS
                       (SELECT 1 FROM OPENJSON(@CommandJson, ''$.values'') AS supplied
-                       WHERE NOT EXISTS (SELECT 1 FROM @AllowedValues AS allowed WHERE allowed.field_name = supplied.[key]))
+                       WHERE NOT EXISTS (SELECT 1 FROM @AllowedValues AS allowed
+                                         WHERE allowed.field_name COLLATE Latin1_General_100_BIN2
+                                             = supplied.[key] COLLATE Latin1_General_100_BIN2
+                                           AND DATALENGTH(allowed.field_name) = DATALENGTH(supplied.[key])))
                     THROW 52003, ''RESUME_EDITOR_VALIDATION'', 1;
             END;
 

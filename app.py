@@ -74,6 +74,10 @@ from resume_media_routes import (
     PLANNED_RATE_LIMITS as RESUME_MEDIA_RATE_LIMITS,
     resume_media,
 )
+from resume_publication_routes import (
+    PLANNED_RATE_LIMITS as RESUME_PUBLICATION_RATE_LIMITS,
+    resume_publication,
+)
 # PS-WORKSHOP-001 W2a: registers additional view functions onto the SAME
 # `workshop` Blueprint instance above (import-time side effect only, no
 # name from this module is otherwise used here) — see
@@ -424,6 +428,13 @@ app.config.update(
     # no production authority.
     PEERSLATE_RESUME_MEDIA_ENABLED=(
         os.environ.get('PEERSLATE_RESUME_MEDIA_ENABLED', 'false').lower() == 'true'
+    ),
+    # PS-MVP1-PUBLICATION-INTEGRATION-001: owner review/publish and gated
+    # generic-member publication readers. Off by default. Routes read this
+    # with `is True`. Schema remains proposed and unapplied; enablement
+    # applies no SQL, does not start F, and grants no production authority.
+    PEERSLATE_RESUME_PUBLICATION_ENABLED=(
+        os.environ.get('PEERSLATE_RESUME_PUBLICATION_ENABLED', 'false').lower() == 'true'
     ),
     PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY=PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY,
     # PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001: the transition flag
@@ -958,6 +969,23 @@ app.register_blueprint(resume_intake)
 # The owner's private media application must be explicitly injected; there is
 # no implicit fixture catalog and no publication route in this package.
 app.register_blueprint(resume_media)
+app.register_blueprint(resume_publication)
+from services.entry_policy_service import entry_policy_service as _entry_policy_service
+from services.resume_media_catalog_repository import SqlResumeCatalogRepository
+from services.resume_publication_repository import SqlResumePublicationRepository
+from services.resume_publication_service import (
+    resume_publication_service as _resume_publication_service,
+)
+
+_publication_sql = SqlResumePublicationRepository()
+_resume_publication_service.repository = _publication_sql
+_resume_publication_service.sql_repository = _publication_sql
+_resume_publication_service.catalog = SqlResumeCatalogRepository()
+_entry_policy_service.publication_service = _resume_publication_service
+_resume_publication_service.policy_service = _entry_policy_service
+_media_application = app.config.get("RESUME_MEDIA_SERVICE")
+if _media_application is not None:
+    _media_application.publication_service = _resume_publication_service
 # PS-COMMUNITY-AUTH-WALL-001: the legacy fixture-backed people_interests_api
 # is never registered. No feature-flag state may resurrect a public or
 # fixture Community surface — flag off means unavailable, not "older feed".
@@ -1094,6 +1122,11 @@ for _resume_intake_endpoint, _resume_intake_limit in RESUME_INTAKE_RATE_LIMITS.i
 for _resume_media_endpoint, _resume_media_limit in RESUME_MEDIA_RATE_LIMITS.items():
     app.view_functions[_resume_media_endpoint] = limiter.limit(_resume_media_limit)(
         app.view_functions[_resume_media_endpoint]
+    )
+
+for _resume_publication_endpoint, _resume_publication_limit in RESUME_PUBLICATION_RATE_LIMITS.items():
+    app.view_functions[_resume_publication_endpoint] = limiter.limit(_resume_publication_limit)(
+        app.view_functions[_resume_publication_endpoint]
     )
 
 # PS-SETTINGS-ACCOUNT-EXPORT-AVAILABILITY-001: the same post-registration
@@ -2419,6 +2452,9 @@ RESUME_PROFILE_FILES = {
     # content from the selected structured data source.
     'petec': 'resume_data.json',
 }
+# Publication readers share this fixture classification without embedding a person's slug.
+app.config['PEERSLATE_RESUME_FIXTURE_SLUGS'] = frozenset(RESUME_PROFILE_FILES)
+_resume_publication_service.reserved_public_slugs = app.config['PEERSLATE_RESUME_FIXTURE_SLUGS']
 
 WORK_IMPACT_PUBLICATION_OVERLAY = os.path.join(
     os.path.dirname(__file__),
@@ -3170,14 +3206,105 @@ def _render_living_resume(
     )
 
 
+def _render_member_publication(profile_slug):
+    """Generic member publication reader. Unknown slugs never fall back to Pete."""
+    from services.resume_publication_service import (
+        PublicationDenied,
+        resume_publication_service,
+    )
+    from services.response_policy import MEMBER_PUBLICATION_CACHE_CONTROL
+
+    if app.config.get("PEERSLATE_RESUME_PUBLICATION_ENABLED", False) is not True:
+        abort(404)
+    service = app.config.get("RESUME_PUBLICATION_SERVICE") or resume_publication_service
+    if_none_match = request.headers.get("If-None-Match")
+    try:
+        payload = service.guest_read(slug=profile_slug, if_none_match=if_none_match)
+    except PublicationDenied:
+        abort(404)
+    if payload.get("read_state") == "not_modified":
+        response = app.response_class(status=304)
+        response.headers["Cache-Control"] = MEMBER_PUBLICATION_CACHE_CONTROL
+        response.headers["ETag"] = f'"{payload["etag"]}"'
+        return response
+    response = make_response(
+        render_template(
+            "resume_publication.html",
+            page_title="Resume",
+            member=None,
+            public_publication=payload,
+            profile_slug=profile_slug,
+            is_public_reader=True,
+        )
+    )
+    response.headers["Cache-Control"] = MEMBER_PUBLICATION_CACHE_CONTROL
+    response.headers["ETag"] = f'"{payload["etag"]}"'
+    response.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive, noimageindex"
+    if request.method == "HEAD":
+        response.set_data(b"")
+    return response
+
+
+@app.route('/<profile_slug>/resume/media/<slot>', methods=['GET', 'HEAD'])
+def profile_resume_media(profile_slug, slot):
+    """Guest media bytes. Authorize, then storage, then re-authorize before return."""
+    from services.resume_publication_service import (
+        PublicationDenied,
+        resume_publication_service,
+    )
+    from services.response_policy import MEMBER_PUBLICATION_CACHE_CONTROL
+
+    if profile_slug == 'petec':
+        abort(404)
+    if app.config.get("PEERSLATE_RESUME_PUBLICATION_ENABLED", False) is not True:
+        abort(404)
+    service = app.config.get("RESUME_PUBLICATION_SERVICE") or resume_publication_service
+    revision = request.args.get("revision")
+    publication_revision = None
+    if revision not in (None, ""):
+        try:
+            publication_revision = int(revision)
+        except (TypeError, ValueError):
+            abort(404)
+    try:
+        payload = service.deliver_guest_media(
+            slug=profile_slug,
+            slot=slot,
+            publication_revision=publication_revision,
+            if_none_match=request.headers.get("If-None-Match"),
+            method=request.method,
+        )
+    except PublicationDenied:
+        abort(404)
+    response = app.response_class(
+        payload.get("body") or b"",
+        status=int(payload.get("status") or 200),
+        mimetype=payload.get("content_type") or "application/octet-stream",
+    )
+    response.headers["Cache-Control"] = MEMBER_PUBLICATION_CACHE_CONTROL
+    if payload.get("etag"):
+        response.headers["ETag"] = f'"{payload["etag"]}"'
+    response.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive, noimageindex"
+    if request.method == "HEAD":
+        response.set_data(b"")
+    return response
+
+
+@app.route('/<profile_slug>/resume2/media/<slot>', methods=['GET', 'HEAD'])
+def profile_resume2_media(profile_slug, slot):
+    return redirect(url_for('profile_resume_media', profile_slug=profile_slug, slot=slot), code=302)
+
+
 @app.route('/resume')
 def resume():
     """Send legacy resume bookmarks to the canonical Living Resume page."""
     return redirect(url_for('profile_resume', profile_slug='petec'), code=302)
 
 
-@app.route('/<profile_slug>/resume')
+@app.route('/<profile_slug>/resume', methods=['GET', 'HEAD'])
 def profile_resume(profile_slug):
+    if profile_slug != 'petec':
+        return _render_member_publication(profile_slug)
     overview_style = request.args.get('overviewStyle')
     if overview_style not in STYLE_MANIFESTS:
         overview_style = None
@@ -3191,6 +3318,19 @@ def profile_resume(profile_slug):
 
 @app.route('/<profile_slug>/resume2')
 def profile_resume2(profile_slug):
+    if profile_slug != 'petec':
+        from services.resume_publication_service import (
+            PublicationDenied,
+            resume_publication_service,
+        )
+        if app.config.get("PEERSLATE_RESUME_PUBLICATION_ENABLED", False) is not True:
+            abort(404)
+        service = app.config.get("RESUME_PUBLICATION_SERVICE") or resume_publication_service
+        try:
+            service.guest_read(slug=profile_slug)
+        except PublicationDenied:
+            abort(404)
+        return redirect(url_for('profile_resume', profile_slug=profile_slug), code=302)
     _load_resume_profile(profile_slug)
     return redirect(url_for('profile_resume', profile_slug=profile_slug), code=302)
 

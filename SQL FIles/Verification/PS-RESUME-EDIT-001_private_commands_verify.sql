@@ -39,6 +39,33 @@ IF NOT EXISTS
     INSERT @Failures VALUES (N'Credential completion status check is absent.');
 
 DECLARE @CommandDefinition nvarchar(max) = OBJECT_DEFINITION(OBJECT_ID(N'dbo.usp_CommitLivingResumeCommandForOwner'));
+-- Publication retains the predecessor implementation in Core. Check the real
+-- public dependency chain before applying the unchanged predecessor checks there.
+DECLARE @PublicationInstalled bit = CASE WHEN EXISTS
+    (SELECT 1 FROM dbo.schema_migrations WHERE migration_id=N'PS-RESUME-PUBLICATION-001') THEN 1 ELSE 0 END;
+IF @PublicationInstalled=1
+BEGIN
+    IF @CommandDefinition IS NULL
+       OR OBJECT_ID(N'dbo.usp_CommitLivingResumeCommandForOwnerCore', N'P') IS NULL
+       OR OBJECT_ID(N'dbo.usp_ResumePublicationGuardLegacyMutator', N'P') IS NULL
+       OR NOT EXISTS (SELECT 1 FROM sys.sql_expression_dependencies
+           WHERE referencing_id=OBJECT_ID(N'dbo.usp_CommitLivingResumeCommandForOwner')
+             AND referenced_id=OBJECT_ID(N'dbo.usp_CommitLivingResumeCommandForOwnerCore'))
+       OR NOT EXISTS (SELECT 1 FROM sys.sql_expression_dependencies
+           WHERE referencing_id=OBJECT_ID(N'dbo.usp_CommitLivingResumeCommandForOwner')
+             AND referenced_id=OBJECT_ID(N'dbo.usp_ResumePublicationGuardLegacyMutator'))
+       OR @CommandDefinition NOT LIKE N'%SET TRANSACTION ISOLATION LEVEL SERIALIZABLE%'
+       OR @CommandDefinition NOT LIKE N'%WITH (UPDLOCK, HOLDLOCK)%'
+       OR @CommandDefinition NOT LIKE N'%app_user.user_key = @UserKey%'
+       OR @CommandDefinition LIKE N'%@OwnerProfileId%'
+        THROW 52010, 'Publication wrapper or retained predecessor linkage is invalid.', 1;
+    SET @CommandDefinition=OBJECT_DEFINITION(OBJECT_ID(N'dbo.usp_CommitLivingResumeCommandForOwnerCore'));
+END
+ELSE IF OBJECT_ID(N'dbo.usp_CommitLivingResumeCommandForOwnerCore', N'P') IS NOT NULL
+    THROW 52010, 'Unexpected retained Core without Publication.', 1;
+IF @CommandDefinition IS NULL
+    THROW 52010, 'Predecessor command definition is inaccessible.', 1;
+
 IF @CommandDefinition NOT LIKE N'%SET TRANSACTION ISOLATION LEVEL SERIALIZABLE%'
     INSERT @Failures VALUES (N'Command boundary is not serializable.');
 IF @CommandDefinition NOT LIKE N'%WITH (UPDLOCK, HOLDLOCK)%'

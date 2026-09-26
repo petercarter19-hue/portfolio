@@ -15,9 +15,10 @@ from services.resume_media_repository import (
 )
 from services.resume_publication_contracts import (
     CandidateInput, ContractError, DisplayManifest, EntryState, ManifestEntry,
-    MediaReadPort, MediaSnapshot, MediaState, MediaVersion, PolicyReadPort, PolicySnapshot,
-    ReadState, ReviewedCandidate, SourceState, UseAudience, UsePurpose,
-    ValidationResult, VersionTuple, VisitorAIManifest, Wording, members, unique,
+    MediaReadPort, MediaSnapshot, MediaState, MediaVersion, NeutralReviewEvidence,
+    PolicyReadPort, PolicySnapshot, REVIEW_PAYLOAD_SCHEMA, ReadState,
+    ReviewedCandidate, SourceState, UseAudience, UsePurpose, ValidationResult,
+    VersionTuple, VisitorAIManifest, Wording, members, unique,
 )
 
 
@@ -62,7 +63,7 @@ def _canonical_payload(candidate, policy, media):
     versions = candidate.prior
     context = candidate.context
     return {
-        "schema": "resume-publication-review.v1",
+        "schema": REVIEW_PAYLOAD_SCHEMA,
         "context": {"subject_key": context.subject_key, "resume_key": context.resume_key,
                     "audience": context.audience.value, "purpose": context.purpose.value,
                     "authenticated_owner_key": context.authenticated_owner_key},
@@ -83,11 +84,24 @@ def _canonical_payload(candidate, policy, media):
                        for d in x.deltas],
         } for x in candidate.selections],
         "placements": [_placement(x) for x in candidate.placements],
+        "review_evidence": [{
+            "entry": _entry(x.entry), "evidence_key": x.evidence_key,
+            "evidence_version_key": x.evidence_version_key, "version": x.version,
+            "content_sha256": x.content_sha256, "codec": x.codec,
+            "canonical_token": x.canonical_token,
+            "policy_content_version": x.policy_content_version,
+            "access_revision": x.access_revision, "lifecycle": x.lifecycle,
+            "owner_key": x.owner_key, "saved": x.saved, "approved": x.approved,
+            "active": x.active, "canonical_evidence": x.canonical_evidence,
+            "ai_use_count": x.ai_use_count, "content": x.content,
+            "dependency_versions": list(x.dependency_versions),
+        } for x in candidate.review_evidence],
         "policy": {
             "state": policy.state.value, "sharing_enabled": policy.sharing_enabled,
             "entries": [{"ref": _entry(x.ref), "wording": _wording(x.wording),
                          "display_allowed": x.display_allowed,
                          "visitor_ai_allowed": x.visitor_ai_allowed,
+                         "private_assistance_excluded": x.private_assistance_excluded,
                          "active": x.active, "identity_resolved": x.identity_resolved}
                         for x in sorted(policy.entries, key=lambda x: x.ref)],
             "sources": [{"ref": _source(x.ref), "title": x.source.title,
@@ -155,6 +169,42 @@ def _check_presentation(placement, current):
 
 def _failure(state, reason):
     return ValidationResult(state, reason)
+
+
+def _check_first_ai_grant_evidence(candidate, selection, current, values):
+    """First explicit visitor-AI grant uses saved canonical evidence, not a fake PUBLIC source."""
+    matches = [item for item in candidate.review_evidence if item.entry == selection.entry]
+    if not matches:
+        return ReadState.DENIED, "missing_review_evidence"
+    if len(matches) != 1:
+        return ReadState.DENIED, "duplicate_review_evidence"
+    evidence = matches[0]
+    if type(evidence) is not NeutralReviewEvidence:
+        return ReadState.UNAVAILABLE, "malformed_review_evidence"
+    if evidence.owner_key != candidate.prior.subject_key:
+        return ReadState.DENIED, "foreign_review_evidence"
+    if evidence.entry.access_revision != current.ref.access_revision:
+        return ReadState.STALE, "stale_review_evidence"
+    if evidence.entry.content_revision != current.ref.content_revision:
+        return ReadState.STALE, "stale_review_evidence"
+    if evidence.access_revision != current.ref.access_revision:
+        return ReadState.STALE, "stale_review_evidence"
+    if evidence.canonical_token != current.ref.content_revision:
+        return ReadState.STALE, "stale_review_evidence"
+    if evidence.lifecycle != "active" or not all(
+        (evidence.saved, evidence.approved, evidence.active, evidence.canonical_evidence)
+    ):
+        return ReadState.DENIED, "ineligible_review_evidence"
+    expected_wording = "\n".join(
+        f"{item.field}={item.value if item.value is not None else ''}"
+        for item in sorted(Wording(k, v) for k, v in values.items())
+    )
+    if evidence.content != expected_wording:
+        return ReadState.STALE, "review_evidence_content_changed"
+    digest = hashlib.sha256(evidence.content.encode("utf-8")).hexdigest()
+    if evidence.content_sha256 != digest:
+        return ReadState.DENIED, "review_evidence_digest_mismatch"
+    return None
 
 
 def validate_candidate(candidate: CandidateInput, policy_port: PolicyReadPort,
@@ -245,14 +295,23 @@ def _validate_snapshots(candidate, policy, media):
         if selection.display:
             display.append(entry)
         if selection.visitor_ai:
-            if not sources:
-                return _failure(ReadState.UNAVAILABLE, "missing_ai_source")
-            for source in policy.sources:
-                if source.ref in sources and (
-                    Audience.PUBLIC not in source.source.allowed_audiences
-                    or Purpose.PUBLIC_PROFILE_ANSWER not in source.source.allowed_purposes
-                ):
-                    return _failure(ReadState.DENIED, "ai_source_scope")
+            if current.visitor_ai_allowed:
+                if not sources:
+                    return _failure(ReadState.UNAVAILABLE, "missing_ai_source")
+                for source in policy.sources:
+                    if source.ref in sources and (
+                        Audience.PUBLIC not in source.source.allowed_audiences
+                        or Purpose.PUBLIC_PROFILE_ANSWER not in source.source.allowed_purposes
+                    ):
+                        return _failure(ReadState.DENIED, "ai_source_scope")
+            elif selection.expand_visitor_ai:
+                evidence_error = _check_first_ai_grant_evidence(
+                    candidate, selection, current, values,
+                )
+                if evidence_error:
+                    return _failure(*evidence_error)
+            else:
+                return _failure(ReadState.DENIED, "invalid_permission_expansion")
             visitor_ai.append(entry)
     media_by_slot = {x.ref.slot: x for x in media.media}
     for placement in candidate.placements:
