@@ -86,7 +86,9 @@
     "services/resume_draft_service.py",
     "tests/test_resume_draft_service.py",
     "tests/test_navigation.py",
-    "tests/test_shared_shell_convergence.py"
+    "tests/test_shared_shell_convergence.py",
+    "templates/partials/settings/_my_data_shell.html",
+    "tests/test_resume_media_browser.py"
   ],
   "domains": [
     "mvp1:integrated-acceptance",
