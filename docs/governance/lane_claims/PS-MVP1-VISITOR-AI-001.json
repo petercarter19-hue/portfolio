@@ -36,7 +36,17 @@
     "docs/governance/lane_claims/PS-MVP1-VISITOR-AI-001.json",
     "docs/governance/lane_claims/receipts/PS-MVP1-VISITOR-AI-001.json",
     "docs/governance/lane_claims/evidence/PS-MVP1-VISITOR-AI-001.md",
-    "docs/governance/PACKAGE_REGISTRY.json"
+    "docs/governance/PACKAGE_REGISTRY.json",
+    "app.py",
+    "resume_publication_routes.py",
+    "templates/resume_publication.html",
+    "templates/partials/resume/_publication_review.html",
+    "static/js/resume-publication.js",
+    "static/css/resume-publication.css",
+    "tests/test_resume_publication_routes.py",
+    "tests/test_resume_publication_browser.py",
+    "scripts/run_resume_publication_browser_tests.py",
+    "tests/test_resume_publication_browser_runner.py"
   ],
   "domains": [
     "resume:visitor-ai:eligibility",
