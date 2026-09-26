@@ -89,7 +89,11 @@
     "tests/test_shared_shell_convergence.py",
     "templates/partials/settings/_my_data_shell.html",
     "tests/test_resume_media_browser.py",
-    "SQL FIles/Migrations/proposed/PS-PROFILE-002_profile_publication.sql"
+    "SQL FIles/Migrations/proposed/PS-PROFILE-002_profile_publication.sql",
+    "tests/test_auth.py",
+    "tests/test_owner_home.py",
+    "tests/test_profile_core_visual.py",
+    "tests/test_public_nav_route_truth.py"
   ],
   "domains": [
     "mvp1:integrated-acceptance",
