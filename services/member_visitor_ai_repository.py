@@ -5,7 +5,7 @@ from typing import Protocol
 from services.member_visitor_ai_sources import (
     EligibleSources, PreviewBinding, SourcesUnavailable, build_sources, issue_preview, strict_json,
 )
-from services.resume_publication_contracts import ReadState, text
+from services.resume_publication_contracts import ReadState, text, decode_canonical_source
 
 VISITOR_AI_PROCEDURES = frozenset({'usp_GetMemberVisitorAiBySlug', 'usp_GetMemberVisitorAiPreviewForOwner'})
 
@@ -58,6 +58,28 @@ class SqlMemberVisitorAiRepository:
             return issue_preview(self._read(owner=owner), owner, expected_draft_revision, choices)
         except Exception as error:
             raise SourcesUnavailable('Preview authority is unavailable.') from error
+
+    def preview_choices(self) -> dict:
+        """Private saved-source choices, not proposed wording or a guest token."""
+        try:
+            owner = self._owner()
+            document = self._read(owner=owner)
+            choices = tuple((row['entry_key'], row['visitor_ai']) for row in document['entries'])
+            binding = issue_preview(document, owner, document['draft_revision'], choices)
+            items = []
+            for row in document['entries']:
+                values = decode_canonical_source(bytes.fromhex(row['content_hex']))
+                label = next((values.get(key) for key in ('role_title', 'title', 'name',
+                              'credential_name', 'institution_name', 'summary', 'wording')
+                              if type(values.get(key)) is str and values[key].strip()), 'Saved information')
+                items.append({'entry_key': row['entry_key'], 'label': label[:160],
+                              'selected': row['visitor_ai']})
+            bundle = build_sources(document, owner=owner, preview=binding)
+            if self.recheck(bundle) is not ReadState.CURRENT:
+                raise SourcesUnavailable('Preview changed.')
+            return {'draft_revision': binding.draft_revision, 'choices': items}
+        except Exception as error:
+            raise SourcesUnavailable('Preview choices are unavailable.') from error
 
     def load_preview(self, binding: PreviewBinding) -> EligibleSources:
         try:

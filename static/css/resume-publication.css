@@ -57,3 +57,60 @@
     opacity: 0.55;
     cursor: not-allowed;
 }
+
+/* F implements the approved D08/D11 contextual rail and M08/M11 sheet. */
+.resume-publication__layout { width: 100%; }
+.resume-publication--with-ai .resume-publication__layout {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 390px);
+    align-items: start; gap: 1.5rem; max-width: 1400px; margin: 0 auto;
+}
+.resume-publication--with-ai .resume-publication__panel { width: 100%; min-width: 0; }
+.visitor-ai {
+    box-sizing: border-box; position: static; width: 100%; max-width: none;
+    margin: 0; padding: 1.4rem; color: #173d62; background: #fff;
+    border: 1px solid #d4e1ec; border-top: 3px solid #cb8509; border-radius: 14px;
+    box-shadow: 0 12px 35px rgb(16 39 52 / 9%); font: 400 1rem/1.55 Inter, sans-serif;
+    overflow-wrap: anywhere; max-height: none;
+}
+.visitor-ai:not([open]) { display: none; }
+.visitor-ai[open] { display: block; }
+.visitor-ai__header { display: flex; justify-content: space-between; align-items: center; gap: .75rem; }
+.visitor-ai__eyebrow { margin: 0; color: #164b50; font-weight: 700; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; }
+.visitor-ai h2 { margin: .6rem 0; color: #08494b; font: 600 clamp(1.6rem, 2.1vw, 2.2rem)/1.15 Georgia, serif; }
+.visitor-ai__intro { color: #36567e; margin-bottom: 1.2rem; }
+.visitor-ai__private { background: #edf4ff; border: 1px solid #d4e2f5; border-radius: 8px; padding: .7rem; color: #224d80; }
+.visitor-ai button, .visitor-ai__open { min-height: 44px; cursor: pointer; font: 600 1rem/1.4 Inter, sans-serif; }
+.visitor-ai__ask, .visitor-ai__open { border: 1px solid #075f51; border-radius: 8px; background: #005749; color: #fff; padding: .65rem 1.25rem; box-shadow: 0 5px 12px rgb(0 60 45 / 12%); }
+.visitor-ai__open { margin-top: 1rem; }
+.visitor-ai__close, .visitor-ai__secondary { color: #154f92; border: 1px solid #bfd2ed; border-radius: 8px; background: #f5f9ff; padding: .5rem .7rem; }
+.visitor-ai__close { flex-shrink: 0; }
+.visitor-ai :is(a, button, input, textarea, summary):focus-visible, .visitor-ai__open:focus-visible { outline: 3px solid #1761b5; outline-offset: 3px; }
+.visitor-ai__answer details { border: 1px solid #ceddf0; border-radius: 8px; padding: 1rem; margin: 1rem 0; box-shadow: 0 3px 9px rgb(28 56 73 / 4%); }
+.visitor-ai summary { color: #123f80; font-weight: 650; cursor: pointer; min-height: 44px; }
+.visitor-ai__answer p { white-space: pre-wrap; }
+.visitor-ai__citation { display: inline-block; min-height: 44px; padding: .4rem 0; text-decoration: underline; color: #0754a7; }
+.visitor-ai blockquote { margin: .3rem 0 0; border-left: 3px solid #cb8509; padding: .6rem .8rem; background: #f8fbff; white-space: pre-wrap; }
+.visitor-ai form { border-top: 1px solid #d9e5f3; padding-top: 1rem; display: grid; gap: .5rem; }
+.visitor-ai textarea { box-sizing: border-box; min-height: 95px; width: 100%; resize: vertical; border: 1px solid #94b4d7; border-radius: 8px; padding: .7rem; font: inherit; color: #14345a; background: #fff; }
+.visitor-ai__ask { justify-self: end; min-width: 100px; }
+.visitor-ai button:disabled { cursor: wait; opacity: .6; }
+.visitor-ai__status { min-height: 1.5em; font-size: .9rem; }
+.visitor-ai__status[data-kind="error"] { color: #833618; }
+.visitor-ai__choices { margin: .8rem 0; }
+.visitor-ai__choices fieldset { border: 0; padding: .4rem 0; min-width: 0; }
+.visitor-ai__choices legend { font-weight: 600; font-size: .9rem; }
+.visitor-ai__choices label { display: flex; align-items: flex-start; gap: .6rem; padding: .7rem 0; }
+.visitor-ai__choices input { flex: 0 0 auto; width: 20px; height: 20px; margin-top: .1rem; }
+.visitor-ai__review { display: inline-block; color: #0754a7; padding: .7rem 0; text-decoration: underline; }
+@media (max-width: 900px) {
+    .resume-publication--with-ai .resume-publication__layout { display: block; }
+    .visitor-ai--enhanced[open] {
+        position: fixed; inset: auto 0 0; margin: 0; width: 100%; max-width: none;
+        max-height: 85dvh; overflow-y: auto; border-radius: 22px 22px 0 0;
+        padding: 1.1rem max(1rem, env(safe-area-inset-right)) max(1.2rem, env(safe-area-inset-bottom));
+        border-top: 3px solid #cb8509;
+    }
+    .visitor-ai::backdrop { background: rgb(7 32 47 / 30%); }
+    .visitor-ai h2 { font-size: 1.65rem; }
+}
+@media print { .visitor-ai, .visitor-ai__open { display: none !important; } }

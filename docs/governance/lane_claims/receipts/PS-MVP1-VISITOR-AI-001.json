@@ -1,29 +1,34 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-VISITOR-AI-001",
-  "candidate_sha": "70055a946573c7e9030a159bf26f14f1783d87d0",
+  "candidate_sha": "1c18c5a17e336f9635775679d549fe64a9ccf60a",
   "review_type": "independent",
   "reviewer_ref": "session:01a0c0a4-9342-7163-9052-f16ea0eee843",
   "result": "pass",
-  "reviewed_at": "2026-09-26T10:28:12Z",
+  "reviewed_at": "2026-09-26T12:35:14Z",
   "findings": [
     {
-      "summary": "Local CRLF proof-plan mismatch corrected; all209 committed source hashes independently match final hosted plan and artifact.",
+      "summary": "Citation final release now retains immutable ticket context and rechecks SQL currentness plus cache expiry after accounting finish.",
       "severity": "major",
       "status": "resolved"
     },
     {
-      "summary": "F launcher preserves inherited source-hash filename operands and selects only its oracle invocation; real adapter regressions and actual3571 execution pass.",
+      "summary": "Default-off configured existing Foundry provider and non-test complete-answer semantic support path implemented and exercised by actual HTTP with stub transport.",
       "severity": "major",
       "status": "resolved"
     },
     {
-      "summary": "Media timestamp conversion uses varchar16 hexadecimal representation; actual forward/verify/rollback/reapply and media dependency oracles pass.",
+      "summary": "Reserve, provider work, finish, serialization and final authorization share deadline/concurrency; release follows response close or abandoned-work completion.",
       "severity": "major",
       "status": "resolved"
     },
     {
-      "summary": "Exact hosted SQL3571 passed all15 required cases and four-resource identity-bound cleanup. Independent reviewer accepted actual source, plan, authority, artifact and current CI3570. Acceptance is limited to F areas1 and2; fullF and production are not complete.",
+      "summary": "Standalone public Resume render compatibility restored by conditional script loading; all four prior CI failures pass.",
+      "severity": "major",
+      "status": "resolved"
+    },
+    {
+      "summary": "Final independent acceptance evt-657c8d57-b170-47c9-8ac5-260798cda628: full F repository continuation accepted at exact1c18, CI3580 all four jobs and three current policies pass. Live provider quality, distributed accounting, approved-name binding and production remain unqualified.",
       "severity": "informational",
       "status": "informational"
     }

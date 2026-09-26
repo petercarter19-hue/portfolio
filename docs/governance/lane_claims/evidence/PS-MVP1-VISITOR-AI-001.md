@@ -1,5 +1,96 @@
 # F eligibility and orchestration: accepted source and SQL milestone
 
+## Prospective continuation admission
+
+PR1141 completed as main `7951bcb3c2f62abd8d3a51ae5ef1ecb8a4e27c57` after
+receipt-tail CI3573 passed all four jobs/current policies and merge preflight.
+Root decision `session:01a08dfb-7229-75f0-8017-07dd590f1795/decision:evt-538eccb4-0d30-4f6a-8e62-d14650783ef1`
+prospectively admits remaining F areas 3-5 in the same active package under
+Pete's continuation. PR1143 appended ten existing surfaces only, from source
+`ce7c912af6483b941ad1481dd56dc7f6694d2c9e`; CI3575 all four jobs and three
+current policies passed, extend-surfaces preflight passed, and merge is
+`491a3c3c5759a455835c76e65d12926c57dd2850`. Control custody was finalized.
+Durable reconciliation `2fc25814547f3b5af10d8252cec1b785f06f69c2` and fresh clean
+write preflight passed before continuation writes. Later implementation/review
+is pending; prior acceptance below is not broadened by this admission.
+
+Approved-name fallback decision:
+`session:01a08dfb-7229-75f0-8017-07dd590f1795/decision:evt-f263bf7e-9e07-4892-b6f6-530b1c9afb15`.
+Preserve a full name only from explicit publication authority; absent/denied
+authority uses neutral wording. Production name binding remains unavailable.
+
+## Remaining F candidate verification
+
+The continuation now implements guest and authenticated preview HTTP/UI,
+independent citation access, explicit operational-protection/provider/support
+composition, and name-port consumption with neutral absent/denied fallback.
+Default flags remain off; the registered service has no live provider/support,
+citation cache, name authority or operational runtime selected implicitly.
+The actual request identity is bound to the existing SQL repository for preview.
+No SQL, migration, proof-runner, foundation or deployment bytes changed.
+
+Writer focused verification:83 tests passed after initial implementation;
+75 affected service/source/repository/HTTP/contracts/runner tests passed after
+the final read-protection correction. The eight unchanged SQL/runner source
+tests from the first pass remain retained evidence. Strict browser runner:
+all6 required journeys passed, zero skips, including both new F journeys and
+the original four E journeys. Pip check and Git whitespace check passed.
+The first local launch lacked the existing synthetic ANTHROPIC_API_KEY test
+setting; setting the same non-secret test value as CI resolved startup without
+provider traffic. One anonymous HTTP test initially retained Flask's development
+user despite its allow flag being false; the test now explicitly removes that
+key. Product auth behavior was not weakened. Self-review added the same bounded
+operational admission to citation/options reads, not just question generation.
+
+Evidence under `X:/PeerSlate/evidence/PS-MVP1-VISITOR-AI-001/`:
+`continuation-focused.log`, `continuation-focused-final.log`,
+`browser-continuation-final.log`, and `browser-continuation/*.png`.
+Browser snapshots cover desktop supported/citation, network recovery, private
+mobile preview, and320/390/640/768/1024/1440 CSS widths. They show the implemented
+F panel/sheet, not full integrated Resume visual acceptance. No horizontal
+overflow was observed at those widths; keyboard Escape returns focus and
+hide/reopen preserves input. Physical device and assistive-tech proof are absent.
+Synthetic provider/identity/SQL rows demonstrate real F Python/HTTP/browser
+consumption; live provider/name/distributed-accounting qualification is absent.
+Independent exact-candidate review, current-target full CI, merge and close
+remain pending at this candidate preparation point.
+
+## Independent findings and combined correction
+
+Reviewer turn `01a0dd84-7d35-7881-bafe-937f00cc6842` required changes on
+`56527701a6ec9c1923658b11171b76eb6f01b98d`: P1 citation release after worker
+accounting could disclose an excerpt revoked during finish; P1 configured real
+provider/semantic-support implementation was missing; P2 final answer SQL check
+ran outside the runtime deadline/concurrency. These were real source gaps, not
+live-qualification limitations. The root explicitly directed one combined
+bounded correction, retaining unchanged SQL and visual evidence.
+
+The correction splits accounting `finish` (retains concurrency) from `release`
+(after response close/abandoned-work completion). Reserve, work, finish,
+serialization and final SQL/expiry authorization execute under one deadline and
+both concurrency controls. Citation output retains private immutable ticket
+context for its final fence after finish. Timeout cleanup remains asynchronous
+even if the future completes at callback registration, so remote cleanup cannot
+block the timed-out response; occupied slots bound pending cleanup count.
+
+The implemented default-off startup factory consumes explicit JSON settings,
+uses the unchanged Foundry HTTP/spend adapter with F-specific prompts, and
+performs a non-test complete-answer semantic-support call. Stub-transport HTTP
+tests exercise real configuration, six questions/twelve provider-phase calls,
+exact question/eligible bytes, complete summary/claims, incorrect meanings/
+dates/quantities/certainty, incomplete/malformed support output, transport
+failure and invalid cost configuration. Construction acquires no token and
+makes no call. Missing configuration still returns unavailable; actual live
+provider/support quality, name binding and distributed accounting remain
+unqualified. No credentials, live calls, production or SQL changes occurred.
+
+Corrected focused suite:81 PASS; strict browser6/6 PASS, zero skips(7.414s).
+The final asynchronous-cleanup adjustment additionally passed all39 affected
+service/HTTP tests. Logs: `corrections-focused.log`, `corrections-final-runtime.log`,
+`browser-corrected-final.log`; viewport screenshots: `browser-corrected/` beneath the
+same external X evidence directory. Exact corrected-source independent review
+and current-source CI are still required; the earlier reviewer PASS is not reused.
+
 ## Scope and source
 
 This records acceptance areas1 and2 of F: authoritative saved-source eligibility,
@@ -115,3 +206,37 @@ gates remain null. No PackageG activation. A repository merge is not deployment.
 - `tests/test_member_visitor_ai_sql_engine.py`
 - `tests/test_member_visitor_ai_sql_proof_runner.py`
 - `tests/test_resume_publication_contracts.py`
+
+## Required CI integration correction
+
+CI3578 on56527701 failed four synthetic E oracle/runner tests because the public content block called Flask `url_for` without the standalone renderer providing it. The template now loads its script only for the owner flow or enabled visitor AI. No SQL adapter or proof runner changed. All four exact failed tests now pass (0.295s), and strict browser6/6 passes with zero skips (7.200s). Logs: `ci-template-regressions.log` and `browser-template-final.log` in the external F evidence directory. This supersedes db21f8b7 for final review and current-source CI.
+
+## Full F repository acceptance
+
+Final independent reviewer `session:01a0c0a4-9342-7163-9052-f16ea0eee843`
+accepted exact `1c18c5a17e336f9635775679d549fe64a9ccf60a` against base/target
+`491a3c3c5759a455835c76e65d12926c57dd2850`; receipt event
+`evt-657c8d57-b170-47c9-8ac5-260798cda628`. All three review findings and the
+subsequent template compatibility correction are resolved; no actionable finding
+remains. Independent tests:81 focused PASS; browser6/6 zero skips7.201s;
+four prior CI regressions PASS0.317s; actual HTTP slow-reserve/finish probes
+return429 within46ms on40ms deadline, retain capacity until work ends, clean up,
+and retain successful-request leases until response close. Configured actual
+Foundry and semantic-support code passes six questions/twelve stub calls and
+fails closed on malformed/incomplete verdicts. No live provider was called.
+
+The reviewer independently verified actual CI3580 completed/succeeded at
+synthetic merge `bcab7c562f9dad90f77357e03525766c9bcec2b0` for those exact source
+and target commits. All four required jobs succeeded; all three PR1144 policies
+approved, current and unexpired. Application/security suite:6837 tests PASS in
+381.481s,116 skips. SQL3571 and unchanged approved visual evidence are retained;
+this continuation does not relabel the old SQL artifact as current Python proof.
+
+This receipt/evidence-only tail records acceptance of all five F repository
+areas. Required tail CI, normal accepted merge and governed claim close follow.
+No further source review is required for this permitted runtime-inert tail.
+Actual merge/close/lifecycle facts are collected in the external completion
+record `X:/PeerSlate/evidence/PS-MVP1-VISITOR-AI-001/F_COMPLETION_REPORT.md`.
+Production deployment/schema/enablement, live provider/support qualification,
+distributed accounting and actual approved-name binding remain separately
+unproved. Package G is not activated by F completion.

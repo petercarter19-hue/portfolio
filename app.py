@@ -436,6 +436,9 @@ app.config.update(
     PEERSLATE_RESUME_PUBLICATION_ENABLED=(
         os.environ.get('PEERSLATE_RESUME_PUBLICATION_ENABLED', 'false').lower() == 'true'
     ),
+    PEERSLATE_MEMBER_VISITOR_AI_ENABLED=(
+        os.environ.get('PEERSLATE_MEMBER_VISITOR_AI_ENABLED', 'false').lower() == 'true'
+    ),
     PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY=PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY,
     # PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001: the transition flag
     # for Interview Studio's access boundary and storage isolation. Off
@@ -983,6 +986,13 @@ _resume_publication_service.sql_repository = _publication_sql
 _resume_publication_service.catalog = SqlResumeCatalogRepository()
 _entry_policy_service.publication_service = _resume_publication_service
 _resume_publication_service.policy_service = _entry_policy_service
+# F remains off by default. Explicit JSON settings select the existing Foundry
+# adapter and complete-answer support implementation, without acquiring tokens
+# or making HTTP calls at startup. Missing/invalid settings stay unavailable.
+from resume_publication_routes import install_member_visitor_ai, visitor_ai_enabled, visitor_ai_heading
+from services.database_service import database_service as _visitor_ai_database
+install_member_visitor_ai(app, database=_visitor_ai_database,
+                         settings=os.environ.get('PEERSLATE_MEMBER_VISITOR_AI_SETTINGS'))
 _media_application = app.config.get("RESUME_MEDIA_SERVICE")
 if _media_application is not None:
     _media_application.publication_service = _resume_publication_service
@@ -3219,7 +3229,8 @@ def _render_member_publication(profile_slug):
     service = app.config.get("RESUME_PUBLICATION_SERVICE") or resume_publication_service
     if_none_match = request.headers.get("If-None-Match")
     try:
-        payload = service.guest_read(slug=profile_slug, if_none_match=if_none_match)
+        payload = service.guest_read(slug=profile_slug,
+                                    if_none_match=None if visitor_ai_enabled() else if_none_match)
     except PublicationDenied:
         abort(404)
     if payload.get("read_state") == "not_modified":
@@ -3235,6 +3246,8 @@ def _render_member_publication(profile_slug):
             public_publication=payload,
             profile_slug=profile_slug,
             is_public_reader=True,
+            visitor_ai_enabled=visitor_ai_enabled(),
+            visitor_ai_heading=visitor_ai_heading(profile_slug),
         )
     )
     response.headers["Cache-Control"] = MEMBER_PUBLICATION_CACHE_CONTROL

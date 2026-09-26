@@ -23,6 +23,8 @@ EXPECTED_METHODS = (
     "test_owner_guest_contexts_permission_combinations_draft_isolation_and_corrections",
     "test_owner_review_publish_guest_sees_result_and_sharing_off_denies",
     "test_stale_publish_replay_conflict_private_restore_and_media_revocation",
+    "test_visitor_mobile_keyboard_reflow_and_private_preview_separation",
+    "test_visitor_questions_sixth_answer_citation_revocation_and_failure_recovery",
 )
 
 

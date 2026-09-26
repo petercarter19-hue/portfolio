@@ -36,6 +36,12 @@ class ResumePublicationBrowserRunnerTests(unittest.TestCase):
         )
         self.assertEqual(suite.countTestCases(), len(EXPECTED_METHODS))
 
+    def test_missing_f_journey_is_not_accepted_as_the_old_suite(self):
+        from scripts.run_resume_publication_browser_tests import BrowserCiError
+        with self.assertRaises(BrowserCiError):
+            load_selected_suite(MODULE_FILE, 'publication_browser_missing_f', CLASS_NAME,
+                tuple(name for name in EXPECTED_METHODS if not name.startswith('test_visitor_')))
+
     def test_required_ci_wires_fail_closed_publication_suite_without_weakening_existing_jobs(self):
         contents = PIPELINE_FILE.read_text(encoding="utf-8")
         self.assertNotIn("\t", contents)

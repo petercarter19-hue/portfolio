@@ -10,6 +10,9 @@ from __future__ import annotations
 import os
 import threading
 import unittest
+from contextlib import contextmanager
+from pathlib import Path
+from unittest.mock import patch
 from uuid import uuid4
 
 from werkzeug.serving import make_server
@@ -144,7 +147,7 @@ class ResumePublicationBrowserTests(unittest.TestCase):
         guest.goto(f"{origin}/alice/resume")
         self.assertIn("Published Resume", guest.content())
         self.assertIn("Led team 0.", guest.locator(".resume-publication__guest").inner_text())
-        self.assertIn("not the labeled Pete example", guest.locator(".resume-publication--public").inner_text())
+        self.assertIn("Explore the experience this member has chosen to share.", guest.locator(".resume-publication--public").inner_text())
         page.click("#resume-publication-sharing-off-button")
         page.wait_for_function(
             "() => document.getElementById('resume-publication-status').textContent.includes('Sharing is off')"
@@ -353,6 +356,161 @@ class ResumePublicationBrowserTests(unittest.TestCase):
         self.assertIn(alias.status, (302, 404))
         owner.close()
         guest.close()
+
+
+    @contextmanager
+    def _visitor_fixture(self):
+        from flask import request
+        from identity import AuthenticationRequired, PeerSlateIdentity
+        from tests.test_resume_publication_routes import visitor_http_stack
+        from services.member_visitor_ai_service import ApprovedMemberName
+        from services.resume_publication_contracts import ReadState, UsePurpose
+        db, repo, provider, service, runtime = visitor_http_stack(requests_per_client_window=100,
+            aggregate_cost_units_per_window=1000, timeout_seconds=5)
+        publication = memory_resume_publication_service()
+        policy = EntryPolicyService(repository=InMemoryEntryPolicyRepository())
+        publication.policy_service = policy
+        policy.publication_service = publication
+        publication.bind_slug('member-a', 'alice')
+        _create_role(policy, 'member-a', summary='Public experience summary.')
+        review = publication.review_for_owner('member-a', {})
+        publication.commit('member-a', {'type':'publish', 'request_id':str(uuid4()),
+            'reviewed_digest':review.reviewed.digest, 'slug':'alice'})
+        class Names:
+            def read_approved(self, context):
+                return ApprovedMemberName(context.subject_key, UsePurpose.VISITOR_AI, 'María del Carmen Li', 'name-v1')
+            def recheck(self, context, name): return ReadState.CURRENT
+        service.names = Names()
+        changes = dict(RESUME_PUBLICATION_SERVICE=publication, PEERSLATE_MEMBER_VISITOR_AI_ENABLED=True,
+                       MEMBER_VISITOR_AI_SERVICE=service, MEMBER_VISITOR_AI_RUNTIME=runtime)
+        original = {key:self.app.config.get(key) for key in changes}
+        self.app.config.update(changes)
+        def synthetic_identity():
+            owner = request.cookies.get('f_synthetic_owner')
+            if owner not in {'member-a', 'member-b'}: raise AuthenticationRequired('Synthetic signed out context')
+            return PeerSlateIdentity(owner, 'development', 'urn:synthetic:f', owner, display_name='Private account name')
+        try:
+            with patch('resume_publication_routes.get_current_identity', synthetic_identity):
+                yield db, repo, provider, service
+        finally:
+            runtime.close()
+            self.app.config.update(original)
+
+    def _f_screenshot(self, page, name):
+        directory = os.environ.get('PEERSLATE_F_BROWSER_EVIDENCE')
+        if directory:
+            root = Path(directory)
+            root.mkdir(parents=True, exist_ok=True)
+            page.screenshot(path=str(root / (name + '.png')), full_page=False)
+
+    def _f_question(self, page, question):
+        page.fill('#visitor-ai-question', question)
+        with page.expect_response(lambda r: r.url.endswith('/questions') and r.request.method == 'POST') as received:
+            page.click('#visitor-ai-ask')
+        page.wait_for_function("() => !document.getElementById('visitor-ai-ask').disabled")
+        return received.value
+
+    def test_visitor_questions_sixth_answer_citation_revocation_and_failure_recovery(self):
+        from tests.test_member_visitor_ai_sources import SAVED_TEXT
+        from services.ai_foundation.errors import ProviderUnavailableError
+        with self._visitor_fixture() as (db, repo, provider, service):
+            context = self.browser.new_context(viewport={'width':1440, 'height':1000})
+            try:
+                page = context.new_page()
+                page.goto(self._origin() + '/alice/resume')
+                page.wait_for_selector('#visitor-ai-ask:not([disabled])')
+                self.assertEqual(page.locator('#visitor-ai-title').inner_text(), 'Ask María del Carmen Li AI')
+                self.assertNotIn(SAVED_TEXT, page.locator('.resume-publication__guest').inner_text())
+                self.assertEqual(page.locator('#visitor-ai-answer').inner_text(), '')
+                for i in range(6):
+                    exact = f'What happened in 2021? Question {i+1}'
+                    response = self._f_question(page, exact)
+                    self.assertEqual(response.status, 200)
+                    self.assertEqual(provider.seen[-1][0].question, exact)
+                    self.assertEqual(provider.seen[-1][0].subject_key, 'member-a')
+                    self.assertIn(SAVED_TEXT, page.locator('#visitor-ai-answer').inner_text())
+                self.assertEqual(len(provider.seen), 6)
+                page.click('.visitor-ai__citation')
+                page.wait_for_function("() => document.querySelector('.visitor-ai blockquote').textContent.includes('Led a team')")
+                self._f_screenshot(page, 'guest-desktop-supported')
+                db.documents['member-a']['sharing_epoch'] += 1
+                page.click('.visitor-ai__citation')
+                page.wait_for_function("() => document.querySelector('.visitor-ai blockquote').textContent.includes('unavailable')")
+                self.assertNotIn(SAVED_TEXT, page.locator('.visitor-ai blockquote').inner_text())
+                def outage(): raise ProviderUnavailableError('synthetic unavailable')
+                provider.hook = outage
+                question = '<img src=x onerror=alert(1)> exact question'
+                self.assertEqual(self._f_question(page, question).status, 503)
+                self.assertEqual(page.input_value('#visitor-ai-question'), question)
+                self.assertEqual(page.locator('#visitor-ai-answer').inner_text(), '')
+                self.assertIn('preserved', page.locator('#visitor-ai-status').inner_text())
+                provider.hook = lambda:None
+                self.assertEqual(self._f_question(page, question).status, 200)
+                self.assertEqual(page.locator('#visitor-ai-answer img').count(), 0)
+                self.assertEqual(page.locator('#visitor-ai-answer summary').inner_text(), question)
+                page.route('**/ai/questions', lambda route:route.abort())
+                page.click('#visitor-ai-ask')
+                page.wait_for_function("() => document.getElementById('visitor-ai-status').textContent.includes('please try again')")
+                self.assertEqual(page.input_value('#visitor-ai-question'), question)
+                self._f_screenshot(page, 'guest-network-recovery')
+            finally: context.close()
+
+    def test_visitor_mobile_keyboard_reflow_and_private_preview_separation(self):
+        from tests.test_member_visitor_ai_sources import SAVED_TEXT
+        with self._visitor_fixture() as (db, repo, provider, service):
+            owner = self.browser.new_context(viewport={'width':390, 'height':844})
+            guest = self.browser.new_context(viewport={'width':390, 'height':844})
+            other = self.browser.new_context()
+            try:
+                owner.add_cookies([{'name':'f_synthetic_owner', 'value':'member-a', 'url':self._origin()}])
+                other.add_cookies([{'name':'f_synthetic_owner', 'value':'member-b', 'url':self._origin()}])
+                db.documents['member-a']['sharing_enabled'] = False
+                db.documents['member-a']['entries'][0]['visitor_ai'] = False
+                page = owner.new_page()
+                page.goto(self._origin() + '/app/resume/publication')
+                page.focus('#visitor-ai-open'); page.keyboard.press('Enter')
+                page.wait_for_selector('#visitor-ai-panel[open]')
+                page.wait_for_selector('#visitor-ai-ask:not([disabled])')
+                self.assertEqual(page.locator('#visitor-ai-title').inner_text(), 'Try visitor AI')
+                self.assertIn('Only you can see', page.locator('.visitor-ai__private').inner_text())
+                page.click('.visitor-ai__choices > summary')
+                page.check('#visitor-ai-choices input')
+                self.assertEqual(self._f_question(page, 'What did I allow for this preview?').status, 200)
+                self.assertEqual(provider.seen[-1][0].product, 'member_visitor_ai_preview')
+                self.assertIn(SAVED_TEXT, page.locator('#visitor-ai-answer').inner_text())
+                url = page.locator('.visitor-ai__citation').get_attribute('href')
+                self.assertEqual(guest.request.get(url).status, 404)
+                self.assertEqual(other.request.get(url).status, 404)
+                self.assertEqual(owner.request.get(url).status, 200)
+                page.click('.visitor-ai__choices > summary')
+                self._f_screenshot(page, 'owner-mobile-preview')
+                page.keyboard.press('Escape')
+                self.assertFalse(page.locator('#visitor-ai-panel').is_visible())
+                self.assertEqual(page.evaluate('document.activeElement.id'), 'visitor-ai-open')
+                page.keyboard.press('Enter')
+                self.assertEqual(page.input_value('#visitor-ai-question'), 'What did I allow for this preview?')
+                page.click('.visitor-ai__choices > summary')
+                page.uncheck('#visitor-ai-choices input')
+                self.assertEqual(page.locator('#visitor-ai-answer').inner_text(), '')
+                self.assertEqual(self._f_question(page, 'Any permitted sources?').status, 200)
+                self.assertIn('does not establish', page.locator('#visitor-ai-status').inner_text())
+                self.assertEqual(len(provider.seen), 1)
+                db.documents['member-a']['draft_revision'] += 1
+                self.assertEqual(owner.request.get(url).status, 404)
+                self.assertEqual(self._f_question(page, 'Preserve this after a draft change').status, 503)
+                self.assertEqual(page.input_value('#visitor-ai-question'), 'Preserve this after a draft change')
+                # Responsive widths also exercise the narrow viewport produced
+                # by desktop zoom. Physical device/assistive-tech proof is separate.
+                public = guest.new_page()
+                for width in (320, 390, 640, 768, 1024, 1440):
+                    public.set_viewport_size({'width':width, 'height':900})
+                    public.goto(self._origin() + '/alice/resume')
+                    public.click('#visitor-ai-open')
+                    self.assertFalse(public.evaluate('document.documentElement.scrollWidth > innerWidth + 1'))
+                    self.assertFalse(public.locator('#visitor-ai-panel').evaluate('(n) => n.scrollWidth > n.clientWidth + 1'))
+                    self._f_screenshot(public, f'guest-responsive-{width}')
+            finally:
+                owner.close(); guest.close(); other.close()
 
 
 if __name__ == "__main__":
