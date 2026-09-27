@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "package": "PS-AGENT-WORKFLOW-MINIMAL-001",
+  "state": "active",
+  "outcome": "Make the repository agent workflow concise and evidence-bound: trim duplicated AGENTS.md lifecycle detail into exact authority links while preserving operative constraints; add one small structured per-package acceptance record with a focused pre-change baseline, explicit criteria, candidate-bound verification, manual evidence provenance, and a completion check that refuses missing, failed, blocked, or stale proof; point repository instructions to the existing local context-health signal. Keep the mechanism bounded and use no production, schema, identity, billing, destructive, or material-visual authority. Package manager session:01a0e4ac-d74a-74c3-ada2-a54a62f10818; sole implementation writer session:01a0e4af-fa35-7b72-8c47-fd29399040c3; independent exact-candidate review required.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0e4af-fa35-7b72-8c47-fd29399040c3",
+  "branch": "work/2026-09-27-agent-workflow-minimal-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "fb94c607e80323ac6cc4d93e3630d59007efa327",
+  "owner_outcome_ref": "session:01a0e457-b297-78b3-9353-9babe2e1af7d/owner-selected-minimal-workflow-improvement",
+  "surfaces": [
+    "AGENTS.md",
+    "START_HERE.md",
+    "docs/AI_WORKFLOW.md",
+    "docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "scripts/package_acceptance.py",
+    "tests/test_package_acceptance.py",
+    "tests/test_governance_pointers.py",
+    "docs/governance/lane_claims/PS-AGENT-WORKFLOW-MINIMAL-001.json",
+    "docs/governance/lane_claims/receipts/PS-AGENT-WORKFLOW-MINIMAL-001.json",
+    "docs/governance/lane_claims/evidence/PS-AGENT-WORKFLOW-MINIMAL-001.md"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-AGENT-WORKFLOW-MINIMAL-001.md"
+  ],
+  "domains": [
+    "governance:agent-workflow:instructions",
+    "governance:agent-workflow:acceptance"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
