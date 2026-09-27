@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-ASK-PETE-LIVE-FOUNDRY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Correct the live legacy /api/chat Ask Pete speed and answer quality using existing Azure GPT-6 Luna low: bounded generation and whole-answer semantic support, one request deadline, no repair/resample chain, strict grounded citations, current approved public sources, refusal precedence and question-appropriate prose. Preserve intake/member visitor paths and paused Opportunity Slate. Deliver implementation, finite focused verification, independent exact-candidate review and accepted merge; prepare exact reviewed production configuration/release and rollback separately. Root manager session:01a08dfb-7229-75f0-8017-07dd590f1795; retained Astra High writer and Astra Extra High reviewer. No schema, identity, signup, production mutation or new paid batch authority from this claim.",
   "assignment": "implementation",
   "writer_ref": "session:01a0c0a4-0c58-7b22-8f10-eb7d05bd2775",
@@ -42,6 +42,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "e6b1e7a7c99ba833f732e7946767f39d452618cf",
+  "closed_at": "2026-09-27T21:53:24Z"
 }
