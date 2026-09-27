@@ -29,7 +29,9 @@
     "docs/initiatives/PS-ASK-PETE-LIVE-FOUNDRY-001/README.md",
     "docs/governance/lane_claims/PS-ASK-PETE-LIVE-FOUNDRY-001.json",
     "docs/governance/lane_claims/receipts/PS-ASK-PETE-LIVE-FOUNDRY-001.json",
-    "docs/governance/lane_claims/evidence/PS-ASK-PETE-LIVE-FOUNDRY-001.md"
+    "docs/governance/lane_claims/evidence/PS-ASK-PETE-LIVE-FOUNDRY-001.md",
+    "requirements.txt",
+    "tests/test_member_overview_renderer.py"
   ],
   "domains": [
     "ask-pete:live-foundry"
