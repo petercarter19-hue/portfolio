@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 from uuid import uuid4
+from time import monotonic
 
 from services.ai_foundation import (
     AIFoundationGateway,
@@ -71,7 +72,15 @@ class AskPeteService:
         catalog: PublicSourceCatalog,
         provider: AIProvider,
         trace_sink: Callable[[AITrace], None] | None = None,
+        quality_rounds: int = MAXIMUM_QUALITY_ROUNDS,
+        current_catalog_check: Callable[[], None] | None = None,
+        execution_sink: Callable[[dict], None] | None = None,
     ) -> None:
+        if quality_rounds not in (1, MAXIMUM_QUALITY_ROUNDS):
+            raise ValueError("quality rounds must be one or two")
+        self._quality_rounds = quality_rounds
+        self._current_catalog_check = current_catalog_check
+        self._execution_sink = execution_sink
         self._catalog = catalog
         self._gateway = AIFoundationGateway(
             provider,
@@ -195,16 +204,31 @@ class AskPeteService:
         try:
             result = self._answer_and_validate(request, sources, purpose)
         except RESAMPLED_REFUSALS:
+            if self._quality_rounds == 1:
+                raise
             resample = True
         if resample:
             result = self._answer_and_validate(request, sources, purpose)
 
+        if self._current_catalog_check:
+            self._current_catalog_check()
+        serialization_started = monotonic()
         payload = serialize_public_answer(
             answer=result.answer,
             catalog=self._catalog,
             purpose=purpose,
             context_key=context,
         )
+        if self._execution_sink:
+            try:
+                self._execution_sink({"request_id": request.request_id, "phase": "serialization",
+                                      "duration_ms": round((monotonic() - serialization_started) * 1000)})
+            except Exception:
+                pass
+        # Recheck after serialization as well: a revoked/replaced record must
+        # not escape in either summary, claim, or locator.
+        if self._current_catalog_check:
+            self._current_catalog_check()
         diagnostic = AskPeteDiagnostic.from_trace(
             result.trace,
             manifest_id=self._catalog.manifest_id,

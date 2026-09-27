@@ -222,5 +222,58 @@ class MemberOverviewRendererTests(unittest.TestCase):
             self.assertIn(text, response.get_data(as_text=True))
 
 
+class IPv6LoopbackCompatibilityTests(unittest.TestCase):
+    def test_real_route_allows_only_exact_loopback_with_native_valid_ports(self):
+        from flask import request
+        client = app.test_client()
+        for host in ("[::1]", "[::1]:5000", "[::1]:65535"):
+            with self.subTest(host=host):
+                response = client.get("/_internal/member-overview", headers={"Host": host})
+                self.assertEqual(response.status_code, 200)
+                with app.test_request_context("/", headers={"Host": host}):
+                    self.assertEqual(request.host, host)
+        for host in ("[::2]", "[::ffff:192.0.2.1]", "[2001:db8::1]",
+                     "[::1]:0", "[::1]:65536", "[::1]:99999", "[::1]:00080",
+                     "[::1]:-1", "[::1]:abc", "[::1].evil.example", "[::1]@evil.example",
+                     "[::1] ", "[::1", "::1", "evil.example", "localhost:99999"):
+            with self.subTest(host=host):
+                response = client.get("/_internal/member-overview", headers={"Host": host})
+                self.assertEqual(response.status_code, 400)
+
+    def test_loopback_requires_explicit_entry_without_changing_native_unrestricted_semantics(self):
+        from werkzeug.sansio import utils
+        check = utils.host_is_trusted
+        for refs in (["[::1]"], "[::1]", ("localhost", "[::1]")):
+            with self.subTest(refs=refs):
+                self.assertTrue(check("[::1]:5000", refs))
+        for refs in (["localhost"], ["::1"], [".[::1]"], ["[::2]"]):
+            with self.subTest(refs=refs):
+                self.assertFalse(check("[::1]", refs))
+        for refs in (None, []):
+            with self.subTest(refs=refs):
+                self.assertTrue(check("[::2]", refs))
+                self.assertFalse(check("[::1]:65536", refs))
+        client = app.test_client()
+        with patch.dict(app.config, {"TRUSTED_HOSTS": ["localhost"]}):
+            self.assertEqual(client.get("/_internal/member-overview", headers={"Host": "[::1]"}).status_code, 400)
+
+    def test_installation_is_idempotent_and_inactive_for_other_versions(self):
+        from app import _install_werkzeug_ipv6_loopback_compat
+        from werkzeug.sansio import utils
+        installed = utils.host_is_trusted
+        _install_werkzeug_ipv6_loopback_compat()
+        _install_werkzeug_ipv6_loopback_compat()
+        self.assertIs(utils.host_is_trusted, installed)
+        sentinel = lambda *_args, **_kwargs: False
+        with patch.object(utils, "host_is_trusted", sentinel), patch("importlib.metadata.version", return_value="3.1.10"):
+            _install_werkzeug_ipv6_loopback_compat()
+            self.assertIs(utils.host_is_trusted, sentinel)
+
+    def test_forwarded_host_cannot_enable_loopback_preview(self):
+        client = app.test_client()
+        self.assertEqual(client.get("/_internal/member-overview", headers={"Host": "evil.example", "X-Forwarded-Host": "[::1]"}).status_code, 400)
+        self.assertEqual(client.get("/_internal/member-overview", headers={"Host": "peerslate.com", "X-Forwarded-Host": "[::1]"}).status_code, 404)
+
+
 if __name__ == "__main__":
     unittest.main()

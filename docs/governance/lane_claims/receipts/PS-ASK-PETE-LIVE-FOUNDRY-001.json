@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-ASK-PETE-LIVE-FOUNDRY-001",
+  "candidate_sha": "6a192846d6c4e5c9d4902832b5b11893710c089d",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a0c0a4-9342-7163-9052-f16ea0eee843",
+  "result": "pass",
+  "reviewed_at": "2026-09-27T21:07:19Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-ASK-PETE-LIVE-FOUNDRY-001.md"
+}

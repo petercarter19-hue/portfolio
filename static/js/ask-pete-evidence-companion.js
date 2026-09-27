@@ -915,7 +915,9 @@
             meta.appendChild(makeSupportBadge(payload.state, payload.support_label));
             if (state.previousAnswer) meta.insertBefore(makeBackButton(), meta.firstChild);
             fragment.appendChild(meta);
-            appendText(fragment, 'p', 'ask-pete-evidence-answer__summary', payload.summary);
+            payload.summary.split(/\n\s*\n/).filter((part) => part.trim()).forEach((paragraph) => {
+                appendText(fragment, 'p', 'ask-pete-evidence-answer__summary', paragraph.trim());
+            });
 
             /* Owner direction (Pete, 2026-08-09): no boundary CARD. The server
                quality contract still requires the boundary claim, and honesty

@@ -222,6 +222,33 @@ PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY = os.environ.get(
 ).hexdigest()
 
 # Create the Flask app
+def _install_werkzeug_ipv6_loopback_compat():
+    """Restore explicit loopback trust for Werkzeug 3.1.9's IPv6 regression."""
+    from importlib.metadata import version
+    from werkzeug.sansio import utils as host_utils
+
+    if version("werkzeug") != "3.1.9":
+        return
+    original = host_utils.host_is_trusted
+    if getattr(original, "_peerslate_ipv6_loopback_compat", False):
+        return
+
+    def host_is_trusted(hostname, trusted_list=None):
+        # Prove the exact literal and its explicit membership before asking the
+        # unmodified validator to check syntax and port bounds without a list.
+        if isinstance(hostname, str) and re.fullmatch(r"\[::1\](?::[1-9][0-9]{0,4})?", hostname):
+            refs = [trusted_list] if isinstance(trusted_list, str) else trusted_list
+            if refs and "[::1]" in refs:
+                return original(hostname, None)
+        return original(hostname, trusted_list)
+
+    host_is_trusted._peerslate_ipv6_loopback_compat = True
+    host_utils.host_is_trusted = host_is_trusted
+
+
+_install_werkzeug_ipv6_loopback_compat()
+
+
 app = Flask(__name__)
 app.secret_key = PEERSLATE_SESSION_SECRET_KEY
 # Azure terminates HTTPS before forwarding the request to Gunicorn. Trust the
@@ -370,6 +397,10 @@ app.config.update(
     PEERSLATE_ASK_PETE_GROUNDED_ENABLED=(
         os.environ.get('PEERSLATE_ASK_PETE_GROUNDED_ENABLED', 'false').lower() == 'true'
     ),
+    PEERSLATE_ASK_PETE_FOUNDRY_ENABLED=(
+        os.environ.get('PEERSLATE_ASK_PETE_FOUNDRY_ENABLED', 'false').lower() == 'true'
+    ),
+    PEERSLATE_ASK_PETE_FOUNDRY_ENDPOINT=os.environ.get('PEERSLATE_ASK_PETE_FOUNDRY_ENDPOINT', ''),
     # PS-ASK-PETE-DIRECT-001: the private recruiter-question path — the
     # consent-first form inside Ask Pete's handoff card, POST
     # /api/ask-pete/direct-question, and the owner-only inbox at
@@ -3527,9 +3558,15 @@ def _record_ask_pete_trace(trace):
     )
 
 
+def _record_ask_pete_execution(event):
+    """Fixed, payload-free phase/usage fields emitted by the Foundry adapter."""
+    app.logger.info('Ask Pete execution %s', json.dumps(event, sort_keys=True))
+
+
 @app.route('/api/chat', methods=['POST'])
 @limiter.limit('10 per minute')
 def chat():
+    route_started = time.monotonic()
     # Reject an off-site caller before spending any Claude budget. The three
     # interview endpoints already do this; /api/chat is the one AI route that
     # was missed, which left the paid model reachable from any other origin.
@@ -3564,8 +3601,14 @@ def chat():
             'error': 'Message is too long. Please keep questions under 1000 characters.'
         }), 400
 
-    if app.config.get('PEERSLATE_ASK_PETE_GROUNDED_ENABLED', False):
+    foundry_enabled = app.config.get('PEERSLATE_ASK_PETE_FOUNDRY_ENABLED', False)
+    if app.config.get('PEERSLATE_ASK_PETE_GROUNDED_ENABLED', False) or foundry_enabled:
         try:
+            foundry_options = {
+                'foundry_enabled': True,
+                'foundry_endpoint': app.config.get('PEERSLATE_ASK_PETE_FOUNDRY_ENDPOINT', ''),
+                'execution_sink': _record_ask_pete_execution,
+            } if foundry_enabled else {}
             result = answer_public_question(
                 root_path=Path(__file__).resolve().parent,
                 client=client,
@@ -3573,8 +3616,17 @@ def chat():
                 requested_action=data.get('action'),
                 context_key=data.get('context_key'),
                 trace_sink=_record_ask_pete_trace,
+                **foundry_options,
             )
-            return jsonify(result.payload)
+            response = jsonify(result.payload)
+            if foundry_enabled:
+                _record_ask_pete_execution({
+                    'request_id': result.diagnostic.request_id,
+                    'phase': 'route',
+                    'duration_ms': round((time.monotonic() - route_started) * 1000),
+                    'outcome': result.payload['state'],
+                })
+            return response
         except AskPeteRequestError:
             return jsonify({
                 'error': 'Ask Pete could not use that question context.'

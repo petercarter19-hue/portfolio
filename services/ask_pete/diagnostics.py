@@ -17,7 +17,7 @@ class AskPeteDiagnostic:
     answer_state: str | None
     claim_count: int
     citation_count: int
-    provider_called: bool
+    provider_called: bool | None
     duration_ms: int
     error_category: str | None
 

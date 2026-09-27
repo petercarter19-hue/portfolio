@@ -245,6 +245,8 @@ class AzureFoundryResponsesProvider:
         maximum_input_tokens: int = 1_500,
         maximum_input_bytes: int | None = None,
         maximum_output_tokens: int = 700,
+        answer_reasoning_effort: str | None = None,
+        answer_json_schema: Mapping[str, Any] | None = None,
     ) -> None:
         parsed_endpoint = urlsplit(endpoint)
         hostname = (parsed_endpoint.hostname or "").casefold()
@@ -281,6 +283,23 @@ class AzureFoundryResponsesProvider:
         self._maximum_input_tokens = maximum_input_tokens
         self._maximum_input_bytes = maximum_input_bytes
         self._maximum_output_tokens = maximum_output_tokens
+        # Opt-in answer contract only. Structured intake keeps its separate
+        # accepted xhigh contract; existing answer callers keep their defaults.
+        if answer_reasoning_effort not in (None, "low"):
+            raise ValueError("answer reasoning effort must be low when supplied")
+        if (answer_reasoning_effort is None) != (answer_json_schema is None):
+            raise ValueError("answer reasoning and strict schema must be supplied together")
+        self._answer_options: dict[str, Any] = {}
+        if answer_json_schema is not None:
+            if not isinstance(answer_json_schema, Mapping) or answer_json_schema.get("type") != "object":
+                raise ValueError("answer schema must describe an object")
+            self._answer_options = {
+                "reasoning": {"effort": answer_reasoning_effort},
+                "text": {"format": {
+                    "type": "json_schema", "name": "grounded_answer", "strict": True,
+                    "schema": json.loads(json.dumps(answer_json_schema)),
+                }},
+            }
 
     @staticmethod
     def _instructions() -> str:
@@ -364,6 +383,8 @@ class AzureFoundryResponsesProvider:
         input_bytes = len(instructions.encode("utf-8")) + len(
             input_text.encode("utf-8")
         )
+        if self._answer_options:
+            input_bytes += len(json.dumps(self._answer_options).encode("utf-8"))
         if input_bytes > self._maximum_input_bytes:
             raise ExecutionLimitError("Foundry input exceeds its prepaid ceiling")
         reservation = self._price.estimate_micro_usd(
@@ -388,6 +409,7 @@ class AzureFoundryResponsesProvider:
                     "input": input_text,
                     "max_output_tokens": self._maximum_output_tokens,
                     "store": False,
+                    **self._answer_options,
                 },
                 timeout=(5.0, 90.0),
             )
