@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-INTEGRATED-ACCEPTANCE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Complete G integrated internal MVP1 acceptance and supported corrections under outputs/13_PACKAGE_G_INTERNAL_ACCEPTANCE_ASSIGNMENT.md and AC01-AC15. Reuse closed foundations; exercise real synthetic browser/application journeys, privacy, persistence, recovery, permissions and approved desktop/mobile UI. Add narrow Profile ingress and pin the same server-derived owner approved Profile identity revision in Resume review digest and atomic publication per decision evt-3d2ab9e2-c3e0-47d7-8c68-dae543ecef2d; no latest-name overlay or second identity store. Include proposed PS-RESUME-IDENTITY-001 and fresh isolated proof only after separate exact operational authority. Same Astra High writer and Astra Extra High reviewer; finish required CI, accepted merge and close. Production/schema application, full Profile enablement, live provider/real member/identity actions, spending and signup enablement excluded. Preserve separate engine/provider/environment/pilot qualification; do not pass unresolved blockers to Pete.",
   "assignment": "implementation",
   "writer_ref": "session:01a0c0a4-0c58-7b22-8f10-eb7d05bd2775",
@@ -109,6 +109,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "da61be08d1e5abd8379ccce942a24bc9156dba22",
+  "closed_at": "2026-09-27T14:03:00Z"
 }
