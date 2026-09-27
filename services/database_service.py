@@ -263,6 +263,14 @@ ALLOWED_PROCEDURES = frozenset(
         # apply proposed schema or enable the feature flag.
         "usp_CommitResumePublicationCommandForOwner",
         "usp_GetResumePublicationForOwner",
+        # G uses the existing durable Profile identity/publication authority.
+        # Registration is not schema application or full Profile enablement.
+        "usp_GetProfileOwnerBySlug",
+        "usp_GetProfileDraftForOwner",
+        "usp_SaveProfileDraftForOwner",
+        "usp_GetCurrentProfilePublicationForOwner",
+        "usp_CommitProfilePublicationForOwner",
+        "usp_GetProfilePublicationCommandForOwner",
         "usp_GetResumePublicationReceiptForOwner",
         "usp_GetPublicResumePublicationBySlug",
         "usp_GetResumePublicationMediaAuthorization",

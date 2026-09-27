@@ -51,7 +51,7 @@ def unique(values: tuple, key) -> None:
 
 
 CANONICAL_SOURCE_CODEC = "resume-canonical-source.v1"
-REVIEW_PAYLOAD_SCHEMA = "resume-publication-review.v2"
+REVIEW_PAYLOAD_SCHEMA = "resume-publication-review.v4"
 CANONICAL_SOURCE_FIELDS = (
     "canonical_type",
     "role_title",
@@ -351,10 +351,12 @@ class VersionTuple:
 @dataclass(frozen=True, order=True)
 class Wording:
     field: str
-    value: str | None
+    value: str | bool | None
 
     def __post_init__(self):
         text(self.field)
+        if type(self.value) is bool and self.field in _BOOLEAN_SOURCE_FIELDS:
+            return
         if self.value is not None:
             text(self.value, empty=True)
 
@@ -362,12 +364,14 @@ class Wording:
 @dataclass(frozen=True, order=True)
 class EditorialDelta:
     field: str
-    before: str | None
-    after: str | None
+    before: str | bool | None
+    after: str | bool | None
 
     def __post_init__(self):
         text(self.field)
         for value in (self.before, self.after):
+            if type(value) is bool and self.field in _BOOLEAN_SOURCE_FIELDS:
+                continue
             if value is not None:
                 text(value, empty=True)
         if self.before == self.after:
@@ -509,6 +513,65 @@ class PublicationEvidenceVersion:
 
 
 @dataclass(frozen=True)
+class ProfileIdentityReference:
+    """Selected immutable Profile publication, never a second identity record."""
+
+    owner_key: str
+    profile_slug: str
+    revision_key: str
+    revision_number: int
+    publication_digest: str
+    schema_version: int = 1
+
+    def __post_init__(self):
+        for value in (self.owner_key, self.profile_slug, self.revision_key):
+            text(value)
+        if (len(self.owner_key) > 300 or len(self.profile_slug) > 64
+                or len(self.revision_key) > 128):
+            raise ContractError("invalid Profile identity reference")
+        revision(self.revision_number)
+        if self.revision_number < 1:
+            raise ContractError("positive Profile publication revision required")
+        digest(self.publication_digest)
+        if type(self.schema_version) is not int or self.schema_version != 1:
+            raise ContractError("unsupported Profile identity reference")
+
+    def to_payload(self):
+        return {
+            "schema_version": self.schema_version,
+            "owner_key": self.owner_key,
+            "profile_slug": self.profile_slug,
+            "revision_key": self.revision_key,
+            "revision_number": self.revision_number,
+            "publication_digest": self.publication_digest,
+        }
+
+    @classmethod
+    def from_payload(cls, value):
+        if type(value) is not dict or set(value) != {
+            "schema_version", "owner_key", "profile_slug", "revision_key",
+            "revision_number", "publication_digest",
+        }:
+            raise ContractError("closed Profile identity reference required")
+        return cls(**value)
+
+
+@dataclass(frozen=True)
+class DraftEntryBase:
+    """Canonical editor token is distinct from the policy content counter."""
+
+    entry: EntryRef
+    canonical_token: str
+
+    def __post_init__(self):
+        if type(self.entry) is not EntryRef:
+            raise ContractError("typed draft entry base required")
+        text(self.canonical_token)
+        if len(self.canonical_token) > 128:
+            raise ContractError("invalid canonical editor token")
+
+
+@dataclass(frozen=True)
 class CandidateInput:
     context: TrustedUseContext
     prior: VersionTuple
@@ -516,13 +579,29 @@ class CandidateInput:
     placements: tuple[MediaPlacement, ...]
     schema_version: int = 1
     review_evidence: tuple[NeutralReviewEvidence, ...] = ()
+    profile_identity: ProfileIdentityReference | None = None
+    draft_bases: tuple[DraftEntryBase, ...] = ()
+    story_entry_key: str | None = None
 
     def __post_init__(self):
         if type(self.schema_version) is not int or self.schema_version != 1:
             raise ContractError("unsupported schema version")
         if type(self.context) is not TrustedUseContext or type(self.prior) is not VersionTuple:
             raise ContractError("typed context and versions required")
+        if self.profile_identity is not None:
+            if (type(self.profile_identity) is not ProfileIdentityReference
+                    or self.profile_identity.owner_key != self.context.subject_key):
+                raise ContractError("same-owner Profile identity reference required")
         members(self.selections, EntrySelection)
+        if self.story_entry_key is not None:
+            text(self.story_entry_key)
+            if self.story_entry_key not in {item.entry.entry_key for item in self.selections}:
+                raise ContractError("Story must reference an entry in this candidate")
+        members(self.draft_bases, DraftEntryBase)
+        unique(self.draft_bases, lambda value: value.entry.identity)
+        if any(base.entry not in self.prior.entries for base in self.draft_bases):
+            raise ContractError("draft base must belong to this candidate")
+        object.__setattr__(self, "draft_bases", tuple(sorted(self.draft_bases, key=lambda value: value.entry)))
         members(self.placements, MediaPlacement)
         members(self.review_evidence, NeutralReviewEvidence)
         unique(self.selections, lambda x: x.entry.identity)
@@ -649,6 +728,7 @@ class ReviewedCandidate:
     digest: str
     validation: ReadState = ReadState.CURRENT
     schema_version: int = 1
+    owner_entries: tuple[ManifestEntry, ...] = ()
 
 
 @dataclass(frozen=True)

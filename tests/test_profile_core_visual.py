@@ -7,6 +7,7 @@ the adopted visual language without pretending to complete that comparison.
 
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 import unittest
 
@@ -34,7 +35,18 @@ class ProfileCoreVisualContractTests(unittest.TestCase):
                 self.assertIn(token, css)
         self.assertNotIn("#0057ff", css.lower())
 
-    def test_current_application_registration_remains_untouched(self):
-        app_source = Path("app.py").read_text(encoding="utf-8")
-        self.assertNotIn("profile_routes", app_source)
-        self.assertNotIn("profile_api", app_source)
+    def test_full_profile_registration_remains_dormant(self):
+        tree = ast.parse(Path("app.py").read_text(encoding="utf-8"))
+        imports = set()
+        names = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom):
+                imports.add(node.module)
+                names.update(alias.name for alias in node.names)
+            elif isinstance(node, ast.Import):
+                imports.update(alias.name for alias in node.names)
+            elif isinstance(node, ast.Name):
+                names.add(node.id)
+        self.assertNotIn("profile_routes", imports)
+        self.assertNotIn("profile_api", imports | names)
+        self.assertIn("mvp1_profile_routes", imports)

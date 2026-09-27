@@ -12,7 +12,7 @@ class ProfileMigrationTests(unittest.TestCase):
         matches = [item for item in registry["migrations"] if item["id"] == "PS-PROFILE-002"]
         self.assertEqual(len(matches), 1)
         self.assertIsNone(matches[0]["gate"])
-        self.assertEqual(matches[0]["requires"], ["PS-PLAT-002", "PS-PLAT-005", "PS-AUTH-001"])
+        self.assertEqual(matches[0]["requires"], ["PS-PLAT-002", "PS-PLAT-005", "PS-AUTH-001", "PS-COMMUNITY-PUBLIC-PILOT-001"])
 
     def test_forward_has_normalized_owner_and_audience_fences(self):
         sql = (ROOT / "SQL FIles/Migrations/proposed/PS-PROFILE-002_profile_publication.sql").read_text(encoding="utf-8")

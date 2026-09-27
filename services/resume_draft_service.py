@@ -38,10 +38,10 @@ from services.resume_draft_repository import (
 
 
 COMMAND_TYPES = frozenset(
-    {"save_item", "discard_item", "create_private_item", "review_candidate"}
+    {"save_item", "discard_item", "create_private_item", "review_candidate", "bind_story", "clear_story"}
 )
 RECORD_TYPES = frozenset(
-    {"role", "education", "credential", "skill", "accomplishment"}
+    {"role", "education", "credential", "skill", "accomplishment", "knowledge"}
 )
 FORBIDDEN_CLIENT_FIELDS = frozenset(
     {
@@ -152,6 +152,22 @@ def _command_json(command: dict) -> str:
     return json.dumps(body, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
 
 
+def _normalize_draft_values(record_type, values):
+    if record_type != "knowledge":
+        return normalize_editor_values(record_type, values)
+    from services.knowledge_service import KnowledgeServiceError, validate_knowledge_item_input
+    if not isinstance(values, dict) or set(values) - {"title", "wording", "classification"}:
+        raise LivingResumeEditorValidationError("Check the personal entry fields.")
+    try:
+        title, wording, classification = validate_knowledge_item_input(
+            values.get("title"), values.get("wording"), values.get("classification", "personal"))
+    except KnowledgeServiceError as error:
+        raise LivingResumeEditorValidationError(str(error)) from error
+    if classification != "personal":
+        raise LivingResumeEditorValidationError("Choose a personal entry for My Story.")
+    return {"title": title, "wording": wording, "classification": classification}
+
+
 class ResumeDraftService:
     def __init__(self, repository=None, catalog=None) -> None:
         self.repository = repository or SqlResumeDraftRepository()
@@ -168,6 +184,7 @@ class ResumeDraftService:
         snapshot.setdefault("items", {})
         snapshot.setdefault("receipts", {})
         snapshot.setdefault("base_publication_version", None)
+        snapshot.setdefault("story_entry_key", None)
         # Version this command is fenced against. The shared-draft atomic
         # command boundary re-checks it inside the store, so a text save and a
         # media save cannot both win the same version.
@@ -176,9 +193,17 @@ class ResumeDraftService:
 
     def _save(self, owner: str, snapshot: dict, command: dict | None = None) -> bool:
         if command is not None:
+            transport = dict(command)
+            if transport.get("expected_draft_version") is None:
+                transport["expected_draft_version"] = snapshot.get("_base_version", 0)
+            if command.get("record_type") == "knowledge":
+                if command["type"] == "create_private_item":
+                    transport["values"] = _normalize_draft_values("knowledge", command["values"])
+                elif command["type"] == "save_item":
+                    transport["values"] = snapshot["items"][command["record_key"]]["proposed_values"]
             snapshot["_pending_command"] = {
                 "request_id": command["request_id"],
-                "command_json": _command_json(command),
+                "command_json": _command_json(transport),
             }
         shares_media_state = getattr(self.repository, SHARED_MEDIA_STATE_ATTRIBUTE, False)
         if shares_media_state:
@@ -278,6 +303,8 @@ class ResumeDraftService:
                 else:
                     live_items.pop(record_key, None)
             live["items"] = live_items
+            if (command or {}).get("type") in {"bind_story", "clear_story"}:
+                live["story_entry_key"] = snapshot.get("story_entry_key")
             for key in receipt_keys:
                 live_receipts[key] = copy.deepcopy(snapshot["receipts"][key])
             live["receipts"] = live_receipts
@@ -369,6 +396,7 @@ class ResumeDraftService:
         return {
             "draft_version": snapshot["draft_version"],
             "base_publication_version": snapshot.get("base_publication_version"),
+            "story_entry_key": snapshot.get("story_entry_key"),
             "items": merged,
             "capabilities": {
                 "commands": sorted(COMMAND_TYPES),
@@ -475,6 +503,8 @@ class ResumeDraftService:
             "discard_item": self._discard_item,
             "create_private_item": self._create_private_item,
             "review_candidate": self._review_candidate,
+            "bind_story": self._bind_story,
+            "clear_story": self._bind_story,
         }[command["type"]]
         result = handler(owner, snapshot, command)
         snapshot["receipts"][command["request_id"]] = {
@@ -494,10 +524,27 @@ class ResumeDraftService:
         result.setdefault("proposed_values", command.get("values"))
         return result
 
+    def _bind_story(self, owner: str, snapshot: dict, command: dict) -> dict:
+        selected = None
+        if command["type"] == "bind_story":
+            canonical = self._catalog_get(owner, command["record_key"])
+            if canonical is None or canonical.get("record_type") != "knowledge":
+                raise ResumeDraftNotFoundError()
+            if (canonical.get("content_token") != command["expected_content_token"]
+                    or canonical.get("access_revision") != command["expected_access_revision"]
+                    or canonical.get("publication_eligible") is not True):
+                raise ResumeDraftConflictError("changed", [], "That personal entry changed. Review it again.")
+            selected = canonical["record_key"]
+        snapshot["story_entry_key"] = selected
+        snapshot["draft_version"] += 1
+        return {"outcome": "story_selected" if selected else "story_removed", "item": None}
+
     def _save_item(self, owner: str, snapshot: dict, command: dict) -> dict:
         canonical = self._catalog_get(owner, command["record_key"])
-        if canonical is None:
+        if canonical is None or canonical.get("record_type") != command["record_type"]:
             raise ResumeDraftNotFoundError()
+        if canonical.get("record_type") == "knowledge" and not canonical.get("access_revision"):
+            raise ResumeDraftValidationError("Select this personal entry for My Story before editing its Resume draft.")
         conflicts = []
         if str(canonical["content_token"]) != str(command["expected_content_token"]):
             conflicts.append(
@@ -525,7 +572,7 @@ class ResumeDraftService:
             )
         try:
             merged = {**(canonical.get("values") or {}), **command["values"]}
-            proposed = normalize_editor_values(command["record_type"], merged)
+            proposed = _normalize_draft_values(command["record_type"], merged)
         except LivingResumeEditorValidationError as error:
             raise ResumeDraftValidationError(str(error)) from error
         snapshot["items"][command["record_key"]] = {
@@ -552,10 +599,18 @@ class ResumeDraftService:
         return {"outcome": "discarded", "item": None}
 
     def _create_private_item(self, owner: str, snapshot: dict, command: dict) -> dict:
+        if command.get("parent_key") is not None:
+            if self._catalog_get(owner, command["parent_key"]) is None:
+                raise ResumeDraftNotFoundError()
         try:
-            values = normalize_editor_values(command["record_type"], command["values"])
+            values = _normalize_draft_values(command["record_type"], command["values"])
         except LivingResumeEditorValidationError as error:
             raise ResumeDraftValidationError(str(error)) from error
+        if command["record_type"] == "knowledge" and getattr(self.repository, "command_port", False):
+            # The SQL command creates the existing versioned knowledge record,
+            # private policy and receipt in one transaction. This is only a
+            # proposed result until _save succeeds and the workspace is reread.
+            return {"outcome": "created", "item": None}
         try:
             created = self.catalog.create_private(
                 owner,
@@ -614,6 +669,7 @@ class ResumeDraftService:
             )
         workspace = {
             "draft_version": snapshot["draft_version"],
+            "story_entry_key": snapshot.get("story_entry_key"),
             "items": snapshot["items"],
         }
         digest = _json_digest(workspace)
@@ -640,7 +696,7 @@ class ResumeDraftService:
         elif record_type not in {None, *RECORD_TYPES}:
             raise ResumeDraftValidationError("Invalid record type.")
         record_key = None
-        if command_type != "review_candidate":
+        if command_type not in {"review_candidate", "clear_story"}:
             record_key = _as_uuid(payload.get("record_key"), field="record key")
         values = payload.get("values") if payload.get("values") is not None else {}
         if values is not None and not isinstance(values, dict):
@@ -667,7 +723,9 @@ class ResumeDraftService:
             )
         expected_content_token = payload.get("expected_content_token")
         expected_access_revision = payload.get("expected_access_revision")
-        if command_type == "save_item":
+        if command_type in {"bind_story", "clear_story"} and expected_draft_version is None:
+            raise ResumeDraftValidationError("The current draft version is required.")
+        if command_type in {"save_item", "bind_story"}:
             if not isinstance(expected_content_token, str) or not expected_content_token:
                 raise ResumeDraftValidationError("Invalid expected content token.")
             if utf16_length(expected_content_token) > 64:

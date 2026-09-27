@@ -515,6 +515,12 @@ class DatabaseServiceTests(unittest.TestCase):
         resume_publication = {
             "usp_CommitResumePublicationCommandForOwner",
             "usp_GetResumePublicationForOwner",
+            "usp_GetProfileOwnerBySlug",
+            "usp_GetProfileDraftForOwner",
+            "usp_SaveProfileDraftForOwner",
+            "usp_GetCurrentProfilePublicationForOwner",
+            "usp_CommitProfilePublicationForOwner",
+            "usp_GetProfilePublicationCommandForOwner",
             "usp_GetResumePublicationReceiptForOwner",
             "usp_ListResumePublicationPolicyForOwner",
             "usp_GetPublicResumePublicationBySlug",
@@ -569,7 +575,7 @@ class DatabaseServiceTests(unittest.TestCase):
             visitor_ai,
         )
         self.assertEqual(sum(len(group) for group in groups), len(expected))
-        self.assertEqual(len(expected), 171)
+        self.assertEqual(len(expected), 177)
         self.assertEqual(set(ALLOWED_PROCEDURES), expected)
 
     def test_visitor_ai_internal_helper_is_not_browser_executable(self):

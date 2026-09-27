@@ -396,9 +396,7 @@ def my_data():
 
 
 def _my_data_enabled():
-    # Missing configuration behaves as disabled. Tests set it explicitly.
-    # The environment-backed wiring arrives in a small follow-on package
-    # after the active media claim releases app.py.
+    # Missing configuration behaves as disabled; app.py wires the explicit flag.
     return current_app.config.get("PEERSLATE_MY_DATA_ENABLED", False) is True
 
 
@@ -410,6 +408,18 @@ def _my_data_template_context():
     }
     if not enabled:
         return context
+    context["my_data_sharing_state"] = "disabled"
+    if (current_app.config.get("PEERSLATE_RESUME_PUBLICATION_ENABLED") is True
+            or current_app.config.get("PEERSLATE_MEMBER_VISITOR_AI_ENABLED") is True):
+        context["my_data_sharing_state"] = "unavailable"
+        try:
+            from services.resume_publication_service import resume_publication_service
+            service = current_app.config.get("RESUME_PUBLICATION_SERVICE") or resume_publication_service
+            sharing = service.owner_preview(get_current_identity().user_key)
+            if sharing.get("read_state") == "current" and isinstance(sharing.get("sharing_enabled"), bool):
+                context["my_data_sharing_state"] = "on" if sharing["sharing_enabled"] else "off"
+        except Exception:  # A failed read must never imply that existing sharing is off.
+            current_app.logger.error("PeerSlate My Data sharing status unavailable.")
     try:
         endpoint_urls = {
             "my_data_entries_url": url_for("entry_policy.list_entry_policy_entries"),

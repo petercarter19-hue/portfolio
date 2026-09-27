@@ -228,7 +228,8 @@ def build_sources(document: dict, *, owner: str | None = None,
         source_ref = SourceRef(ref, item.evidence_key, item.evidence_version_key, item.version, item.content_sha256)
         source = SourceVersion(
             item.evidence_version_key, item.evidence_key, item.version, subject,
-            'Approved saved information', raw.decode('utf-8'), item.content_sha256,
+            'Private saved draft preview' if owner is not None else 'Approved saved information',
+            raw.decode('utf-8'), item.content_sha256,
             frozenset({audience}), frozenset({Purpose.PUBLIC_PROFILE_ANSWER}),
         )
         refs.append(ref)

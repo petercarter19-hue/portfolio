@@ -25,7 +25,7 @@ from flask import (
 
 from identity import AuthenticationRequired, get_current_identity
 from services.database_service import DatabaseServiceError
-from services.resume_publication_contracts import ReadState
+from services.resume_publication_contracts import ContractError, ReadState
 from services.member_visitor_ai_sources import strict_json
 from services.member_visitor_ai_service import (
     MemberVisitorAiService, MESSAGES, OperationalRefusal, ResultState, VisitorAiRuntime,
@@ -90,7 +90,11 @@ def install_member_visitor_ai(app, *, database, settings=None, token_provider=No
     from services.member_visitor_ai_service import (UnavailableVisitorProvider, build_configured_visitor_ai)
     from services.ai_foundation.gateway import AIFoundationGateway
     from services.ai_foundation.azure_foundry import FOUNDRY_TOKEN_SCOPE
-    repository = SqlMemberVisitorAiRepository(database, identity=RequestVisitorOwner())
+    draft_service = None
+    if app.config.get('PEERSLATE_RESUME_EDITOR_ENABLED'):
+        from services.resume_draft_service import resume_draft_service as default_draft_service
+        draft_service = app.config.get('RESUME_DRAFT_SERVICE') or default_draft_service
+    repository = SqlMemberVisitorAiRepository(database, identity=RequestVisitorOwner(), draft_service=draft_service)
     service = MemberVisitorAiService(repository, repository, AIFoundationGateway(UnavailableVisitorProvider()))
     runtime = None
     configured = False
@@ -108,6 +112,11 @@ def install_member_visitor_ai(app, *, database, settings=None, token_provider=No
             configured = True
         except Exception:
             app.logger.error('Visitor AI configuration is unavailable.')
+    binding = app.config.get('MVP1_PROFILE_BINDING')
+    if binding is not None:
+        from services.mvp1_profile_binding import PinnedResumeNamePort
+        from services.resume_publication_repository import SqlResumePublicationRepository
+        service.names = PinnedResumeNamePort(binding, SqlResumePublicationRepository(database))
     app.config['MEMBER_VISITOR_AI_SERVICE'] = service
     app.config['MEMBER_VISITOR_AI_RUNTIME'] = runtime
     return configured
@@ -195,7 +204,9 @@ def preview_resume_publication():
     if identity is None:
         return jsonify({"success": False, "message": "Not found."}), 404
     try:
-        result = _service().owner_preview(identity.user_key)
+        result = _service().draft_preview(identity.user_key)
+    except PublicationConflictError as error:
+        return jsonify({"success": False, "code": error.code, "message": str(error)}), 409
     except PublicationUnavailableError:
         return jsonify({"success": False, "code": "unavailable", "message": "Publication is unavailable."}), 503
     return jsonify({"success": True, **result, "published": False})
@@ -209,16 +220,32 @@ def review_resume_publication():
     payload = _json_body()
     try:
         result = _service().review_for_owner(identity.user_key, payload)
+    except (PublicationValidationError, ContractError) as error:
+        return jsonify({"success": False, "code": "invalid", "message": str(error)}), 400
+    except PublicationConflictError as error:
+        return jsonify({"success": False, "code": error.code, "message": str(error)}), 409
     except PublicationUnavailableError:
         return jsonify({"success": False, "code": "unavailable", "message": "Publication is unavailable."}), 503
     if result.reviewed is None:
         return jsonify({"success": False, "code": result.reason, "state": result.state.value}), 409
+    reference = result.reviewed.candidate.profile_identity
+    approved_identity = None
+    if reference is not None:
+        binding = _service().profile_binding
+        approved_identity = binding.resolve(identity.user_key, reference) if binding else None
+        if approved_identity is None:
+            return jsonify({"success": False, "code": "stale_identity",
+                            "message": "Profile identity changed. Review it again."}), 409
     return jsonify(
         {
             "success": True,
             "state": result.state.value,
             "reason": result.reason,
             "digest": result.reviewed.digest,
+            "candidate": _service().publish_candidate(result.reviewed),
+            "entries": _service().review_details(result.reviewed),
+            "profile_identity": reference.to_payload() if reference else None,
+            "identity_display_name": approved_identity.display_name if approved_identity else None,
             "display_count": len(result.reviewed.display.entries),
             "visitor_ai_count": len(result.reviewed.visitor_ai.entries),
         }
@@ -233,7 +260,7 @@ def commit_resume_publication():
     payload = _json_body()
     try:
         result = _service().commit(identity.user_key, payload)
-    except PublicationValidationError as error:
+    except (PublicationValidationError, ContractError) as error:
         return jsonify({"success": False, "code": "invalid", "message": str(error)}), 400
     except PublicationConflictError as error:
         return jsonify({"success": False, "code": error.code, "message": str(error)}), 409
@@ -241,12 +268,22 @@ def commit_resume_publication():
         return jsonify({"success": False, "code": error.code, "message": str(error)}), 409
     except PublicationUnavailableError:
         return jsonify({"success": False, "code": "unavailable", "message": "Publication is unavailable."}), 503
-    return jsonify({"success": True, **result})
+    try:
+        current = _service().owner_preview(identity.user_key)
+        availability = {"state": "current", "sharing_enabled": current["sharing_enabled"],
+                        "publication_revision": current["publication_revision"]}
+    except PublicationUnavailableError:
+        availability = {"state": "unavailable"}
+    return jsonify({"success": True, **result, "availability": availability})
 
 
 def _ai_boundary(state=ResultState.UNAVAILABLE, *, status=503, question=''):
     response = jsonify({'state': state.value, 'question': question,
                         'text': MESSAGES[state], 'citations': []})
+    if status == 429:
+        runtime = current_app.config.get('MEMBER_VISITOR_AI_RUNTIME')
+        if isinstance(runtime, VisitorAiRuntime):
+            response.headers['Retry-After'] = str(max(1, int(runtime.limits.window_seconds)))
     return response, status
 
 

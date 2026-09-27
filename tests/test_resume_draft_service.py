@@ -1,12 +1,16 @@
-"""Resume draft overlay contracts. In-memory only — not a live database."""
+"""Resume draft overlay and adapter contracts. Fake ports, not a live database."""
 
 from __future__ import annotations
 
 import threading
 import unittest
+from unittest.mock import Mock
 from uuid import UUID, uuid4
 
-from services.resume_draft_repository import InMemoryCanonicalCatalog, InMemoryResumeDraftRepository
+from services.resume_draft_repository import (
+    InMemoryCanonicalCatalog, InMemoryResumeDraftRepository,
+    SqlResumeDraftRepository, ResumeDraftStoreUnavailable,
+)
 from services.resume_draft_service import (
     SHARED_MEDIA_STATE_ATTRIBUTE,
     ResumeDraftConflictError,
@@ -21,6 +25,29 @@ OWNER_A = "owner-a"
 OWNER_B = "owner-b"
 ROLE_KEY = str(UUID(int=11, version=4))
 EDU_KEY = str(UUID(int=12, version=4))
+
+
+class SqlStoryIdentityTests(unittest.TestCase):
+    def test_same_story_uuid_has_one_canonical_key_across_driver_representations(self):
+        key = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+        for supplied in (key, key.upper(), UUID(key), None):
+            with self.subTest(representation=type(supplied).__name__, supplied=supplied):
+                header = {'draft_version': 3, 'story_entry_key': supplied}
+                database = Mock()
+                database.execute_procedure.return_value = [[header], []]
+                snapshot = SqlResumeDraftRepository(database).load_owner(OWNER_A)
+                self.assertEqual(snapshot['story_entry_key'], key if supplied is not None else None)
+                self.assertEqual(header['story_entry_key'], supplied)
+                database.execute_procedure.assert_called_once_with(
+                    'usp_GetResumeDraftForOwner', [('@UserKey', OWNER_A)])
+
+    def test_malformed_stored_story_identity_is_unavailable_not_cleared(self):
+        for supplied in ('', 'not-a-uuid', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaax'):
+            with self.subTest(supplied=supplied):
+                database = Mock()
+                database.execute_procedure.return_value = [[{'story_entry_key': supplied}], []]
+                with self.assertRaises(ResumeDraftStoreUnavailable):
+                    SqlResumeDraftRepository(database).load_owner(OWNER_A)
 
 
 def role_values(**overrides):
@@ -108,6 +135,55 @@ class ResumeDraftServiceTests(unittest.TestCase):
         self.repository = InMemoryResumeDraftRepository()
         self.service = ResumeDraftService(repository=self.repository, catalog=self.catalog)
         published_role(self.catalog)
+
+    def story(self, **overrides):
+        item = dict(record_key=EDU_KEY, record_type="knowledge", content_token="7",
+                    access_revision=1, publication_eligible=True, editable=True,
+                    values={"title": "About me", "wording": "A private personal account.",
+                            "classification": "personal"}, resume_display=False, visitor_ai=False)
+        item.update(overrides)
+        return self.catalog.put_item(OWNER_A, item)
+
+    def bind_story_command(self, **overrides):
+        command = dict(request_id=str(uuid4()), type="bind_story", record_key=EDU_KEY,
+                       expected_draft_version=0, expected_content_token="7", expected_access_revision=1)
+        command.update(overrides)
+        return command
+
+    def test_story_binding_is_explicit_private_versioned_and_replayable(self):
+        self.story(title="My Story")
+        self.assertIsNone(self.service.get_workspace(OWNER_A)["story_entry_key"])
+        command = self.bind_story_command()
+        first = self.service.commit(OWNER_A, command)
+        self.assertEqual(first["workspace"]["story_entry_key"], EDU_KEY)
+        self.assertEqual(first["workspace"]["draft_version"], 1)
+        self.assertTrue(self.service.commit(OWNER_A, command)["replayed"])
+        self.assertFalse(self.catalog.get_item(OWNER_A, EDU_KEY)["resume_display"])
+        self.assertFalse(self.catalog.get_item(OWNER_A, EDU_KEY)["visitor_ai"])
+        cleared = self.service.commit(OWNER_A, dict(request_id=str(uuid4()), type="clear_story", expected_draft_version=1))
+        self.assertIsNone(cleared["workspace"]["story_entry_key"])
+        self.assertEqual(cleared["workspace"]["draft_version"], 2)
+
+    def test_story_binding_refuses_foreign_wrong_type_stale_and_unconfirmed(self):
+        self.story()
+        with self.assertRaises(ResumeDraftNotFoundError):
+            self.service.commit(OWNER_B, self.bind_story_command())
+        with self.assertRaises(ResumeDraftNotFoundError):
+            self.service.commit(OWNER_A, self.bind_story_command(record_key=ROLE_KEY))
+        for changes in ({"expected_content_token": "6"}, {"expected_access_revision": 2}):
+            with self.assertRaises(ResumeDraftConflictError):
+                self.service.commit(OWNER_A, self.bind_story_command(**changes))
+        self.story(publication_eligible=False)
+        with self.assertRaises(ResumeDraftConflictError):
+            self.service.commit(OWNER_A, self.bind_story_command())
+        self.assertEqual(self.repository.load_owner(OWNER_A)["draft_version"], 0)
+
+    def test_record_type_cannot_be_changed_by_draft_payload(self):
+        with self.assertRaises(ResumeDraftNotFoundError):
+            self.service.commit(OWNER_A, dict(request_id=str(uuid4()), type="save_item",
+                record_key=ROLE_KEY, record_type="knowledge", expected_content_token="1",
+                expected_access_revision=1, values={"title": "Other", "wording": "Wrong type"}))
+        self.assertEqual(self.repository.load_owner(OWNER_A)["items"], {})
 
     def test_owners_cannot_read_or_mutate_each_other(self):
         self.catalog.put_item(

@@ -221,6 +221,13 @@ stages:
               ANTHROPIC_API_KEY: test-key-for-ci-only
               PLAYWRIGHT_BROWSERS_PATH: $(Pipeline.Workspace)/ms-playwright
 
+          - script: python scripts/run_mvp1_acceptance_browser_tests.py
+            displayName: Run required integrated MVP1 and retained intake browser journeys
+            condition: and(succeeded(), ne(variables['ProveBrowserDisposition.deliveryControlOnly'], 'true'))
+            env:
+              ANTHROPIC_API_KEY: test-key-for-ci-only
+              PLAYWRIGHT_BROWSERS_PATH: $(Pipeline.Workspace)/ms-playwright
+
           - publish: '$(Pipeline.Workspace)/browser-disposition.json'
             artifact: BrowserDeliveryDisposition
             displayName: Publish executed browser-job disposition

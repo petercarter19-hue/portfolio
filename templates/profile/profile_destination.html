@@ -1,3 +1,34 @@
+{% if mvp1 %}{% extends "base.html" %}{% endif %}
+{% block extra_head %}
+{% if mvp1 %}<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/profile-experience.css') }}"><meta name="robots" content="noindex, nofollow, noarchive">{% endif %}
+{% endblock %}
+{% block content %}
+{% if mvp1 %}
+<section class="owner-app mvp1-profile" aria-labelledby="profile-title">
+{% if profile_owner %}
+<header><p class="owner-app__eyebrow">Your Profile</p><h1 id="profile-title">Your public introduction</h1>
+<p>Save privately, review, then choose to publish. Your Resume uses only the introduction you select in its publication review.</p></header>
+<form id="mvp1-profile-form" data-command-url="{{ url_for('mvp1_profile.owner_command') }}" data-state-url="{{ url_for('mvp1_profile.owner_state') }}">
+{% set identity = profile_state.identity or {} %}
+<label for="profile-slug">Profile address</label><input id="profile-slug" name="slug" required maxlength="64" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value="{{ profile_state.profile_slug or '' }}" {% if profile_state.profile_slug %}readonly{% endif %}>
+<label for="profile-name">Name to publish</label><input id="profile-name" name="display_name" required maxlength="160" value="{{ identity.display_name or '' }}">
+<label for="profile-headline">Headline</label><input id="profile-headline" name="headline" required maxlength="240" value="{{ identity.headline or '' }}">
+<label for="profile-location">Location (optional)</label><input id="profile-location" name="location" maxlength="160" value="{{ identity.location or '' }}">
+<label for="profile-summary">Introduction</label><textarea id="profile-summary" name="summary" required maxlength="2000">{{ identity.summary or '' }}</textarea>
+<div class="mvp1-profile__actions"><button type="submit">Save privately</button><button id="profile-review" type="button">Review public introduction</button></div>
+</form>
+<section id="profile-review-panel" hidden aria-label="Review your public introduction"><h2>Ready to make this public?</h2><p id="profile-reviewed-name"></p><p id="profile-reviewed-headline"></p><p id="profile-reviewed-location"></p><p id="profile-reviewed-summary"></p>
+<p>This publishes your introduction on Profile. Review and publish Resume separately to select this revision there.</p><button id="profile-publish" type="button">Publish this introduction</button></section>
+<p id="profile-status" role="status" aria-live="polite"></p>
+<div class="mvp1-profile__actions"><a href="{{ url_for('resume_draft.get_resume_editor_page') }}">Continue to your Resume</a><a href="{{ url_for('owner.my_data') }}">My Data</a><a id="profile-public-link" href="{{ profile_state.public_profile_url or '#' }}" {% if not profile_state.public_profile_url %}hidden{% endif %}>View public Profile</a><button id="profile-withdraw" type="button" {% if not profile_state.public_profile_url %}hidden{% endif %}>Withdraw public introduction</button></div>
+<script type="application/json" id="profile-state">{{ profile_state|tojson }}</script>
+<script src="{{ url_for('static', filename='js/mvp1-profile.js') }}" defer></script>
+{% else %}
+<header class="profile__masthead"><p class="profile__eyebrow">Profile</p><h1 id="profile-title">{{ profile_identity.display_name }}</h1><p class="profile__headline">{{ profile_identity.headline }}</p>{% if profile_identity.location %}<p>{{ profile_identity.location }}</p>{% endif %}<p class="profile__summary">{{ profile_identity.summary }}</p></header>
+{% if resume_href %}<a href="{{ resume_href }}">Explore Resume</a>{% endif %}
+{% endif %}
+</section>
+{% else %}
 {# Unregistered Profile-local experience. No global shell, auth, or production route is changed. #}
 <!doctype html>
 <html lang="en">
@@ -138,3 +169,6 @@
     <script src="{{ url_for('static', filename='js/profile-experience.js') }}" defer></script>
   </body>
 </html>
+
+{% endif %}
+{% endblock %}

@@ -81,7 +81,10 @@ LIFECYCLE_PERMANENT = "permanently_deleted"
 RECOVERY_DAYS = 30
 MAX_TEXT = 8000
 _UUID = re.compile(
-    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+    # SQL uniqueidentifier and the intake's stable SHA-derived identifiers use
+    # all 128 bits. Preserve those existing keys; version/variant bits are not
+    # owner authority. Keep the exact dashed hexadecimal representation.
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
 )
 _FIELD_SETS = {
     "role": frozenset(

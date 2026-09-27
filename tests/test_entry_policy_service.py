@@ -30,6 +30,22 @@ class Clock:
 
 
 class EntryPolicyServiceTests(unittest.TestCase):
+    def test_intake_stable_identifiers_keep_exact_identity_and_owner_fences(self):
+        from services.resume_intake_service import _stable_key
+        for number in range(16):
+            entry = _stable_key("g-synthetic-submission", f"fact:{number}")
+            self.create(self.owner_a, entry=entry, role_title="Engineer", employer_name="Example")
+            row = next(row for row in self.service.list_entries(self.owner_a)["entries"] if row["entry_key"] == entry)
+            self.assertFalse(row["resume_display"])
+            with self.assertRaises(EntryPolicyConflictError):
+                self.service.commit(self.owner_b, {"type": "change_permissions", "request_id": str(uuid4()),
+                    "entry_key": entry, "expected_access_revision": row["access_revision"],
+                    "permissions": {"resume_display": True}})
+            self.assertEqual(self.service.list_entries(self.owner_b)["entries"], [])
+        for invalid in ("not-a-key", "{" + str(uuid4()) + "}", str(uuid4()).replace("-", "")):
+            with self.assertRaises(EntryPolicyValidationError):
+                self.create(self.owner_a, entry=invalid, role_title="Engineer", employer_name="Example")
+
     def setUp(self):
         self.clock = Clock()
         self.service = EntryPolicyService(

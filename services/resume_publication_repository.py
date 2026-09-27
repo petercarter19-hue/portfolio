@@ -104,6 +104,8 @@ def _is_invalid_correction_target(error: BaseException) -> bool:
 
 
 def _raise_commit_error(error: BaseException) -> None:
+    if any("54302" in text or "profile identity changed" in text.lower() for text in _sql_error_texts(error)):
+        raise PublicationConflictError("stale_identity", "Profile identity changed. Review it again.") from error
     if _is_receipt_conflict(error):
         raise PublicationConflictError(
             "request_conflict",
@@ -215,6 +217,7 @@ class SqlResumePublicationRepository:
             publications[revision] = {
                 "media": media,
                 "digest": row.get("reviewed_digest"),
+                "profile_identity": self._identity_reference(row.get("profile_identity_json")),
             }
         return {
             "sharing_enabled": bool(row.get("sharing_enabled")),
@@ -227,6 +230,19 @@ class SqlResumePublicationRepository:
             "revoked_media": set(),
             "read_epoch": int(row.get("sharing_epoch") or 0),
         }
+
+    @staticmethod
+    def _identity_reference(raw):
+        if raw is None:
+            return None
+        from services.mvp1_profile_binding import identity_reference
+        try:
+            parsed = json.loads(raw) if type(raw) is str else raw
+            ref = identity_reference(parsed)
+            return ref.to_payload() if ref else None
+        except (TypeError, ValueError):
+            # A corrupt optional identity never supplies a public name.
+            return None
 
     def get_receipt(self, owner_user_key: str, request_id: str) -> dict[str, Any] | None:
         try:

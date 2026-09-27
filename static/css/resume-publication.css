@@ -36,6 +36,9 @@
     font: 400 1rem/1.4 Inter, sans-serif;
 }
 
+.resume-publication-review input[type="checkbox"] { width: 1.15rem; min-height: 1.15rem; height: 1.15rem; padding: 0; margin: .3rem 0 0; accent-color: #005749; }
+.resume-publication__review-entry fieldset label { min-height: 2.75rem; }
+
 .resume-publication__digest {
     margin: 1rem 0 0;
     padding: 0.75rem;
@@ -114,3 +117,62 @@
     .visitor-ai h2 { font-size: 1.65rem; }
 }
 @media print { .visitor-ai, .visitor-ai__open { display: none !important; } }
+/* Owner-only review uses the same content width and form controls as Resume. */
+.resume-publication__review-entry { padding: 1rem 0; border-top: 1px solid #d8dfdc; overflow-wrap: anywhere; }
+.resume-publication__review-entry h3 { margin: 0 0 .75rem; }
+.resume-publication__review-entry p { margin: .4rem 0; white-space: pre-wrap; }
+.resume-publication__review-entry fieldset { margin-top: .8rem; padding: .75rem; border: 1px solid #c9d3ce; border-radius: .4rem; }
+.resume-publication__review-entry fieldset label { display: flex; align-items: flex-start; gap: .5rem; margin: .5rem 0; }
+.resume-publication__review-entry input { flex: 0 0 auto; margin-top: .25rem; }
+.resume-publication__review-entry details { margin: .75rem 0; }
+.resume-publication__review-entry ins { text-decoration: none; background: #e7f3e9; }
+
+/* Approved D11/M11 Resume composition; the shared blue header stays shared. */
+.resume-publication--public { padding: 1.25rem clamp(1rem, 2vw, 2rem) 4rem; background: #f3faff; }
+.resume-publication--public .resume-publication__layout { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 1.25rem; max-width: 1560px; margin: 0 auto; align-items: start; }
+.resume-publication--public.resume-publication--with-ai .resume-publication__layout { grid-template-columns: 180px minmax(0, 1fr) minmax(290px, 360px); }
+.resume-publication--public .resume-publication__panel { width: 100%; min-width: 0; padding: 0; border-radius: 10px; border-color: #e0e8e8; background: #fff; box-shadow: 0 8px 28px rgb(21 60 76 / 6%); }
+.resume-publication--public .resume-publication__intro { padding: clamp(1.25rem, 3vw, 2.25rem); border-bottom: 1px solid #e4eaea; }
+.resume-publication--public h1 { margin: .4rem 0; color: #073f45; font: 650 clamp(2rem, 3.5vw, 3.2rem)/1.1 Georgia, serif; overflow-wrap: anywhere; }
+.resume-publication--public .resume-publication__headline { color: #9b5900; font-weight: 700; margin-top: .6rem; }
+.resume-publication__sections { display: grid; gap: .45rem; padding-top: 1rem; }
+.resume-publication__sections a { color: #173d62; font: 600 1rem/1.4 Inter, sans-serif; padding: .8rem 1rem; border-radius: 6px; min-height: 44px; text-decoration: none; }
+.resume-publication__sections a:first-child { color: white; background: #005749; box-shadow: 0 5px 14px rgb(0 60 45 / 12%); }
+.resume-publication__sections a:focus-visible { outline: 3px solid #1761b5; outline-offset: 3px; }
+.resume-publication__section { padding: 1.25rem; border-bottom: 1px solid #e4eaea; scroll-margin-top: 6rem; overflow-wrap: anywhere; }
+.resume-publication__section > h2 { margin: 0 0 1rem; color: #174b65; font: 700 .85rem/1.4 Inter, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+.resume-publication--public .resume-publication__entry { margin: 0; min-width: 0; }
+.resume-publication--public .resume-publication__entry h3 { margin: 0 0 .3rem; color: #073f45; font: 600 1.25rem/1.35 Georgia, serif; }
+.resume-publication__entry p { margin: .4rem 0; white-space: pre-wrap; overflow-wrap: anywhere; color: #36567e; line-height: 1.6; }
+.resume-publication__organization { font-weight: 650; }
+.resume-publication__dates { font-size: .9rem; }
+.resume-publication__timeline { border-left: 2px solid #c98212; margin-left: .4rem; }
+.resume-publication__timeline .resume-publication__entry { position: relative; padding: 0 0 1.7rem 1.2rem; }
+.resume-publication__timeline .resume-publication__entry:last-child { padding-bottom: .4rem; }
+.resume-publication__timeline .resume-publication__entry::before { content: ''; position: absolute; top: .3rem; left: -7px; width: 12px; height: 12px; border-radius: 50%; background: #c98212; }
+.resume-publication__strengths { display: flex; flex-wrap: wrap; gap: .75rem; }
+.resume-publication__strengths .resume-publication__entry { padding: .7rem .9rem; border: 1px solid #d3e1ef; border-radius: 6px; background: #f8fbff; }
+.resume-publication__experience--illustrated { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, .8fr); gap: 1.2rem; }
+.resume-publication__media { margin: 0; min-width: 0; position: relative; }
+.resume-publication__media img { display: block; width: 100%; border-radius: 6px; }
+.resume-publication__crop { position: relative; overflow: hidden; border-radius: 6px; aspect-ratio: 3 / 2; }
+.resume-publication__crop--story_banner { aspect-ratio: 3 / 1; }
+.resume-publication__crop img { position: absolute; max-width: none; border-radius: 0; }
+.resume-publication__media figcaption { color: #36567e; font-size: .8rem; padding: .3rem 0; }
+.resume-publication__media figcaption span { display: block; }
+.resume-publication__story .resume-publication__media { margin-top: 1rem; }
+.resume-publication__empty { padding: 1.25rem; }
+@media (max-width: 1100px) {
+    .resume-publication--public.resume-publication--with-ai .resume-publication__layout { grid-template-columns: 140px minmax(0, 1fr) 290px; gap: .85rem; }
+}
+@media (max-width: 900px) {
+    .resume-publication--public .resume-publication__layout,
+    .resume-publication--public.resume-publication--with-ai .resume-publication__layout { display: block; }
+    .resume-publication__sections { display: flex; flex-wrap: wrap; padding: 0 0 1rem; gap: .25rem; }
+    .resume-publication__sections a { padding: .6rem .8rem; }
+    .resume-publication--public { padding-top: 1rem; }
+}
+@media (max-width: 520px) {
+    .resume-publication__experience--illustrated { display: block; }
+    .resume-publication__experience .resume-publication__media { margin-top: 1rem; }
+}

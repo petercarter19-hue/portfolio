@@ -18,7 +18,7 @@
     const SLOT_ASPECT = { story_banner: 3.0, experience_support: 1.5 };
     const SLOT_LABEL = { story_banner: "My Story banner", experience_support: "Experience photo" };
     const PLACEMENT_PREVIEW_LABEL = "Placement preview \u00b7 Not added yet";
-    const SAVED_LABEL = "On your r\u00e9sum\u00e9 \u00b7 Not published";
+    const SAVED_LABEL = "Saved in your private draft";
 
     const urls = {
         workspace: root.getAttribute("data-media-workspace-url"),
@@ -1083,8 +1083,15 @@
     }
 
     if (elements.upload) {
-        elements.upload.addEventListener("change", async function () {
+        const retryUpload = document.createElement("button");
+        retryUpload.type = "button";
+        retryUpload.className = "resume-media__quiet";
+        retryUpload.textContent = "Try upload again";
+        retryUpload.hidden = true;
+        elements.upload.insertAdjacentElement("afterend", retryUpload);
+        async function uploadSelectedPhoto() {
             const file = elements.upload.files && elements.upload.files[0];
+            retryUpload.hidden = true;
             if (!file) {
                 return;
             }
@@ -1099,11 +1106,13 @@
                     body: form,
                 });
             } catch (error) {
-                setStatus("That upload did not reach PeerSlate. Nothing was uploaded.", "error");
+                retryUpload.hidden = false;
+                setStatus("The upload response did not arrive. Check My photos before trying this upload again. Your file is still selected.", "error");
                 return;
             }
             const payload = await response.json().catch(function () { return {}; });
             if (!response.ok) {
+                retryUpload.hidden = false;
                 setStatus(
                     failedMessage(payload, "That photo could not be accepted."),
                     "error"
@@ -1116,7 +1125,9 @@
             );
             elements.upload.value = "";
             await loadWorkspace();
-        });
+        }
+        elements.upload.addEventListener("change", uploadSelectedPhoto);
+        retryUpload.addEventListener("click", uploadSelectedPhoto);
     }
 
     elements.tabPhotos.addEventListener("click", function () { selectTab("photos"); });

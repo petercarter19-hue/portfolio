@@ -1390,7 +1390,8 @@
       "requires": [
         "PS-PLAT-002",
         "PS-PLAT-005",
-        "PS-AUTH-001"
+        "PS-AUTH-001",
+        "PS-COMMUNITY-PUBLIC-PILOT-001"
       ],
       "summary": "Dark additive governed Profile publication foundation: normalized Profile-native versions, exact source projection references, private draft placements, immutable audience revision manifests, idempotent command records, and reserved slug history. Connections activation remains gated on the future PS-CONNECT-002 relationship hardening and is not enabled by this candidate.",
       "gate": null
@@ -2759,6 +2760,14 @@
         "PS-RESUME-PUBLICATION-001"
       ],
       "summary": "Proposed read-only visitor AI eligibility and owner preview snapshots over existing canonical, publication, evidence, draft and media authorities. No new truth store; no production application or enablement.",
+      "gate": null
+    },
+    {
+      "id": "PS-RESUME-IDENTITY-001",
+      "forward": "SQL FIles/Migrations/proposed/PS-RESUME-IDENTITY-001_publication_identity.sql",
+      "rollback": "SQL FIles/Migrations/proposed/PS-RESUME-IDENTITY-001_publication_identity_rollback.sql",
+      "requires": ["PS-RESUME-PUBLICATION-001", "PS-PROFILE-002", "PS-WORKSHOP-004", "PS-VISITOR-AI-001"],
+      "summary": "Proposed G pinned same-owner approved Profile identity reference in immutable Resume revisions and atomic publish validation. Corrections preserve the pin; current approval fences suppress revoked identity. Includes owner withdrawal-to-republish recovery. No SQL execution, production application or enablement is established.",
       "gate": null
     }
   ]

@@ -44,9 +44,15 @@ def _media(ref):
 def _placement(item):
     # Numeric crop equivalents serialize equally; negative zero is zero.
     def number(value):
-        return float(value) if value else 0.0
+        numeric = float(value) if value else 0.0
+        # Match the JSON number the browser sends back: JSON.stringify writes
+        # 0 and 1, while Python otherwise emits 0.0 and 1.0. Preserve noninteger
+        # crop coordinates; no rounding or tolerance weakens the exact review.
+        return int(numeric) if numeric.is_integer() else numeric
     return {"slot": item.slot, "source_kind": item.source_kind, "asset_id": item.asset_id,
-            "asset_version": item.asset_version, "asset_digest": item.asset_digest,
+            # Photo rowversions can exceed JavaScript's safe integer range.
+            # Carry the exact decimal token through browser review and replay.
+            "asset_version": str(item.asset_version), "asset_digest": item.asset_digest,
             "presentation_version": item.presentation_version,
             "crop": {"x": number(item.crop.x), "y": number(item.crop.y),
                      "width": number(item.crop.width), "height": number(item.crop.height)},
@@ -64,6 +70,11 @@ def _canonical_payload(candidate, policy, media):
     context = candidate.context
     return {
         "schema": REVIEW_PAYLOAD_SCHEMA,
+        "story_entry_key": candidate.story_entry_key,
+        "profile_identity": (candidate.profile_identity.to_payload()
+                             if candidate.profile_identity is not None else None),
+        "draft_bases": [{"entry": _entry(base.entry), "canonical_token": base.canonical_token}
+                        for base in candidate.draft_bases],
         "context": {"subject_key": context.subject_key, "resume_key": context.resume_key,
                     "audience": context.audience.value, "purpose": context.purpose.value,
                     "authenticated_owner_key": context.authenticated_owner_key},
@@ -276,7 +287,7 @@ def _validate_snapshots(candidate, policy, media):
                 or not value.digest_is_current()):
             return _failure(ReadState.STALE, "source_changed")
     by_entry = {x.ref: x for x in policy.entries}
-    display, visitor_ai = [], []
+    display, visitor_ai, owner_entries = [], [], []
     for selection in candidate.selections:
         current = by_entry[selection.entry]
         if not current.active or not current.identity_resolved:
@@ -292,12 +303,19 @@ def _validate_snapshots(candidate, policy, media):
             values[delta.field] = delta.after
         sources = tuple(x for x in prior.sources if x.entry == selection.entry)
         entry = ManifestEntry(selection.entry, tuple(Wording(k, v) for k, v in sorted(values.items())), sources)
+        owner_entries.append(entry)
         if selection.display:
             display.append(entry)
         if selection.visitor_ai:
             if current.visitor_ai_allowed:
                 if not sources:
-                    return _failure(ReadState.UNAVAILABLE, "missing_ai_source")
+                    if not any(item.entry == selection.entry for item in candidate.review_evidence):
+                        return _failure(ReadState.UNAVAILABLE, "missing_ai_source")
+                    evidence_error = _check_first_ai_grant_evidence(
+                        candidate, selection, current, {x.field: x.value for x in current.wording},
+                    )
+                    if evidence_error:
+                        return _failure(*evidence_error)
                 for source in policy.sources:
                     if source.ref in sources and (
                         Audience.PUBLIC not in source.source.allowed_audiences
@@ -306,7 +324,7 @@ def _validate_snapshots(candidate, policy, media):
                         return _failure(ReadState.DENIED, "ai_source_scope")
             elif selection.expand_visitor_ai:
                 evidence_error = _check_first_ai_grant_evidence(
-                    candidate, selection, current, values,
+                    candidate, selection, current, {x.field: x.value for x in current.wording},
                 )
                 if evidence_error:
                     return _failure(*evidence_error)
@@ -349,5 +367,6 @@ def _validate_snapshots(candidate, policy, media):
     encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True,
                          separators=(",", ":"), allow_nan=False).encode("utf-8")
     reviewed = ReviewedCandidate(candidate, prior, DisplayManifest(tuple(display), candidate.placements),
-                                 VisitorAIManifest(tuple(visitor_ai)), hashlib.sha256(encoded).hexdigest())
+                                 VisitorAIManifest(tuple(visitor_ai)), hashlib.sha256(encoded).hexdigest(),
+                                 owner_entries=tuple(owner_entries))
     return ValidationResult(ReadState.CURRENT, "reviewed_not_published", reviewed)

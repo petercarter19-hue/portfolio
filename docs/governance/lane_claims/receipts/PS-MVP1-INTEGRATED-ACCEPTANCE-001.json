@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-INTEGRATED-ACCEPTANCE-001",
+  "candidate_sha": "5a7f05ddd651cadc1864d659ef225814994a75cf",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a0c0a4-9342-7163-9052-f16ea0eee843",
+  "result": "pass",
+  "reviewed_at": "2026-09-27T02:32:16Z",
+  "findings": [
+    {
+      "summary": "R1-R6 functional and browser corrections accepted by the same reviewer; SQL3649 closes the retained real-engine hold with all18 cases passing.",
+      "severity": "major",
+      "status": "resolved"
+    },
+    {
+      "summary": "Strict current rowversion bytes, canonical UUID identity and personal original-wording/privacy/currentness fences are independently engine-verified.",
+      "severity": "major",
+      "status": "resolved"
+    },
+    {
+      "summary": "Durable catalog save, immutable receipt provenance, exact replay and current/removed media history rollback protection pass actual SQL checks.",
+      "severity": "major",
+      "status": "resolved"
+    },
+    {
+      "summary": "Two effective predecessor wrapper omissions corrected; both publication guards and all14 actual rollback definition restorations are verified.",
+      "severity": "major",
+      "status": "resolved"
+    },
+    {
+      "summary": "Final independent acceptance evt-11c48a59-9dd2-47eb-863c-8acd3fe8129d: exact5a7f05dd all18 SQL cases/runtime/principal/four-resource cleanup PASS; CI3648 all4jobs and3current policies PASS.6919 tests ran,6778 passed,141 skipped. Production/live-provider/pilot and stated qualification boundaries remain excluded.",
+      "severity": "informational",
+      "status": "informational"
+    }
+  ],
+  "evidence_ref": "lane_claims/evidence/PS-MVP1-INTEGRATED-ACCEPTANCE-001.md"
+}

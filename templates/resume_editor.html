@@ -6,7 +6,6 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/resume-editor.css') }}">
 {% if config.get('PEERSLATE_RESUME_INTAKE_ENABLED', false) %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/resume-intake.css') }}">
 {% endif %}
@@ -16,25 +15,28 @@
 {% if config.get('PEERSLATE_RESUME_PUBLICATION_ENABLED', false) %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/resume-publication.css') }}">
 {% endif %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resume-editor.css') }}">
 <meta name="robots" content="noindex, nofollow">
 {% endblock %}
 
 {% block content %}
-<section class="owner-app resume-editor" aria-labelledby="resume-editor-title">
+<section class="owner-app resume-editor resume-editor--overview" aria-labelledby="resume-editor-title">
+    <nav class="resume-editor__sections" aria-label="Resume sections">
+        <p class="resume-editor__nav-title">My Resume</p>
+        <a href="#resume-editor-title">Overview</a>
+        <a href="#resume-story-title">My Story</a>
+        <a href="#resume-section-role">Experience</a>
+        <a href="#resume-section-education">Education</a>
+        <a href="#resume-section-skill">Strengths</a>
+        {% if config.get('PEERSLATE_RESUME_MEDIA_ENABLED', false) %}<a href="#resume-media-placement">Photos</a>{% endif %}
+        <a href="{{ url_for('owner.my_data') }}">My Data</a>
+    </nav>
     <div class="owner-app__panel resume-editor__panel">
         <header class="resume-editor__intro">
             <p class="owner-app__eyebrow">Private Resume</p>
             <h1 id="resume-editor-title">Edit your Resume</h1>
-            <p>
-                Welcome, {{ member.display_name or 'PeerSlate member' }}.
-                This editor is private. Saving keeps a draft overlay and does not
-                publish, share, or change what visitors already see.
-            </p>
-            <p class="resume-editor__privacy-note">
-                Already-shared facts stay as they are until you publish later.
-                Stale drafts cannot overwrite newer corrections or restore
-                revoked permissions. Review does not publish.
-            </p>
+            <p>Welcome, {{ member.display_name or 'PeerSlate member' }}. A place for your experience, strengths and story.</p>
+            <p class="resume-editor__privacy-note">Saving does not publish. Your changes stay private until you review and publish them.</p>
         </header>
 
         <div
@@ -46,20 +48,90 @@
 
         <p class="resume-editor__toolbar">
             <button type="button" class="resume-editor__button" id="resume-editor-reload">Reload</button>
-            <button type="button" class="resume-editor__button resume-editor__button--secondary" id="resume-editor-review">
+            <button type="button" class="resume-editor__button resume-editor__button--secondary" id="resume-editor-review" {% if config.get('PEERSLATE_RESUME_PUBLICATION_ENABLED', false) %}data-page-url="{{ url_for('resume_publication.get_resume_publication_page') }}"{% endif %}>
                 Review without publishing
             </button>
-            {% if config.get('PEERSLATE_RESUME_PUBLICATION_ENABLED', false) %}
-            <a class="resume-editor__button resume-editor__button--secondary" href="{{ url_for('resume_publication.get_resume_publication_page') }}">
-                Publish reviewed Resume
-            </a>
-            {% endif %}
+
         </p>
+
+
+
+        <section class="resume-editor__add" aria-labelledby="resume-story-title">
+            <h2 id="resume-story-title">Optional My Story</h2>
+            <p>Choose a saved personal entry for the short introduction on your Resume. Display and visitor AI stay off until you choose them in your sharing review.</p>
+            <label for="resume-story-choice">Saved personal entry</label>
+            <select id="resume-story-choice"><option value="">No Story selected</option></select>
+            <button type="button" class="resume-editor__button" id="resume-story-select">Use this entry for My Story</button>
+            <p id="resume-story-status" role="status" aria-live="polite"></p>
+            <details>
+                <summary>Write a new personal entry</summary>
+                <form id="resume-story-create">
+                    <label for="resume-story-wording">Your words</label>
+                    <textarea id="resume-story-wording" rows="4" maxlength="8000" required></textarea>
+                    <button type="submit" class="resume-editor__button">Save personal entry privately</button>
+                </form>
+            </details>
+        </section>
+
+        {% if config.get('PEERSLATE_RESUME_MEDIA_ENABLED', false) %}
+        <section id="resume-media-placement" class="resume-editor__story-composition" aria-label="My Story placement preview">
+        <figure class="resume-media__frame resume-media__frame--story" data-slot="story_banner">
+            <p class="resume-media__placeholder" id="resume-media-placement-empty-story_banner">
+                Add a story banner
+                <span>Optional</span>
+            </p>
+            <span class="resume-media__frame-view">
+                <img
+                    class="resume-media__frame-image"
+                    id="resume-media-placement-image-story_banner"
+                    alt=""
+                    hidden
+                >
+            </span>
+            <span class="resume-media__story-text">
+                <span id="resume-editor-story-preview">No Story selected. Choose a saved personal entry to preview your introduction.</span>
+            </span>
+            <figcaption class="resume-media__badge" id="resume-media-placement-badge-story_banner" hidden>
+                Placement preview &middot; Not added yet
+            </figcaption>
+            <p class="resume-media__attribution" id="resume-media-placement-attribution-story_banner" hidden></p>
+            <button type="button" class="resume-media__quiet" id="resume-media-placement-change-story_banner">
+                Change banner
+            </button>
+        </figure>
+        </section>
+        <div id="resume-editor-experience-media" class="resume-editor__experience-media" hidden>
+        <figure class="resume-media__frame resume-media__frame--experience" data-slot="experience_support">
+            <p class="resume-media__placeholder" id="resume-media-placement-empty-experience_support">
+                Add an experience photo
+                <span>Optional</span>
+            </p>
+            <span class="resume-media__frame-view">
+                <img
+                    class="resume-media__frame-image"
+                    id="resume-media-placement-image-experience_support"
+                    alt=""
+                    hidden
+                >
+            </span>
+            <figcaption class="resume-media__badge" id="resume-media-placement-badge-experience_support" hidden>
+                Placement preview &middot; Not added yet
+            </figcaption>
+            <p class="resume-media__attribution" id="resume-media-placement-attribution-experience_support" hidden></p>
+            <button type="button" class="resume-media__quiet" id="resume-media-placement-change-experience_support">
+                Change photo
+            </button>
+        </figure>
+        </div>
+        {% else %}
+        <p id="resume-editor-story-preview">No Story selected. Choose a saved personal entry to preview your introduction.</p>
+        {% endif %}
 
         <div id="resume-editor-lists" data-workspace-url="{{ workspace_url }}" data-commands-url="{{ commands_url }}" data-review-url="{{ review_url }}"></div>
 
         <section class="resume-editor__add" aria-labelledby="resume-editor-add-title">
-            <h2 id="resume-editor-add-title">Add a private education record</h2>
+            <details>
+            <summary id="resume-editor-add-title">Add education</summary>
             <p>New facts are saved privately. Display and visitor AI stay off.</p>
             <form id="resume-editor-add-education">
                 <p>
@@ -85,14 +157,18 @@
                     <button type="submit" class="resume-editor__button">Save privately</button>
                 </p>
             </form>
+            </details>
         </section>
+
     </div>
-    {% if config.get('PEERSLATE_RESUME_MEDIA_ENABLED', false) %}
-    {% include "partials/resume/_media_chooser.html" %}
-    {% endif %}
-    {% if config.get('PEERSLATE_RESUME_INTAKE_ENABLED', false) %}
-    {% include "partials/resume/_intake_composer.html" %}
-    {% endif %}
+    <div class="resume-editor__guides">
+        {% if config.get('PEERSLATE_RESUME_INTAKE_ENABLED', false) %}
+        {% include "partials/resume/_intake_composer.html" %}
+        {% endif %}
+        {% if config.get('PEERSLATE_RESUME_MEDIA_ENABLED', false) %}
+        {% include "partials/resume/_media_chooser.html" %}
+        {% endif %}
+    </div>
 </section>
 <script src="{{ url_for('static', filename='js/resume-editor.js') }}" defer></script>
 {% if config.get('PEERSLATE_RESUME_MEDIA_ENABLED', false) %}

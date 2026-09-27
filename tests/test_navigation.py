@@ -80,7 +80,7 @@ class NavigationTests(unittest.TestCase):
                 else:
                     app.config[key] = value
 
-    def test_petes_slate_opens_the_canonical_resume_and_redundant_home_is_omitted(self):
+    def test_generic_member_home_never_claims_the_fixture_as_current_member(self):
         for path in ('/', '/petec/resume'):
             with self.subTest(path=path):
                 links = self.parse_platform_links(path)
@@ -88,8 +88,8 @@ class NavigationTests(unittest.TestCase):
 
                 self.assertNotIn('Atrium', links_by_text)
                 self.assertEqual(
-                    links_by_text["Pete's Slate"]['attributes']['href'],
-                    '/petec/resume#overview',
+                    links_by_text["My PeerSlate"]['attributes']['href'],
+                    '/app',
                 )
                 self.assertNotIn('Home', links_by_text)
 
@@ -102,11 +102,11 @@ class NavigationTests(unittest.TestCase):
         }
         self.assertNotIn(
             'aria-current',
-            homepage_links["Pete's Slate"]['attributes'],
+            homepage_links["My PeerSlate"]['attributes'],
         )
         self.assertEqual(
-            resume_links["Pete's Slate"]['attributes'].get('aria-current'),
-            'page',
+            resume_links["My PeerSlate"]['attributes'].get('aria-current'),
+            None,
         )
         self.assertNotIn('Home', resume_links)
 
@@ -215,7 +215,7 @@ class NavigationTests(unittest.TestCase):
         self.assertIn('data-platform-menu-toggle', html)
         self.assertIn('id="platform-mobile-menu"', html)
         menu = html.split('id="platform-mobile-menu"', 1)[1].split('</nav>', 1)[0]
-        for label in ('Pete&#39;s Slate', 'Interview Studio'):
+        for label in ('My PeerSlate', 'Interview Studio'):
             self.assertEqual(menu.count(f'>{label}</a>'), 1)
         self.assertNotIn('>Community</a>', menu)
         self.assertNotIn('>Opportunity Slate</a>', menu)
@@ -538,7 +538,7 @@ class NavigationTests(unittest.TestCase):
         data-ps-shell-room-title, which the SERVER writes and no script
         touches, and it sits beside a logo that is always there.
         """
-        paths = ('/interview-studio', '/opportunity-slate', '/petec/resume')
+        paths = ('/interview-studio', '/opportunity-slate', '/app')
         opportunity_is_private = (
             'opportunity_slate_v2.room' in app.view_functions
         )
@@ -550,19 +550,19 @@ class NavigationTests(unittest.TestCase):
                     as_text=True
                 )
                 for path in paths
-                if not (opportunity_is_private and path == '/opportunity-slate')
+                if path != '/app' and not (opportunity_is_private and path == '/opportunity-slate')
             }
 
             signed_in = self.signed_in_client()
             for path, expected in zip(
-                paths, ('Interview Studio', 'Opportunity Slate', "Pete's Slate")
+                paths, ('Interview Studio', 'Opportunity Slate', "My PeerSlate")
             ):
                 with self.subTest(path=path):
                     html = signed_in.get(
                         path, base_url='http://localhost'
                     ).get_data(as_text=True)
                     # The label is a rendered value, so Jinja escapes the
-                    # apostrophe in "Pete's Slate".
+                    # apostrophe in "My PeerSlate".
                     escaped = expected.replace("'", '&#39;')
                     self.assertIn(' data-ps-shell-room-title>', html)
                     self.assertIn(
@@ -621,8 +621,8 @@ class NavigationTests(unittest.TestCase):
             ).get_data(as_text=True)
         source = html.split('data-global-tabsource', 1)[1].split('</ul>', 1)[0]
 
-        self.assertIn(f'href="{"/petec/resume"}#overview" ', source)
-        self.assertIn('>Pete&#39;s Slate</span>', source)
+        self.assertIn('href="/app" ', source)
+        self.assertIn('>My PeerSlate</span>', source)
         self.assertNotIn('>Profile<', source)
         self.assertNotIn('href="/the-slate"', source)
         self.assertNotIn('>Community</span>', source)
@@ -656,7 +656,7 @@ class NavigationTests(unittest.TestCase):
         self.assertIn('href="/app/settings"', menu)
         self.assertNotIn('>Help<', menu)
         # Every promoted destination is reachable from the sheet.
-        for label in ('Pete&#39;s Slate', 'Interview Studio'):
+        for label in ('My PeerSlate', 'Interview Studio'):
             self.assertEqual(menu.count(f'>{label}</a>'), 1)
         self.assertNotIn('>Community</a>', menu)
         self.assertNotIn('>Opportunity Slate</a>', menu)
@@ -711,7 +711,7 @@ class NavigationTests(unittest.TestCase):
         body = legacy.get_data(as_text=True)
         self.assertEqual(body.count('public-navigation.css'), 1)
         self.assertIn('class="global-header"', body)
-        self.assertIn('href="/app">My PeerSlate</a>', body)
+        self.assertRegex(body, r'href="/app"[^>]*>My PeerSlate</a>')
         self.assertNotIn('class="profile-tabs', body)
         self.assertNotIn('owner-home-shell', body)
         self.assertEqual(body.count('js/public-site-search.js'), 1)

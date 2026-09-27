@@ -20,6 +20,39 @@ from tests.test_resume_publication_contracts import fixture
 
 
 class ResumePublicationAdapterTests(unittest.TestCase):
+    def test_personal_catalog_reads_owned_confirmed_versions_without_registering_them(self):
+        from types import SimpleNamespace
+        from services.resume_draft_repository import LivingResumeCanonicalCatalog, CanonicalReadUnavailable
+        calls = []
+        record = dict(item_key="story-1", classification="personal", status="confirmed",
+                      current_version=7, confirmed_version=7, version_token="00000000000000ab",
+                      title="About me", approved_wording="Member approved words")
+        class Knowledge:
+            def list_knowledge_items_for_owner(self, owner):
+                calls.append(("list", owner))
+                return SimpleNamespace(items=[record], total_count=1)
+            def get_knowledge_item_for_owner(self, owner, key):
+                calls.append(("get", owner, key))
+                return record
+        policy = Mock()
+        policy.list_entries.return_value = []
+        editor = Mock()
+        editor.get_editor.return_value = {}
+        catalog = LivingResumeCanonicalCatalog(editor=editor, policy_repository=policy, knowledge=Knowledge())
+        selected = catalog.list_items("member-b")[0]
+        self.assertEqual(selected["content_token"], record["version_token"])
+        self.assertEqual(selected["values"]["wording"], record["approved_wording"])
+        self.assertEqual(selected["access_revision"], 0)
+        self.assertFalse(selected["resume_display"])
+        self.assertFalse(selected["visitor_ai"])
+        policy.commit_command.assert_not_called()
+        self.assertEqual(calls, [("list", "member-b"), ("get", "member-b", "story-1")])
+        record["confirmed_version"] = 6
+        self.assertEqual(catalog.list_items("member-b"), [])
+        catalog._knowledge = SimpleNamespace(list_knowledge_items_for_owner=lambda owner: SimpleNamespace(items=[], total_count=1))
+        with self.assertRaises(CanonicalReadUnavailable):
+            catalog.list_items("member-b")
+
     def test_snapshot_ports_fail_closed_on_missing_or_stale_versions(self):
         candidate, policy, media = fixture()
         policy_port = SnapshotPolicyPort(policy)
@@ -170,7 +203,9 @@ class ResumePublicationAdapterTests(unittest.TestCase):
                     ]
                 }
 
-        catalog = LivingResumeCanonicalCatalog(editor=Editor(), policy_repository=Policy())
+        from types import SimpleNamespace
+        knowledge = SimpleNamespace(list_knowledge_items_for_owner=lambda owner: SimpleNamespace(items=[], total_count=0))
+        catalog = LivingResumeCanonicalCatalog(editor=Editor(), policy_repository=Policy(), knowledge=knowledge)
         items = catalog.list_items("member-a")
         self.assertEqual(len(items), 1)
         self.assertEqual(items[0]["access_revision"], 4)
@@ -185,7 +220,7 @@ class ResumePublicationAdapterTests(unittest.TestCase):
                 raise EntryPolicyStoreUnavailable("unused snapshot")
 
         empty_policy = LivingResumeCanonicalCatalog(
-            editor=Editor(), policy_repository=PolicyMissing()
+            editor=Editor(), policy_repository=PolicyMissing(), knowledge=knowledge
         )
         listed = empty_policy.list_items("member-a")
         self.assertEqual(len(listed), 1)
@@ -214,7 +249,9 @@ class ResumePublicationAdapterTests(unittest.TestCase):
             def get_editor(self, owner):
                 return {"roles": [{"record_key": "role-1", "row_version": "aa", "editable": True}]}
 
-        catalog = LivingResumeCanonicalCatalog(editor=Editor(), policy_repository=Policy())
+        from types import SimpleNamespace
+        knowledge = SimpleNamespace(list_knowledge_items_for_owner=lambda owner: SimpleNamespace(items=[], total_count=0))
+        catalog = LivingResumeCanonicalCatalog(editor=Editor(), policy_repository=Policy(), knowledge=knowledge)
         items = catalog.list_items("member-a")
         self.assertEqual(items[0]["access_revision"], 3)
         self.assertTrue(items[0]["publication_eligible"])

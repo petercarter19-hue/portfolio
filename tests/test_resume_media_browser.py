@@ -66,7 +66,7 @@ FIXTURES = Path(__file__).resolve().parent / "fixtures" / "resume_media"
 MEMBER_PHOTO = FIXTURES / "member-photo-1200x800.jpg"
 LIBRARY_ILLUSTRATION = FIXTURES / "library-illustration-1600x900.png"
 PLACEMENT_PREVIEW_LABEL = "Placement preview \u00b7 Not added yet"
-SAVED_LABEL = "On your r\u00e9sum\u00e9 \u00b7 Not published"
+SAVED_LABEL = "Saved in your private draft"
 
 CONFIG_KEYS = (
     "TESTING",

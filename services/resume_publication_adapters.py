@@ -7,6 +7,7 @@ closed. Review itself performs no writes.
 from __future__ import annotations
 
 import hashlib
+from dataclasses import replace
 from contextlib import contextmanager
 import json
 import os
@@ -24,6 +25,9 @@ from uuid import uuid4
 
 from services.resume_publication_contracts import (
     CandidateInput,
+    ContractError,
+    EditorialDelta,
+    DraftEntryBase,
     EntryRef,
     EntrySelection,
     EntryState,
@@ -104,6 +108,8 @@ def policy_snapshot_from_entries(
     sharing_enabled: bool,
     entries: list[dict],
     sources: tuple[SourceState, ...] = (),
+    wording_fields=None,
+    wording_values=None,
 ) -> PolicySnapshot:
     refs = []
     states = []
@@ -114,10 +120,13 @@ def policy_snapshot_from_entries(
             str(item.get("content_token") or item.get("content_version")),
             int(item["access_revision"]),
         )
+        values = dict((wording_values or {}).get(str(item["entry_key"]), item.get("values") or {}))
+        for name in (wording_fields or {}).get(str(item["entry_key"]), ()):
+            values.setdefault(name, None)
         wording = tuple(
-            Wording(str(key), None if value is None else str(value) if type(value) is not str else value)
-            for key, value in sorted((item.get("values") or {}).items())
-            if type(value) in (str, type(None))
+            Wording(str(key), value)
+            for key, value in sorted(values.items())
+            if type(value) in (str, bool, type(None))
         )
         refs.append(ref)
         states.append(
@@ -157,6 +166,11 @@ class OwnerPolicyPort:
         sharing_epoch: int,
         sharing_enabled: bool,
         sources: tuple[SourceState, ...] = (),
+        wording_fields=None,
+        draft_service=None,
+        draft_bases=(),
+        media_versions=(),
+        wording_values=None,
     ) -> None:
         self.policy_service = policy_service
         self.resume_key = resume_key
@@ -165,9 +179,27 @@ class OwnerPolicyPort:
         self.sharing_epoch = sharing_epoch
         self.sharing_enabled = sharing_enabled
         self.sources = sources
+        self.wording_fields = wording_fields
+        self.draft_service = draft_service
+        self.draft_bases = draft_bases
+        self.media_versions = media_versions
+        self.wording_values = wording_values
 
     def read_current(self, context, refs: tuple[EntryRef, ...]) -> PolicySnapshot:
         try:
+            if self.draft_service is not None:
+                workspace = self.draft_service.get_workspace(context.subject_key)
+                if (workspace.get("draft_version") != self.draft_revision
+                        or workspace.get("capabilities", {}).get("canonical_read") != "ok"):
+                    return PolicySnapshot(ReadState.STALE)
+                current_items = {item["record_key"]: item for item in workspace.get("items", ())}
+                self.wording_values = {key: item.get("values") or {} for key, item in current_items.items()}
+                for base in self.draft_bases:
+                    item = current_items.get(base.entry.entry_key)
+                    if (item is None or item.get("orphaned") or item.get("draft_is_stale")
+                            or item.get("content_token") != base.canonical_token
+                            or item.get("access_revision") != base.entry.access_revision):
+                        return PolicySnapshot(ReadState.STALE)
             list_for_review = getattr(
                 self.policy_service, "list_publication_entries", self.policy_service.list_entries
             )
@@ -190,12 +222,94 @@ class OwnerPolicyPort:
             sharing_enabled=self.sharing_enabled,
             entries=entries,
             sources=self.sources,
+            wording_fields=self.wording_fields,
+            wording_values=self.wording_values,
         )
         if tuple(item.identity for item in refs) != tuple(
             item.identity for item in snapshot.versions.entries
         ):
             return PolicySnapshot(ReadState.STALE, snapshot.versions)
-        return snapshot
+        return replace(snapshot, versions=replace(snapshot.versions, media=self.media_versions))
+
+
+class DraftMediaPublicationPort:
+    """Read the existing draft and source authorities; never trust client media."""
+
+    def __init__(self, application, versions=None):
+        self.application = application
+        self.versions = versions
+
+    def read_draft(self, owner, draft_revision):
+        repository = self.application.media_repository
+        draft = repository.get_draft(owner_id=owner)
+        if draft.version != draft_revision:
+            raise ContractError("media draft changed")
+        states = []
+        for placement in draft.placements:
+            catalog = None
+            if placement.source_kind == "owner_photo":
+                record = repository.get_owner_photo(owner_id=owner, source_id=placement.asset_id)
+                ready = record is not None and record.state == "ready"
+            else:
+                record = repository.get_catalog_asset(asset_id=placement.asset_id, version=placement.asset_version)
+                catalog = record
+                ready = record is not None
+            if record is None or record.lifecycle != "active" or not ready:
+                raise ContractError("media source is unavailable")
+            readiness = hashlib.sha256(json.dumps({
+                "version": record.version, "digest": record.digest, "state": getattr(record, "state", "ready"),
+                "lifecycle": record.lifecycle, "width": record.width, "height": record.height,
+                "source_revision": getattr(record, "version_token", str(record.version)),
+            }, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+            ref = MediaVersion(owner, placement.slot, placement.presentation_version, placement.source_kind,
+                placement.asset_id, getattr(record, "version_token", str(record.version)), record.version,
+                str(record.version) if catalog else None, record.digest, readiness)
+            states.append(MediaState(ref, record.width, record.height, True, True, catalog))
+        return draft.placements, tuple(sorted(states, key=lambda item: item.ref))
+
+    def read_current(self, context, placements):
+        try:
+            current, states = self.read_draft(context.subject_key, self.versions.draft_revision)
+            if tuple(sorted(current, key=lambda item: item.slot)) != placements:
+                return MediaSnapshot(ReadState.STALE)
+            return MediaSnapshot(ReadState.CURRENT, self.versions, states)
+        except Exception:
+            return MediaSnapshot(ReadState.UNAVAILABLE)
+
+
+class PublishedMediaBytesPort:
+    """Storage adapter called only after the publication authorizes a source.
+
+    Owner identity here comes from that server authorization, never the guest
+    request. Existing media readers enforce source ownership, byte integrity
+    and a second source check. The caller then rechecks publication eligibility.
+    """
+
+    def __init__(self, application):
+        self.application = application
+
+    def read(self, authorization):
+        from services.resume_publication_service import PublicationUnavailableError
+        try:
+            owner = authorization["owner_user_key"]
+            if authorization.get("authorized") is not True or type(owner) is not str or not owner:
+                raise ValueError("publication authority required")
+            if authorization["source_kind"] == "owner_photo":
+                opened = self.application.open_photo_preview(owner_id=owner, source_id=authorization["source_key"])
+            elif authorization["source_kind"] == "generated_illustration":
+                opened = self.application.open_library_thumbnail(owner_id=owner,
+                    asset_id=authorization["source_key"], asset_version=authorization["asset_version"],
+                    slot=authorization["slot"])
+            else:
+                raise ValueError("invalid media kind")
+            if not opened:
+                raise ValueError("media changed")
+            data = opened["stream"].read()
+            if len(data) != opened["byte_length"]:
+                raise ValueError("media changed")
+            return {"data": data, "content_type": opened["content_type"]}
+        except Exception as error:
+            raise PublicationUnavailableError("Resume media storage is unavailable.") from error
 
 
 class OwnerMediaPort:
@@ -257,17 +371,38 @@ def build_owner_review_candidate(
     payload: dict | None = None,
     placements: tuple[MediaPlacement, ...] = (),
     media_versions: tuple[MediaVersion, ...] = (),
+    media_states=None,
     sources: tuple[SourceState, ...] = (),
+    profile_identity=None,
+    draft_items=(),
+    story_entry_key=None,
 ):
     """Build an owner review candidate from durable list/get rows. Review does not write."""
 
     payload = payload or {}
     choices = payload.get("entries") or payload.get("selections") or []
     choice_map = {}
-    if isinstance(choices, list):
-        for item in choices:
-            if isinstance(item, dict) and item.get("entry_key"):
-                choice_map[str(item["entry_key"])] = item
+    if type(choices) is not list:
+        raise ContractError("entry selections must be a list")
+    for item in choices:
+        if type(item) is not dict or type(item.get("entry_key")) is not str:
+            raise ContractError("invalid entry selection")
+        if item["entry_key"] in choice_map:
+            raise ContractError("duplicate entry selection")
+        for flag in ("resume_display", "display", "visitor_ai"):
+            if flag in item and type(item[flag]) is not bool:
+                raise ContractError("permissions must be explicit booleans")
+        choice_map[item["entry_key"]] = item
+    if set(choice_map) - {row["entry_key"] for row in entries}:
+        raise ContractError("entry selection is unavailable")
+    overlays = {item["record_key"]: item for item in draft_items if item.get("has_draft")}
+    workspace_items = {item["record_key"]: item for item in draft_items}
+    if story_entry_key is not None and not any(row["entry_key"] == story_entry_key
+            and row["canonical_type"] == "knowledge" for row in entries):
+        raise ContractError("Story reference is unavailable")
+    if any(item.get("orphaned") or item.get("draft_is_stale") for item in overlays.values()):
+        raise ContractError("stale Resume draft")
+    wording_fields = {key: tuple((item.get("proposed_values") or {}).keys()) for key, item in overlays.items()}
     snapshot = policy_snapshot_from_entries(
         subject_key=owner,
         resume_key=resume_key,
@@ -277,6 +412,8 @@ def build_owner_review_candidate(
         sharing_enabled=sharing_enabled,
         entries=entries,
         sources=sources,
+        wording_fields=wording_fields,
+        wording_values={key: item.get("values") or {} for key, item in workspace_items.items()},
     )
     context = _context_from_authorized_server(
         subject_key=owner,
@@ -297,7 +434,21 @@ def build_owner_review_candidate(
     )
     selections = []
     evidence = []
+    draft_bases = []
     for state in snapshot.entries:
+        overlay = overlays.get(state.ref.entry_key)
+        deltas = []
+        canonical = workspace_items.get(state.ref.entry_key)
+        if canonical is not None:
+            draft_bases.append(DraftEntryBase(state.ref, canonical["content_token"]))
+        if overlay:
+            if (overlay.get("draft_base_content_token") != overlay.get("content_token")
+                    or overlay.get("draft_base_access_revision") != state.ref.access_revision):
+                raise ContractError("stale Resume draft")
+            before = {item.field: item.value for item in state.wording}
+            for name, value in (overlay.get("proposed_values") or {}).items():
+                if value != before.get(name):
+                    deltas.append(EditorialDelta(name, before.get(name), value))
         choice = choice_map.get(state.ref.entry_key)
         if choice:
             display = bool(choice.get("resume_display", choice.get("display", state.display_allowed)))
@@ -308,9 +459,9 @@ def build_owner_review_candidate(
         expand_display = display and not state.display_allowed
         expand_visitor_ai = visitor_ai and not state.visitor_ai_allowed
         selections.append(
-            EntrySelection(state.ref, display, visitor_ai, expand_display, expand_visitor_ai)
+            EntrySelection(state.ref, display, visitor_ai, expand_display, expand_visitor_ai, tuple(deltas))
         )
-        if expand_visitor_ai:
+        if visitor_ai:
             evidence.append(_neutral_evidence(owner, state.ref, state.wording))
     candidate = CandidateInput(
         context,
@@ -318,10 +469,12 @@ def build_owner_review_candidate(
         tuple(selections),
         placements,
         review_evidence=tuple(evidence),
+        profile_identity=profile_identity,
+        draft_bases=tuple(draft_bases),
+        story_entry_key=story_entry_key,
     )
-    media_states = tuple(
-        MediaState(item, 1800, 600, True, True) for item in media_versions
-    )
+    if media_states is None:
+        media_states = tuple(MediaState(item, 1800, 600, True, True) for item in media_versions)
     media = MediaSnapshot(ReadState.CURRENT, versions, media_states)
     policy = PolicySnapshot(
         ReadState.CURRENT, versions, sharing_enabled, snapshot.entries, sources

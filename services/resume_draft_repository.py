@@ -14,6 +14,7 @@ from typing import Any, Protocol
 from uuid import UUID
 
 from services.database_service import DatabaseServiceError, database_service
+from services.knowledge_service import KnowledgeService, KnowledgeServiceError
 from services.entry_policy_repository import (
     EntryPolicyStoreUnavailable,
     SqlEntryPolicyRepository,
@@ -59,7 +60,7 @@ def _as_key(value: object) -> str | None:
 
 
 def empty_draft_snapshot() -> dict[str, Any]:
-    return {"draft_version": 0, "base_publication_version": None, "items": {}, "receipts": {}}
+    return {"draft_version": 0, "base_publication_version": None, "story_entry_key": None, "items": {}, "receipts": {}}
 
 
 class ResumeDraftStoreUnavailable(RuntimeError):
@@ -217,6 +218,11 @@ class SqlResumeDraftRepository:
             header = header_rows[0]
             snapshot["draft_version"] = int(header.get("draft_version") or 0)
             snapshot["base_publication_version"] = header.get("base_publication_version")
+            selected_story = header.get("story_entry_key")
+            normalized_story = _as_key(selected_story)
+            if selected_story is not None and normalized_story is None:
+                raise ResumeDraftStoreUnavailable("Resume Story reference is unavailable.")
+            snapshot["story_entry_key"] = normalized_story
             receipts = header.get("command_receipts_json") or []
             if isinstance(receipts, str):
                 try:
@@ -408,9 +414,10 @@ class LivingResumeCanonicalCatalog:
 
     persistence_label = "living_resume_editor_sql"
 
-    def __init__(self, editor=None, policy_repository=None) -> None:
+    def __init__(self, editor=None, policy_repository=None, knowledge=None) -> None:
         self._editor: LivingResumeEditorService = editor or living_resume_editor_service
         self._policy = policy_repository
+        self._knowledge = knowledge or KnowledgeService()
 
     def _policy_index(self, owner_user_key: str) -> dict[str, dict[str, Any]]:
         if self._policy is None:
@@ -496,10 +503,45 @@ class LivingResumeCanonicalCatalog:
         return items
 
     def list_items(self, owner_user_key: str) -> list[dict[str, Any]]:
-        return self._editor_items(owner_user_key)
+        items = self._editor_items(owner_user_key)
+        policy = self._policy_index(owner_user_key)
+        try:
+            listed = self._knowledge.list_knowledge_items_for_owner(owner_user_key)
+            # Refuse an incomplete source snapshot; do not silently publish a
+            # subset when the existing knowledge list reaches its bounded cap.
+            if listed.total_count != len(listed.items):
+                raise CanonicalReadUnavailable("Personal entries are unavailable.")
+            for summary in listed.items:
+                if summary["classification"] != "personal" or summary["status"] != "confirmed":
+                    continue
+                row = self._knowledge.get_knowledge_item_for_owner(owner_user_key, summary["item_key"])
+                if (row["classification"] != "personal" or row["status"] != "confirmed"
+                        or row["confirmed_version"] != row["current_version"]):
+                    continue
+                access = policy.get(row["item_key"])
+                if access and (access.get("lifecycle") != "active" or access.get("canonical_type") != "knowledge"):
+                    continue
+                items.append({
+                    "record_key": row["item_key"], "record_type": "knowledge",
+                    "content_token": row["version_token"],
+                    "content_version": access.get("content_version") if access else None,
+                    "access_revision": access["access_revision"] if access else 0,
+                    "editable": bool(access), "blocked_reason": None if access else "select_story_first",
+                    "save_mode": "draft_overlay",
+                    "values": {"title": row["title"], "wording": row["approved_wording"], "classification": "personal"},
+                    "resume_display": bool(access and access.get("resume_display")),
+                    "visitor_ai": bool(access and access.get("visitor_ai")),
+                    "private_assistance_excluded": bool(access and access.get("private_assistance_excluded")),
+                    # An unregistered record can be explicitly selected. Only
+                    # the locked bind command may create its private policy row.
+                    "publication_eligible": True,
+                })
+        except (KnowledgeServiceError, DatabaseServiceError, ValueError) as error:
+            raise CanonicalReadUnavailable("Personal entries are unavailable.") from error
+        return items
 
     def get_item(self, owner_user_key: str, record_key: str) -> dict[str, Any] | None:
-        for item in self._editor_items(owner_user_key):
+        for item in self.list_items(owner_user_key):
             if item["record_key"] == record_key:
                 return item
         return None

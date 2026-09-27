@@ -115,3 +115,12 @@
   .profile__opening,.profile__empty { border: 1px solid CanvasText; box-shadow: none; }
   .profile__nav a[aria-current="page"] { border-bottom: 3px solid Highlight; box-shadow: none; }
 }
+/* Narrow MVP1 introduction uses the shared shell and existing Profile palette. */
+.mvp1-profile { max-width: 58rem; margin-inline: auto; padding: clamp(1rem, 4vw, 3rem); }
+.mvp1-profile form { display: grid; gap: .65rem; max-width: 42rem; }
+.mvp1-profile input, .mvp1-profile textarea { box-sizing: border-box; width: 100%; min-width: 0; padding: .7rem; font: inherit; color: #172b29; background: #fff; border: 1px solid #70817b; border-radius: .35rem; }
+.mvp1-profile textarea { min-height: 9rem; resize: vertical; }
+.mvp1-profile__actions { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-block: 1rem; }
+.mvp1-profile button { min-height: 2.75rem; padding: .65rem 1rem; font: inherit; cursor: pointer; }
+.mvp1-profile [id="profile-review-panel"] { margin-block: 1.5rem; padding: 1.2rem; border: 1px solid #70817b; border-radius: .5rem; background: #fff; }
+.mvp1-profile p, .mvp1-profile h1 { overflow-wrap: anywhere; white-space: pre-line; }

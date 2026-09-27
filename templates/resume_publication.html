@@ -14,25 +14,117 @@
 {% endblock %}
 
 {% block content %}
+{% macro resume_date(value, precision) -%}
+{%- if value and precision != 'unknown' -%}
+{{- 'About ' if precision == 'approximate' else '' -}}{{- value[:4] if precision == 'year' else (value[:7] if precision == 'month' else value) -}}
+{%- endif -%}
+{%- endmacro %}
+
+{% macro resume_entry(item) %}
+{% set words = item.wording %}
+<article class="resume-publication__entry">
+    <h3>{{ words.role_title or words.title or words.name or words.skill_name or words.credential_name or words.degree_name or words.institution_name or ('Achievement' if words.wording else 'Shared information') }}</h3>
+    {% if words.employer_name or words.institution_name or words.issuer or words.issuer_name %}<p class="resume-publication__organization">{{ words.employer_name or words.institution_name or words.issuer or words.issuer_name }}</p>{% endif %}
+    {% if words.date_precision != 'unknown' and (words.start_date or words.end_date or words.issue_date) %}<p class="resume-publication__dates">{{ resume_date(words.start_date or words.issue_date, words.date_precision) }}{% if words.current_role %} – Present{% elif words.end_date %}{% if words.start_date or words.issue_date %} – {% endif %}{{ resume_date(words.end_date, words.date_precision) }}{% endif %}</p>{% endif %}
+    {% if words.education_status %}<p class="resume-publication__education-status">{{ {'planned': 'Planned', 'in_progress': 'In progress', 'completed': 'Completed', 'incomplete': 'Incomplete', 'withdrawn': 'Withdrawn'}.get(words.education_status, words.education_status | replace('_', ' ') | capitalize) }}</p>{% endif %}
+    {% if words.location_text %}<p>{{ words.location_text }}</p>{% endif %}
+    {% if words.degree_name or words.field_of_study %}<p>{{ words.degree_name or '' }}{% if words.degree_name and words.field_of_study %} · {% endif %}{{ words.field_of_study or '' }}</p>{% endif %}
+    {% if words.summary or words.skill_summary or words.wording %}<p>{{ words.summary or words.skill_summary or words.wording }}</p>{% endif %}
+</article>
+{% endmacro %}
+
+{% macro resume_media(slot) %}
+{% set media = public_publication.media.get(slot) %}
+{% if media %}
+<figure class="resume-publication__media">
+    {% set crop = media.crop %}
+    <div class="resume-publication__crop resume-publication__crop--{{ slot }}">
+    <img src="{{ url_for('profile_resume_media', profile_slug=profile_slug, slot=slot, revision=public_publication.publication_revision) }}" alt="{{ '' if media.decorative else media.alt_text }}" loading="lazy"{% if crop and crop.width > 0 and crop.height > 0 %} style="width: {{ 100 / crop.width }}%; height: {{ 100 / crop.height }}%; left: {{ -100 * crop.x / crop.width }}%; top: {{ -100 * crop.y / crop.height }}%;"{% endif %}>
+    </div>
+    {% if media.caption or media.provenance_label %}<figcaption>{% if media.caption %}{{ media.caption }}{% endif %}{% if media.provenance_label %}<span>{{ media.provenance_label }}</span>{% endif %}</figcaption>{% endif %}
+</figure>
+{% endif %}
+{% endmacro %}
+
+{% macro ai_panel(preview) %}
+<dialog open class="visitor-ai" id="visitor-ai-panel" aria-labelledby="visitor-ai-title"
+    data-question-url="{{ url_for('resume_publication.preview_ai_question') if preview else url_for('resume_publication.guest_ai_question', slug=profile_slug) }}"
+    {% if preview %}data-choices-url="{{ url_for('resume_publication.preview_ai_sources') }}"{% endif %}>
+    <header class="visitor-ai__header">
+        <p class="visitor-ai__eyebrow">{{ 'Private visitor preview' if preview else 'A Resume you can question' }}</p>
+        <button type="button" id="visitor-ai-close" class="visitor-ai__close" aria-label="{{ 'Close preview' if preview else 'Close questions' }}">Close</button>
+    </header>
+    <h2 id="visitor-ai-title">{{ visitor_ai_heading }}</h2>
+    <p class="visitor-ai__intro">{{ 'Try questions using your saved draft and the information you select below.' if preview else 'Answers use only information this member has permitted this AI to use.' }}</p>
+    {% if preview %}
+    <p class="visitor-ai__private">Only you can see this preview. Nothing is published.</p>
+    <details class="visitor-ai__choices">
+        <summary>Review what your AI can use</summary>
+        <p>These choices apply only to this preview. They do not change your saved permissions.</p>
+        <fieldset id="visitor-ai-choices"><legend>Saved information for this preview</legend></fieldset>
+        <button type="button" class="visitor-ai__secondary" id="visitor-ai-refresh">Refresh choices</button>
+    </details>
+    {% endif %}
+    <div id="visitor-ai-answer" class="visitor-ai__answer"></div>
+    <form id="visitor-ai-form">
+        <label for="visitor-ai-question">Your question</label>
+        <textarea id="visitor-ai-question" name="question" rows="3" placeholder="Ask about experience, skills or achievements…" required></textarea>
+        <button type="submit" class="visitor-ai__ask" id="visitor-ai-ask" disabled>Ask</button>
+    </form>
+    <p id="visitor-ai-status" role="status" aria-live="polite" class="visitor-ai__status"></p>
+    <noscript><p>Turn on JavaScript to ask questions. You can still read the shared Resume.</p></noscript>
+    {% if preview %}<a class="visitor-ai__review" href="#resume-publication-review">Review sharing</a>{% endif %}
+</dialog>
+{% endmacro %}
+
 {% if is_public_reader %}
 <section class="owner-app resume-publication resume-publication--public{% if visitor_ai_enabled %} resume-publication--with-ai{% endif %}" aria-labelledby="resume-publication-title">
+    {% set entries = (public_publication.display or {}).values() | list %}
+    {% set stories = entries | selectattr('presentation_section', 'equalto', 'story') | list %}
+    {% set strengths = entries | selectattr('canonical_type', 'equalto', 'skill') | list %}
+    {% set experience = entries | rejectattr('presentation_section', 'equalto', 'story') | rejectattr('canonical_type', 'equalto', 'skill') | list %}
     <div class="resume-publication__layout">
+    <nav class="resume-publication__sections" aria-label="Resume sections">
+        <a href="#resume-publication-title" aria-current="location">Overview</a>
+        {% if stories %}<a href="#resume-story">My Story</a>{% endif %}
+        {% if experience %}<a href="#resume-experience">Experience</a>{% endif %}
+        {% if strengths %}<a href="#resume-strengths">Strengths</a>{% endif %}
+    </nav>
     <div class="owner-app__panel resume-publication__panel">
         <header class="resume-publication__intro">
             <p class="owner-app__eyebrow">Resume</p>
-            <h1 id="resume-publication-title">Published Resume</h1>
-            <p>Explore the experience this member has chosen to share.</p>
+            <h1 id="resume-publication-title">{{ public_publication.public_identity.display_name if public_publication.public_identity else 'Published Resume' }}</h1>
+            {% if public_publication.public_identity %}
+            <p class="resume-publication__headline">{{ public_publication.public_identity.headline }}</p>
+            {% if public_publication.public_identity.location %}<p>{{ public_publication.public_identity.location }}</p>{% endif %}
+            {% endif %}
+            {% if not public_publication.public_identity %}<p>Explore the experience this member has chosen to share.</p>{% endif %}
             {% if visitor_ai_enabled %}<button class="visitor-ai__open" id="visitor-ai-open" type="button" aria-controls="visitor-ai-panel">{{ visitor_ai_heading }}</button>{% endif %}
         </header>
         <div class="resume-publication__guest" data-publication-revision="{{ public_publication.publication_revision }}">
-            {% for entry_key, item in (public_publication.display or {}).items() %}
-            <article class="resume-publication__entry">
-                <h2>{{ item.wording.role_title or item.wording.title or item.wording.name or 'Entry' }}</h2>
-                <p>{{ item.wording.summary or item.wording.skill_summary or item.wording.wording or '' }}</p>
-            </article>
-            {% else %}
-            <p>No display entries are currently published.</p>
-            {% endfor %}
+            {% if stories %}
+            <section id="resume-story" class="resume-publication__section resume-publication__story">
+                <h2>My Story</h2>
+                {% for item in stories %}{{ resume_entry(item) }}{% endfor %}
+                {{ resume_media('story_banner') }}
+            </section>
+            {% endif %}
+            {% if experience %}
+            <section id="resume-experience" class="resume-publication__section">
+                <h2>Experience &amp; learning</h2>
+                <div class="resume-publication__experience{% if public_publication.media.experience_support %} resume-publication__experience--illustrated{% endif %}">
+                <div class="resume-publication__timeline">{% for item in experience %}{{ resume_entry(item) }}{% endfor %}</div>
+                {{ resume_media('experience_support') }}
+                </div>
+            </section>
+            {% endif %}
+            {% if strengths %}
+            <section id="resume-strengths" class="resume-publication__section">
+                <h2>Strengths</h2>
+                <div class="resume-publication__strengths">{% for item in strengths %}{{ resume_entry(item) }}{% endfor %}</div>
+            </section>
+            {% endif %}
+            {% if not entries %}<p class="resume-publication__empty">No display entries are currently published.</p>{% endif %}
         </div>
     </div>
     {% if visitor_ai_enabled %}{{ ai_panel(false) }}{% endif %}
@@ -66,34 +158,3 @@
 <script src="{{ url_for('static', filename='js/resume-publication.js') }}" defer></script>
 {% endif %}
 {% endblock %}
-
-{% macro ai_panel(preview) %}
-<dialog open class="visitor-ai" id="visitor-ai-panel" aria-labelledby="visitor-ai-title"
-    data-question-url="{{ url_for('resume_publication.preview_ai_question') if preview else url_for('resume_publication.guest_ai_question', slug=profile_slug) }}"
-    {% if preview %}data-choices-url="{{ url_for('resume_publication.preview_ai_sources') }}"{% endif %}>
-    <header class="visitor-ai__header">
-        <p class="visitor-ai__eyebrow">{{ 'Private visitor preview' if preview else 'A Resume you can question' }}</p>
-        <button type="button" id="visitor-ai-close" class="visitor-ai__close" aria-label="{{ 'Close preview' if preview else 'Close questions' }}">Close</button>
-    </header>
-    <h2 id="visitor-ai-title">{{ visitor_ai_heading }}</h2>
-    <p class="visitor-ai__intro">{{ 'Try questions using the saved information you select below.' if preview else 'Answers use only information this member has permitted this AI to use.' }}</p>
-    {% if preview %}
-    <p class="visitor-ai__private">Only you can see this preview. Nothing is published.</p>
-    <details class="visitor-ai__choices">
-        <summary>Review what your AI can use</summary>
-        <p>These choices apply only to this preview. They do not change your saved permissions.</p>
-        <fieldset id="visitor-ai-choices"><legend>Saved information for this preview</legend></fieldset>
-        <button type="button" class="visitor-ai__secondary" id="visitor-ai-refresh">Refresh choices</button>
-    </details>
-    {% endif %}
-    <div id="visitor-ai-answer" class="visitor-ai__answer"></div>
-    <form id="visitor-ai-form">
-        <label for="visitor-ai-question">Your question</label>
-        <textarea id="visitor-ai-question" name="question" rows="3" placeholder="Ask about experience, skills or achievements…" required></textarea>
-        <button type="submit" class="visitor-ai__ask" id="visitor-ai-ask" disabled>Ask</button>
-    </form>
-    <p id="visitor-ai-status" role="status" aria-live="polite" class="visitor-ai__status"></p>
-    <noscript><p>Turn on JavaScript to ask questions. You can still read the shared Resume.</p></noscript>
-    {% if preview %}<a class="visitor-ai__review" href="#resume-publication-review">Review sharing</a>{% endif %}
-</dialog>
-{% endmacro %}

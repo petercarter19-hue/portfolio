@@ -13,8 +13,16 @@
         and what visitors can learn through your AI.
     </p>
     <p class="owner-app__note" role="note">
+        {% if my_data_sharing_state == 'on' %}
+        Your Resume is currently shared. Corrections and permission changes to shared entries can affect what visitors see or learn through your AI. Display and visitor AI are separate choices.
+        {% elif my_data_sharing_state == 'off' %}
+        Resume sharing is off. Saving information or changing entry permissions does not turn sharing on.
+        {% elif my_data_sharing_state == 'unavailable' %}
+        We cannot confirm your current Resume sharing status. Existing sharing may still be active. Try reloading before changing shared information.
+        {% else %}
         Public effects are not active yet. Your sharing choices are saved for
         the future and nothing is shown publicly or to visitor AI today.
+        {% endif %}
     </p>
 
     <div id="my-data" data-my-data-root
@@ -93,7 +101,7 @@
     <noscript>
         <p>
             My Data needs JavaScript for the composer overlay. Your saved
-            information stays private and unchanged.
+            information and sharing choices remain unchanged.
         </p>
     </noscript>
 </section>

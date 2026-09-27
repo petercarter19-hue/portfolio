@@ -152,7 +152,7 @@ class SharedShellConvergenceTests(unittest.TestCase):
         )
         representations = [_links(html, marker) for marker in markers]
         expected_hrefs = [
-            "/petec/resume#overview",
+            "/app",
             "/the-slate",
             "/interview-studio",
             "/opportunity-slate",
@@ -206,7 +206,7 @@ class SharedShellConvergenceTests(unittest.TestCase):
         _, html = self.render("/app")
         titles = {record["title"] for record in _search_records(html)}
         self.assertTrue(
-            {"My PeerSlate", "Settings", "Pete's Slate", "Interview Studio"}
+            {"My PeerSlate", "Settings", "My PeerSlate", "Interview Studio"}
             <= titles
         )
         for absent in ("Capture", "Ask Pete", "Profile", "Help", "Notification"):
@@ -239,7 +239,7 @@ class SharedShellConvergenceTests(unittest.TestCase):
             html, '<nav class="platform-nojs-navigation"', "</nav>"
         )
         for href in (
-            "/petec/resume#overview",
+            "/app",
             "/the-slate",
             "/interview-studio",
             "/opportunity-slate",

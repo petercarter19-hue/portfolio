@@ -32,6 +32,200 @@ from services.resume_publication_service import (
 )
 from services.resume_publication_validation import validate_candidate
 from tests.test_resume_publication_contracts import fixture
+from tests.mvp1_acceptance_support import SharedMvp1Fixture
+
+
+class IntegratedDraftPublicationTests(unittest.TestCase):
+    def test_story_banner_is_hidden_without_displayed_story_and_restriction_removes_it(self):
+        shared = SharedMvp1Fixture()
+        owner, key = "member-a", str(uuid4())
+        shared.policy.commit(owner, {"type": "create", "request_id": str(uuid4()),
+            "entry_key": key, "canonical_type": "knowledge", "values": {
+                "title": "My Story", "wording": "I enjoy building small useful tools.", "classification": "personal"}})
+        from services.resume_media_repository import MediaPlacement, RequestReceipt, provenance_label_for
+        from services.resume_media_service import centered_slot_crop
+        photo = shared.seed_photo(owner)
+        placement = MediaPlacement("story_banner", "owner_photo", photo.source_id,
+            photo.version, photo.digest, centered_slot_crop(slot="story_banner", width=photo.width, height=photo.height),
+            alt_text="Synthetic test image", provenance_label=provenance_label_for(source_kind="owner_photo"))
+        shared.media.media_repository.commit_draft(owner_id=owner, expected_version=0,
+            placements=(placement,), receipt=RequestReceipt(owner, "add", str(uuid4()), "b" * 64, "{}"))
+        def publish(display):
+            review = shared.publication.review_for_owner(owner, {"entries": [
+                {"entry_key": key, "resume_display": display, "visitor_ai": False}]}).reviewed
+            self.assertIsNotNone(review)
+            shared.publication.commit(owner, {"type": "publish", "request_id": str(uuid4()), "slug": "alice",
+                "profile_identity": None, "reviewed_digest": review.digest,
+                "candidate": shared.publication.publish_candidate(review)})
+        publish(False)
+        self.assertNotIn("story_banner", shared.publication.guest_read(slug="alice")["media"])
+        with self.assertRaises(PublicationDenied):
+            shared.publication.deliver_guest_media(slug="alice", slot="story_banner")
+        # An identical title never implicitly binds personal information.
+        self.assertIsNone(shared.draft.get_workspace(owner)["story_entry_key"])
+        item = shared.canonical.get_item(owner, key)
+        shared.draft.commit(owner, {"type": "bind_story", "request_id": str(uuid4()), "record_key": key,
+            "expected_content_token": item["content_token"], "expected_access_revision": item["access_revision"],
+            "expected_draft_version": shared.draft.get_workspace(owner)["draft_version"]})
+        publish(True)
+        self.assertIn("story_banner", shared.publication.guest_read(slug="alice")["media"])
+        row = shared.policy.list_entries(owner)["entries"][0]
+        shared.policy.commit(owner, {"type": "change_permissions", "request_id": str(uuid4()),
+            "entry_key": key, "expected_access_revision": row["access_revision"],
+            "permissions": {"resume_display": False}})
+        self.assertNotIn("story_banner", shared.publication.guest_read(slug="alice")["media"])
+        with self.assertRaises(PublicationDenied):
+            shared.publication.deliver_guest_media(slug="alice", slot="story_banner")
+
+    def test_real_media_bytes_and_late_restriction_never_release_stale_bytes(self):
+        shared, owner, key, _ = self._saved_edit()
+        from services.resume_media_repository import MediaPlacement, RequestReceipt, provenance_label_for
+        from services.resume_media_service import centered_slot_crop
+        photo = shared.seed_photo(owner)
+        placement = MediaPlacement("experience_support", "owner_photo", photo.source_id,
+            photo.version, photo.digest, centered_slot_crop(slot="experience_support", width=photo.width, height=photo.height),
+            alt_text="Synthetic blue test image", provenance_label=provenance_label_for(source_kind="owner_photo"))
+        shared.media.media_repository.commit_draft(owner_id=owner, expected_version=1,
+            placements=(placement,), receipt=RequestReceipt(owner, "add", str(uuid4()), "b" * 64, "{}"))
+        reviewed = shared.publication.review_for_owner(owner, {"entries": [
+            {"entry_key": key, "resume_display": True, "visitor_ai": False}]}).reviewed
+        shared.publication.commit(owner, {"type": "publish", "request_id": str(uuid4()), "slug": "alice",
+            "profile_identity": None, "reviewed_digest": reviewed.digest,
+            "candidate": shared.publication.publish_candidate(reviewed)})
+        read = shared.publication.deliver_guest_media(slug="alice", slot="experience_support")
+        self.assertEqual(read["status"], 200)
+        self.assertEqual(read["content_type"], "image/png")
+        self.assertTrue(read["body"].startswith(b"\x89PNG"))
+        shared.media_storage.on_open = lambda *args, **kwargs: shared.media_sources.update_owner_photo(
+            owner_id=owner, source_id=photo.source_id, lifecycle="restricted")
+        with self.assertRaises((PublicationDenied, PublicationUnavailableError)):
+            shared.publication.deliver_guest_media(slug="alice", slot="experience_support")
+        self.assertNotIn("experience_support", shared.publication.guest_read(slug="alice")["media"])
+
+    def _saved_edit(self):
+        shared = SharedMvp1Fixture()
+        owner, key = "member-a", str(uuid4())
+        shared.policy.commit(owner, {"type": "create", "request_id": str(uuid4()),
+            "entry_key": key, "canonical_type": "role", "values": {
+                "role_title": "Engineer", "employer_name": "Synthetic Company", "summary": "Original wording."}})
+        item = shared.canonical.get_item(owner, key)
+        shared.draft.commit(owner, {"type": "save_item", "request_id": str(uuid4()),
+            "record_key": key, "record_type": "role", "expected_content_token": item["content_token"],
+            "expected_access_revision": item["access_revision"], "expected_draft_version": 0,
+            "values": {"summary": "Reviewed new wording."}})
+        reviewed = shared.publication.review_for_owner(owner, {"entries": [
+            {"entry_key": key, "resume_display": True, "visitor_ai": True}]}).reviewed
+        self.assertIsNotNone(reviewed)
+        envelope = shared.publication.publish_candidate(reviewed)
+        return shared, owner, key, {"type": "publish", "request_id": str(uuid4()),
+            "slug": "alice", "profile_identity": None,
+            "reviewed_digest": reviewed.digest, "candidate": envelope}
+
+    def test_complete_candidate_needs_no_pending_review_and_commits_only_reviewed_changes(self):
+        shared, owner, key, payload = self._saved_edit()
+        shared.publication._pending_reviews.clear()
+        shared.publication.commit(owner, payload)
+        row = shared.policy.list_entries(owner)["entries"][0]
+        self.assertEqual(row["values"]["summary"], "Reviewed new wording.")
+        self.assertEqual(row["values"]["employer_name"], "Synthetic Company")
+        self.assertTrue(row["resume_display"])
+        self.assertTrue(row["visitor_ai"])
+        self.assertEqual(row["content_version"], 2)
+        self.assertEqual(shared.draft.repository.load_owner(owner)["items"], {})
+        self.assertEqual(shared.publication.guest_read(slug="alice")["display"][key]["wording"]["summary"], "Reviewed new wording.")
+        shared.publication.commit(owner, {"type": "sharing_off", "request_id": str(uuid4())})
+        self.assertTrue(shared.publication.commit(owner, copy.deepcopy(payload))["replayed"])
+        self.assertFalse(shared.publication.owner_preview(owner)["sharing_enabled"])
+        changed = copy.deepcopy(payload)
+        changed["candidate"]["entries"][0]["visitor_ai"] = False
+        with self.assertRaises(PublicationConflictError):
+            shared.publication.commit(owner, changed)
+        self.assertEqual(shared.policy.list_entries(owner)["entries"][0]["content_version"], 2)
+
+    def test_changed_canonical_base_preserves_new_fact_and_private_draft(self):
+        shared, owner, key, payload = self._saved_edit()
+        shared.policy.commit(owner, {"type": "edit", "request_id": str(uuid4()), "entry_key": key,
+            "expected_content_version": 1, "expected_access_revision": 1,
+            "values": {"summary": "New canonical fact.", "role_title": "Engineer", "employer_name": "Synthetic Company"}})
+        with self.assertRaises(PublicationConflictError):
+            shared.publication.commit(owner, payload)
+        self.assertEqual(shared.policy.list_entries(owner)["entries"][0]["values"]["summary"], "New canonical fact.")
+        self.assertIn(key, shared.draft.repository.load_owner(owner)["items"])
+        self.assertIsNone(shared.publication.owner_preview(owner)["current"])
+
+    def test_forged_reviewed_delta_cannot_change_saved_overlay(self):
+        shared, owner, key, payload = self._saved_edit()
+        payload["candidate"]["entries"][0]["deltas"][0]["after"] = "Unreviewed injected wording"
+        with self.assertRaises(PublicationConflictError):
+            shared.publication.commit(owner, payload)
+        self.assertEqual(shared.policy.list_entries(owner)["entries"][0]["values"]["summary"], "Original wording.")
+
+    def test_failed_publication_save_restores_canonical_draft_and_receipt(self):
+        shared, owner, key, payload = self._saved_edit()
+        original_save = shared.publication.repository.save_owner
+        calls = []
+        def fail_once(who, snapshot):
+            calls.append(who)
+            if len(calls) == 1:
+                raise PublicationStoreUnavailable("injected failure")
+            return original_save(who, snapshot)
+        shared.publication.repository.save_owner = fail_once
+        with self.assertRaises(PublicationUnavailableError):
+            shared.publication.commit(owner, payload)
+        self.assertEqual(shared.policy.list_entries(owner)["entries"][0]["values"]["summary"], "Original wording.")
+        self.assertIn(key, shared.draft.repository.load_owner(owner)["items"])
+        self.assertEqual(shared.publication.repository.load_owner(owner)["receipts"], {})
+        shared.publication.commit(owner, payload)
+        self.assertEqual(shared.policy.list_entries(owner)["entries"][0]["content_version"], 2)
+
+    def test_saved_photo_crop_is_reviewed_and_late_source_restriction_blocks_publish(self):
+        shared, owner, key, _ = self._saved_edit()
+        from services.resume_media_repository import MediaPlacement, RequestReceipt, provenance_label_for
+        from services.resume_media_service import centered_slot_crop
+        source_key = str(uuid4())
+        shared.media_sources.seed_owner_photo(owner_id=owner, source_id=source_key,
+            width=1800, height=600, digest="a" * 64)
+        placement = MediaPlacement("experience_support", "owner_photo", source_key, 1, "a" * 64,
+            centered_slot_crop(slot="experience_support", width=1800, height=600), 1, "Synthetic landscape", False,
+            provenance_label_for(source_kind="owner_photo"), None)
+        shared.media.media_repository.commit_draft(owner_id=owner, expected_version=1,
+            placements=(placement,), receipt=RequestReceipt(owner, "add", str(uuid4()), "b" * 64, "{}"))
+        result = shared.publication.review_for_owner(owner, {"entries": [
+            {"entry_key": key, "resume_display": True, "visitor_ai": False}]})
+        self.assertIsNotNone(result.reviewed, result.reason)
+        envelope = shared.publication.publish_candidate(result.reviewed)
+        self.assertEqual(envelope["placements"][0]["crop"], placement.crop.as_dict())
+        command = {"type": "publish", "request_id": str(uuid4()), "slug": "alice",
+            "reviewed_digest": result.reviewed.digest, "candidate": envelope, "profile_identity": None}
+        shared.media_sources.update_owner_photo(owner_id=owner, source_id=source_key, lifecycle="restricted")
+        with self.assertRaises(PublicationUnavailableError):
+            shared.publication.commit(owner, command)
+        self.assertIsNone(shared.publication.owner_preview(owner)["current"])
+        self.assertEqual(shared.draft.repository.load_owner(owner)["draft_version"], 2)
+
+    def test_saved_resume_editorial_delta_is_in_the_publication_review(self):
+        shared = SharedMvp1Fixture()
+        shared.canonical.token_for_version = lambda value: "0x" + format(value, "016x")
+        owner, key = "member-a", str(uuid4())
+        shared.policy.commit(owner, {"type": "create", "request_id": str(uuid4()),
+            "entry_key": key, "canonical_type": "role", "values": {
+                "role_title": "Engineer", "employer_name": "Synthetic Company", "summary": "Original wording."}})
+        row = shared.policy.list_entries(owner)["entries"][0]
+        shared.policy.commit(owner, {"type": "change_permissions", "request_id": str(uuid4()),
+            "entry_key": key, "expected_access_revision": row["access_revision"],
+            "permissions": {"resume_display": True, "visitor_ai": False}})
+        item = shared.canonical.get_item(owner, key)
+        shared.draft.commit(owner, {"type": "save_item", "request_id": str(uuid4()),
+            "record_key": key, "record_type": "role", "expected_content_token": item["content_token"],
+            "expected_access_revision": item["access_revision"], "expected_draft_version": 0,
+            "values": {"summary": "Reviewed new wording."}})
+        reviewed = shared.publication.review_for_owner(owner).reviewed
+        self.assertIsNotNone(reviewed)
+        values = {word.field: word.value for word in reviewed.display.entries[0].wording}
+        self.assertEqual(values["summary"], "Reviewed new wording.")
+        self.assertEqual(reviewed.candidate.draft_bases[0].canonical_token, "0x0000000000000001")
+        self.assertEqual(reviewed.candidate.draft_bases[0].entry.content_revision, "1")
+        self.assertEqual(shared.policy.list_entries(owner)["entries"][0]["values"]["summary"], "Original wording.")
 
 
 def reviewed_for(owner="member-a"):

@@ -17,6 +17,8 @@ BEGIN TRY
      OR NOT EXISTS (SELECT 1 FROM dbo.schema_migrations WHERE migration_id=N'PS-PLAT-002')
      OR NOT EXISTS (SELECT 1 FROM dbo.schema_migrations WHERE migration_id=N'PS-PLAT-005')
      OR NOT EXISTS (SELECT 1 FROM dbo.schema_migrations WHERE migration_id=N'PS-AUTH-001')
+     OR NOT EXISTS (SELECT 1 FROM dbo.schema_migrations WHERE migration_id=N'PS-COMMUNITY-PUBLIC-PILOT-001')
+     OR OBJECT_ID(N'dbo.community_posts', N'U') IS NULL
     THROW 52900, 'PS-PROFILE-002 prerequisites are not applied.', 1;
 
   IF EXISTS (SELECT 1 FROM dbo.schema_migrations WHERE migration_id=N'PS-PROFILE-002')
@@ -300,7 +302,8 @@ BEGIN TRY
     IF @OwnerProfileId IS NULL THROW 52911,''Profile owner unavailable.'',1;
     BEGIN TRANSACTION;
     DECLARE @LockResult int;
-    EXEC @LockResult=sys.sp_getapplock @Resource=CONCAT(N''profile-draft:'',@OwnerProfileId),@LockMode=N''Exclusive'',@LockOwner=N''Transaction'',@LockTimeout=5000;
+    DECLARE @DraftLockResource nvarchar(255)=CONCAT(N''profile-draft:'',@OwnerProfileId);
+    EXEC @LockResult=sys.sp_getapplock @Resource=@DraftLockResource,@LockMode=N''Exclusive'',@LockOwner=N''Transaction'',@LockTimeout=5000;
     IF @LockResult<0 THROW 52917,''Profile draft lock unavailable.'',1;
     DECLARE @DraftId bigint,@CurrentDraftKey nvarchar(128),@CurrentDraftVersion nvarchar(128);
     SELECT @DraftId=profile_draft_id,@CurrentDraftKey=draft_key,@CurrentDraftVersion=draft_version FROM dbo.profile_drafts WITH(UPDLOCK,HOLDLOCK) WHERE owner_profile_id=@OwnerProfileId;
@@ -404,7 +407,8 @@ BEGIN TRY
     IF @OwnerProfileId IS NULL THROW 52914,''Profile owner unavailable.'',1;
     BEGIN TRANSACTION;
     DECLARE @LockResult int;
-    EXEC @LockResult=sys.sp_getapplock @Resource=CONCAT(N''profile-publish:'',@OwnerProfileId,N'':'',@Audience),@LockMode=N''Exclusive'',@LockOwner=N''Transaction'',@LockTimeout=5000;
+    DECLARE @PublishLockResource nvarchar(255)=CONCAT(N''profile-publish:'',@OwnerProfileId,N'':'',@Audience);
+    EXEC @LockResult=sys.sp_getapplock @Resource=@PublishLockResource,@LockMode=N''Exclusive'',@LockOwner=N''Transaction'',@LockTimeout=5000;
     IF @LockResult<0 THROW 52918,''Profile publication lock unavailable.'',1;
     DECLARE @ExistingDigest char(64)=(SELECT request_sha256 FROM dbo.profile_publication_commands WITH(UPDLOCK,HOLDLOCK) WHERE owner_profile_id=@OwnerProfileId AND idempotency_key=@IdempotencyKey);
     IF @ExistingDigest IS NOT NULL

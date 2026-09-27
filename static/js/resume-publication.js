@@ -11,8 +11,85 @@
     const sharingOffButton = document.getElementById("resume-publication-sharing-off-button");
     const reviewUrl = root.getAttribute("data-review-url");
     const commandsUrl = root.getAttribute("data-commands-url");
+    const entriesNode = document.getElementById("resume-publication-entries");
     let reviewedDigest = null;
+    let reviewedIdentity = null;
+    let reviewedCandidate = null;
+    let pendingPublish = null;
     let inFlight = false;
+
+    function choices() {
+        return Array.from(entriesNode.querySelectorAll("[data-entry-key]")).map(function (row) {
+            return { entry_key: row.dataset.entryKey,
+                resume_display: row.querySelector('[data-permission="resume_display"]').checked,
+                visitor_ai: row.querySelector('[data-permission="visitor_ai"]').checked };
+        });
+    }
+
+    function textElement(tag, value, parent) {
+        const node = document.createElement(tag);
+        node.textContent = value == null ? "Not set" : String(value);
+        parent.appendChild(node);
+        return node;
+    }
+
+    function renderEntries(entries) {
+        entriesNode.replaceChildren();
+        entries.forEach(function (entry) {
+            const section = document.createElement("section");
+            section.className = "resume-publication__review-entry";
+            section.dataset.entryKey = entry.entry_key;
+            textElement("h3", entry.title, section);
+            const wording = entry.after || {};
+            Object.keys(wording).forEach(function (field) {
+                if (wording[field] !== null && wording[field] !== "") {
+                    const line = document.createElement("p");
+                    textElement("strong", field.replaceAll("_", " ") + ": ", line);
+                    textElement("span", wording[field], line);
+                    section.appendChild(line);
+                }
+            });
+            if (entry.changes && entry.changes.length) {
+                const changes = document.createElement("details");
+                textElement("summary", "Wording changes to save when you publish", changes);
+                entry.changes.forEach(function (change) {
+                    const line = document.createElement("p");
+                    textElement("strong", change.field.replaceAll("_", " ") + ": ", line);
+                    textElement("del", change.before, line);
+                    textElement("span", " → ", line);
+                    textElement("ins", change.after, line);
+                    changes.appendChild(line);
+                });
+                section.appendChild(changes);
+            }
+            const fieldset = document.createElement("fieldset");
+            textElement("legend", "Choose each use independently", fieldset);
+            [["resume_display", "Show on my Resume"], ["visitor_ai", "Allow visitor AI to use this"]].forEach(function (item) {
+                const label = document.createElement("label");
+                const input = document.createElement("input");
+                input.type = "checkbox";
+                input.dataset.permission = item[0];
+                input.checked = entry[item[0]] === true;
+                input.addEventListener("change", function () {
+                    reviewedDigest = null;
+                    reviewedCandidate = null;
+                    publishButton.disabled = true;
+                    digestNode.hidden = true;
+                    setStatus("Review your updated sharing choices before publishing.");
+                });
+                label.appendChild(input);
+                label.appendChild(document.createTextNode(" " + item[1]));
+                fieldset.appendChild(label);
+            });
+            section.appendChild(fieldset);
+            entriesNode.appendChild(section);
+        });
+        if (!entries.length) textElement("p", "No saved entries yet. Add information in your Resume or My Data.", entriesNode);
+    }
+
+    function lockChoices(locked) {
+        entriesNode.querySelectorAll("input").forEach(function (input) { input.disabled = locked; });
+    }
 
     function setStatus(message, kind) {
         status.textContent = message;
@@ -45,14 +122,16 @@
     }
 
     reviewButton.addEventListener("click", async function () {
-        if (inFlight) {
+        if (inFlight || pendingPublish) {
             return;
         }
         inFlight = true;
         publishButton.disabled = true;
+        lockChoices(true);
         setStatus("Reviewing current facts. This does not publish.", "ok");
         try {
-            const result = await send(reviewUrl, {});
+            const selected = choices();
+            const result = await send(reviewUrl, selected.length ? {entries: selected} : {});
             if (!result.ok || !result.payload.digest) {
                 reviewedDigest = null;
                 digestNode.hidden = true;
@@ -60,8 +139,12 @@
                 return;
             }
             reviewedDigest = result.payload.digest;
+            reviewedIdentity = result.payload.profile_identity || null;
+            reviewedCandidate = result.payload.candidate;
+            renderEntries(result.payload.entries || []);
             digestNode.hidden = false;
             digestNode.textContent =
+                (result.payload.identity_display_name ? "Name: " + result.payload.identity_display_name + ". " : "No public name selected. ") +
                 String(result.payload.display_count || 0) + " entries shown on your Resume. " +
                 String(result.payload.visitor_ai_count || 0) + " entries available to visitor AI.";
             publishButton.disabled = false;
@@ -69,8 +152,12 @@
                 "Your information and sharing choices are ready to review. Publish when you are ready to share them.",
                 "ok"
             );
+        } catch (error) {
+            reviewedDigest = null;
+            setStatus("Review could not finish. Your saved information is unchanged; try again.", "error");
         } finally {
             inFlight = false;
+            lockChoices(false);
         }
     });
 
@@ -78,25 +165,50 @@
         if (inFlight || !reviewedDigest) {
             return;
         }
-        const slug = (slugInput.value || "").trim();
+        const slug = pendingPublish ? pendingPublish.slug : (slugInput.value || "").trim();
         if (!slug || slug.toLowerCase() === "petec") {
             setStatus("Choose an available public address for your Resume.", "error");
             return;
         }
         inFlight = true;
         try {
-            const result = await send(commandsUrl, {
+            if (!pendingPublish) pendingPublish = {
                 type: "publish",
                 request_id: requestId(),
                 reviewed_digest: reviewedDigest,
+                profile_identity: reviewedIdentity,
+                candidate: reviewedCandidate,
                 slug: slug,
-            });
+            };
+            slugInput.disabled = true;
+            reviewButton.disabled = true;
+            lockChoices(true);
+            const result = await send(commandsUrl, pendingPublish);
             if (!result.ok) {
+                if (result.status >= 400 && result.status < 500 && result.status !== 408 && result.status !== 429) {
+                    pendingPublish = null;
+                    reviewedDigest = null;
+                    publishButton.disabled = true;
+                    slugInput.disabled = false;
+                    reviewButton.disabled = false;
+                    lockChoices(false);
+                }
                 setStatus(result.payload.message || "Publish could not finish.", "error");
                 return;
             }
+            pendingPublish = null;
             publishButton.disabled = true;
-            setStatus("Published. Visitors now see the reviewed current facts.", "ok");
+            slugInput.disabled = false;
+            reviewButton.disabled = false;
+            lockChoices(false);
+            const availability = result.payload.availability || {};
+            setStatus(availability.state !== "current"
+                ? "Publish recorded. The current sharing status could not be checked; refresh to check it."
+                : availability.sharing_enabled
+                    ? "Published. Your Resume is currently shared."
+                    : "Publish recorded. Sharing is currently off.", "ok");
+        } catch (error) {
+            setStatus("The publish response was interrupted. Retry Publish to check the same request safely.", "error");
         } finally {
             inFlight = false;
         }
@@ -154,7 +266,7 @@
         question.focus();
     });
     closer.addEventListener("click", function () { panel.close(); opener.focus(); });
-    panel.addEventListener("close", function () { opener.focus(); });
+    panel.addEventListener("close", function () { if (!panel.open) opener.focus(); });
 
     function message(text, failed) {
         status.textContent = text;

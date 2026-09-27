@@ -436,6 +436,12 @@ app.config.update(
     PEERSLATE_RESUME_PUBLICATION_ENABLED=(
         os.environ.get('PEERSLATE_RESUME_PUBLICATION_ENABLED', 'false').lower() == 'true'
     ),
+    PEERSLATE_MVP1_PROFILE_ENABLED=(
+        os.environ.get('PEERSLATE_MVP1_PROFILE_ENABLED', 'false').lower() == 'true'
+    ),
+    PEERSLATE_MY_DATA_ENABLED=(
+        os.environ.get('PEERSLATE_MY_DATA_ENABLED', 'false').lower() == 'true'
+    ),
     PEERSLATE_MEMBER_VISITOR_AI_ENABLED=(
         os.environ.get('PEERSLATE_MEMBER_VISITOR_AI_ENABLED', 'false').lower() == 'true'
     ),
@@ -973,6 +979,8 @@ app.register_blueprint(resume_intake)
 # no implicit fixture catalog and no publication route in this package.
 app.register_blueprint(resume_media)
 app.register_blueprint(resume_publication)
+from mvp1_profile_routes import mvp1_profile
+app.register_blueprint(mvp1_profile)
 from services.entry_policy_service import entry_policy_service as _entry_policy_service
 from services.resume_media_catalog_repository import SqlResumeCatalogRepository
 from services.resume_publication_repository import SqlResumePublicationRepository
@@ -986,6 +994,16 @@ _resume_publication_service.sql_repository = _publication_sql
 _resume_publication_service.catalog = SqlResumeCatalogRepository()
 _entry_policy_service.publication_service = _resume_publication_service
 _resume_publication_service.policy_service = _entry_policy_service
+from services.resume_draft_service import resume_draft_service as _resume_draft_service
+if app.config['PEERSLATE_RESUME_EDITOR_ENABLED']:
+    _resume_publication_service.draft_service = app.config.get('RESUME_DRAFT_SERVICE') or _resume_draft_service
+_resume_publication_service.require_media_application = app.config['PEERSLATE_RESUME_MEDIA_ENABLED']
+if app.config['PEERSLATE_MVP1_PROFILE_ENABLED']:
+    from services.profile_core_repository import SqlProfileCoreRepository
+    from services.mvp1_profile_binding import Mvp1ProfileBinding
+    from services.database_service import database_service as _profile_database
+    app.config['MVP1_PROFILE_BINDING'] = Mvp1ProfileBinding(SqlProfileCoreRepository(_profile_database))
+    _resume_publication_service.profile_binding = app.config['MVP1_PROFILE_BINDING']
 # F remains off by default. Explicit JSON settings select the existing Foundry
 # adapter and complete-answer support implementation, without acquiring tokens
 # or making HTTP calls at startup. Missing/invalid settings stay unavailable.
@@ -996,6 +1014,9 @@ install_member_visitor_ai(app, database=_visitor_ai_database,
 _media_application = app.config.get("RESUME_MEDIA_SERVICE")
 if _media_application is not None:
     _media_application.publication_service = _resume_publication_service
+    _resume_publication_service.media_application = _media_application
+    from services.resume_publication_adapters import PublishedMediaBytesPort
+    _resume_publication_service.media_bytes_port = PublishedMediaBytesPort(_media_application)
 # PS-COMMUNITY-AUTH-WALL-001: the legacy fixture-backed people_interests_api
 # is never registered. No feature-flag state may resurrect a public or
 # fixture Community surface — flag off means unavailable, not "older feed".
@@ -1138,6 +1159,10 @@ for _resume_publication_endpoint, _resume_publication_limit in RESUME_PUBLICATIO
     app.view_functions[_resume_publication_endpoint] = limiter.limit(_resume_publication_limit)(
         app.view_functions[_resume_publication_endpoint]
     )
+
+app.view_functions['mvp1_profile.owner_command'] = limiter.limit('60 per hour')(
+    app.view_functions['mvp1_profile.owner_command']
+)
 
 # PS-SETTINGS-ACCOUNT-EXPORT-AVAILABILITY-001: the same post-registration
 # wrapper idiom for the account-export surface -- C3's recorded "no rate
@@ -1377,14 +1402,31 @@ def shared_navigation_urls():
         request.path == root or request.path.startswith(root + '/')
         for root in ('/app', '/the-slate', '/opportunity-slate')
     )
+    generic_member_page = (
+        request.endpoint == 'mvp1_profile.public_profile'
+        or (request.endpoint == 'profile_resume'
+            and (request.view_args or {}).get('profile_slug') != 'petec')
+    )
 
     def destination_group(surface, order=()):
         records = navigation_destinations(surface, request.path)
+        if generic_member_page:
+            # A member's public page must not offer the example subject's
+            # Story, Resume or contact as that member's navigation targets.
+            records = [record for record in records if not record['href'].startswith('/petec')]
+        if surface in ('account', 'member_search'):
+            # My PeerSlate is already the generic primary destination. Keep
+            # the combined phone menu and member search free of duplicates.
+            records = [record for record in records if record['key'] != 'workspace']
         if not private_room and surface in ('shell', 'phone', 'public_search'):
             records = [
                 record for record in records
                 if record['key'] not in ('community', 'opportunity')
             ]
+        if not private_room and surface == 'public_search':
+            # Public search indexes public destinations; the protected workspace
+            # remains available through primary navigation and member search.
+            records = [record for record in records if record['key'] != 'slate']
         if order:
             positions = {key: position for position, key in enumerate(order)}
             records.sort(key=lambda item: positions.get(item['key'], len(positions)))
@@ -3220,6 +3262,7 @@ def _render_member_publication(profile_slug):
     """Generic member publication reader. Unknown slugs never fall back to Pete."""
     from services.resume_publication_service import (
         PublicationDenied,
+        PublicationUnavailableError,
         resume_publication_service,
     )
     from services.response_policy import MEMBER_PUBLICATION_CACHE_CONTROL
@@ -3233,13 +3276,16 @@ def _render_member_publication(profile_slug):
                                     if_none_match=None if visitor_ai_enabled() else if_none_match)
     except PublicationDenied:
         abort(404)
+    except PublicationUnavailableError:
+        abort(503)
     if payload.get("read_state") == "not_modified":
         response = app.response_class(status=304)
         response.headers["Cache-Control"] = MEMBER_PUBLICATION_CACHE_CONTROL
         response.headers["ETag"] = f'"{payload["etag"]}"'
         return response
-    response = make_response(
-        render_template(
+    for _attempt in range(2):
+        heading = visitor_ai_heading(profile_slug)
+        response = make_response(render_template(
             "resume_publication.html",
             page_title="Resume",
             member=None,
@@ -3247,9 +3293,24 @@ def _render_member_publication(profile_slug):
             profile_slug=profile_slug,
             is_public_reader=True,
             visitor_ai_enabled=visitor_ai_enabled(),
-            visitor_ai_heading=visitor_ai_heading(profile_slug),
-        )
-    )
+            visitor_ai_heading=heading,
+        ))
+        try:
+            current = service.guest_read(slug=profile_slug)
+        except PublicationDenied:
+            abort(404)
+        except PublicationUnavailableError:
+            abort(503)
+        if (current.get("etag") == payload.get("etag")
+                and current.get("publication_revision") == payload.get("publication_revision")
+                and current.get("public_identity") == payload.get("public_identity")
+                and current.get("display") == payload.get("display")
+                and current.get("media") == payload.get("media")
+                and visitor_ai_heading(profile_slug) == heading):
+            break
+        payload = current
+    else:
+        abort(503)
     response.headers["Cache-Control"] = MEMBER_PUBLICATION_CACHE_CONTROL
     response.headers["ETag"] = f'"{payload["etag"]}"'
     response.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive, noimageindex"
@@ -3263,6 +3324,7 @@ def profile_resume_media(profile_slug, slot):
     """Guest media bytes. Authorize, then storage, then re-authorize before return."""
     from services.resume_publication_service import (
         PublicationDenied,
+        PublicationUnavailableError,
         resume_publication_service,
     )
     from services.response_policy import MEMBER_PUBLICATION_CACHE_CONTROL
@@ -3289,6 +3351,8 @@ def profile_resume_media(profile_slug, slot):
         )
     except PublicationDenied:
         abort(404)
+    except PublicationUnavailableError:
+        abort(503)
     response = app.response_class(
         payload.get("body") or b"",
         status=int(payload.get("status") or 200),

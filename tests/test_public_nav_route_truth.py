@@ -81,7 +81,7 @@ class PublicNavigationRouteTruthTests(unittest.TestCase):
         return response.get_data(as_text=True)
 
     def test_every_shell_representation_uses_the_same_promoted_routes(self):
-        expected = ("/petec/resume#overview", "/interview-studio")
+        expected = ("/app", "/interview-studio")
         for path in ("/", "/petec/resume", "/interview-studio"):
             with self.subTest(path=path):
                 html = self.render(path)

@@ -86,6 +86,18 @@ DESTINATIONS = (
         surfaces=("account", "launchpad", "member_search"), return_allowed=True,
     ),
     Destination(
+        "member_profile", "/app/profile", ("mvp1_profile.owner_profile",),
+        label="My Profile", sub="Your introduction and public identity", icon="slate",
+        keys="my profile introduction identity", surfaces=("account", "member_search"),
+        flags=("PEERSLATE_MVP1_PROFILE_ENABLED",), return_allowed=True,
+    ),
+    Destination(
+        "member_resume", "/app/resume", ("resume_draft.get_resume_editor_page",),
+        label="My Resume", sub="Build and review your Resume", icon="slate",
+        keys="my resume edit experience skills", surfaces=("account", "member_search"),
+        flags=("PEERSLATE_RESUME_EDITOR_ENABLED",), return_allowed=True,
+    ),
+    Destination(
         "capture", "/app/capture", ("owner.capture",), return_allowed=True,
     ),
     Destination(
@@ -186,10 +198,11 @@ DESTINATIONS = (
         query_values=_query_values(step=("replace",)),
     ),
     Destination(
-        "slate", "/petec/resume", ("profile_resume",),
-        label="Pete's Slate", sub="Pete Carter's public Overview", icon="slate",
-        keys="pete slate profile overview public", href_suffix="#overview",
+        "slate", "/app", ("auth.owner_workspace",),
+        label="My PeerSlate", sub="Your private starting point", icon="slate",
+        keys="my peerslate resume profile start",
         surfaces=("shell", "phone", "public_search", "member_search"),
+        return_allowed=True,
     ),
     Destination(
         "story", "/petec/my-story", ("my_story",),
@@ -217,9 +230,9 @@ DESTINATIONS = (
     ),
     Destination(
         "resume_download", "/static/files/pete-carter-resume.pdf", ("static",),
-        label="Download résumé", sub="One-page PDF",
+        label="Example résumé PDF", sub="Pete Carter's example PDF",
         keys="download resume résumé pdf file print ats",
-        surfaces=("public_search",),
+        surfaces=(),
     ),
     Destination(
         "why", "/peerslate", ("peerslate_home",),
@@ -329,8 +342,6 @@ def available_prefixes():
 
 
 def _is_current_destination(destination, current_path):
-    if destination.key == "slate":
-        return current_path == "/petec" or current_path.startswith("/petec/")
     if destination.key == "community":
         return current_path == "/the-slate" or current_path.startswith("/the-slate/")
     if destination.key == "interview":

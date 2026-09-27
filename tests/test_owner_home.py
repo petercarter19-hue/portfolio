@@ -144,8 +144,8 @@ class OwnerHomeRetirementTests(unittest.TestCase):
 
     def test_account_navigation_uses_truthful_temporary_name(self):
         body = self.client.get("/app").get_data(as_text=True)
-        self.assertIn('href="/app">My PeerSlate</a>', body)
-        self.assertNotIn('href="/app">My Slate</a>', body)
+        self.assertRegex(body, r'<a\b[^>]*href="/app"[^>]*>\s*My PeerSlate\s*</a>')
+        self.assertNotRegex(body, r'<a\b[^>]*href="/app"[^>]*>\s*My Slate\s*</a>')
 
 
 if __name__ == "__main__":

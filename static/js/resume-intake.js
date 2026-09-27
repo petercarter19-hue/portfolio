@@ -48,6 +48,8 @@
     var textarea = document.getElementById('resume-intake-text');
     var fileInput = document.getElementById('resume-intake-file');
     var micButton = document.getElementById('resume-intake-mic');
+    var cancelRecordingButton = document.getElementById('resume-intake-cancel-recording');
+    var recordingGeneration = 0;
     var addButton = document.getElementById('resume-intake-add');
     var composer = document.getElementById('resume-intake-composer');
     var receiptBox = document.getElementById('resume-intake-receipt');
@@ -393,7 +395,8 @@
                 saved: 'saved privately',
                 unresolved: 'captured, needs your review',
                 pending: 'processing claim pending \u00b7 still unsent',
-                failed: 'could not be read \u00b7 still unsent'
+                failed: 'could not be read \u00b7 still unsent',
+                cancelled: 'transcription cancelled; any uploaded audio stays private'
             }[row.status] || row.status;
             item.appendChild(document.createTextNode(' ' + row.label + ' \u00b7 ' + state));
             if (row.message) {
@@ -467,7 +470,7 @@
             proposalList.appendChild(empty);
             return;
         }
-        proposals.forEach(function (proposal) {
+        proposals.forEach(function (proposal, proposalIndex) {
             var item = document.createElement('li');
             var quote = document.createElement('p');
             quote.className = 'resume-intake__proposal-quote';
@@ -495,6 +498,8 @@
                 var typeLabel = document.createElement('label');
                 typeLabel.textContent = 'Save this as';
                 typeField = document.createElement('select');
+                typeField.id = 'resume-proposal-' + proposalIndex + '-type';
+                typeLabel.htmlFor = typeField.id;
                 typeField.setAttribute('data-proposal-type', '');
                 ['role', 'skill', 'education', 'credential', 'accomplishment'].forEach(function (value) {
                     var option = document.createElement('option');
@@ -513,6 +518,8 @@
                 var wordingLabel = document.createElement('label');
                 wordingLabel.textContent = 'Your wording';
                 wordingField = document.createElement('input');
+                wordingField.id = 'resume-proposal-' + proposalIndex + '-wording';
+                wordingLabel.htmlFor = wordingField.id;
                 wordingField.type = 'text';
                 wordingField.setAttribute('data-proposal-wording', '');
                 var proposed = proposal.proposed_values || {};
@@ -535,6 +542,8 @@
                     field.value = value || '';
                     field.maxLength = 300;
                     field.setAttribute(attribute, '');
+                    field.id = 'resume-proposal-' + proposalIndex + '-' + attribute;
+                    label.htmlFor = field.id;
                     wrap.appendChild(label);
                     wrap.appendChild(field);
                     item.appendChild(wrap);
@@ -554,6 +563,8 @@
                     label.textContent = labelText;
                     var field = document.createElement('select');
                     field.setAttribute(attribute, '');
+                    field.id = 'resume-proposal-' + proposalIndex + '-' + attribute;
+                    label.htmlFor = field.id;
                     choices.forEach(function (choice) {
                         var option = document.createElement('option');
                         option.value = choice[0];
@@ -580,6 +591,8 @@
                 var parentLabelNode = document.createElement('label');
                 parentLabelNode.textContent = 'Which entry does this belong to? (Impact only)';
                 parentField = document.createElement('select');
+                parentField.id = 'resume-proposal-' + proposalIndex + '-parent';
+                parentLabelNode.htmlFor = parentField.id;
                 parentField.hidden = true;
                 fillParentSelect(parentField);
                 var parentWrap = document.createElement('p');
@@ -783,7 +796,7 @@
                     parent_key: row.parent_key || null
                 };
             }),
-            attachments: attachments.map(function (row) {
+            attachments: attachments.filter(function (row) { return row.status !== 'cancelled'; }).map(function (row) {
                 if (row.kind === 'recording') {
                     return {client_key: row.client_key, kind: 'recording', source_key: row.source_key};
                 }
@@ -946,6 +959,11 @@
             attachments.push(existingRow);
         }
         var recordingRequest = existingRow.recording_request;
+        var generation = recordingGeneration;
+        existingRow.transcriptionGeneration = generation;
+        existingRow.transcribing = true;
+        cancelRecordingButton.hidden = false;
+        cancelRecordingButton.textContent = 'Cancel transcription';
         setStatus('Transcribing\u2026 you can keep typing.', 'ok');
         recordingSignature(blob, clientKey).then(function (signature) {
             if (recordingRequest.signature && recordingRequest.signature !== signature) {
@@ -961,6 +979,12 @@
             form.append('recording', blob, 'recording.webm');
             return send(urls.recording, {method: 'POST', body: form});
         }).then(function (result) {
+            if (generation !== recordingGeneration) {
+                existingRow.status = 'cancelled'; existingRow.retryable = false;
+                renderAttachments(); refreshDraftLabel(); return;
+            }
+            existingRow.transcribing = false;
+            cancelRecordingButton.hidden = true;
             if (result.response.status === 400 || result.response.status === 409) {
                 existingRow.status = 'failed';
                 existingRow.retryable = false;
@@ -996,6 +1020,11 @@
             refreshDraftLabel();
             setStatus('Transcript added to your answer. Nothing is saved until you press Add.', 'ok');
         }).catch(function () {
+            if (generation !== recordingGeneration) {
+                existingRow.status = 'cancelled'; existingRow.retryable = false;
+                renderAttachments(); refreshDraftLabel(); return;
+            }
+            cancelRecordingButton.hidden = true;
             existingRow.status = 'failed';
             existingRow.retryable = true;
             renderAttachments();
@@ -1015,7 +1044,11 @@
             setStatus('Recording is not supported in this browser. You can keep typing.', 'error');
             return;
         }
+        var generation = recordingGeneration;
+        cancelRecordingButton.hidden = false;
+        cancelRecordingButton.textContent = 'Cancel recording';
         navigator.mediaDevices.getUserMedia({audio: true}).then(function (stream) {
+            if (generation !== recordingGeneration) { stream.getTracks().forEach(function (track) { track.stop(); }); return; }
             recordedChunks = [];
             recorder = new MediaRecorder(stream);
             recorder.addEventListener('dataavailable', function (event) {
@@ -1026,8 +1059,10 @@
             recorder.addEventListener('stop', function () {
                 stream.getTracks().forEach(function (track) { track.stop(); });
                 micButton.setAttribute('aria-pressed', 'false');
+                if (generation !== recordingGeneration) return;
                 var blob = new Blob(recordedChunks, {type: recorder.mimeType || 'audio/webm'});
                 if (!blob.size) {
+                    cancelRecordingButton.hidden = true;
                     setStatus('No audio was captured. You can keep typing.', 'error');
                     return;
                 }
@@ -1043,6 +1078,8 @@
             micButton.setAttribute('aria-pressed', 'true');
             setStatus('Recording. Press the microphone again to stop.', 'ok');
         }).catch(function () {
+            if (generation !== recordingGeneration) return;
+            cancelRecordingButton.hidden = true;
             setStatus('Microphone permission was not granted. You can keep typing.', 'error');
         });
     }
@@ -1190,6 +1227,17 @@
         renderAttachments();
         refreshDraftLabel();
         setStatus('Attached. Nothing is uploaded until you press Add.', 'ok');
+    });
+    cancelRecordingButton.addEventListener('click', function () {
+        recordingGeneration += 1;
+        attachments.forEach(function (row) {
+            if (row.transcribing) { row.status = 'cancelled'; row.retryable = false; row.transcribing = false; }
+        });
+        renderAttachments(); refreshDraftLabel();
+        stopRecording();
+        cancelRecordingButton.hidden = true;
+        micButton.setAttribute('aria-pressed', 'false');
+        setStatus('Recording cancelled. Your typed words are kept. Any audio already uploaded stays private; its transcript will not be inserted.', 'ok');
     });
     micButton.addEventListener('click', function () {
         if (recorder && recorder.state === 'recording') {
