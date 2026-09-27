@@ -27,6 +27,21 @@ def _read(*parts):
 
 
 class LeanStartupTests(unittest.TestCase):
+    def test_repository_agent_rules_are_short_and_link_to_current_authority(self):
+        body = _read("AGENTS.md")
+        self.assertLess(len(body.split()), 750)
+        for target in re.findall(r"\]\(([^)#]+)(?:#[^)]+)?\)", body):
+            with self.subTest(target=target):
+                self.assertTrue(os.path.isfile(_path(*target.split("/"))), target)
+        for term in (
+            "delivery_preflight.py", "WORKTREE_LIFECYCLE.md",
+            "AI_MODEL_AND_ROLE_ROUTING.md", "DOCUMENT_CONTROL.md",
+            "OWNER_TECHNICAL_COMPLETION_REPORT.md", "PS-OPS-001",
+            "claim never grants them", "session-health advisory",
+            "non-gating context evidence", "agent-executed acceptance check",
+        ):
+            self.assertIn(term, body)
+
     def test_supported_agents_enter_through_one_start_file(self):
         body = _read("AGENTS.md")
         self.assertIn("MANDATORY PRE-WORK GATE", body)

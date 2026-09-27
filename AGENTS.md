@@ -1,233 +1,83 @@
 # PeerSlate Repository Instructions
 
 > **MANDATORY PRE-WORK GATE**
-> Before a write, migration, deployment, or product decision, open
-> [START_HERE.md](START_HERE.md), fetch authoritative Azure `origin/main`, read
-> [CURRENT_BASELINE.yaml](docs/governance/CURRENT_BASELINE.yaml), and choose a
-> Routine, Bounded, or Protected path. Before an implementation write, read
-> [CURRENT_LANES.json](docs/governance/CURRENT_LANES.json) and this package's
-> claim under `docs/governance/lane_claims/`, then pass:
->
-> `python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write --task-ref <WRITER-REF> --fetch --require-clean`
->
-> A control-only activation, authorize, release-surfaces, transfer, owner
-> reassignment, pause, resume, or close is the
-> narrow exception: run `--intent read` before editing, change and commit only
-> the exact package claim on its dedicated control branch, then run the matching
-> control intent with `--fetch --require-clean` before PR. Do not change an
-> implementation surface in that control commit.
->
-> Required-check repair has one separately reviewed admission mode:
-> `repair-activate` / `repair-merge`, documented in `START_HERE.md`. It requires
-> an exact external owner approval and independent precommit review manifest,
-> a current control lease token, and normal Azure CI and branch policies.
-> It never converts an ordinary failed preflight into permission.
->
-> A failed preflight is a stop, not permission to make another branch or
-> worktree. New work requires Pete's explicit outcome and the one-claim
-> activation flow in `START_HERE.md`.
-> The unrevoked standing bounded Workshop decision recorded in
-> `docs/governance/DECISIONS.md` may satisfy that outcome-selection gate only
-> for a concrete minimum repository follow-up needed to complete its already
-> accepted outcome while the parent claim is active or paused. The child claim
-> must cite the standing reference and failed gate; expiry and excluded
-> production, schema, destructive, identity/privacy-policy, credential,
-> spending, external-operation, and material-visual authorities remain exact.
+> Before a write, migration, deployment, or product decision, follow [START_HERE.md](START_HERE.md):
+> fetch Azure `origin/main`, read [CURRENT_BASELINE.yaml](docs/governance/CURRENT_BASELINE.yaml),
+> [CURRENT_LANES.json](docs/governance/CURRENT_LANES.json), and the package's
+> claim under `docs/governance/lane_claims/`. Choose Routine, Bounded, or
+> Protected. Before implementation edits, pass
+> `python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write --task-ref <YOUR-ACTUAL-REF> --fetch --require-clean`.
+> A failed preflight stops the write. Use the exact control-only transition in
+> START_HERE for activation, authority or scope changes, pause, recovery, and
+> close; run `--intent read` first and do not use an implementation branch
+> to change its claim. New work requires Pete's selected outcome and the
+> one-claim activation flow.
 
-## Authority
+The unrevoked standing bounded Workshop decision in
+[DECISIONS.md](docs/governance/DECISIONS.md) satisfies that selection gate only
+for a concrete minimum repository follow-up to the accepted use-disclosure
+outcome while its parent claim is active or paused. Follow the exact citation,
+expiry, and excluded-authority rules in [START_HERE.md](START_HERE.md).
 
-Follow [DOCUMENT_CONTROL.md](docs/governance/DOCUMENT_CONTROL.md). The current
-Constitution and Roadmap named by `CURRENT_BASELINE.yaml` control durable rules
-and sequence. Historical Bibles, roadmaps, ledgers, status reports, and
-handoffs are evidence, not additional gates.
+## Authority and trust
 
-## Always-on product and trust invariants
+[DOCUMENT_CONTROL.md](docs/governance/DOCUMENT_CONTROL.md) gives the current
+authority order. The Constitution and Roadmap named by CURRENT_BASELINE govern
+durable product rules and sequence. Historical records are evidence, not new
+gates. Read only the package and specialist authority the chosen path triggers.
 
 - Build a reusable multi-user product; Pete is fixture content, never shared
-  product logic.
-- Content is private by default. Derive identity server-side and authorize
-  before returning or mutating protected data.
+  logic. Content is private by default. Derive identity server-side and
+  authorize before protected retrieval or mutation.
 - Keep canonical truth, source evidence, AI proposals, and projections
-  separate. AI proposes; people decide; it never silently saves, publishes,
-  sends, deletes, or makes truth canonical.
-- Preserve one authoritative source per fact, truthful demo/fixture labels,
-  useful AI-unavailable behavior, and WCAG 2.2 AA expectations.
-- Preserve unrelated work, secrets, production data, and user-authored content.
+  distinct. AI proposes; people decide. Never silently save, publish, send,
+  delete, or change canonical truth.
+- Preserve one authoritative source per fact, truthful fixture labels, useful
+  AI-unavailable behavior, WCAG 2.2 AA
+  expectations, unrelated work, secrets, production data, and authored content.
 
 ## Ownership and delivery
 
-- Equivalent authorized assignments use equivalent lifecycle, delivery and
-  review capabilities in Codex, Cursor, Claude and other runtimes. ChatGPT may
-  coordinate the program; that role confers no exclusive technical privilege.
-  Use each caller's actual opaque reference, never another task's identity.
-- Codex callers resolve their native `CODEX_THREAD_ID` as `session:<UUID>`;
-  inherited `CODEX_SESSION_ID` is never caller identity. The legacy
-  `PEERSLATE_CALLER_REF` launcher attestation remains supported, and any
-  disagreement between explicit, native, and registered context identity fails.
-  External runtimes use a package-scoped caller context registered by the
-  current control-lease holder with Pete's exact authorization reference; users
-  do not configure identity environment variables. Registration grants no
-  claim, lease, custody, or repository authority. These values remain operational
-  attestations, not cryptographic boundaries against another process with the
-  same OS privileges. Use receiver acceptance and reviewed owner-revocation
-  recovery when original task continuity is lost; do not depend on a permanently
-  reachable chat or infer revocation from age.
-- After a control custody transition, use the current lease token for preflight
-  and `control-run` for direct control-tree writes. Existing unguarded writers
-  require separately established quiescence before recovery; shared tooling
-  alone cannot stop raw filesystem writes. Preserve history and existing
-  independent precommit and exact-commit merge review.
+- Use your actual opaque caller identity, never another task's reference.
+  Codex uses native `CODEX_THREAD_ID` as `session:<UUID>`; external runtimes
+  follow the registered caller-context procedure. Identity attestation alone
+  grants no claim. [WORKTREE_LIFECYCLE.md](docs/governance/WORKTREE_LIFECYCLE.md)
+  governs custody, the one registered durable worktree, control leases,
+  recovery, and retirement. Do not bypass a refusal with a new checkout,
+  reset, clean, force removal, or ref deletion.
+- One writer owns each mutable surface. There is no numeric writer cap;
+  branch, path, or domain collision stops the affected work. Disjoint claims
+  may proceed.
+  Reviewers are read-only on implementation branches. Work on a short-lived
+  branch from current Azure main, never push directly to main. Use the exact
+  review and merge flow in START_HERE and [AI_WORKFLOW.md](docs/AI_WORKFLOW.md):
+  freeze a candidate, obtain the claim's required self or independent review,
+  and keep any post-review tail to the fixed receipt and evidence paths.
+- The assigned writer may implement through accepted merge unless its claim is
+  `write_only`. A merge is repository truth, not deployment. Production,
+  schema, configuration, enablement, rollback, and destructive actions require
+  their separate exact authority. A claim never grants them.
+- Follow [AI model and role routing](docs/AI_MODEL_AND_ROLE_ROUTING.md) for
+  actual role capabilities. Overall audit manager, package manager, visual
+  creator, architect, writer, reviewer, and release owner are distinct;
+  no role silently inherits another. Coordination grants no exclusive
+  technical privilege. Its [capability-use guidance](docs/AI_MODEL_AND_ROLE_ROUTING.md#capability-use)
+  covers the local session-health advisory: treat it as approximate,
+  non-gating context evidence, not an automatic handoff or authority change.
 
-- One writer owns each mutable surface. Any number of writers may proceed when
-  their branches, claimed paths, and hierarchical domains are disjoint. There
-  is no numeric writer, class, or production-capable-lane cap. A real branch,
-  path, or domain collision stops only the colliding work.
-- Review-only agents and independent reviewers do not consume writer claims and
-  may not write the implementation branch.
-- An assigned implementation writer may implement, validate, correct review
-  findings, open the Azure PR, and merge accepted work unless the claim or Pete
-  explicitly gives a narrower assignment. No separate merge grant is needed.
-- Work on a short-lived branch from current `origin/main`; never push directly
-  to `main`. A merge is not a deployment.
-- Every merge requires the exact review recorded in its claim: writer
-  self-review for Routine/Bounded and independent review for Protected. The
-  reviewed candidate stays immutable; later commits may add only the review
-  receipt and fixed runtime-inert `lane_claims/evidence/<PACKAGE-ID>.md` file.
-- A claim deliberately narrowed to `write_only` cannot merge until Pete's new
-  opaque decision reference is recorded by the generic `authorize` control
-  transition. Normal implementation claims need no separate merge grant.
-- Paused work releases product scope but keeps its branch reserved. Resume uses
-  the exact fetched checkpoint and reruns collisions. Preserve the remote
-  implementation branch through claim close so reviewed squash bytes remain
-  provable.
-- Partial scope release is not an informal edit to a claim. The active writer
-  first establishes the durable `scope-release` freeze described in
-  `WORKTREE_LIFECYCLE.md`; only then may one claim-only control PR remove exact
-  files and/or narrow domains with `--intent release-surfaces`. The freeze
-  survives CI and control-lease release. After the accepted claim transition,
-  ordinary writes remain blocked until `reconcile-main` imports authoritative
-  main. These operations remain disabled until both CURRENT_LANES schema 4 and
-  machine-local registry schema 2 are accepted; schema 3/1 keeps today’s flow.
-- A closed package's fixed evidence file may be amended only through the
-  owner-authorized `evidence-errata` control transition in `START_HERE.md`;
-  the closed claim itself is never reopened or changed.
-- Production deployment, schema mutation, configuration, enablement, rollback,
-  and destructive operations are separate. A repository claim never grants
-  them. Production deployment requires a manually queued exact main SHA and an
-  explicit Pete authorization reference; production operations stay serialized.
-- Follow [AI model and role routing](docs/AI_MODEL_AND_ROLE_ROUTING.md). Overall
-  audit manager, package manager, visual creator, architect, writer, reviewer,
-  and release owner are separate assignments; no role silently inherits another.
-  Its capability-use section governs useful delegation, browser evidence,
-  continuity, goals and scheduling for Codex and Cursor agents. Keep that policy
-  canonical rather than copying it into host-specific rules.
+## Triggered authority
 
-## Local worktree lifecycle
-
-- After the `PS-WORKTREE-LIFECYCLE-001` bootstrap, do not run ad hoc
-  `git worktree add`. Reuse the active package's one registered durable full
-  worktree through `scripts/worktree_lifecycle.py ensure`, or use exact
-  bookkeeping-only `adopt` when its claim branch already has a worktree.
-- A successful `ensure` returns an inline `environment_readiness` observation
-  for the exact durable worktree. Inspect it before the requested operation.
-  It is read-only evidence and cannot grant authority or change successful
-  custody when optional authentication or network evidence is unavailable.
-- Reviewers default to the immutable Azure/pushed diff and create no worktree.
-  They may share the package worktree read-only only when coordinated with its
-  writer and there is no concurrent mutation. Runnable isolation leases the
-  one sparse `_control` singleton through `verify --runtime-required`.
-- Activation, authorize, release-surfaces, transfer, owner reassignment, pause,
-  resume, and close
-  reuse the same
-  mutex- and task-leased `_control` singleton. Successful temporary work is
-  finalized in the same task; a refusal preserves the exact path and reports
-  the blocker.
-- A successful `finalize-task` appends inline usage for an exact session task
-  reference and only explicitly selected child session IDs. Missing local
-  telemetry is reported as unavailable and never changes lifecycle success,
-  merge authority, or a billing claim.
-- Owner reassignment is a fail-closed recovery, not a voluntary transfer. It
-  requires Pete's exact opaque authorization reference, preserves the old
-  branch and old-writer worktrees, creates a distinct absent successor branch
-  at the exact fetched checkpoint, and records `owner_reassignment` provenance
-  without `relinquished`. Preparation requires a complete initialized registry
-  with exactly one exclusively leased `_control` record, no lock or unresolved
-  pending operation, and no malformed/orphaned preparation state. Every
-  pending create, retire, closed-custody-retire, control-repoint, or
-  branch-create journal must have
-  its exact schema and registry-record custody before reconciliation; recovery
-  otherwise leaves the registry unchanged. Preparation reconciles
-  every active target/source durable record against its exact pristine live
-  Git path, task, branch, and checkpoint; and refuses exact or namespace
-  ancestor/descendant branch collisions. It persists one exact completed
-  preparation tuple, including Git's `[new branch]` response and source
-  snapshot. Owner-reassignment preflight re-proves that tuple and source state;
-  post-merge `ensure` consumes it once only while creating a pristine receiver
-  worktree; residue retains the pending journal and proof. Preflight performs a
-  terminal mutex-held registry/lease/pending validation after all claim and
-  remote proofs, and repeats the source, namespace, main, claim, old-branch,
-  and successor proofs before releasing that mutex.
-  A missing, changed, consumed, duplicated, locked, pending, CI-only, or
-  uninitialized proof is a stop. The receiver cannot ensure or write its
-  successor worktree until the one-claim recovery PR merges.
-  Successive legitimate reassignments retain each older source and preparation
-  under its own handoff while binding the new transition only to its current
-  source.
-  A stale active-durable registry HEAD may be reconciled only inside that same
-  preparation transaction, only with a separate bounded source-unavailability
-  evidence reference, and only when the recorded HEAD is an ancestor while the
-  exact claim/task/branch/path, pristine live checkout, local branch, and
-  fetched server tip all prove the requested checkpoint. If guarded successor
-  creation proves no new branch, the registry reconciliation rolls back; any
-  successful proof is retained in the preparation's digest-bound immutable
-  tuple, and its custody record must link bidirectionally to exactly one
-  pending or completed/consuming/consumed preparation state. Any omitted or
-  orphan link, residue, divergence, lease, ambiguity, or race preserves a refusal. A
-  governed `superseded` claim is terminal and is never live ownership.
-- Closed-claim worktree retirement by a successor is a separate Protected
-  operation, not owner impersonation and not ordinary `retire`. Use
-  `retire-closed-custody` only from the exact active cleanup package worktree
-  and writer, with Pete's cleanup authorization reference and a distinct
-  truthful source-unavailability reference for the one target. Fetched main
-  must contain the accepted independent receipt and evidence, every reviewed
-  lifecycle surface must have the reviewed bytes on main and the cleanup
-  branch, and the executing script blob must be that exact main blob. The fetched
-  target claim must be exactly `closed` for the original task and branch; the
-  canonical managed path, live checkout, local branch, and server branch must
-  all equal the explicit expected HEAD. A stale registry HEAD is admitted only
-  when it is equal to or a proven ancestor of that HEAD. The target must have no
-  lease, pending operation, duplicate, nesting, reparse point, path ambiguity,
-  tracked/untracked/ignored residue, behind-server state, or divergence. The
-  transaction preserves the original `task_ref`, records the cleanup caller
-  separately with both evidence references, journals exact before/after
-  records. Present-side recovery re-proves the complete path, repository,
-  branch, live/local HEAD, reparse, nesting, and pristine identity before it
-  may clear a preserved journal; every mismatch retains that journal. Removal
-  uses only ordinary non-force Git worktree removal. Every branch,
-  tag, and ref remains. Any mismatch preserves the target; never reset, clean,
-  force, prune, run garbage collection, or delete a ref to make it pass.
-- On an initialized machine, mutating preflight requires `--task-ref` and the
-  exact registered package or control context. Except for owner reassignment's
-  mandatory local preparation proof, CI and an uninitialized machine do not
-  create a global block; unrelated grandfathered worktrees never do. Run the
-  read-only `worktree_lifecycle.py audit --json` to expose post-policy growth.
-- The controlling safety and recovery contract is
-  [WORKTREE_LIFECYCLE.md](docs/governance/WORKTREE_LIFECYCLE.md). Never work
-  around its refusal with a second checkout, force removal, reset, clean,
-  prune, garbage collection, or branch/tag/ref deletion.
-
-## Triggered authorities
-
-| Work area | Read when it applies |
+| Trigger | Read |
 |---|---|
-| Shared behavior | [PEERSLATE_SITE_RULES.md](docs/PEERSLATE_SITE_RULES.md) and the package. |
-| Material user-facing direction | [OWNER_VISUAL_INTEGRITY_STANDARD.md](docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md) and the locked authority. ChatGPT is the sole creator of materially revised production visual direction; writers implement it. |
-| Story | [OWNER_STORY_COMPOSITION_STANDARD.md](docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md). |
-| Capture/Journal | [PS-JOURNAL-001](docs/initiatives/PS-JOURNAL-001/README.md). |
+| Shared behavior | [Site rules](docs/PEERSLATE_SITE_RULES.md) and the package. |
+| Material visual direction | [Visual integrity standard](docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md) and locked authority. ChatGPT creates materially revised production visual direction; writers implement it after owner acceptance. |
+| Story | [Story composition standard](docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md). |
+| Capture, Moment, or Journal | [PS-JOURNAL-001](docs/initiatives/PS-JOURNAL-001/README.md). |
 | Projects | [PS-PROJECTS-001](docs/initiatives/PS-PROJECTS-001/README.md). |
 | Protected operations | [PS-OPS-001](docs/initiatives/PS-OPS-001/README.md). |
 
-Use [AI_WORKFLOW.md](docs/AI_WORKFLOW.md). For material closeout, report base
-and final SHA, changed paths, verification, review, merge state, deployment
-state, honest limitations, and next action. Never call a fixture live, a merge
-deployed, or an AI proposal accepted without evidence.
+For writable package work, follow the agent-executed acceptance check in
+START_HERE and use the proportional [completion record](docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md).
+Report base/final SHA, changed paths, verification, review, merge and live
+states, limits, and next action. Never call a fixture live, a merge deployed,
+or an AI proposal accepted without evidence.

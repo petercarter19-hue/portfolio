@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-AGENT-WORKFLOW-MINIMAL-001",
+  "candidate_sha": "359956ff5e1a8863182fa268b114fa48b410c854",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a0e4d5-55c7-7e41-93d9-0be5136e584f",
+  "result": "pass",
+  "reviewed_at": "2026-09-27T23:26:00Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-AGENT-WORKFLOW-MINIMAL-001.md"
+}

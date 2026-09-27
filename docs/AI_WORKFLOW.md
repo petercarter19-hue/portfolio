@@ -5,19 +5,16 @@ operations._
 
 ## Default flow
 
-Equivalent assignments keep the same lifecycle across runtimes; coordination
-grants no exclusive privilege. Preserve actual caller identity and reviewed
-acceptance.
-`docs/governance/WORKTREE_LIFECYCLE.md` governs lost-task custody recovery;
-`START_HERE.md` governs required-check repair admission, retaining Azure CI and
-branch policies. Configuration does not prove access.
+Equivalent assignments keep the same lifecycle across runtimes. Preserve
+caller identity and reviewed acceptance. `docs/governance/WORKTREE_LIFECYCLE.md` governs
+custody recovery; `START_HERE.md` governs required-check repair without
+waiving Azure CI or branch policies. Configuration does not prove access.
 
 1. Follow `START_HERE.md`, fetch Azure main, preserve unrelated work, and read
    the current package claim.
-2. Choose Routine, Bounded, or Protected. On an initialized developer machine,
-   reuse the package's one registered durable worktree and pass its exact
-   writer `--task-ref` to mutating preflight. `ensure` includes
-   non-gating read-only readiness.
+2. Choose Routine, Bounded, or Protected. Reuse the registered durable
+   worktree and pass its exact writer `--task-ref` to mutating preflight;
+   `ensure` provides non-gating readiness.
 3. The assigned writer implements, validates, self-reviews the complete diff,
    corrects findings, opens the PR, and merges accepted work.
 4. Add an independent exact-SHA review only when Protected risk, the package,
@@ -26,43 +23,38 @@ branch policies. Configuration does not prove access.
 5. Report merge, deployment, schema, enablement, and live verification as
    separate states.
 
+For writable packages, commit the focused baseline and criteria in the fixed
+evidence file before coding. After review, map each criterion to semantic,
+candidate-bound source proof and invoke
+`python -B scripts/package_acceptance.py check --package <PACKAGE-ID> --candidate <REVIEWED-SHA>`
+before accepting completion. Read-only work uses `--read-only`. This agent-executed check is
+neither delivery preflight nor an OS write gate; see `START_HERE.md`.
+
 Specialist reviews and audits are event-driven; none is required
 unless its delivery path or package specifically triggers it. Use
 [capability routing](AI_MODEL_AND_ROLE_ROUTING.md#capability-use) for model and tool choices.
 
 ## Concurrency and collision rule
 
-Writers may proceed without capacity limits on unique branches and disjoint
-normalized paths and hierarchical domains.
-Review-only tasks claim no mutable surfaces.
+Writers have no capacity cap when branches, paths, and hierarchical domains
+are disjoint. Reviewers claim no mutable surface. Each package keeps its claim,
+receipt, and evidence namespace. Paused work releases product scope but
+reserves its branch; closed work keeps historical control custody. Collisions
+stop only affected packages. Disjoint main movement preserves review; claimed
+surface movement expires it.
 
-Each package permanently owns its claim, receipt and evidence paths; other
-claims cannot reserve them or a broad parent. Paused work releases product
-paths/domains but reserves its branch. Closed work releases implementation
-ownership, not its historical control namespace.
-
-Collisions stop only affected packages. Disjoint main movement preserves review;
-movement across a claimed surface expires it.
-
-An active writer may release exact paths and/or narrow domains only through the
-durable `scope-release` freeze and claim-only `release-surfaces` transition.
-After acceptance, journaled `reconcile-main` imports authoritative main; it
-never permits an unowned conflict or grants technical PASS. Both remain dormant
-until index schema 4 and registry schema 2; schema 3/1 stays compatible.
+Scope reduction requires the durable `scope-release` freeze and claim-only
+`release-surfaces` transition. Journaled `reconcile-main` then imports
+authoritative main without admitting unowned conflicts or granting PASS.
 
 ## Worktree lifecycle
 
-Ad hoc `git worktree add` is unsupported. Active packages reuse one durable
-worktree through `ensure` or exact `adopt`. Reviews create none. Claim
-transitions and necessary runnable verification share the mutex- and
-task-leased sparse `_control` singleton; the same task finalizes temporary
-resources.
-
-The local registry never grants repository authority. Once initialized, it
-blocks only an unregistered mutating workspace; CI, missing registry, and
-unrelated grandfathered worktrees remain non-blocking. `audit` is read-only.
-Retirement uses exact registered paths and ordinary non-force Git removal after
-the checks in `docs/governance/WORKTREE_LIFECYCLE.md`.
+Ad hoc `git worktree add` is unsupported. Use `ensure` or exact `adopt`
+for the durable worktree; reviews create none. Control transitions and runnable
+isolation lease the sparse `_control` singleton and finalize in the same
+task. The local registry guards workspace custody, not repository authority;
+`audit` is read-only. Retirement follows
+`docs/governance/WORKTREE_LIFECYCLE.md` with ordinary non-force Git removal.
 
 ## Delivery paths
 
@@ -145,8 +137,9 @@ owned resolution, makes a normal two-parent merge, and never force-pushes. Main
 drift preserves R as `refresh_required`; fresh reconciliation and exact review
 cover changed combined bytes.
 
-Record outcome, SHAs, changes, tests, review, release states, limits, next
-action, and exact-session `finalize-task` usage or unavailable once. Candidate,
+Record outcome, SHAs, changes, tests, acceptance-check result, review, release
+states, limits, next action, and exact-session `finalize-task` usage or
+unavailable once. Candidate,
 Launch, Operate, Retire, visual acceptance, and full-site audits are
 event-driven. None blocks unrelated Routine or Bounded work.
 

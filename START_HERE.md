@@ -469,6 +469,47 @@ verification are separate truthful states.
 
 ## 7. Finish proportionately
 
+For a writable package, record the focused pre-change command and explicit
+criterion IDs in its single fixed `lane_claims/evidence/<PACKAGE-ID>.md`
+`package-acceptance-json` block, then commit that plan before implementation.
+The criterion text and baseline stay unchanged through the reviewed candidate.
+Use this JSON shape inside the named fenced block (one block per package):
+
+```package-acceptance-json
+{
+  "schema_version": 1, "package": "<PACKAGE-ID>", "plan_sha": null,
+  "baseline": [{"command": "<focused command>", "exit_code": 0,
+                "observation": "<actual pre-change result>"}],
+  "criteria": [{"id": "behavior", "expected": "<specific outcome>",
+                "verification": "<how it will be observed>"}],
+  "candidate_sha": null, "checks": []
+}
+```
+
+After committing the plan, fill `plan_sha` with that commit's SHA in the
+implementation candidate. A failed initial baseline may stay as history when
+a later pre-change entry for the same command proves it resolved. If its latest
+result is still red, a passing automated candidate check must name that exact
+command in `resolves_baseline_command`. Do not rewrite the predefined baseline
+or criteria.
+After exact-SHA review, add each criterion's observed result, exact source,
+and candidate SHA to `checks` as
+`{ "criterion_id": "behavior", "result": "pass", "kind": "automated", "candidate_sha": "<REVIEWED-SHA>", "source_ref": "<exact output/source>", "observed": "<semantic result>" }`.
+For manual/browser checks, add `provenance` with `observer_ref`,
+`captured_at`, and the same exact `source_ref`. A passing process exit
+alone does not establish the criterion's meaning. Commit only the allowed
+receipt/evidence tail and run:
+
+```bash
+python -B scripts/package_acceptance.py check --package <PACKAGE-ID> --candidate <REVIEWED-SHA>
+```
+
+An absent, failed, blocked, unmapped, or stale proof makes this agent-executed
+completion check incomplete. Read-only work can explicitly report
+`python -B scripts/package_acceptance.py check --package <PACKAGE-ID> --read-only`
+as skipped. This helper does not grant a claim, replace
+`delivery_preflight.py`, or enforce OS permissions.
+
 Use `docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md` once. Record outcome,
 base/final SHA, changed paths, tests, review, PR/merge state, deployment state,
 honest limits, next action, and the non-gating `usage_summary` returned by

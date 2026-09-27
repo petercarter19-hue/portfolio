@@ -1,33 +1,33 @@
 # PeerSlate Completion Record
 
-Use this once for each completed slice. It is a release fact record, not a
-second specification. Fill the protected additions only when their trigger
-applied.
+Use once per slice as a release fact record. Add protected fields only when
+triggered.
 
 ## Core record
 
 - Task/package and delivery path: Routine / Bounded / Protected
 - Outcome and member/site effect:
-- Package manager and why (including ChatGPT Work yes/no when relevant):
+- Package manager and why (ChatGPT Work yes/no when relevant):
 - Triggered specialists and return target:
-- Exact root and selected child session IDs, configured model/effort by role,
-  and effective-setting verification (or `unavailable`):
-- Optional observed local usage summary: input tokens, cached-input subset,
-  output tokens, and reasoning-output subset already included in output; or an
-  honest unavailable reason. This is never a live-usage, quota, billing, price,
-  invoice, or merge-gate claim:
-- Observed elapsed time and known waiting, with source pointers. Never infer
-  waiting from silence, timestamp gaps, or token totals:
-- Accepted outcome, rework, and interventions, with bounded completion-evidence
-  or manual source pointers; otherwise `unavailable`:
+- Root/selected child session IDs, configured model/effort, effective settings
+  or `unavailable`:
+- Optional local usage: input, cached-input subset, output, reasoning-output
+  subset already included in output, or unavailable reason. Never a live-usage,
+  quota, billing, price, invoice, or merge-gate claim:
+- Observed elapsed time and known waiting, with sources. Never infer waiting
+  from silence, gaps, or tokens:
+- Accepted outcome, rework, interventions, with evidence pointers or
+  `unavailable`:
 - Branch, base SHA, final SHA, and changed paths:
 - Verification performed and result:
+- Package acceptance: criterion/source mapping and
+  `python -B scripts/package_acceptance.py check --package <PACKAGE-ID> --candidate <REVIEWED-SHA>`
+  result; or explicit `--read-only` skip. Incomplete is not accepted.
 - Release state: local only / PR / merged / pipeline verified / live verified
-- Dependencies and custody: dependency, owner/package, state, exact release
-  condition, and whether it is only a control-window sequence.
+- Dependency/custody: owner, state, release condition, control-window sequence.
 - Delivery state: active / paused / held / scope-release-frozen /
-  scope-sync-required / reconciliation-refresh-required. Hold policy and claim
-  pause are distinct.
+  scope-sync-required / reconciliation-refresh-required. Distinguish hold
+  policy from claim pause.
 - Known limits, deferred work, or owner decision needed:
 - Next action (or `None`):
 
