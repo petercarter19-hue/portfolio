@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "package": "PS-ASK-PETE-LIVE-TELEMETRY-001",
+  "state": "active",
+  "outcome": "Complete the bounded Ask Pete release follow-up with reliable payload-free production failure-stage telemetry. Explicit narrow INFO sink, strict field/value allowlist, fixed phase/reason observations, typed capacity/deadline reasons and focused visibility/privacy/failure regressions. Preserve model, prompt, identity, 20-second deadline, two-call ceiling, no retries and existing grounded answer acceptance. Diagnose future failures without claiming the earlier unavailable response is explained or fixed. Manager and sole production executor session:01a08dfb-7229-75f0-8017-07dd590f1795; retained Astra High writer and Astra Extra High independent reviewer session:01a0c0a4-9342-7163-9052-f16ea0eee843. Deliver repository implementation through independent exact review, CI, accepted merge and close; prepare release/sentinel readiness only. No paid calls, production, schema, identity or shared-foundation changes.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0c0a4-0c58-7b22-8f10-eb7d05bd2775",
+  "branch": "codex/2026-09-28-ask-pete-live-telemetry-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "342a03f8958c1fa00e7b02d46beed5c70bf6b951",
+  "owner_outcome_ref": "pete-ask-pete-bounded-main-20260927-01a0e4de;message:01a0e4de-8d8a-70e1-8fe9-994ff468c28e;session:01a08dfb-7229-75f0-8017-07dd590f1795/telemetry-follow-up-direction:2026-09-28;PS-ASK-PETE-LIVE-FOUNDRY-001/ADAPTER_DIAGNOSTIC_CONCLUSION.md",
+  "surfaces": [
+    "app.py",
+    "services/ask_pete/diagnostics.py",
+    "services/ask_pete/runtime.py",
+    "services/ask_pete/foundry_provider.py",
+    "services/ask_pete/deadline.py",
+    "services/ask_pete/service.py",
+    "tests/ask_pete/test_live_foundry.py",
+    "docs/governance/lane_claims/PS-ASK-PETE-LIVE-TELEMETRY-001.json",
+    "docs/governance/lane_claims/receipts/PS-ASK-PETE-LIVE-TELEMETRY-001.json",
+    "docs/governance/lane_claims/evidence/PS-ASK-PETE-LIVE-TELEMETRY-001.md"
+  ],
+  "domains": ["ask-pete:live-foundry"],
+  "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-ASK-PETE-LIVE-TELEMETRY-001.md"],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
