@@ -1,6 +1,9 @@
 """Actual /api/chat -> catalog -> Foundry -> support -> response, no paid calls."""
 
 import copy
+from contextlib import contextmanager
+import io
+import logging
 from dataclasses import replace
 import json
 import os
@@ -16,10 +19,23 @@ import app as app_module
 from services.ai_foundation.errors import ProviderUnavailableError
 from services.ask_pete import deadline as deadline_module
 from services.ask_pete import runtime
+from services.ask_pete import diagnostics
 from services.ask_pete.deadline import RequestDeadline, run_bounded
 
 ROOT = Path(__file__).resolve().parents[2]
 HEADERS = {"Origin": "http://localhost", "Sec-Fetch-Site": "same-origin"}
+
+
+@contextmanager
+def captured_operations():
+    output = io.StringIO()
+    handler = next(h for h in diagnostics._LOGGER.handlers if getattr(h, "_ask_pete_safe_sink", False))
+    with patch.object(handler, "stream", output):
+        yield output
+
+
+def operation_records(output):
+    return [json.loads(line.split("Ask Pete execution ", 1)[1]) for line in output.getvalue().splitlines()]
 
 
 def recruiter_fixture():
@@ -403,6 +419,222 @@ class LiveFoundryTests(TestCase):
                 release.set()
                 self.assertTrue(finished.wait(1))
         self.assertEqual(transport.calls, [])
+
+
+class TelemetryTests(TestCase):
+    setUp = LiveFoundryTests.setUp
+    tearDown = LiveFoundryTests.tearDown
+
+    def call(self, transport=None):
+        return self.client.post("/api/chat", json={"message": "What is documented?"}, headers=HEADERS)
+
+    def test_real_sink_visible_with_root_warning_and_server_correlation(self):
+        root = logging.getLogger()
+        with patch.object(root, "level", logging.WARNING), \
+             patch.dict(app_module.app.config, DEBUG=False), \
+             patch("services.ask_pete.foundry_provider.UrllibTransport", return_value=Transport()), \
+             patch.object(runtime, "_foundry_token", return_value="secret-token"), captured_operations() as output:
+            response = self.call()
+        records = operation_records(output)
+        request_id = response.get_json()["answer_id"].removesuffix(":answer")
+        self.assertRegex(request_id, r"^ask-pete-[0-9a-f]{32}$")
+        self.assertTrue(all(e.get("request_id") == request_id for e in records))
+        self.assertIn("request", [e["phase"] for e in records])
+        self.assertIn("route", [e["phase"] for e in records])
+        self.assertFalse(diagnostics._LOGGER.propagate)
+        self.assertNotIn("secret-token", output.getvalue())
+        self.assertNotIn("What is documented?", output.getvalue())
+        self.assertNotIn(response.get_json()["summary"], output.getvalue())
+
+    def test_configuration_emits_one_safe_readiness_marker_and_no_duplicate_handler(self):
+        isolated = logging.Logger("isolated-ask-pete")
+        output = io.StringIO()
+        with patch.object(diagnostics, "_LOGGER", isolated), patch("sys.stderr", output):
+            diagnostics.configure_execution_logging()
+            diagnostics.configure_execution_logging()
+        self.assertEqual(len(isolated.handlers), 1)
+        self.assertEqual(operation_records(output), [{"phase": "sink_ready", "outcome": "ready"}])
+
+    def test_log_allowlist_rejects_content_wrong_types_bounds_and_nonfinite_values(self):
+        with captured_operations() as output:
+            for bad in ({"secret": "secret-sentinel"}, ["secret-sentinel"], "secret-sentinel",
+                        True, -1, 10**1000, float("nan"), float("inf")):
+                diagnostics.record_execution({"phase": "request", "stage": bad, "reason": bad,
+                    "request_id": "secret-sentinel", "input_tokens": bad, "http_status": bad,
+                    "question": "secret-sentinel", "error": RuntimeError("secret-sentinel")})
+        self.assertTrue(all(e == {"phase": "request"} for e in operation_records(output)))
+        self.assertNotIn("secret-sentinel", output.getvalue())
+
+    def test_credential_transport_http_and_response_validation_are_distinct(self):
+        cases = [
+            ("credential_unavailable", RuntimeError("secret-sentinel"), None),
+            ("transport_unavailable", None, RuntimeError("secret-sentinel")),
+            ("http_non_success", None, SimpleNamespace(status_code=503)),
+            ("response_validation_unknown", None, SimpleNamespace(status_code=200, json=lambda: {"secret": "secret-sentinel"})),
+        ]
+        for reason, token_error, response in cases:
+            with self.subTest(reason=reason), captured_operations() as output, \
+                 patch.object(runtime, "_foundry_token", side_effect=token_error, return_value="secret-token"), \
+                 patch("services.ask_pete.foundry_provider.UrllibTransport") as transport:
+                if isinstance(response, Exception):
+                    transport.return_value.post.side_effect = response
+                else:
+                    transport.return_value.post.return_value = response
+                result = self.call()
+                self.assertEqual(transport.return_value.post.call_count, 0 if token_error else 1)
+            records = operation_records(output)
+            terminal = next(e for e in records if e["phase"] == "request")
+            self.assertEqual(terminal["reason"], reason)
+            self.assertEqual(result.get_json()["state"], "unavailable")
+            self.assertNotIn("secret", output.getvalue())
+            self.assertNotIn("Traceback", output.getvalue())
+
+    def test_contract_and_support_failures_keep_usage_without_retry(self):
+        for target, expected_calls, reason in (("generation", 1, "answer_contract"), ("support", 2, "support_rejected")):
+            def mutate(phase, answer):
+                if phase == target:
+                    if target == "generation": answer["secret-sentinel"] = "secret-sentinel"
+                    else: answer["summary_supported"] = False
+            transport = Transport(mutate)
+            with captured_operations() as output, \
+                 patch.object(runtime, "_foundry_token", return_value="test-token"), \
+                 patch("services.ask_pete.foundry_provider.UrllibTransport", return_value=transport):
+                response = self.call()
+            self.assertEqual(response.get_json()["state"], "unavailable")
+            self.assertEqual(len(transport.calls), expected_calls)
+            records = operation_records(output)
+            self.assertEqual(next(e for e in records if e["phase"] == "request")["reason"], reason)
+            paid = [e for e in records if e["phase"] in {"generation", "support"}]
+            self.assertTrue(all(e["usage_available"] and e["input_tokens"] == 6400 for e in paid))
+            self.assertNotIn("secret-sentinel", output.getvalue())
+
+    def test_sources_currentness_and_serialization_report_failure_boundary(self):
+        catalog = runtime._catalog(ROOT)
+        for target, reason in (("sources", "source_unavailable"), ("currentness", "currentness_failed"), ("serialization", "serialization_failed")):
+            with self.subTest(target=target), captured_operations() as output, \
+                 patch.object(runtime, "_foundry_token", return_value="test-token"), \
+                 patch("services.ask_pete.foundry_provider.UrllibTransport", return_value=Transport()):
+                if target in {"sources", "currentness"}:
+                    values = [ValueError("secret-sentinel")] if target == "sources" else [catalog, ValueError("secret-sentinel")]
+                    with patch.object(runtime, "_catalog", side_effect=values): result = self.call()
+                else:
+                    with patch("services.ask_pete.service.serialize_public_answer", side_effect=ValueError("secret-sentinel")):
+                        result = self.call()
+            terminal = next(e for e in operation_records(output) if e["phase"] == "request")
+            self.assertEqual((terminal["last_stage"], terminal["reason"]), (target, reason))
+            self.assertEqual(result.get_json()["state"], "unavailable")
+            self.assertNotIn("secret-sentinel", output.getvalue())
+
+    def test_capacity_reason_is_typed_and_makes_no_call(self):
+        slots = BoundedSemaphore(1)
+        slots.acquire()
+        try:
+            with patch.object(deadline_module, "_SLOTS", slots), \
+                 patch.object(runtime, "_foundry_token") as token, captured_operations() as output:
+                result = self.call()
+            token.assert_not_called()
+            terminal = next(e for e in operation_records(output) if e["phase"] == "request")
+            self.assertEqual(terminal["reason"], "capacity_occupied")
+            self.assertEqual(result.get_json()["state"], "unavailable")
+        finally:
+            slots.release()
+
+    def test_deadline_terminal_remains_unknown_with_late_worker_events(self):
+        release, finished = Event(), Event()
+        events = []
+        def blocked_token():
+            release.wait(2)
+            return "secret-token"
+        def sink(event):
+            events.append(dict(event))
+            if event.get("late"): finished.set()
+        try:
+            with patch.object(runtime, "_foundry_token", side_effect=blocked_token), \
+                 patch.object(RequestDeadline, "start", return_value=RequestDeadline(monotonic() + .05)), \
+                 patch.object(app_module, "_record_ask_pete_execution", side_effect=sink), \
+                 patch("services.ask_pete.foundry_provider.UrllibTransport") as transport:
+                response = self.call()
+                terminal = next(e for e in events if e["phase"] == "request")
+                self.assertEqual((terminal["outcome"], terminal["reason"], terminal["last_stage"]),
+                                 ("unavailable", "deadline_exceeded", "credential"))
+                release.set()
+                self.assertTrue(finished.wait(2))
+                transport.return_value.post.assert_not_called()
+            self.assertEqual(response.get_json()["state"], "unavailable")
+            self.assertEqual(len([e for e in events if e["phase"] == "request"]), 1)
+            self.assertTrue(any(e.get("late") and e["phase"] == "generation" and not e["usage_available"] for e in events))
+        finally:
+            release.set()
+
+    def test_stalled_event_sink_is_marked_late_when_terminal_writes_first(self):
+        release, entered, finished = Event(), Event(), Event()
+        events = []
+        def sink(event):
+            if event.get("phase") == "stage" and event.get("stage") == "sources":
+                entered.set()
+                release.wait(2)
+            events.append(dict(event))
+            if event.get("phase") == "sources" and event.get("late"):
+                finished.set()
+        try:
+            with patch.object(RequestDeadline, "start", return_value=RequestDeadline(monotonic() + .05)), \
+                 patch.object(app_module, "_record_ask_pete_execution", side_effect=sink), \
+                 patch("services.ask_pete.foundry_provider.UrllibTransport") as transport:
+                response = self.call()
+                self.assertTrue(entered.is_set())
+                self.assertEqual(response.get_json()["state"], "unavailable")
+                self.assertEqual(events[0]["phase"], "request")
+                self.assertEqual(events[0]["reason"], "deadline_exceeded")
+                release.set()
+                self.assertTrue(finished.wait(2))
+                transport.return_value.post.assert_not_called()
+            worker = [event for event in events if event["phase"] in {"stage", "sources"}]
+            self.assertEqual([event["phase"] for event in worker[:2]], ["stage", "sources"])
+            self.assertTrue(worker[0]["late"])
+            self.assertTrue(worker[1]["late"])
+            self.assertEqual(len([event for event in events if event["phase"] == "request"]), 1)
+        finally:
+            release.set()
+
+    def test_real_logger_formats_late_at_write_after_stalled_info_call(self):
+        release, entered, finished = Event(), Event(), Event()
+        real_info = diagnostics._LOGGER.info
+        def stalled_info(format_string, log_event):
+            event = log_event.event
+            if event.get("phase") == "stage" and event.get("stage") == "sources":
+                entered.set()
+                release.wait(2)
+            result = real_info(format_string, log_event)
+            if event.get("phase") == "sources" and event.get("late"):
+                finished.set()
+            return result
+        try:
+            with captured_operations() as output, \
+                 patch.object(diagnostics._LOGGER, "info", side_effect=stalled_info), \
+                 patch.object(RequestDeadline, "start", return_value=RequestDeadline(monotonic() + .05)), \
+                 patch("services.ask_pete.foundry_provider.UrllibTransport") as transport:
+                response = self.call()
+                self.assertTrue(entered.is_set())
+                self.assertEqual(response.get_json()["state"], "unavailable")
+                self.assertEqual(operation_records(output)[0]["phase"], "request")
+                release.set()
+                self.assertTrue(finished.wait(2))
+                transport.return_value.post.assert_not_called()
+                records = operation_records(output)
+            self.assertTrue(next(event for event in records if event["phase"] == "stage")["late"])
+            self.assertTrue(next(event for event in records if event["phase"] == "sources")["late"])
+            self.assertEqual(len([event for event in records if event["phase"] == "request"]), 1)
+        finally:
+            release.set()
+
+    def test_sink_failure_never_changes_real_route_answer(self):
+        transport = Transport()
+        with patch.object(diagnostics._LOGGER, "info", side_effect=RuntimeError("secret-sentinel")), \
+             patch.object(runtime, "_foundry_token", return_value="test-token"), \
+             patch("services.ask_pete.foundry_provider.UrllibTransport", return_value=transport):
+            response = self.call()
+        self.assertEqual(response.get_json()["state"], "supported")
+        self.assertEqual(len(transport.calls), 2)
 
 
 class DeadlineCapacityTests(TestCase):

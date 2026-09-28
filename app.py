@@ -92,6 +92,8 @@ from services.ai_foundation.errors import AIFoundationError
 from services.ask_pete.errors import AskPeteRequestError, PublicSourceManifestError
 from services.ask_pete.manifest import load_public_source_catalog
 from services.ask_pete.runtime import answer_public_question
+from services.ask_pete.diagnostics import configure_execution_logging, record_execution
+from uuid import uuid4
 from overview_projection_service import (
     STYLE_MANIFESTS,
     OverviewProjectionError,
@@ -3537,30 +3539,21 @@ def profile_resume_ledger(profile_slug):
 # { "response": "Pete is proficient in..." }
 # -------------------------------------------------------
 
+configure_execution_logging()
+
+
 def _record_ask_pete_trace(trace):
     """Log only the payload-free foundation trace contract."""
-    app.logger.info(
-        (
-            'Ask Pete trace request_id=%s purpose=%s outcome=%s '
-            'state=%s sources=%s claims=%s citations=%s provider_called=%s '
-            'duration_ms=%s error_category=%s'
-        ),
-        trace.request_id,
-        trace.purpose,
-        trace.outcome,
-        trace.answer_state,
-        trace.source_count,
-        trace.claim_count,
-        trace.citation_count,
-        trace.provider_called,
-        trace.duration_ms,
-        trace.error_category,
-    )
+    record_execution({"phase": "trace", "request_id": trace.request_id,
+                      "outcome": trace.outcome, "source_count": trace.source_count,
+                      "claim_count": trace.claim_count, "citation_count": trace.citation_count,
+                      "provider_called": trace.provider_called, "duration_ms": trace.duration_ms,
+                      "reason": trace.error_category})
 
 
 def _record_ask_pete_execution(event):
     """Fixed, payload-free phase/usage fields emitted by the Foundry adapter."""
-    app.logger.info('Ask Pete execution %s', json.dumps(event, sort_keys=True))
+    record_execution(event)
 
 
 @app.route('/api/chat', methods=['POST'])
@@ -3603,11 +3596,13 @@ def chat():
 
     foundry_enabled = app.config.get('PEERSLATE_ASK_PETE_FOUNDRY_ENABLED', False)
     if app.config.get('PEERSLATE_ASK_PETE_GROUNDED_ENABLED', False) or foundry_enabled:
+        route_request_id = f"ask-pete-{uuid4().hex}"
         try:
             foundry_options = {
                 'foundry_enabled': True,
                 'foundry_endpoint': app.config.get('PEERSLATE_ASK_PETE_FOUNDRY_ENDPOINT', ''),
                 'execution_sink': _record_ask_pete_execution,
+                'request_id': route_request_id,
             } if foundry_enabled else {}
             result = answer_public_question(
                 root_path=Path(__file__).resolve().parent,
@@ -3628,16 +3623,20 @@ def chat():
                 })
             return response
         except AskPeteRequestError:
+            record_execution({"phase": "route", "request_id": route_request_id,
+                              "outcome": "invalid_request", "reason": "invalid_request"})
             return jsonify({
                 'error': 'Ask Pete could not use that question context.'
             }), 400
         except AIFoundationError:
-            app.logger.exception('Grounded Ask Pete answer failed validation.')
+            record_execution({"phase": "route", "request_id": route_request_id,
+                              "outcome": "failed", "reason": "request_failed"})
             return jsonify({
                 'error': 'Ask Pete could not verify a grounded answer. Please try again.'
             }), 502
         except Exception:
-            app.logger.exception('Unexpected Grounded Ask Pete failure.')
+            record_execution({"phase": "route", "request_id": route_request_id,
+                              "outcome": "failed", "reason": "unexpected_failure"})
             return jsonify({
                 'error': 'Something went wrong. Please try again.'
             }), 500

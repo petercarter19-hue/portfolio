@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-ASK-PETE-LIVE-TELEMETRY-001",
+  "candidate_sha": "8c6b39d740267ed63ac696909393717dbc7e4157",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a0c0a4-9342-7163-9052-f16ea0eee843",
+  "result": "pass",
+  "reviewed_at": "2026-09-28T01:37:15Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-ASK-PETE-LIVE-TELEMETRY-001.md"
+}

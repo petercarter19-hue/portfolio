@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 from uuid import uuid4
-from time import monotonic
 
 from services.ai_foundation import (
     AIFoundationGateway,
@@ -25,7 +24,7 @@ from services.ai_foundation.errors import (
 )
 
 from .classification import classify_public_purpose
-from .diagnostics import AskPeteDiagnostic
+from .diagnostics import AskPeteDiagnostic, observed_phase
 from .errors import AskPeteRequestError, AskPeteResponseError
 from .manifest import PublicSourceCatalog
 from .quality import validate_product_quality
@@ -212,19 +211,13 @@ class AskPeteService:
 
         if self._current_catalog_check:
             self._current_catalog_check()
-        serialization_started = monotonic()
-        payload = serialize_public_answer(
-            answer=result.answer,
-            catalog=self._catalog,
-            purpose=purpose,
-            context_key=context,
-        )
-        if self._execution_sink:
-            try:
-                self._execution_sink({"request_id": request.request_id, "phase": "serialization",
-                                      "duration_ms": round((monotonic() - serialization_started) * 1000)})
-            except Exception:
-                pass
+        with observed_phase(self._execution_sink, request.request_id, "serialization", "serialization_failed"):
+            payload = serialize_public_answer(
+                answer=result.answer,
+                catalog=self._catalog,
+                purpose=purpose,
+                context_key=context,
+            )
         # Recheck after serialization as well: a revoked/replaced record must
         # not escape in either summary, claim, or locator.
         if self._current_catalog_check:

@@ -8,6 +8,7 @@ from functools import lru_cache
 import os
 from time import monotonic
 from uuid import uuid4
+from threading import RLock
 
 from services.ai_foundation import AITrace
 
@@ -15,7 +16,7 @@ from .manifest import load_public_source_catalog
 from .provider import AnthropicGroundedProvider
 from .service import AskPeteResult, AskPeteService
 from .classification import classify_public_purpose
-from .diagnostics import AskPeteDiagnostic
+from .diagnostics import AskPeteDiagnostic, emit_safely, observed_phase, failure_reason
 from .errors import AskPeteRequestError
 from .deadline import RequestDeadline, run_bounded
 from services.ai_foundation.errors import AIFoundationError, ProviderUnavailableError
@@ -74,34 +75,57 @@ def _answer_foundry(*, root_path, endpoint, question, requested_action,
     request_id = request_id or f"ask-pete-{uuid4().hex}"
     started = monotonic()
     deadline = RequestDeadline.start()
+    observation_lock = RLock()
+    observation = {"stage": "request", "failed_stage": None, "reason": None,
+                   "closed": False, "in_flight": {}}
     def emit(event):
-        if execution_sink:
-            try:
-                execution_sink(event)
-            except Exception:
-                pass
+        event = dict(event)
+        with observation_lock:
+            if observation["closed"]:
+                event["late"] = True
+            else:
+                # Keep the same event object until its sink returns. A timeout
+                # can close the request while that sink is stalled; close then
+                # marks it late before the stalled sink writes its record.
+                event["late"] = False
+                observation["in_flight"][id(event)] = event
+                if event.get("stage"):
+                    observation["stage"] = event["stage"]
+                if event.get("reason"):
+                    observation["reason"] = event["reason"]
+                    observation["failed_stage"] = event.get("stage", observation["stage"])
+        try:
+            emit_safely(execution_sink, event)
+        finally:
+            with observation_lock:
+                observation["in_flight"].pop(id(event), None)
+    def record_trace(trace):
+        with observation_lock:
+            late = observation["closed"]
+        if late:
+            emit({"request_id": request_id, "phase": "trace", "outcome": trace.outcome,
+                  "provider_called": trace.provider_called, "duration_ms": trace.duration_ms})
+        else:
+            emit_safely(trace_sink, trace)
     def work():
-        source_started = monotonic()
-        catalog = _catalog(root_path)
-        deadline.remaining()
-        emit({"request_id": request_id, "phase": "sources", "source_count": len(catalog.sources),
-              "source_bytes": sum(len(s.content.encode("utf-8")) for s in catalog.sources),
-              "duration_ms": round((monotonic() - source_started) * 1000)})
+        with observed_phase(emit, request_id, "sources", "source_unavailable") as event:
+            catalog = _catalog(root_path)
+            deadline.remaining()
+            event.update(source_count=len(catalog.sources),
+                         source_bytes=sum(len(s.content.encode("utf-8")) for s in catalog.sources))
         def current_check():
-            checked = monotonic()
-            deadline.remaining()
-            if _catalog(root_path) != catalog:
-                raise ProviderUnavailableError("Approved source catalog changed")
-            deadline.remaining()
-            emit({"request_id": request_id, "phase": "currentness",
-                  "duration_ms": round((monotonic() - checked) * 1000)})
+            with observed_phase(emit, request_id, "currentness", "currentness_failed"):
+                deadline.remaining()
+                if _catalog(root_path) != catalog:
+                    raise ProviderUnavailableError("Approved source catalog changed")
+                deadline.remaining()
         provider = FoundryGroundedProvider(
             endpoint=endpoint, token_provider=_foundry_token,
             subject_display_name=catalog.subject_display_name,
             prompt_path=root_path / "prompts" / "ask_pete" / "grounded_public_v1.md",
             deadline=deadline, event_sink=emit,
         )
-        service = AskPeteService(catalog=catalog, provider=provider, trace_sink=trace_sink,
+        service = AskPeteService(catalog=catalog, provider=provider, trace_sink=record_trace,
                                 quality_rounds=1, current_catalog_check=current_check,
                                 execution_sink=emit)
         result = service.answer(question, requested_action=requested_action,
@@ -116,12 +140,21 @@ def _answer_foundry(*, root_path, endpoint, question, requested_action,
     except AskPeteRequestError:
         outcome = "invalid_request"
         raise
-    except (AIFoundationError, ValueError):
+    except (AIFoundationError, ValueError) as error:
+        with observation_lock:
+            observation["reason"] = failure_reason(error, observation["reason"] or "request_failed")
         return _unavailable(request_id, purpose, round((monotonic() - started) * 1000))
     finally:
-        emit({"request_id": request_id, "phase": "request", "outcome": outcome,
-              "duration_ms": round((monotonic() - started) * 1000),
-              "deadline_seconds": 20, "quality_resamples": 0, "corrective_retries": 0})
+        with observation_lock:
+            observation["closed"] = True
+            for pending in observation["in_flight"].values():
+                pending["late"] = True
+            terminal = {"request_id": request_id, "phase": "request", "outcome": outcome,
+                        "last_stage": observation["failed_stage"] or observation["stage"],
+                        "reason": observation["reason"], "late": False,
+                        "duration_ms": round((monotonic() - started) * 1000),
+                        "deadline_seconds": 20, "quality_resamples": 0, "corrective_retries": 0}
+        emit_safely(execution_sink, terminal)
 
 
 def build_ask_pete_service(

@@ -15,6 +15,7 @@ from services.ai_foundation.errors import AnswerContractError, ProviderUnavailab
 
 from .provider import AnthropicGroundedProvider
 from .quality import validate_product_quality
+from .diagnostics import observed_phase, failure_reason, emit_safely
 
 DEPLOYMENT = "gpt-6-luna"
 REASONING_EFFORT = "low"
@@ -118,13 +119,18 @@ class _DeadlineTransport:
     def __init__(self, transport, deadline):
         self.transport, self.deadline = transport, deadline
         self.calls = 0
+        self.observe = None
 
     def post(self, url, *, headers, json, timeout):
         remaining = self.deadline.remaining()
         connect = min(5.0, remaining / 4)
+        if self.observe:
+            self.observe("transport")
         self.calls += 1
         result = self.transport.post(url, headers=headers, json=json,
                                      timeout=(connect, remaining - connect))
+        if self.observe:
+            self.observe("response_validation", result.status_code)
         self.deadline.remaining()
         return result
 
@@ -151,6 +157,7 @@ class _Phase(AzureFoundryResponsesProvider):
         if type(reasoning) is int and 0 <= reasoning <= payload["usage"]["output_tokens"]:
             self.event["reasoning_tokens"] = reasoning
         if status != "completed":
+            self.event["reason"] = "completion_incomplete"
             raise ProviderUnavailableError("Foundry response did not complete")
         return super()._output_text(payload)
 
@@ -170,11 +177,7 @@ class FoundryGroundedProvider:
         self.ledger = spend_ledger or SpendLedger(hard_cap_micro_usd=cap, max_calls=2)
 
     def _emit(self, event):
-        if self.event_sink:
-            try:
-                self.event_sink(event)
-            except Exception:
-                pass  # Diagnostics cannot change answer acceptance.
+        emit_safely(self.event_sink, event)
 
     def _call(self, request, sources, phase, document, instructions, schema, output_tokens):
         self.deadline.remaining()
@@ -182,13 +185,23 @@ class FoundryGroundedProvider:
         calls_before = self.transport.calls
         event = {"request_id": request.request_id, "phase": phase,
                  "deployment": DEPLOYMENT, "reasoning_effort": REASONING_EFFORT,
-                 "usage_available": False, "outcome": "unavailable"}
+                 "usage_available": False, "outcome": "unavailable", "stage": "request"}
+        def observe(stage, status=None):
+            event["stage"] = stage
+            if type(status) is int and 100 <= status <= 599:
+                event["http_status"] = status
+            self._emit({"request_id": request.request_id, "phase": "stage", "operation": phase,
+                        "stage": stage, "outcome": "started"})
+        def token():
+            observe("credential")
+            return self.token_provider()
+        self.transport.observe = observe
         def usage(record):
             event.update(asdict(record))
             event["usage_available"] = True
         try:
             provider = _Phase(
-                endpoint=self.endpoint, deployment=DEPLOYMENT, token_provider=self.token_provider,
+                endpoint=self.endpoint, deployment=DEPLOYMENT, token_provider=token,
                 transport=self.transport, price_schedule=self.price, spend_ledger=self.ledger,
                 usage_sink=usage, maximum_input_tokens=MAX_INPUT_TOKENS,
                 maximum_input_bytes=MAX_INPUT_BYTES, maximum_output_tokens=output_tokens,
@@ -199,7 +212,15 @@ class FoundryGroundedProvider:
             self.deadline.remaining()
             event["outcome"] = "completed"
             return result
+        except Exception as error:
+            default = {"credential": "credential_unavailable", "transport": "transport_unavailable"}.get(
+                event["stage"], "response_validation_unknown")
+            if not 200 <= event.get("http_status", 200) < 300:
+                default = "http_non_success"
+            event["reason"] = failure_reason(error, event.get("reason", default))
+            raise
         finally:
+            self.transport.observe = None
             event["provider_calls"] = self.transport.calls - calls_before
             event["duration_ms"] = round((monotonic() - started) * 1000)
             self._emit(event)
@@ -214,42 +235,38 @@ class FoundryGroundedProvider:
         schema = RECRUITER_ANSWER_SCHEMA if request.purpose is Purpose.RECRUITER_BRIEF else ANSWER_SCHEMA
         raw = self._call(request, sources, "generation", document, self.prompt,
                          schema, MAX_ANSWER_TOKENS)
-        validation_started = monotonic()
         # Metadata is server-owned, and offsets use the existing exact-substring
         # decoder. Never repair malformed output or buy another sample.
-        if set(raw) != set(ANSWER_SCHEMA["properties"]):
-            raise ProviderUnavailableError("Foundry answer fields differ")
-        if raw.get("state") == "refused" and (
-            raw.get("claims") != [] or raw.get("follow_up_questions") != []
-            or raw.get("handoff") is not None
-        ):
-            raise AnswerContractError("Foundry refusal envelope differs")
-        decoded = AnthropicGroundedProvider._derive_citation_spans(raw, sources)
-        decoded.update(answer_id=f"{request.request_id}:answer", model_name=DEPLOYMENT,
-                       prompt_contract_version=PROMPT_VERSION)
-        answer = validate_grounded_answer(request, sources, parse_grounded_answer(decoded))
-        # Enforce the purpose contract even if a provider ignores its schema.
-        # Refusal retains its higher-priority null-handoff envelope above.
-        if (request.purpose is Purpose.RECRUITER_BRIEF and answer.state is not AnswerState.REFUSED
-            and (answer.handoff is None or answer.handoff.reason is not HandoffReason.HUMAN_JUDGMENT
-                 or raw["handoff"].get("private") is not True)):
-            raise AnswerContractError("Foundry recruiter handoff differs")
-        validate_product_quality(request.purpose, answer)
-        self._emit({"request_id": request.request_id, "phase": "grounding_quality",
-                    "duration_ms": round((monotonic() - validation_started) * 1000)})
+        with observed_phase(self.event_sink, request.request_id, "grounding_quality", "answer_contract"):
+            if set(raw) != set(ANSWER_SCHEMA["properties"]):
+                raise ProviderUnavailableError("Foundry answer fields differ")
+            if raw.get("state") == "refused" and (
+                raw.get("claims") != [] or raw.get("follow_up_questions") != []
+                or raw.get("handoff") is not None
+            ):
+                raise AnswerContractError("Foundry refusal envelope differs")
+            decoded = AnthropicGroundedProvider._derive_citation_spans(raw, sources)
+            decoded.update(answer_id=f"{request.request_id}:answer", model_name=DEPLOYMENT,
+                           prompt_contract_version=PROMPT_VERSION)
+            answer = validate_grounded_answer(request, sources, parse_grounded_answer(decoded))
+            # Enforce the purpose contract even if a provider ignores its schema.
+            # Refusal retains its higher-priority null-handoff envelope above.
+            if (request.purpose is Purpose.RECRUITER_BRIEF and answer.state is not AnswerState.REFUSED
+                and (answer.handoff is None or answer.handoff.reason is not HandoffReason.HUMAN_JUDGMENT
+                     or raw["handoff"].get("private") is not True)):
+                raise AnswerContractError("Foundry recruiter handoff differs")
+            validate_product_quality(request.purpose, answer)
         verdict = self._call(request, sources, "support", {**document, "proposed_answer": raw},
                              SUPPORT_INSTRUCTIONS, SUPPORT_SCHEMA, MAX_SUPPORT_TOKENS)
-        validation_started = monotonic()
-        claims = verdict.get("claims")
-        if (set(verdict) != set(SUPPORT_SCHEMA["properties"])
-            or any(verdict.get(key) is not True for key in
-                   ("supported", "summary_supported", "other_fields_supported"))
-            or not isinstance(claims, list) or len(claims) != len(answer.claims)
-            or any(not isinstance(v, dict) or set(v) != {"claim_id", "supported"}
-                   or v["claim_id"] != c.claim_id or v["supported"] is not True
-                   for v, c in zip(claims, answer.claims))):
-            raise ProviderUnavailableError("Complete answer support was not established")
-        self.deadline.remaining()
-        self._emit({"request_id": request.request_id, "phase": "support_verdict",
-                    "duration_ms": round((monotonic() - validation_started) * 1000)})
+        with observed_phase(self.event_sink, request.request_id, "support_verdict", "support_rejected"):
+            claims = verdict.get("claims")
+            if (set(verdict) != set(SUPPORT_SCHEMA["properties"])
+                or any(verdict.get(key) is not True for key in
+                       ("supported", "summary_supported", "other_fields_supported"))
+                or not isinstance(claims, list) or len(claims) != len(answer.claims)
+                or any(not isinstance(v, dict) or set(v) != {"claim_id", "supported"}
+                       or v["claim_id"] != c.claim_id or v["supported"] is not True
+                       for v, c in zip(claims, answer.claims))):
+                raise ProviderUnavailableError("Complete answer support was not established")
+            self.deadline.remaining()
         return answer

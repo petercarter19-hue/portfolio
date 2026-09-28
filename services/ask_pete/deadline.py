@@ -12,6 +12,16 @@ _POOL = ThreadPoolExecutor(max_workers=2, thread_name_prefix="ask-pete")
 _SLOTS = BoundedSemaphore(2)
 
 
+class AskPeteDeadlineError(ProviderUnavailableError):
+    """Fixed operational reason; retains the existing provider failure contract."""
+    def __init__(self, reason):
+        if reason not in {"deadline_exceeded", "capacity_occupied"}:
+            raise ValueError("invalid deadline reason")
+        self.reason = reason
+        super().__init__("Ask Pete request deadline exceeded" if reason == "deadline_exceeded"
+                         else "Ask Pete capacity is occupied")
+
+
 @dataclass(frozen=True)
 class RequestDeadline:
     expires_at: float
@@ -25,7 +35,7 @@ class RequestDeadline:
     def remaining(self) -> float:
         remaining = self.expires_at - monotonic()
         if remaining <= 0:
-            raise ProviderUnavailableError("Ask Pete request deadline exceeded")
+            raise AskPeteDeadlineError("deadline_exceeded")
         return remaining
 
 
@@ -33,7 +43,7 @@ def run_bounded(callback, deadline: RequestDeadline):
     deadline.remaining()
     slots = _SLOTS
     if not slots.acquire(blocking=False):
-        raise ProviderUnavailableError("Ask Pete capacity is occupied")
+        raise AskPeteDeadlineError("capacity_occupied")
     try:
         future = _POOL.submit(callback)
     except BaseException:
@@ -45,6 +55,6 @@ def run_bounded(callback, deadline: RequestDeadline):
     try:
         result = future.result(timeout=deadline.remaining())
     except TimeoutError as error:
-        raise ProviderUnavailableError("Ask Pete request deadline exceeded") from error
+        raise AskPeteDeadlineError("deadline_exceeded") from error
     deadline.remaining()
     return result
