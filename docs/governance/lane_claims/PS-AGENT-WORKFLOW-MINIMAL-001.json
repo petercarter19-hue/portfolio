@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-AGENT-WORKFLOW-MINIMAL-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Make the repository agent workflow concise and evidence-bound: trim duplicated AGENTS.md lifecycle detail into exact authority links while preserving operative constraints; add one small structured per-package acceptance record with a focused pre-change baseline, explicit criteria, candidate-bound verification, manual evidence provenance, and a completion check that refuses missing, failed, blocked, or stale proof; point repository instructions to the existing local context-health signal. Keep the mechanism bounded and use no production, schema, identity, billing, destructive, or material-visual authority. Package manager session:01a0e4ac-d74a-74c3-ada2-a54a62f10818; sole implementation writer session:01a0e4af-fa35-7b72-8c47-fd29399040c3; independent exact-candidate review required.",
   "assignment": "implementation",
   "writer_ref": "session:01a0e4af-fa35-7b72-8c47-fd29399040c3",
@@ -33,6 +33,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "03e02237e8cab518ed77b16de4399d213fc34c7e",
+  "closed_at": "2026-09-28T00:00:17Z"
 }
