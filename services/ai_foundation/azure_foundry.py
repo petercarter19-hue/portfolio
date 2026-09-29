@@ -285,8 +285,8 @@ class AzureFoundryResponsesProvider:
         self._maximum_output_tokens = maximum_output_tokens
         # Opt-in answer contract only. Structured intake keeps its separate
         # accepted xhigh contract; existing answer callers keep their defaults.
-        if answer_reasoning_effort not in (None, "low"):
-            raise ValueError("answer reasoning effort must be low when supplied")
+        if answer_reasoning_effort not in (None, "low", "none"):
+            raise ValueError("answer reasoning effort must be low or none when supplied")
         if (answer_reasoning_effort is None) != (answer_json_schema is None):
             raise ValueError("answer reasoning and strict schema must be supplied together")
         self._answer_options: dict[str, Any] = {}

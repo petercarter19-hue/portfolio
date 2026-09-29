@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-ASK-PETE-LIVE-SUPPORT-001",
+  "candidate_sha": "d49e416f1412d6c314c46e0c101f85cbdbae327a",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a0c0a4-9342-7163-9052-f16ea0eee843",
+  "result": "pass",
+  "reviewed_at": "2026-09-28T23:47:20Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-ASK-PETE-LIVE-SUPPORT-001.md"
+}

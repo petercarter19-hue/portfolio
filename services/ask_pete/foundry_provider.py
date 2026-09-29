@@ -19,6 +19,7 @@ from .diagnostics import observed_phase, failure_reason, emit_safely
 
 DEPLOYMENT = "gpt-6-luna"
 REASONING_EFFORT = "low"
+SUPPORT_REASONING_EFFORT = "none"
 PROMPT_VERSION = "ask-pete-foundry-public.v1"
 MAX_INPUT_BYTES = 60_000
 MAX_INPUT_TOKENS = 61_024  # conservative byte-based reservation plus framing
@@ -179,12 +180,13 @@ class FoundryGroundedProvider:
     def _emit(self, event):
         emit_safely(self.event_sink, event)
 
-    def _call(self, request, sources, phase, document, instructions, schema, output_tokens):
+    def _call(self, request, sources, phase, document, instructions, schema,
+              output_tokens, reasoning_effort):
         self.deadline.remaining()
         started = monotonic()
         calls_before = self.transport.calls
         event = {"request_id": request.request_id, "phase": phase,
-                 "deployment": DEPLOYMENT, "reasoning_effort": REASONING_EFFORT,
+                 "deployment": DEPLOYMENT, "reasoning_effort": reasoning_effort,
                  "usage_available": False, "outcome": "unavailable", "stage": "request"}
         def observe(stage, status=None):
             event["stage"] = stage
@@ -205,7 +207,7 @@ class FoundryGroundedProvider:
                 transport=self.transport, price_schedule=self.price, spend_ledger=self.ledger,
                 usage_sink=usage, maximum_input_tokens=MAX_INPUT_TOKENS,
                 maximum_input_bytes=MAX_INPUT_BYTES, maximum_output_tokens=output_tokens,
-                answer_reasoning_effort=REASONING_EFFORT, answer_json_schema=schema,
+                answer_reasoning_effort=reasoning_effort, answer_json_schema=schema,
                 instructions=instructions, document=document, event=event,
             )
             result = provider.answer(request, sources)
@@ -234,7 +236,7 @@ class FoundryGroundedProvider:
         }
         schema = RECRUITER_ANSWER_SCHEMA if request.purpose is Purpose.RECRUITER_BRIEF else ANSWER_SCHEMA
         raw = self._call(request, sources, "generation", document, self.prompt,
-                         schema, MAX_ANSWER_TOKENS)
+                         schema, MAX_ANSWER_TOKENS, REASONING_EFFORT)
         # Metadata is server-owned, and offsets use the existing exact-substring
         # decoder. Never repair malformed output or buy another sample.
         with observed_phase(self.event_sink, request.request_id, "grounding_quality", "answer_contract"):
@@ -257,7 +259,8 @@ class FoundryGroundedProvider:
                 raise AnswerContractError("Foundry recruiter handoff differs")
             validate_product_quality(request.purpose, answer)
         verdict = self._call(request, sources, "support", {**document, "proposed_answer": raw},
-                             SUPPORT_INSTRUCTIONS, SUPPORT_SCHEMA, MAX_SUPPORT_TOKENS)
+                             SUPPORT_INSTRUCTIONS, SUPPORT_SCHEMA, MAX_SUPPORT_TOKENS,
+                             SUPPORT_REASONING_EFFORT)
         with observed_phase(self.event_sink, request.request_id, "support_verdict", "support_rejected"):
             claims = verdict.get("claims")
             if (set(verdict) != set(SUPPORT_SCHEMA["properties"])

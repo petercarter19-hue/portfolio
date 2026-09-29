@@ -139,10 +139,13 @@ class LiveFoundryTests(TestCase):
         self.assertGreater(citation["end"], citation["start"])
         self.assertEqual([c["phase"] for c in transport.calls], ["generation", "support"])
         self.assertEqual(token.call_count, 2)
+        self.assertEqual(
+            [call["body"]["reasoning"] for call in transport.calls],
+            [{"effort": "low"}, {"effort": "none"}],
+        )
         for call in transport.calls:
             body = call["body"]
             self.assertEqual(body["model"], "gpt-6-luna")
-            self.assertEqual(body["reasoning"], {"effort": "low"})
             self.assertIs(body["text"]["format"]["strict"], True)
             self.assertIs(body["store"], False)
             self.assertNotIn("tools", body)
