@@ -20,7 +20,9 @@
     "tests/ask_pete/test_fact_selection.py",
     "docs/governance/lane_claims/PS-ASK-PETE-LUNA-SINGLE-CALL-001.json",
     "docs/governance/lane_claims/evidence/PS-ASK-PETE-LUNA-SINGLE-CALL-001.md",
-    "docs/governance/lane_claims/receipts/PS-ASK-PETE-LUNA-SINGLE-CALL-001.json"
+    "docs/governance/lane_claims/receipts/PS-ASK-PETE-LUNA-SINGLE-CALL-001.json",
+    "static/js/ask-pete-evidence-companion.js",
+    "tests/ask_pete/run_recruiter_evidence_browser.py"
   ],
   "domains": [
     "ask-pete:live-foundry"
