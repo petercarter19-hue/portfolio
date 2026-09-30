@@ -5,11 +5,14 @@ import sys
 import tempfile
 import unittest
 import urllib.request
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from functools import partial
 from pathlib import Path
 from unittest import mock
 
 from services.ai_foundation import AIRequest, Audience, Purpose, SourceVersion
+from services.ai_foundation.contracts import ExtractionPurpose, StructuredRequest
+from services.my_data_extraction_adapter import MyDataExtractionAdapter, EXTRACTION_RESPONSE_SCHEMA
 from services.ai_foundation.azure_foundry import (
     AzureFoundryResponsesProvider,
     ExecutionLimitError,
@@ -144,6 +147,24 @@ class AzureFoundryProviderTests(unittest.TestCase):
         self.assertIn("make a hiring recommendation", instructions)
         self.assertIn("AI output is a proposal only", instructions)
         self.assertIn("do not answer for the subject", instructions)
+
+    def test_answer_usage_merge_preserves_caller_correlation_and_status(self):
+        provider, _, usages, _ = self.provider()
+        request, sources = request_and_sources()
+        provider.answer(request, sources)
+        serialized = asdict(usages[0])
+        self.assertEqual(set(serialized), {
+            "deployment", "input_tokens", "output_tokens", "estimated_micro_usd",
+            "price_schedule_ref", "cached_input_tokens", "cache_write_input_tokens",
+        })
+        # Ask Pete merges this record into an existing operation event. Structured
+        # None defaults must not overwrite its correlation or HTTP failure checks.
+        event = {"request_id": request.request_id, "http_status": 200,
+                 "reasoning_effort": "low"}
+        event.update(serialized)
+        self.assertEqual(event["request_id"], request.request_id)
+        self.assertEqual(event["http_status"], 200)
+        self.assertEqual(event["reasoning_effort"], "low")
 
     def test_cache_token_details_are_structural_usage_only(self):
         payload = answer_payload(input_tokens=608, output_tokens=478)
@@ -732,6 +753,190 @@ class _FakeStatusResponse:
 
     def json(self):
         return {}
+
+
+class StructuredCalibrationTests(unittest.TestCase):
+    def payload(self, **changes):
+        payload={"status":"completed", "output":[{"type":"message","content":[
+            {"type":"output_text","text":'{"candidates":[]}'}]}],
+            "usage":{"input_tokens":10,"output_tokens":5}}
+        payload.update(changes)
+        return payload
+
+    def provider(self, payload=None, **options):
+        transport=FakeTransport(FakeResponse(200, self.payload() if payload is None else payload))
+        usages=[]
+        credentials=[]
+        ledger=SpendLedger(hard_cap_micro_usd=10_000_000,max_calls=10)
+        provider=AzureFoundryResponsesProvider(endpoint="https://synthetic.openai.azure.com",
+            token_provider=lambda:credentials.append(True) or "synthetic-not-a-token",
+            transport=transport,spend_ledger=ledger,usage_sink=usages.append,**options)
+        return provider,transport,usages,ledger,credentials
+
+    def request(self, **changes):
+        options={"request_id":"synthetic-calibration-request", "product":"my_data_intake",
+            "purpose":ExtractionPurpose.MY_DATA_INTAKE_EXTRACTION, "audience":Audience.OWNER,
+            "subject_key":"synthetic:member", "instructions":"Private proposal only.",
+            "input_text":"PRIVATE_CAREER_FRAGMENT", "schema_name":"synthetic_schema"}
+        options.update(changes)
+        return StructuredRequest(**options)
+
+    def test_actual_adapter_emits_both_efforts_same_schema_and_persisted128000(self):
+        wires=[]
+        for effort in ("xhigh","medium"):
+            provider,transport,usages,ledger,_=self.provider(maximum_input_bytes=65536)
+            adapter=MyDataExtractionAdapter(partial(provider.respond,receive_timeout_seconds=1190),
+                                            reasoning_effort=effort)
+            self.assertEqual(adapter.maximum_output_tokens,128000)
+            self.assertEqual(adapter.extract("Clearly fictional career.",allowed_fields={}),[])
+            self.assertEqual(len(transport.calls),1)
+            wire=transport.calls[0][1]
+            self.assertEqual(wire["json"]["max_output_tokens"],128000)
+            self.assertEqual(wire["json"]["reasoning"],{"effort":effort})
+            self.assertEqual(wire["timeout"],(5.0,1190.0))
+            self.assertEqual(usages[0].maximum_output_tokens,128000)
+            self.assertEqual(usages[0].urllib_socket_timeout_seconds,1195)
+            self.assertEqual(usages[0].response_status,"completed")
+            self.assertEqual(ledger.snapshot()["reserved_micro_usd"],0)
+            wires.append(wire["json"])
+        self.assertEqual(wires[0]["text"],wires[1]["text"])
+        self.assertEqual(wires[0]["input"],wires[1]["input"])
+        self.assertEqual(wires[0]["instructions"],wires[1]["instructions"])
+
+    def test_unrelated_structured_default_stays700_and90_with_unknown_subsets(self):
+        provider,transport,usages,_,_=self.provider()
+        provider.respond(self.request(purpose=ExtractionPurpose.MY_DATA_INTAKE_MATCHING),
+                         response_schema=EXTRACTION_RESPONSE_SCHEMA)
+        self.assertEqual(transport.calls[0][1]["json"]["max_output_tokens"],700)
+        self.assertEqual(transport.calls[0][1]["timeout"],(5.0,90.0))
+        self.assertEqual(usages[0].urllib_socket_timeout_seconds,95)
+        self.assertIsNone(usages[0].cached_input_tokens)
+        self.assertIsNone(usages[0].reasoning_output_tokens)
+
+    def test_incomplete_valid_json_reports_settled_safe_usage_before_refusal(self):
+        payload=self.payload(status="incomplete", usage={"input_tokens":10,"output_tokens":5,
+            "input_tokens_details":{"cached_tokens":4},"output_tokens_details":{"reasoning_tokens":3}})
+        provider,transport,usages,ledger,_=self.provider(payload)
+        with mock.patch.object(provider,"_output_text",side_effect=AssertionError("must not decode incomplete")):
+            with mock.patch("services.ai_foundation.azure_foundry.time.monotonic",side_effect=[10.0,12.0]):
+                with self.assertRaisesRegex(ProviderUnavailableError,"not completed"):
+                    provider.respond(self.request(),response_schema=EXTRACTION_RESPONSE_SCHEMA,
+                                     maximum_output_tokens=128000,receive_timeout_seconds=1190)
+        self.assertEqual(len(transport.calls),1)
+        self.assertEqual(len(usages),1)
+        row=usages[0]
+        self.assertEqual((row.input_tokens,row.cached_input_tokens,row.output_tokens,row.reasoning_output_tokens),(10,4,5,3))
+        self.assertEqual(row.request_id,"synthetic-calibration-request")
+        self.assertEqual(row.purpose,"my_data_intake_extraction")
+        self.assertEqual(row.elapsed_seconds,2)
+        self.assertEqual(row.response_status,"incomplete")
+        self.assertEqual(row.http_status,200)
+        self.assertEqual(ledger.snapshot()["spent_micro_usd"],40)
+        metadata=json.dumps(asdict(row))
+        for forbidden in ("PRIVATE_CAREER_FRAGMENT","synthetic-not-a-token","Authorization","headers","instructions"):
+            self.assertNotIn(forbidden,metadata)
+
+    def test_missing_usage_remains_unknown_and_charges_reservation_once(self):
+        provider,transport,usages,ledger,_=self.provider(self.payload(usage=None,status="incomplete"))
+        with self.assertRaises(ProviderUnavailableError):
+            provider.respond(self.request(),response_schema=EXTRACTION_RESPONSE_SCHEMA)
+        self.assertEqual(len(transport.calls),1)
+        self.assertEqual(len(usages),1)
+        self.assertIsNone(usages[0].input_tokens)
+        self.assertIsNone(usages[0].output_tokens)
+        self.assertIsNone(usages[0].estimated_micro_usd)
+        self.assertIsNone(usages[0].cached_input_tokens)
+        self.assertEqual(usages[0].response_status,"incomplete")
+        self.assertGreater(ledger.snapshot()["spent_micro_usd"],40)
+
+    def test_missing_or_malformed_completion_status_refuses_after_usage(self):
+        for status in (None,"unexpected private wording",{"PRIVATE_CAREER_FRAGMENT":True}):
+            with self.subTest(status=status):
+                provider,transport,usages,ledger,_=self.provider(self.payload(status=status))
+                with self.assertRaises(ProviderUnavailableError):
+                    provider.respond(self.request(),response_schema=EXTRACTION_RESPONSE_SCHEMA)
+                self.assertEqual(len(transport.calls),1)
+                self.assertEqual(ledger.snapshot()["spent_micro_usd"],40)
+                self.assertIsNone(usages[0].response_status)
+                self.assertNotIn("PRIVATE_CAREER_FRAGMENT",json.dumps(asdict(usages[0])))
+
+    def test_malformed_subset_keeps_totals_and_refuses_without_fabricated_count(self):
+        provider,_,usages,ledger,_=self.provider(self.payload(usage={"input_tokens":10,"output_tokens":5,
+            "input_tokens_details":{"cached_tokens":11},"output_tokens_details":{"reasoning_tokens":True}}))
+        with self.assertRaises(ProviderUnavailableError):
+            provider.respond(self.request(),response_schema=EXTRACTION_RESPONSE_SCHEMA)
+        self.assertEqual((usages[0].input_tokens,usages[0].output_tokens),(10,5))
+        self.assertIsNone(usages[0].cached_input_tokens)
+        self.assertIsNone(usages[0].reasoning_output_tokens)
+        self.assertEqual(ledger.snapshot()["spent_micro_usd"],40)
+
+    def test_invalid_config_refuses_before_credentials_or_dispatch(self):
+        for config in ({"maximum_output_tokens":0},{"maximum_output_tokens":True},
+                       {"maximum_output_tokens":128001},{"receive_timeout_seconds":0},
+                       {"receive_timeout_seconds":True},{"receive_timeout_seconds":float("nan")},
+                       {"receive_timeout_seconds":float("inf")},{"receive_timeout_seconds":1201}):
+            with self.subTest(config=config):
+                provider,transport,usages,ledger,credentials=self.provider()
+                with self.assertRaises(ValueError):
+                    provider.respond(self.request(),response_schema=EXTRACTION_RESPONSE_SCHEMA,**config)
+                self.assertEqual(transport.calls,[])
+                self.assertEqual(credentials,[])
+                self.assertEqual(usages,[])
+                self.assertEqual(ledger.snapshot()["calls"],0)
+
+    def test_cross_purpose_product_audience_or_model_cannot_inherit_calibration(self):
+        for options, request_changes in (({}, {"purpose":ExtractionPurpose.MY_DATA_INTAKE_MATCHING}),
+            ({},{"product":"unrelated"}), ({},{"audience":Audience.PUBLIC}),
+            ({"deployment":"gpt-6-luna"},{})):
+            with self.subTest(options=options,request_changes=request_changes):
+                provider,transport,_,_,credentials=self.provider(**options)
+                request=self.request(**request_changes)
+                for config in ({"maximum_output_tokens":128000},{"receive_timeout_seconds":1190}):
+                    with self.assertRaises(ValueError):
+                        provider.respond(request,response_schema=EXTRACTION_RESPONSE_SCHEMA,**config)
+                self.assertEqual(transport.calls,[])
+                self.assertEqual(credentials,[])
+        provider,transport,_,_,credentials=self.provider(deployment="gpt-6-luna")
+        with self.assertRaises(ValueError):
+            provider.respond(self.request(reasoning_effort="medium"),response_schema=EXTRACTION_RESPONSE_SCHEMA)
+        self.assertEqual((transport.calls,credentials),([],[]))
+
+    def test_timeout_does_not_retry_and_preserves_unknown_usage(self):
+        provider,transport,usages,ledger,_=self.provider()
+        def timeout_once(url,**kwargs):
+            transport.calls.append((url,kwargs))
+            raise TimeoutError("synthetic offline timeout")
+        transport.post=timeout_once
+        with self.assertRaises(ProviderUnavailableError):
+            provider.respond(self.request(),response_schema=EXTRACTION_RESPONSE_SCHEMA,
+                             maximum_output_tokens=128000,receive_timeout_seconds=1190)
+        self.assertEqual(len(transport.calls),1)
+        self.assertEqual(len(usages),1)
+        self.assertIsNone(usages[0].input_tokens)
+        self.assertIsNone(usages[0].response_status)
+        self.assertGreaterEqual(usages[0].elapsed_seconds,0)
+        self.assertEqual(ledger.snapshot()["calls"],1)
+
+    def test_real_urllib_emits_selected_socket_sum_without_network(self):
+        selected=[]
+        body=json.dumps(self.payload()).encode()
+        class Response:
+            status=200
+            def __enter__(self): return self
+            def __exit__(self,*args): return False
+            def read(self,maximum): return body
+        class Opener:
+            def open(self,request,timeout):
+                selected.append(timeout)
+                return Response()
+        for configured,expected in ((90,95),(1190,1195)):
+            provider,_,usages,_,_=self.provider()
+            provider._transport=UrllibTransport()
+            with mock.patch("urllib.request.build_opener",return_value=Opener()):
+                provider.respond(self.request(),response_schema=EXTRACTION_RESPONSE_SCHEMA,
+                                 receive_timeout_seconds=configured)
+            self.assertEqual(selected[-1],expected)
+            self.assertEqual(usages[0].urllib_socket_timeout_seconds,expected)
 
 
 if __name__ == "__main__":

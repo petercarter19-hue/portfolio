@@ -30,6 +30,7 @@ from services.my_data_extraction_adapter import (
     EXTRACTION_RESPONSE_SCHEMA,
     EXTRACTION_SCHEMA_NAME,
     EXTRACTED_VALUE_PROPERTIES,
+    EXTRACTION_VALUE_FIELDS,
     DeterministicFakeExtractionAdapter,
     ExtractionCandidate,
     ExtractionError,
@@ -154,7 +155,7 @@ class AdapterContractTests(unittest.TestCase):
         with self.assertRaises(ExtractionError):
             MyDataExtractionAdapter(provider=lambda *a, **k: {}, reasoning_effort="low")
 
-    def test_structured_request_refuses_non_xhigh_effort(self):
+    def test_structured_request_refuses_unsupported_effort(self):
         with self.assertRaises(ValueError):
             StructuredRequest(
                 request_id=str(uuid4()),
@@ -182,6 +183,49 @@ class AdapterContractTests(unittest.TestCase):
         with self.assertRaises(ExtractionError):
             adapter.build_request("   ")
         self.assertEqual(adapter.calls, [])
+
+    def test_explicit_medium_and_scoped_allowance_are_emitted_without_changing_default(self):
+        calls = []
+        def provider(request, **kwargs):
+            calls.append((request, kwargs))
+            return {"candidates": []}
+        for effort in ("xhigh", "medium"):
+            adapter = MyDataExtractionAdapter(provider, reasoning_effort=effort)
+            self.assertEqual(adapter.maximum_output_tokens, 128000)
+            self.assertEqual(adapter.extract("Fictional material.", allowed_fields={}), [])
+        self.assertEqual([row[0].reasoning_effort for row in calls], ["xhigh", "medium"])
+        self.assertEqual([row[1]["maximum_output_tokens"] for row in calls], [128000,128000])
+        self.assertEqual(calls[0][0].instructions, calls[1][0].instructions)
+        self.assertEqual(calls[0][1]["response_schema"], calls[1][1]["response_schema"])
+        self.assertEqual(MyDataExtractionAdapter().reasoning_effort, "xhigh")
+
+    def test_medium_matching_and_invalid_allowances_refuse_before_provider(self):
+        calls = []
+        adapter = MyDataExtractionAdapter(lambda **kw: calls.append(kw), reasoning_effort="medium")
+        with self.assertRaises(ValueError):
+            adapter.build_request("Material", purpose=ExtractionPurpose.MY_DATA_INTAKE_MATCHING)
+        for value in (True,0,-1,128001,1.5,"128000"):
+            with self.subTest(value=value), self.assertRaises(ExtractionError):
+                MyDataExtractionAdapter(maximum_output_tokens=value)
+        for effort in (None,True,[],{},"low"):
+            with self.subTest(effort=effort), self.assertRaises(ExtractionError):
+                MyDataExtractionAdapter(reasoning_effort=effort)
+        self.assertEqual(calls, [])
+
+    def test_type_fields_are_exact_existing_canonical_editor_contract(self):
+        from services.resume_intake_service import EDITOR_FIELDS
+        self.assertEqual(set(EXTRACTION_VALUE_FIELDS), set(EDITOR_FIELDS) | {"unspecified"})
+        for kind, fields in EDITOR_FIELDS.items():
+            self.assertEqual(frozenset(EXTRACTION_VALUE_FIELDS[kind]), fields)
+        self.assertEqual(EXTRACTION_VALUE_FIELDS["unspecified"], ("text",))
+
+    def test_prompt_retains_grouping_unknown_precision_and_course_qualifiers(self):
+        instructions = MyDataExtractionAdapter().build_request("Material").instructions
+        for wording in ("Group each position", "classroom prototype", "internal pilot",
+                        "not deployed", "not company-wide", "Missing dates remain null",
+                        "otherwise null", "course completion certificate is education",
+                        "unsupported", "code derives", "YYYY-01-01", "date_precision month"):
+            self.assertIn(wording.lower(), instructions.lower())
 
 
 class PayloadValidationTests(unittest.TestCase):
@@ -301,6 +345,39 @@ class PayloadValidationTests(unittest.TestCase):
             )
         self.assertEqual(unlisted.exception.code, "matched_needs_listed_match")
 
+    def test_unique_quote_derives_same_span_and_service_candidate_shape(self):
+        payload=self.payload()
+        del payload["candidates"][0]["span_start"]
+        del payload["candidates"][0]["span_end"]
+        candidate=validate_extraction_payload(payload,text=self.TEXT,allowed_fields=self.FIELDS)[0]
+        self.assertEqual((candidate.span_start,candidate.span_end,candidate.quote),(0,16,"Systems Engineer"))
+        self.assertEqual(candidate.provided_fields,("role_title",))
+
+    def test_ambiguous_nonexact_and_partial_spans_fail_closed(self):
+        for text, patch, code in (
+            (self.TEXT+" and Systems Engineer", {}, "ambiguous_quote"),
+            (self.TEXT, {"quote":"Systems Enginer"}, "span_quote_mismatch"),
+            (self.TEXT, {"span_start":0}, "invalid_span"),
+        ):
+            payload=self.payload()
+            candidate=payload["candidates"][0]
+            candidate.pop("span_start")
+            candidate.pop("span_end")
+            candidate.update(patch)
+            with self.subTest(code=code), self.assertRaises(ExtractionError) as error:
+                validate_extraction_payload(payload,text=text,allowed_fields=self.FIELDS)
+            self.assertEqual(error.exception.code,code)
+
+    def test_nullable_unknown_dates_and_boolean_current_role_are_preserved(self):
+        values={"role_title":"Systems Engineer", "current_role":False, "start_date":None}
+        fields={"role":frozenset(values)}
+        candidate=validate_extraction_payload(self.payload(values=values),text=self.TEXT,allowed_fields=fields)[0]
+        self.assertIs(candidate.values["current_role"],False)
+        self.assertNotIn("start_date",candidate.values)
+        values["current_role"]="false"
+        with self.assertRaises(ExtractionError):
+            validate_extraction_payload(self.payload(values=values),text=self.TEXT,allowed_fields=fields)
+
 
 class ProviderTransportTests(unittest.TestCase):
     """The strict call actually sends effort xhigh and a strict schema."""
@@ -338,6 +415,7 @@ class ProviderTransportTests(unittest.TestCase):
 
             def json(self):
                 return {
+                    "status": "completed",
                     "output": [{
                         "type": "message",
                         "content": [{
@@ -379,12 +457,23 @@ class ProviderTransportTests(unittest.TestCase):
                     walk(child, f"{path}.{name}")
             if "array" in type_names and "items" in schema:
                 walk(schema["items"], f"{path}[]")
+            for index, branch in enumerate(schema.get("anyOf", [])):
+                walk(branch, f"{path}.anyOf[{index}]")
 
         walk(EXTRACTION_RESPONSE_SCHEMA, "$")
-        values = EXTRACTION_RESPONSE_SCHEMA["properties"]["candidates"]["items"]["properties"]["values"]
-        self.assertEqual(values["properties"], EXTRACTED_VALUE_PROPERTIES)
-        self.assertIn("current_role", values["properties"])
-        self.assertEqual(values["properties"]["current_role"]["type"], ["boolean", "null"])
+        branches = EXTRACTION_RESPONSE_SCHEMA["properties"]["candidates"]["items"]["anyOf"]
+        self.assertEqual(len(branches),6)
+        for branch in branches:
+            properties=branch["properties"]
+            kind=properties["record_type"]["enum"][0]
+            values=properties["values"]["properties"]
+            self.assertEqual(set(values),set(EXTRACTION_VALUE_FIELDS[kind]))
+            self.assertNotIn("span_start",properties)
+            self.assertNotIn("span_end",properties)
+            if kind=="role":
+                self.assertEqual(values["current_role"]["type"],["boolean","null"])
+            if kind=="skill":
+                self.assertEqual(set(values),{"name","summary"})
         self.assertGreater(len(seen), 3)
 
     def test_provider_http_failure_is_unavailable_not_silent(self):

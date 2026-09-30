@@ -244,7 +244,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
             {"name":"empty.txt","mimeType":"text/plain","buffer":b""},
         ])
         page.locator("#resume-intake-add").click()
-        page.locator("#resume-intake-receipt").get_by_text("2 could not be saved",exact=False).wait_for()
+        page.locator("#resume-intake-receipt").get_by_text("0 saved privately \u00b7 0 needs your review \u00b7 2 could not be saved.",exact=True).wait_for()
         page.locator("#resume-intake-text").fill("Keep my newer unsent words.")
         page.locator("#resume-intake-type").select_option("skill")
         page.locator("#resume-intake-skill").fill("Member chosen strength")
