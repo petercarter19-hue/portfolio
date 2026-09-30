@@ -32,7 +32,9 @@
     "templates/partials/resume/_publication_review.html",
     "static/js/resume-publication.js",
     "tests/test_resume_publication_routes.py",
-    "tests/test_resume_publication_browser.py"
+    "tests/test_resume_publication_browser.py",
+    "scripts/package_acceptance.py",
+    "tests/test_package_acceptance.py"
   ],
   "domains": [
     "mvp1:three-persona-onboarding-acceptance",
