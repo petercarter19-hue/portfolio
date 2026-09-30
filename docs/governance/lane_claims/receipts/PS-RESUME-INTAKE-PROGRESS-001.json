@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-RESUME-INTAKE-PROGRESS-001",
+  "candidate_sha": "97272b47e92505d4a9180a33f0550862d19482ca",
+  "review_type": "self",
+  "reviewer_ref": "session:01a0f1ae-2ca7-72a2-91cb-1c0895f35a34",
+  "result": "pass",
+  "reviewed_at": "2026-09-30T19:39:37Z",
+  "findings": [],
+  "evidence_ref": "X:/PeerSlate/evidence/PS-RESUME-INTAKE-PROGRESS-001/CANDIDATE_SOURCE_BINDING.json"
+}

@@ -20,6 +20,7 @@ import re
 import tempfile
 import threading
 import unittest
+from pathlib import Path
 
 from werkzeug.serving import make_server
 
@@ -34,7 +35,9 @@ from services.resume_intake_document_adapter import ResumeDocumentAdapter
 from services.resume_intake_policy import selected_policy_for_tests
 from services.resume_intake_repository import InMemoryResumeIntakeRepository
 from services.resume_intake_service import ResumeIntakeService
-from services.resume_intake_service import ResumeIntakeUnavailableError
+from services.resume_intake_service import (
+    ResumeIntakeUnavailableError, ResumeIntakeValidationError, ResumeIntakeConflictError,
+)
 from services.resume_intake_transcription_adapter import ResumeTranscriptionAdapter
 
 try:
@@ -309,6 +312,8 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.assertIn("1 saved privately", receipt)
         self.assertIn("2 needs your review", receipt)
 
+        self.assertFalse(page.locator("#resume-intake-activity").is_visible())
+
         # The server really received the uploaded bytes through the seam.
         self.assertEqual(len(self.received_documents), 1)
         self.assertEqual(
@@ -348,38 +353,85 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.assertIn("Not added yet", page.locator("#resume-intake-draft-label").inner_text())
 
     def test_in_field_microphone_inserts_without_overwriting_typing(self):
+        owner = self._use_owner("browser-progress-overlap")
+        original = app.config["RESUME_INTAKE_SERVICE"]
+        first_started, second_started, add_started = (threading.Event() for _ in range(3))
+        release_first, release_second, release_add = (threading.Event() for _ in range(3))
+        for gate in (release_first, release_second, release_add):
+            self.addCleanup(gate.set)
+        calls = {"recording": 0, "add": 0}
+
+        class DelayedService(ResumeIntakeService):
+            def transcribe_recording(self, owner_key, upload, payload, **kwargs):
+                calls["recording"] += 1
+                first = calls["recording"] == 1
+                (first_started if first else second_started).set()
+                if not (release_first if first else release_second).wait(30):
+                    raise ResumeIntakeUnavailableError()
+                return super().transcribe_recording(owner_key, upload, payload, **kwargs)
+
+            def submit(self, owner_key, payload, **kwargs):
+                calls["add"] += 1
+                add_started.set()
+                if not release_add.wait(30):
+                    raise ResumeIntakeUnavailableError()
+                return super().submit(owner_key, payload, **kwargs)
+
+        app.config["RESUME_INTAKE_SERVICE"] = DelayedService(
+            repository=self.repository, draft_service=self.draft_service,
+            transcription_adapter=ResumeTranscriptionAdapter(service=self.transcriber),
+            policy=selected_policy_for_tests(),
+        )
+        self.addCleanup(app.config.update, {"RESUME_INTAKE_SERVICE": original})
         page = self._new_page(viewport={"width": 1440, "height": 1000})
         page.goto(f"{self.base_url}/app/resume", wait_until="load")
         typed = "Typed before recording."
         page.locator("#resume-intake-text").fill(typed)
-
         page.locator("#resume-intake-mic").click()
-        page.wait_for_timeout(1500)
+        page.wait_for_timeout(300)
         page.locator("#resume-intake-mic").click()
-
-        # Wait for the transcript to land (or an honest refusal), then check the
-        # typed text survived the late transcription either way.
-        try:
-            page.wait_for_function(
-                "() => (document.getElementById('resume-intake-text').value || '').indexOf('Browser journey transcript') !== -1"
-                " || /not supported|permission|did not|could not/i.test("
-                "document.getElementById('resume-intake-status').textContent || '')",
-                timeout=20000,
-            )
-        except Exception:  # pragma: no cover - timing only
-            pass
+        activity = page.locator("#resume-intake-activity")
+        activity.get_by_text("Turning your recording into text", exact=False).wait_for()
+        self.assertTrue(first_started.wait(2))
+        page.locator("#resume-intake-cancel-recording").click()
+        self.assertFalse(activity.is_visible())
+        self.assertEqual(page.locator("#resume-intake-text").input_value(), typed)
+        # Start a new recording while the cancelled request still has no response.
+        page.locator("#resume-intake-mic").click()
+        page.wait_for_timeout(300)
+        page.locator("#resume-intake-add").click()
+        page.locator("#resume-intake-text").fill(typed + " Newer words.")
+        page.locator("#resume-intake-mic").click()
+        activity.get_by_text("Preparing your information", exact=False).wait_for()
+        activity.get_by_text("Turning your recording into text", exact=False).wait_for()
+        capture_dir = os.environ.get("PEERSLATE_PROGRESS_CAPTURE_DIR")
+        if capture_dir:
+            page.screenshot(path=str(Path(capture_dir) / "desktop-overlap.png"))
+        release_first.set()
+        self.assertTrue(add_started.wait(5))
+        page.wait_for_timeout(150)
+        # The obsolete first recording cannot insert text, clear the new work,
+        # or hide the new transcription's cancel control.
+        self.assertNotIn(TRANSCRIPT, page.locator("#resume-intake-text").input_value())
+        self.assertIn("Preparing your information", activity.inner_text())
+        self.assertIn("Turning your recording into text", activity.inner_text())
+        self.assertTrue(page.locator("#resume-intake-cancel-recording").is_visible())
+        release_add.set()
+        self.assertTrue(second_started.wait(5))
+        page.wait_for_function("() => !document.getElementById('resume-intake-add').disabled")
+        self.assertTrue(activity.is_visible())
+        self.assertNotIn("Preparing your information", activity.inner_text())
+        self.assertIn("Turning your recording into text", activity.inner_text())
+        release_second.set()
+        page.wait_for_function("() => document.getElementById('resume-intake-text').value.includes('Browser journey transcript')")
+        self.assertFalse(activity.is_visible())
+        self.assertFalse(page.locator("#resume-intake-cancel-recording").is_visible())
+        self.assertEqual(page.locator("#resume-intake-composer").get_attribute("aria-busy"), "false")
         value = page.locator("#resume-intake-text").input_value()
-        self.assertIn(typed, value)
-        if TRANSCRIPT in value:
-            self.assertGreaterEqual(len(self.transcriber.calls), 1)
-            self.assertTrue(self.transcriber.calls[0]["bytes"])
-            self.assertIn("Recording", page.locator("#resume-intake-attachments").inner_text())
-        else:
-            status = page.locator("#resume-intake-status").inner_text().lower()
-            self.assertTrue(
-                "microphone" in status or "recording" in status,
-                f"expected an honest microphone state, saw {status!r}",
-            )
+        self.assertIn("Newer words", value)
+        self.assertEqual(value.count(TRANSCRIPT), 1)
+        self.assertEqual(calls, {"recording": 2, "add": 1})
+        self.assertEqual(len(self.catalog.list_items(owner)), 0)
 
     def test_mobile_composition_reflows_without_horizontal_overflow(self):
         page = self._new_page(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True)
@@ -429,19 +481,71 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.assertFalse(saved[0]["resume_display"])
 
     def test_newer_typing_during_a_slow_add_is_never_discarded(self):
-        self._use_owner("browser-newer-typing")
-        page = self._new_page(viewport={"width": 1440, "height": 1000})
+        owner = self._use_owner("browser-newer-typing")
+        original = app.config["RESUME_INTAKE_SERVICE"]
+        started, release = threading.Event(), threading.Event()
+        self.addCleanup(release.set)
+        calls = []
+
+        class DelayedAdd(ResumeIntakeService):
+            def submit(self, owner_key, payload, **kwargs):
+                calls.append(payload)
+                started.set()
+                if not release.wait(30):
+                    raise ResumeIntakeUnavailableError()
+                return super().submit(owner_key, payload, **kwargs)
+
+        app.config["RESUME_INTAKE_SERVICE"] = DelayedAdd(
+            repository=self.repository, draft_service=self.draft_service,
+            policy=selected_policy_for_tests(),
+        )
+        self.addCleanup(app.config.update, {"RESUME_INTAKE_SERVICE": original})
+        page = self._new_page(viewport={"width": 390, "height": 844},
+                              is_mobile=True, has_touch=True, reduced_motion="reduce")
         page.goto(f"{self.base_url}/app/resume", wait_until="load")
         page.locator("#resume-intake-text").fill("First version of my answer.")
-        # Type again after the click but before the response renders.
         page.locator("#resume-intake-add").click()
+        activity = page.locator("#resume-intake-activity")
+        activity.get_by_text("Preparing your information", exact=False).wait_for()
+        self.assertTrue(started.wait(2))
+        visible_box = activity.bounding_box()
+        self.assertGreaterEqual(visible_box["y"], 0)
+        self.assertLessEqual(visible_box["y"] + visible_box["height"], 845)
+        self.assertEqual(activity.get_attribute("role"), "status")
+        self.assertEqual(activity.get_attribute("aria-live"), "polite")
+        self.assertEqual(page.locator("#resume-intake-composer").get_attribute("aria-busy"), "true")
+        self.assertFalse(activity.evaluate("el => !!el.closest('[aria-busy=true]')"))
+        # Form/keyboard-style re-entry must not bypass the disabled Add button.
+        page.locator("#resume-intake-composer").evaluate(
+            "el => { el.dispatchEvent(new Event('submit', {cancelable:true})); el.dispatchEvent(new Event('submit', {cancelable:true})); }")
         page.locator("#resume-intake-text").fill("First version of my answer. And a newer sentence.")
-        page.locator("#resume-intake-receipt").get_by_text("needs your review", exact=False).first.wait_for(
-            timeout=15000
-        )
-        self.assertIn(
-            "newer sentence", page.locator("#resume-intake-text").input_value()
-        )
+        page.locator("#resume-intake-hide").click()
+        self.assertTrue(activity.is_visible())
+        self.assertTrue(page.locator("#resume-intake-reopen").is_visible())
+        self.assertEqual(activity.locator(".resume-intake__activity-mark").evaluate(
+            "el => getComputedStyle(el).animationName"), "none")
+        self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth - innerWidth"), 1)
+        box = activity.bounding_box()
+        self.assertGreaterEqual(box["x"], 0)
+        self.assertLessEqual(box["x"] + box["width"], 391)
+        # This is a genuine outstanding request, not a synthetic fake stage.
+        activity.get_by_text("This request is taking longer", exact=False).wait_for(timeout=12000)
+        self.assertNotRegex(activity.inner_text(), r"[0-9]+%|reasoning|seconds|minutes")
+        capture_dir = os.environ.get("PEERSLATE_PROGRESS_CAPTURE_DIR")
+        if capture_dir:
+            page.screenshot(path=str(Path(capture_dir) / "mobile-hidden-guide-long-wait.png"))
+        self.assertEqual(len(calls), 1)
+        page.locator("#resume-intake-reopen").click()
+        self.assertTrue(activity.is_visible())
+        self.assertEqual(page.locator("#resume-intake-text").input_value(),
+                         "First version of my answer. And a newer sentence.")
+        release.set()
+        page.locator("#resume-intake-receipt").get_by_text("needs your review", exact=False).first.wait_for(timeout=15000)
+        self.assertFalse(activity.is_visible())
+        self.assertEqual(page.locator("#resume-intake-composer").get_attribute("aria-busy"), "false")
+        self.assertIn("newer sentence", page.locator("#resume-intake-text").input_value())
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(len(self.catalog.list_items(owner)), 0)
 
     def test_lost_response_retries_the_same_request_without_duplicates(self):
         owner = self._use_owner("browser-lost-response")
@@ -481,6 +585,8 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
             "name":"uncertain.bin","mimeType":"application/octet-stream","buffer":b"unchanged bytes"})
         page.locator("#resume-intake-add").click()
         page.locator("#resume-intake-status").get_by_text("unsent", exact=False).wait_for(timeout=15000)
+        self.assertFalse(page.locator("#resume-intake-activity").is_visible())
+        self.assertEqual(page.locator("#resume-intake-composer").get_attribute("aria-busy"), "false")
         self.assertTrue(page.get_by_role("button",name="Remove uncertain.bin",exact=True).is_disabled())
         # The client keeps the same request and every byte for the retry.
         page.locator("#resume-intake-add").click()
@@ -491,6 +597,37 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.assertEqual(request_ids[0], request_ids[1])
         self.assertEqual(len(self.repository.load_owner(owner)["submissions"]), 1)
         self.assertFalse(page.get_by_role("button",name="Remove uncertain.bin",exact=True).is_disabled())
+        refusals = []
+
+        class RefusingAdd(ResumeIntakeService):
+            def submit(self, owner_key, payload, **kwargs):
+                refusals.append(payload["request_id"])
+                if len(refusals) == 1:
+                    raise ResumeIntakeValidationError("This Add was refused.")
+                raise ResumeIntakeConflictError("conflict", message="This Add conflicts.")
+
+        app.config["RESUME_INTAKE_SERVICE"] = RefusingAdd(
+            repository=self.repository, draft_service=self.draft_service,
+            policy=selected_policy_for_tests(),
+        )
+        text = "Keep these words through refusal and connection failure."
+        page.locator("#resume-intake-text").fill(text)
+        for message in ("This Add was refused.", "This Add conflicts."):
+            page.locator("#resume-intake-add").click()
+            page.locator("#resume-intake-status").get_by_text(message, exact=True).wait_for()
+            self.assertFalse(page.locator("#resume-intake-activity").is_visible())
+            self.assertFalse(page.locator("#resume-intake-add").is_disabled())
+            self.assertEqual(page.locator("#resume-intake-text").input_value(), text)
+        self.assertNotEqual(refusals[0], refusals[1])
+        page.context.set_offline(True)
+        try:
+            page.locator("#resume-intake-add").click()
+            page.locator("#resume-intake-status").get_by_text("connection dropped", exact=False).wait_for()
+            self.assertFalse(page.locator("#resume-intake-activity").is_visible())
+            self.assertEqual(page.locator("#resume-intake-composer").get_attribute("aria-busy"), "false")
+            self.assertEqual(page.locator("#resume-intake-text").input_value(), text)
+        finally:
+            page.context.set_offline(False)
 
     def test_mobile_sheet_dismiss_and_reopen_preserves_queued_and_attached_input(self):
         self._use_owner("browser-sheet")
@@ -594,6 +731,8 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.assertEqual(
             page.evaluate("() => document.getElementById('resume-intake-text').value"), ""
         )
+        self.assertFalse(page.locator("#resume-intake-activity").is_visible())
+        self.assertFalse(page.locator("#resume-intake-cancel-recording").is_visible())
         # A normal member delay must not change duration or any other digest
         # input before Try again retransmits the original recording request.
         page.wait_for_timeout(2500)
@@ -606,6 +745,28 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.assertEqual(request_payloads[0], request_payloads[1])
         # One provider call for the original transcription, none for the replay.
         self.assertEqual(len(self.transcriber.calls), provider_calls + 1)
+        self.assertFalse(page.locator("#resume-intake-activity").is_visible())
+        # A terminal pending/recovery response is not evidence that a server
+        # job is still processing. It must stop busy and preserve manual input.
+        class RecoveryRecording(ResumeIntakeService):
+            def transcribe_recording(self, owner_key, upload, payload, **kwargs):
+                return {"success": False, "outcome": "pending", "recovery_required": True,
+                        "input_preserved": True, "message": "Recovery is required for this recording."}
+
+        app.config["RESUME_INTAKE_SERVICE"] = RecoveryRecording(
+            repository=self.repository, draft_service=self.draft_service,
+            policy=selected_policy_for_tests(),
+        )
+        words = page.locator("#resume-intake-text").input_value()
+        page.locator("#resume-intake-mic").click()
+        page.wait_for_timeout(300)
+        page.locator("#resume-intake-mic").click()
+        page.locator("#resume-intake-status").get_by_text("Recovery is required", exact=False).wait_for(timeout=15000)
+        self.assertFalse(page.locator("#resume-intake-activity").is_visible())
+        self.assertFalse(page.locator("#resume-intake-cancel-recording").is_visible())
+        self.assertEqual(page.locator("#resume-intake-composer").get_attribute("aria-busy"), "false")
+        self.assertEqual(page.locator("#resume-intake-text").input_value(), words)
+        self.assertEqual(page.locator("#resume-intake-attachments").get_by_text("Try again", exact=True).count(), 0)
 
     def test_earlier_recording_retry_keeps_its_request_after_a_second_recording(self):
         self._use_owner("browser-recording-intervening")

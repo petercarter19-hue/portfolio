@@ -54,6 +54,11 @@
     var composer = document.getElementById('resume-intake-composer');
     var receiptBox = document.getElementById('resume-intake-receipt');
     var statusBox = document.getElementById('resume-intake-status');
+    var activityBox = document.getElementById('resume-intake-activity');
+    var activityText = document.getElementById('resume-intake-activity-text');
+    var activitySlot = document.getElementById('resume-intake-activity-slot');
+    var activityOperations = [];
+    var addOperation = null;
     var draftLabel = document.getElementById('resume-intake-draft-label');
     var queuedList = document.getElementById('resume-intake-queued');
     var attachmentList = document.getElementById('resume-intake-attachments');
@@ -220,6 +225,59 @@
         }
         statusBox.textContent = message || '';
         statusBox.setAttribute('data-kind', kind || 'ok');
+    }
+
+    // Only locally outstanding work is busy. A pending/recovery HTTP receipt
+    // is terminal for this request, not evidence of a background job.
+    function renderActivity() {
+        var adding = activityOperations.some(function (operation) { return operation.kind === 'add'; });
+        var transcribing = activityOperations.some(function (operation) { return operation.kind === 'transcription'; });
+        var waiting = activityOperations.some(function (operation) { return operation.longWait; });
+        var message = adding ? 'Preparing your information…' : '';
+        if (transcribing) {
+            message += (message ? ' ' : '') + 'Turning your recording into text…';
+        }
+        if (message) {
+            message += waiting
+                ? ' This request is taking longer. You can keep typing; your new words will be kept.'
+                : ' You can keep typing.';
+        }
+        activityText.textContent = message;
+        activityBox.hidden = !activityOperations.length;
+        // The live status is outside this form, so busy never defers its announcement.
+        composer.setAttribute('aria-busy', activityOperations.length ? 'true' : 'false');
+        addButton.setAttribute('aria-busy', adding ? 'true' : 'false');
+        var destination = root.hidden ? reopenButton.parentNode : activitySlot;
+        if (activityBox.parentNode !== destination) destination.insertBefore(activityBox, destination.firstChild);
+        activityBox.classList.toggle('resume-intake__activity--outside', root.hidden);
+    }
+
+    function beginActivity(kind) {
+        var operation = {kind: kind, longWait: false, timer: null};
+        activityOperations.push(operation);
+        operation.timer = window.setTimeout(function () {
+            if (activityOperations.indexOf(operation) === -1) return;
+            operation.longWait = true;
+            renderActivity();
+        }, 10000);
+        renderActivity();
+        activityBox.scrollIntoView({block: 'nearest'});
+        return operation;
+    }
+
+    function endActivity(operation) {
+        var index = activityOperations.indexOf(operation);
+        if (index === -1) return;
+        window.clearTimeout(operation.timer);
+        activityOperations.splice(index, 1);
+        renderActivity();
+    }
+
+    function syncRecordingCancel() {
+        var recording = recorder && recorder.state === 'recording';
+        var transcribing = attachments.some(function (row) { return row.transcribing; });
+        cancelRecordingButton.hidden = !recording && !transcribing;
+        cancelRecordingButton.textContent = recording ? 'Cancel recording' : 'Cancel transcription';
     }
 
     function send(url, options) {
@@ -847,6 +905,7 @@
         if (event) {
             event.preventDefault();
         }
+        if (addOperation) return;
         var request = buildRequestParts();
         if (!request.text && !request.items.length && !request.attachments.length) {
             setStatus('Add something before saving.', 'error');
@@ -870,8 +929,12 @@
         });
         addButton.disabled = true;
         renderAttachments();
-        setStatus('Adding\u2026', 'ok');
+        var operation = beginActivity('add');
+        addOperation = operation;
+        setStatus('Preparing your information\u2026', 'ok');
         send(urls.submit, {method: 'POST', body: form}).then(function (result) {
+            endActivity(operation);
+            addOperation = null;
             addButton.disabled = false;
             if (result.response.status === 400 || result.response.status === 409) {
                 // A definitive refusal means this payload will never be
@@ -935,6 +998,8 @@
             refreshDraftLabel();
             load();
         }).catch(function () {
+            endActivity(operation);
+            addOperation = null;
             addButton.disabled = false;
             setStatus(
                 'The connection dropped before Add finished. Your answer is still here, unsent.',
@@ -993,10 +1058,13 @@
             };
             attachments.push(existingRow);
         }
+        if (existingRow.transcribing) return;
         var recordingRequest = existingRow.recording_request;
         var generation = recordingGeneration;
         existingRow.transcriptionGeneration = generation;
         existingRow.transcribing = true;
+        var operation = beginActivity('transcription');
+        existingRow.activityOperation = operation;
         cancelRecordingButton.hidden = false;
         cancelRecordingButton.textContent = 'Cancel transcription';
         setStatus('Transcribing\u2026 you can keep typing.', 'ok');
@@ -1014,12 +1082,13 @@
             form.append('recording', blob, 'recording.webm');
             return send(urls.recording, {method: 'POST', body: form});
         }).then(function (result) {
+            endActivity(operation);
             if (generation !== recordingGeneration) {
                 existingRow.status = 'cancelled'; existingRow.retryable = false;
                 renderAttachments(); refreshDraftLabel(); return;
             }
             existingRow.transcribing = false;
-            cancelRecordingButton.hidden = true;
+            syncRecordingCancel();
             if (result.response.status === 400 || result.response.status === 409) {
                 existingRow.status = 'failed';
                 existingRow.retryable = false;
@@ -1055,11 +1124,13 @@
             refreshDraftLabel();
             setStatus('Transcript added to your answer. Nothing is saved until you press Add.', 'ok');
         }).catch(function () {
+            endActivity(operation);
             if (generation !== recordingGeneration) {
                 existingRow.status = 'cancelled'; existingRow.retryable = false;
                 renderAttachments(); refreshDraftLabel(); return;
             }
-            cancelRecordingButton.hidden = true;
+            existingRow.transcribing = false;
+            syncRecordingCancel();
             existingRow.status = 'failed';
             existingRow.retryable = true;
             renderAttachments();
@@ -1126,6 +1197,7 @@
         guideDismissed = true;
         root.hidden = true;
         reopenButton.hidden = false;
+        renderActivity();
         if (firstUse) {
             root.setAttribute('data-state', 'docked');
             if (editorSection) {
@@ -1141,6 +1213,7 @@
         guideHidden = false;
         root.hidden = false;
         reopenButton.hidden = true;
+        renderActivity();
         if (firstUse) {
             root.setAttribute('data-state', 'welcome');
             if (scrim) {
@@ -1281,7 +1354,10 @@
     cancelRecordingButton.addEventListener('click', function () {
         recordingGeneration += 1;
         attachments.forEach(function (row) {
-            if (row.transcribing) { row.status = 'cancelled'; row.retryable = false; row.transcribing = false; }
+            if (row.transcribing) {
+                endActivity(row.activityOperation);
+                row.status = 'cancelled'; row.retryable = false; row.transcribing = false;
+            }
         });
         renderAttachments(); refreshDraftLabel();
         stopRecording();

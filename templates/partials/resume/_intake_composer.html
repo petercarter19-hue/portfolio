@@ -199,6 +199,12 @@
                 </button>
             </div>
         </form>
+        <div id="resume-intake-activity-slot">
+            <p class="resume-intake__activity" id="resume-intake-activity" role="status" aria-live="polite" aria-atomic="true" hidden>
+                <span class="resume-intake__activity-mark" aria-hidden="true"></span>
+                <span id="resume-intake-activity-text"></span>
+            </p>
+        </div>
 
         <p class="resume-intake__lock" id="resume-intake-draft-state">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2M6 10h12v9H6z"/></svg>
@@ -228,10 +234,10 @@
     <p class="resume-intake__status" id="resume-intake-status" role="status" aria-live="polite"></p>
 </aside>
 
-<p class="resume-intake__reopen">
+<div class="resume-intake__reopen">
     <button type="button" class="resume-intake__reopen-button" id="resume-intake-reopen" hidden>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>
         Guide me
         <span class="resume-intake__reopen-hint">Continue your answer.</span>
     </button>
-</p>
+</div>
