@@ -983,3 +983,10 @@ can push it all the way to deployment."
   product implementation, production operation or historical proof. Pete wants
   the remaining MVP and cleanup steps presented plainly for approval one at a
   time; agreement with the overall plan is not activation of those steps.
+
+## 2026-09-29 - Use GPT-6.1 Sol for OpenAI assignments
+
+- Pete selected this update in `session:01a0c0a9-a194-71f2-9c9b-7e665fe79193/owner-decision:2026-09-29/gpt-6.1-sol-role-routing` and authorized applying it where supported.
+- Every OpenAI role uses GPT-6.1 Sol. Site and package management, all independent reviews and demanding well-bounded implementation use Extra High. Known-cause implementation, consequential architecture and routine release use High; bounded evidence and documentation use Medium; difficult unresolved integration retains Medium or High according to stated risk.
+- The current table in `docs/AI_MODEL_AND_ROLE_ROUTING.md` owns the assignments. Apply them at supported launches and safe work boundaries, verify observable runtime settings, and preserve explicit package/session exceptions and task-specific holds.
+- This changes OpenAI assignment defaults only. Historical decisions remain evidence; product AI models, non-OpenAI roles, ownership, review requirements, CI and delivery controls remain as assigned.

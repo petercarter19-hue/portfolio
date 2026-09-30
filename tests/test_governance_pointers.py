@@ -374,21 +374,23 @@ class WorkflowEfficiencyTests(unittest.TestCase):
     def test_openai_role_defaults_require_actual_runtime_verification(self):
         body = " ".join(_read("docs", "AI_MODEL_AND_ROLE_ROUTING.md").split())
         for route in (
-            "Site management | **GPT-6 Astra, Medium**",
-            "Package management | **Sol, Extra High**",
-            "Known-cause implementation | **Sol, High**",
-            "Bounded supporting work | **Sol, Medium**",
-            "Consequential architecture or cross-package decision | **GPT-6 Astra, High**",
-            "Difficult unresolved debugging or integration | **GPT-6 Astra, Medium or High**",
-            "Consequential independent security, privacy or architecture review | **Fresh GPT-6 Astra, High**",
-            "Routine bounded independent review, release or closeout execution | **Sol, High**",
-            "Demanding well-bounded implementation | **Sol, Extra High**",
+            "Site management | **GPT-6.1 Sol, Extra High**",
+            "Package management | **GPT-6.1 Sol, Extra High**",
+            "Known-cause implementation | **GPT-6.1 Sol, High**",
+            "Bounded supporting work | **GPT-6.1 Sol, Medium**",
+            "Consequential architecture or cross-package decision | **GPT-6.1 Sol, High**",
+            "Difficult unresolved debugging or integration | **GPT-6.1 Sol, Medium or High**",
+            "Consequential independent security, privacy or architecture review | **Fresh GPT-6.1 Sol, Extra High**",
+            "Final independent review, including routine bounded final review | **Fresh GPT-6.1 Sol, Extra High**",
+            "Other independent reviews | **Fresh GPT-6.1 Sol, Extra High**",
+            "Routine release or closeout execution | **GPT-6.1 Sol, High**",
+            "Demanding well-bounded implementation | **GPT-6.1 Sol, Extra High**",
         ):
             with self.subTest(route=route):
                 self.assertIn(route, body)
         self.assertNotIn("Site or package management", body)
         self.assertIn(
-            "Site managers use Astra Medium; package managers use Sol Extra High",
+            "Site and package managers use GPT-6.1 Sol Extra High",
             body,
         )
         self.assertNotIn("current central manager has Pete's explicit", body)

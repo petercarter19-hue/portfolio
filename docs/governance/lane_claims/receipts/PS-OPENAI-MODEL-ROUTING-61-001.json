@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-OPENAI-MODEL-ROUTING-61-001",
+  "candidate_sha": "076069432b930a68ad69f543691d6823bdf9a0d6",
+  "review_type": "self",
+  "reviewer_ref": "session:01a0c0a9-a194-71f2-9c9b-7e665fe79193",
+  "result": "pass",
+  "reviewed_at": "2026-09-30T04:15:27Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-OPENAI-MODEL-ROUTING-61-001.md"
+}

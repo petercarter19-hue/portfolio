@@ -330,18 +330,20 @@ evidence. Do not create a separate benchmark or monitoring agent.
 
 | Assigned work or decision | Current choice | Use |
 |---|---|---|
-| Site management | **GPT-6 Astra, Medium** | Required OpenAI site-management default. |
-| Package management | **Sol, Extra High** | Required OpenAI package-management default. |
-| Known-cause implementation | **Sol, High** | Implementation, associated tests, debugging, complete-diff self-review and corrections |
-| Bounded supporting work | **Sol, Medium** | Evidence collection and routine documentation under the assigned writer or manager |
-| Consequential architecture or cross-package decision | **GPT-6 Astra, High** | Architecture or coordination whose decision materially affects multiple systems or packages |
-| Difficult unresolved debugging or integration | **GPT-6 Astra, Medium or High** | Use only when the unresolved cause or integration risk needs broader reasoning; state that reason first |
-| Consequential independent security, privacy or architecture review | **Fresh GPT-6 Astra, High** | Exact-candidate review of the defined consequential risk |
-| Routine bounded independent review, release or closeout execution | **Sol, High** | Focused exact-candidate conformance review or ordinary authorized delivery execution |
-| Demanding well-bounded implementation | **Sol, Extra High** | Selectively for an unusually demanding implementation with clear boundaries; state the concrete need first |
+| Site management | **GPT-6.1 Sol, Extra High** | Required OpenAI site-management default. |
+| Package management | **GPT-6.1 Sol, Extra High** | Required OpenAI package-management default. |
+| Known-cause implementation | **GPT-6.1 Sol, High** | Implementation, associated tests, debugging, complete-diff self-review and corrections |
+| Bounded supporting work | **GPT-6.1 Sol, Medium** | Evidence collection and routine documentation under the assigned writer or manager |
+| Consequential architecture or cross-package decision | **GPT-6.1 Sol, High** | Architecture or coordination whose decision materially affects multiple systems or packages |
+| Difficult unresolved debugging or integration | **GPT-6.1 Sol, Medium or High** | Use only when the unresolved cause or integration risk needs broader reasoning; state that reason first |
+| Consequential independent security, privacy or architecture review | **Fresh GPT-6.1 Sol, Extra High** | Exact-candidate review of the defined consequential risk |
+| Final independent review, including routine bounded final review | **Fresh GPT-6.1 Sol, Extra High** | Final exact-candidate independent review |
+| Other independent reviews | **Fresh GPT-6.1 Sol, Extra High** | Focused independent review of the assigned scope |
+| Routine release or closeout execution | **GPT-6.1 Sol, High** | Ordinary authorized delivery execution |
+| Demanding well-bounded implementation | **GPT-6.1 Sol, Extra High** | Selectively for an unusually demanding implementation with clear boundaries; state the concrete need first |
 
-Site managers use Astra Medium; package managers use Sol Extra High. Discuss an
-exception with Pete only after explaining the concrete need.
+Site and package managers use GPT-6.1 Sol Extra High. Discuss an exception with
+Pete only after explaining the concrete need.
 
 At supported launch or session change, select the assigned model and effort and
 verify the effective runtime setting. Handoff labels, inherited parent settings,
