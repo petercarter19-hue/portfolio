@@ -381,7 +381,7 @@
 
         function requestAnswer(requestedAction) {
             const message = elements.input.value.trim();
-            const action = VALID_ACTIONS.has(requestedAction) ? requestedAction : 'evidence_finder';
+            const action = VALID_ACTIONS.has(requestedAction) ? requestedAction : null;
             if (!message) {
                 renderRecovery('validation_error', 'Enter a question before asking Pete AI.');
                 elements.input.focus();
@@ -1228,12 +1228,13 @@
 
         elements.form.addEventListener('submit', (event) => {
             event.preventDefault();
-            requestAnswer(state.requestedAction || 'evidence_finder');
+            requestAnswer(state.requestedAction);
         });
         elements.cancel.addEventListener('click', () => cancelActiveRequest());
         elements.close.addEventListener('click', () => closeCompanion());
         elements.input.addEventListener('input', () => {
             state.draft = elements.input.value;
+            if (!state.explicitContext) state.requestedAction = null;
             if (state.phase === 'validation_error') {
                 setPhase(state.answer ? 'answered' : (state.explicitContext ? 'context_ready' : 'idle'));
                 setStatus('');

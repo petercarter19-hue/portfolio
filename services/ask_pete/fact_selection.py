@@ -23,6 +23,7 @@ MAX_ATOM_CHARS = 400
 MAX_SELECTED_ATOMS = 8
 _FIELD_LABELS = (
     "Positioning: ", "Professional summary: ", "Location: ",
+    "Employer: ", "Role: ", "Dates: ",
     "Summary: ", "Public summary: ", "Public detail: ",
 )
 _LIST_SECTIONS = frozenset({

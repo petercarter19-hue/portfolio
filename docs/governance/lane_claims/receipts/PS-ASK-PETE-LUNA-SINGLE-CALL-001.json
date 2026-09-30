@@ -1,21 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-ASK-PETE-LUNA-SINGLE-CALL-001",
-  "candidate_sha": "2740c920b7582ccbd2abafcf0e896141fb71277d",
+  "candidate_sha": "f365a1f9082bf55f30324c0fd54a1053162c0ba4",
   "review_type": "independent",
   "reviewer_ref": "session:01a0f06e-59f1-7411-a6dc-1946b89fa031",
   "result": "pass",
-  "reviewed_at": "2026-09-30T04:03:32Z",
-  "findings": [
-    {
-      "id": "R1",
-      "priority": "P2",
-      "status": "resolved",
-      "file": "services/ask_pete/fact_selection.py",
-      "line": 137,
-      "title": "Validate selection mode type before set membership",
-      "description": "String-type validation now precedes hash-based membership; independent unit and actual-route regressions verify array/object/Boolean/integer modes return useful HTTP 200 unavailable with no facts and one call."
-    }
-  ],
+  "reviewed_at": "2026-09-30T07:45:48Z",
+  "findings": [],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-ASK-PETE-LUNA-SINGLE-CALL-001.md"
 }

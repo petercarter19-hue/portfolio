@@ -27,7 +27,8 @@ from playwright.sync_api import Browser, Page, Route, sync_playwright
 
 
 ROOT = Path(__file__).resolve().parents[2]
-EVIDENCE_DIR = ROOT / "docs" / "initiatives" / "PS-ASK-PETE-AI-001" / "browser-evidence"
+EVIDENCE_DIR = Path(os.environ.get("ASK_PETE_BROWSER_EVIDENCE_DIR") or
+                    ROOT / "docs" / "initiatives" / "PS-ASK-PETE-AI-001" / "browser-evidence")
 CHROME_PATH = Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe")
 READY_TIMEOUT_SECONDS = 25
 
@@ -591,6 +592,8 @@ def check_contextual_prefill(page: Page, stub: ApiStub) -> None:
 
     stub.mode = "context_mismatch"
     request_custom_question(page, "Confirm the selected MBSE context.")
+    assert stub.post_bodies[-1]["action"] == "evidence_finder"
+    assert stub.post_bodies[-1]["context_key"] == "skill:mbse"
     page.locator("[data-ask-pete-answer]").wait_for(state="visible")
     assert page.locator("[data-ask-pete-context]").is_hidden()
 
@@ -649,6 +652,11 @@ def check_master_source_contextual(
         page.screenshot(path=EVIDENCE_DIR / "source-open.png", full_page=False)
 
         request_custom_question(page, "Show another public evidence summary.")
+        assert stub.post_bodies[-1] == {
+            "message": "Show another public evidence summary.",
+            "action": None,
+            "context_key": None,
+        }
         page.locator("[data-ask-pete-answer]").wait_for(state="visible")
         assert page.locator("[data-ask-pete-evidence-marker]").count() == 0
         page.locator("[data-ask-pete-show-all]").click()
@@ -666,6 +674,37 @@ def check_master_source_contextual(
     except Exception:
         page.close()
         raise
+
+
+def check_action_state(browser: Browser, base_url: str) -> None:
+    """Keep quick-action intent only until the visitor types a new free question."""
+    stub = ApiStub()
+    page = new_page(browser, base_url, stub, 1536, 1024)
+    try:
+        page.locator('[data-ask-pete-starter="recruiter_brief"]').evaluate(
+            "element => element.click()"
+        )
+        page.locator("[data-ask-pete-answer]").wait_for(state="visible")
+        assert stub.post_bodies[-1]["action"] == "recruiter_brief"
+        request_custom_question(page, "What is Pete's current public role?")
+        page.locator("[data-ask-pete-answer]").wait_for(state="visible")
+        assert stub.post_bodies[-1] == {
+            "message": "What is Pete's current public role?",
+            "action": None,
+            "context_key": None,
+        }
+        page.locator('[data-r2-skill-toggle="mbse"]').click()
+        context_button = page.locator(
+            '[data-ask-pete-context-action][data-ask-pete-context-key="skill:mbse"]'
+        )
+        context_button.wait_for(state="visible")
+        context_button.click()
+        request_custom_question(page, "Confirm the selected MBSE context.")
+        assert stub.post_bodies[-1]["action"] == "evidence_finder"
+        assert stub.post_bodies[-1]["context_key"] == "skill:mbse"
+        assert not stub.page_errors
+    finally:
+        page.close()
 
 def capture_critical_state_board(page: Page) -> None:
     """Capture asserted state treatments without representing one product state."""
@@ -1067,6 +1106,7 @@ def check_recovery_and_request_lifecycle(page: Page, stub: ApiStub) -> None:
 
 def main() -> None:
     responsive_only = "--responsive-only" in sys.argv[1:]
+    action_state_only = "--action-state-only" in sys.argv[1:]
     if not responsive_only:
         EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
     process, base_url = start_server()
@@ -1077,6 +1117,10 @@ def main() -> None:
                 launch_options["executable_path"] = str(CHROME_PATH)
             browser = playwright.chromium.launch(**launch_options)
             try:
+                if action_state_only:
+                    check_action_state(browser, base_url)
+                    print("Ask Pete starter, typed-question and context actions passed.")
+                    return
                 stub = ApiStub()
                 if responsive_only:
                     page = new_page(browser, base_url, stub, 1024, 900)

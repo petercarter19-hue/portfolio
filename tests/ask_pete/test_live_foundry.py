@@ -59,6 +59,12 @@ class Transport:
         if document["purpose"] == "recruiter_brief":
             ids = [next(line["atom_id"] for line in source_lines
                         if excerpt in line["text"]) for excerpt in RECRUITER_EXCERPTS]
+        elif document["question"] == "What is Pete's current public role?":
+            current_role = next(source for source in document["approved_source_records"]
+                                if "career-role:northrop" in source["source_version_key"])
+            ids = [next(line["atom_id"] for line in current_role["content_lines"]
+                        if line["text"].startswith(label))
+                   for label in ("Role: ", "Employer: ", "Dates: ")]
         else:
             ids = [next(line["atom_id"] for line in source_lines
                         if "Collaborates with SMEs and Product Owners" in line["text"])]
@@ -147,6 +153,33 @@ class LiveFoundryTests(TestCase):
                     self.assertEqual(len({c["citations"][0]["source_version_key"] for c in data["claims"][:3]}), 3)
                 elif action == "interview_preparation":
                     self.assertEqual(len(data["follow_up_questions"]), 3)
+
+    def test_direct_current_role_question_uses_approved_context_and_one_call(self):
+        question = "What is Pete's current public role?"
+        transport = Transport()
+        response, token, events = self.ask(transport, {"message": question, "action": None})
+        data = response.get_json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data["state"], "supported")
+        self.assertEqual(data["purpose"], "public_profile_answer")
+        self.assertEqual(len(transport.calls), 1)
+        self.assertEqual(token.call_count, 1)
+        self.assertEqual(len(json.loads(transport.calls[0]["body"]["input"])["approved_source_records"]), 15)
+        self.assertEqual(len(data["claims"]), 3)
+        self.assertIn("Systems Engineer", data["summary"])
+        self.assertIn("Northrop Grumman", data["summary"])
+        self.assertIn("2025-Present", data["summary"])
+        self.assertEqual(len({claim["citations"][0]["source_version_key"]
+                              for claim in data["claims"]}), 1)
+        self.assertEqual(sum(event["provider_calls"] for event in events
+                             if event["phase"] == "generation"), 1)
+
+        invalid = Transport(lambda phase, answer: answer.update(atom_ids=[]))
+        unavailable, _, _ = self.ask(invalid, {"message": question, "action": None})
+        self.assertEqual(unavailable.status_code, 200)
+        self.assertEqual(unavailable.get_json()["state"], "unavailable")
+        self.assertEqual(unavailable.get_json()["claims"], [])
+        self.assertEqual(len(invalid.calls), 1)
 
     def test_model_prose_forged_duplicate_or_misaligned_facts_cannot_escape(self):
         mutations = (

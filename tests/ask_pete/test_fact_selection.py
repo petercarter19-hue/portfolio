@@ -67,6 +67,26 @@ class FactSelectionTest(TestCase):
                 atom = atoms[atom_id]
                 self.assertEqual(source.content[atom.start:atom.end], atom.excerpt)
 
+    def test_current_role_fields_are_selectable_and_exactly_cited(self):
+        request = self.request(question="What is Pete's current public role?")
+        sources, document, atoms = self.document(request)
+        record = next(item for item in document["approved_source_records"]
+                      if "career-role:northrop" in item["source_version_key"])
+        field_lines = [next(line for line in record["content_lines"]
+                            if line["text"].startswith(label))
+                       for label in ("Role: ", "Employer: ", "Dates: ")]
+        self.assertTrue(field_lines[-1]["text"].endswith("Present"))
+        ids = [line["atom_id"] for line in field_lines]
+        answer = self.render(request, atoms, ids)
+        validate_grounded_answer(request, sources, answer)
+        validate_product_quality(request.purpose, answer)
+        self.assertEqual(answer.state.value, "supported")
+        self.assertEqual([claim.text for claim in answer.claims],
+                         [line["text"].split(": ", 1)[1] for line in field_lines])
+        self.assertEqual({claim.citations[0].source_version_key for claim in answer.claims},
+                         {record["source_version_key"]})
+        self.assertTrue(all(claim.text in answer.summary for claim in answer.claims))
+
     def test_recruiter_brief_composes_three_real_contextual_facts_in_range(self):
         request = self.request(Purpose.RECRUITER_BRIEF, "Give me a recruiter brief")
         sources, _, atoms = self.document(request)

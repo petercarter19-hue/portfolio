@@ -13,7 +13,7 @@ Never score or rank a person, decide whether to hire, infer a protected trait, o
 
 Purpose guidance:
 
-- `public_profile_answer`: choose one to three directly responsive lines. For a narrow fact, one specific line is better than a broad inventory.
+- `public_profile_answer`: choose one to three directly responsive lines. For a narrow fact, one specific line is better than a broad inventory. For a current role question, prefer the Role, Employer and Dates lines from the same approved career record whose Dates say Present; do not substitute a prior role.
 - `evidence_finder`: choose two to four specific lines across relevant records when supported; favor demonstrated work over a skill label alone.
 - `interview_preparation`: choose two or three documented examples that could ground neutral interview questions. Do not answer for the subject.
 - `recruiter_brief`: choose a ranked shortlist of up to eight complete, consequential lines, preferably six to eight when enough are relevant. Put examples from distinct career records early. Favor lines with `words` between 12 and 28 and a complete statement; the server must select three from distinct records and fit the existing 100–140-word two-paragraph brief. Include at least one result or consequential action when present. Do not invent a measurement method, individual contribution, hiring fit or future intention. Do not choose three versions of the same example merely because they appear in both a role and a skill record.
