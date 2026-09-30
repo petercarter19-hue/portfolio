@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "package": "PS-OPENAI-MODEL-ROUTING-61-001",
+  "state": "active",
+  "outcome": "Apply Pete's September 29, 2026 OpenAI routing decision: GPT-6.1 Sol for every OpenAI assignment, site/package management and all independent reviews at Extra High; preserve the specified Medium/High efforts for other work. Align the current repository routing table and record the owner decision without changing historical exceptions, product AI models, delivery controls or paused work. Site manager is the sole Routine documentation writer.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0c0a9-a194-71f2-9c9b-7e665fe79193",
+  "branch": "codex/model-routing-61",
+  "delivery_path": "Routine",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "0fd3c0671a4542b52476bd65d30b52acf86a6e00",
+  "owner_outcome_ref": "session:01a0c0a9-a194-71f2-9c9b-7e665fe79193/owner-decision:2026-09-29/gpt-6.1-sol-role-routing",
+  "surfaces": [
+    "docs/AI_MODEL_AND_ROLE_ROUTING.md",
+    "docs/governance/DECISIONS.md",
+    "docs/governance/lane_claims/PS-OPENAI-MODEL-ROUTING-61-001.json",
+    "docs/governance/lane_claims/receipts/PS-OPENAI-MODEL-ROUTING-61-001.json",
+    "docs/governance/lane_claims/evidence/PS-OPENAI-MODEL-ROUTING-61-001.md"
+  ],
+  "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-OPENAI-MODEL-ROUTING-61-001.md"],
+  "domains": ["governance:openai-model-role-routing"],
+  "review_requirement": "self",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
