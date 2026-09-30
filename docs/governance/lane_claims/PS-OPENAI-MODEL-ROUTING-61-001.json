@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-OPENAI-MODEL-ROUTING-61-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Apply Pete's September 29, 2026 OpenAI routing decision: GPT-6.1 Sol for every OpenAI assignment, site/package management and all independent reviews at Extra High; preserve the specified Medium/High efforts for other work. Align the current repository routing table and record the owner decision without changing historical exceptions, product AI models, delivery controls or paused work. Site manager is the sole Routine documentation writer.",
   "assignment": "implementation",
   "writer_ref": "session:01a0c0a9-a194-71f2-9c9b-7e665fe79193",
@@ -24,6 +24,6 @@
   "review_requirement": "self",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "d1f421947ffa512bf09cd4cb6ca91f4a9d4e0944",
+  "closed_at": "2026-09-30T05:12:00Z"
 }
