@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "package": "PS-RESUME-EXTRACTION-CALIBRATION-001",
+  "state": "active",
+  "outcome": "Repair My Data GPT5.6-Luna extraction instructions, settings and strict output for the selected Luna-first three-fictional-career calibration. Persist scoped allowance128000; support explicit medium and defaultxhigh extraction with identical revised prompt/schema; preserve source/quote/type/unknown validation, private proposals, member confirmation, manual fallback and no retry. Expose calibration-only receive1190, emitted tuple(5,1190), effective Urllib socket1195 and separate parent absolute deadline1200; other callers retain defaults. Reject incomplete generation even if JSON decodes, preserving available safe bounded request/config/usage/status metadata. Implement offline contract/regression checks, freeze, obtain independent review, required CI, normal accepted merge and close. Parent owns deployment binding, at most six fresh once-only paid synthetic calls and independent actual-output review; spent failed operation is immutable. No writer paid/cloud calls, Sol comparison, voice, policy/schema/factory/identity/storage/flags or live enablement.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0f1ae-2ca7-72a2-91cb-1c0895f35a34",
+  "branch": "codex/2026-09-30-resume-extraction-calibration-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "dfb13e7224da9ee0f6973e1245b240ade6be1b24",
+  "owner_outcome_ref": "session:01a0f011-5b42-78f1-afad-2b81243d2998/event:evt-8bd54ca2-1c12-44e0-9637-87c7356cb7ec",
+  "surfaces": [
+    "services/my_data_extraction_adapter.py",
+    "services/ai_foundation/contracts.py",
+    "services/ai_foundation/azure_foundry.py",
+    "tests/test_my_data_intake_ai.py",
+    "tests/ai_foundation/test_azure_foundry_provider.py",
+    "docs/governance/lane_claims/PS-RESUME-EXTRACTION-CALIBRATION-001.json",
+    "docs/governance/lane_claims/receipts/PS-RESUME-EXTRACTION-CALIBRATION-001.json",
+    "docs/governance/lane_claims/evidence/PS-RESUME-EXTRACTION-CALIBRATION-001.md"
+  ],
+  "domains": [
+    "ai:my-data-intake-extraction",
+    "testing:my-data-extraction-calibration"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-RESUME-EXTRACTION-CALIBRATION-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
