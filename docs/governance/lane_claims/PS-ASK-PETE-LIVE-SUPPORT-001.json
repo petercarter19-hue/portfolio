@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-ASK-PETE-LIVE-SUPPORT-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Repair the demonstrated Luna Ask Pete support-call deadline failure on the existing public route. Keep the 20-second whole-request bound, approved full public sources, independent strict whole-answer support verdict, deterministic citation and product checks, refusal/privacy precedence, two-call ceiling, no retries and useful unavailable fallback. Test a phase-specific lower reasoning effort for the support verdict while preserving low-reasoning generation; validate focused positive, negative, deadline, and isolation behavior. Deliver source through self-review, independent exact-candidate review, CI and accepted merge. Root manager session:01a08dfb-7229-75f0-8017-07dd590f1795 is sole production executor. Live speed and quality require separate bounded production proof. No schema, identity, signup, unrelated AI routing, new paid batch, production config or deployment authority is granted by this claim.",
   "assignment": "implementation",
   "writer_ref": "session:01a0ea20-0c57-7521-90a2-ab3e1af19322",
@@ -29,6 +29,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "bc7caab2c89bf134d2b8ed0c19d06ee62537354b",
+  "closed_at": "2026-09-30T03:00:00Z"
 }
