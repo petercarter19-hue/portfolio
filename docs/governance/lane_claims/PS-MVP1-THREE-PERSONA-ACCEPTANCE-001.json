@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-THREE-PERSONA-ACCEPTANCE-001",
+  "state": "active",
+  "outcome": "Complete the remaining three-career-persona onboarding experience acceptance and concrete required repairs after accepted Luna release, using distinct clearly fictional early-graduate, mid-career and extensive-history accounts. Exercise actual exposed upload/intake/gap handling, useful Resume draft, manual edits, available templates/projections, private preview/save/reload/return, duplicates/conflicts, empty and error recovery, other-member/guest isolation, desktop/mobile/keyboard/accessibility and agent-driven time/friction. Reuse the actual Flask fixture and accepted architecture; label identity, memory persistence, AI/transcription substitutes and real hosted/human/device limits truthfully. Add only the necessary third synthetic account and bounded fictional inputs first; extend only exact tracked product paths for demonstrated required fixes. Freeze and obtain independent exact-candidate experience review, required CI, normal accepted Azure PR merge and close. Parent retains exact live operations/schema/account/provider authority; no speculative new feature, Dashboard, material visual direction, full-site audit or worktree cleanup programme.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0f1ae-2ca7-72a2-91cb-1c0895f35a34",
+  "branch": "codex/2026-09-30-mvp1-three-persona-acceptance-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "cac0e8fa66019ca4b7e7107333361116fc74f447",
+  "owner_outcome_ref": "session:01a0f011-5b42-78f1-afad-2b81243d2998/event:evt-ad4569bd-7a44-4d3b-bb33-84d5ca52a8d4",
+  "surfaces": [
+    "tests/mvp1_acceptance_support.py",
+    "tests/fixtures/mvp1_acceptance",
+    "docs/governance/lane_claims/PS-MVP1-THREE-PERSONA-ACCEPTANCE-001.json",
+    "docs/governance/lane_claims/receipts/PS-MVP1-THREE-PERSONA-ACCEPTANCE-001.json",
+    "docs/governance/lane_claims/evidence/PS-MVP1-THREE-PERSONA-ACCEPTANCE-001.md"
+  ],
+  "domains": [
+    "mvp1:three-persona-onboarding-acceptance",
+    "testing:mvp1:three-persona-experience"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MVP1-THREE-PERSONA-ACCEPTANCE-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
