@@ -16,7 +16,8 @@
     "docs/governance/DECISIONS.md",
     "docs/governance/lane_claims/PS-OPENAI-MODEL-ROUTING-61-001.json",
     "docs/governance/lane_claims/receipts/PS-OPENAI-MODEL-ROUTING-61-001.json",
-    "docs/governance/lane_claims/evidence/PS-OPENAI-MODEL-ROUTING-61-001.md"
+    "docs/governance/lane_claims/evidence/PS-OPENAI-MODEL-ROUTING-61-001.md",
+    "tests/test_governance_pointers.py"
   ],
   "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-OPENAI-MODEL-ROUTING-61-001.md"],
   "domains": ["governance:openai-model-role-routing"],
