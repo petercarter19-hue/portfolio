@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-RESUME-INTAKE-PROGRESS-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Add immediately visible accessible request-bound feedback for existing Resume intake Add and transcription. Reassure longer waits without fake stages, percentages or timing promises. End activity accurately on every terminal response, failure, cancellation or obsolete generation; keep concurrent work independent and prevent duplicate in-flight Add. Preserve typing, exact idempotency, manual fallback and member confirmation. Reuse established design and reduced-motion behavior, including mobile and hidden-guide feedback. Validate actual delayed browser operations, affected recovery and accessibility, self-review, required CI, accepted runtime merge and close. No API, model/configuration/provider, factory, schema, identity, retention, storage, publication, voice expansion or live enablement.",
   "assignment": "implementation",
   "writer_ref": "session:01a0f1ae-2ca7-72a2-91cb-1c0895f35a34",
@@ -29,6 +29,6 @@
   "review_requirement": "self",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "94c229870721101333ca5d91487ad7e54866b9ca",
+  "closed_at": "2026-09-30T20:26:25Z"
 }
