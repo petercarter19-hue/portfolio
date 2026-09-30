@@ -207,7 +207,7 @@ class Mvp1AcceptanceServer:
                                          policy=selected_policy_for_tests())
         def principal():
             owner = request.cookies.get("mvp1-synthetic-owner")
-            if owner not in {"g-member-a", "g-member-b"}:
+            if owner not in {"g-member-a", "g-member-b", "g-member-c"}:
                 raise AuthenticationRequired()
             return PeerSlatePrincipal("development", "mvp1-local-fixture", owner,
                                       display_name="Synthetic member", is_development=True)
@@ -368,7 +368,7 @@ def _interactive_fixture(application):
         selected = path.removeprefix('/__mvp1_fixture__/')
         if environ.get('REQUEST_METHOD') != 'GET':
             response = Response('Fixture selector supports GET only.', status=405)
-        elif selected in {'member-a', 'member-b', 'guest'}:
+        elif selected in {'member-a', 'member-b', 'member-c', 'guest'}:
             response = Response(status=303, headers={'Location': '/app/resume' if selected != 'guest' else '/g-alex/resume'})
             if selected == 'guest':
                 response.delete_cookie('mvp1-synthetic-owner')
@@ -377,8 +377,9 @@ def _interactive_fixture(application):
         elif selected == '':
             response = Response('<!doctype html><html lang="en"><title>G synthetic acceptance fixture</title>'
                 '<main><h1>G synthetic acceptance fixture</h1><p>Local memory only. No real account, database or AI provider.</p>'
-                '<ul><li><a href="member-a">Use synthetic member A</a></li>'
-                '<li><a href="member-b">Use synthetic member B</a></li>'
+                '<ul><li><a href="member-a">Use synthetic member A (Riley Finch, early career)</a></li>'
+                '<li><a href="member-b">Use synthetic member B (Morgan Vale, mid career)</a></li>'
+                '<li><a href="member-c">Use synthetic member C (Casey Rowan, extensive history)</a></li>'
                 '<li><a href="guest">Use anonymous guest</a></li></ul>'
                 '<p>Start from an empty private Resume. Publish as g-alex to use the guest link. '
                 'A restart clears this fixture. Use separate browser contexts for isolation checks.</p></main></html>',

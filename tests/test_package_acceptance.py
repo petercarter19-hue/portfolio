@@ -26,7 +26,8 @@ class PackageAcceptanceTests(unittest.TestCase):
     def setUp(self):
         self._initialize()
 
-    def _initialize(self, *, baseline_exit=0, late_plan=False, mixed_plan=False):
+    def _initialize(self, *, baseline_exit=0, late_plan=False, mixed_plan=False,
+                    criterion_ids=("behavior", "manual-proof")):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.repo = Path(self.tmp.name)
@@ -51,9 +52,9 @@ class PackageAcceptanceTests(unittest.TestCase):
                  "observation": "The focused suite result was observed before implementation."}
             ],
             "criteria": [
-                {"id": "behavior", "expected": "Expected behavior works.",
+                {"id": criterion_ids[0], "expected": "Expected behavior works.",
                  "verification": "Focused command plus observed behavior."},
-                {"id": "manual-proof", "expected": "The operator can verify the flow.",
+                {"id": criterion_ids[1], "expected": "The operator can verify the flow.",
                  "verification": "Manual source with provenance."},
             ],
             "candidate_sha": None,
@@ -71,10 +72,10 @@ class PackageAcceptanceTests(unittest.TestCase):
         self.candidate = self._commit("Implement candidate")
         self.record["candidate_sha"] = self.candidate
         self.record["checks"] = [
-            {"criterion_id": "behavior", "result": "pass", "kind": "automated",
+            {"criterion_id": criterion_ids[0], "result": "pass", "kind": "automated",
              "candidate_sha": self.candidate, "source_ref": "command:focused-suite",
              "observed": "The focused command exercised the behavior and all assertions passed."},
-            {"criterion_id": "manual-proof", "result": "pass", "kind": "manual",
+            {"criterion_id": criterion_ids[1], "result": "pass", "kind": "manual",
              "candidate_sha": self.candidate, "source_ref": "evidence:operator-note-1",
              "observed": "The operator completed the expected flow and observed the saved result.",
              "provenance": {"observer_ref": "session:reviewer", "captured_at": "2026-09-27T20:00:00Z",
@@ -106,6 +107,24 @@ class PackageAcceptanceTests(unittest.TestCase):
         result = acceptance.validate(self.repo, PACKAGE, self.candidate)
         self.assertEqual("pass", result["result"])
         self.assertEqual(2, result["criteria"])
+
+    def test_underscore_identifiers_preserve_exact_plan_and_candidate_binding(self):
+        self._initialize(criterion_ids=("three_empty_accounts", "manual_proof"))
+        self.assertEqual("pass", acceptance.validate(self.repo, PACKAGE, self.candidate)["result"])
+        self._change(lambda record: record["criteria"][0].update(id="three-empty-accounts"))
+        with self.assertRaisesRegex(acceptance.AcceptanceError, "identifiers changed"):
+            acceptance.validate(self.repo, PACKAGE, self.candidate)
+
+    def test_invalid_and_duplicate_identifiers_still_refuse(self):
+        for invalid in ("bad id", "Uppercase", "1first", "bad/id", "bad.id"):
+            record = json.loads(json.dumps(self.record))
+            record["criteria"][0]["id"] = invalid
+            with self.assertRaisesRegex(acceptance.AcceptanceError, "invalid criterion id"):
+                acceptance._criteria(record, PACKAGE)
+        record = json.loads(json.dumps(self.record))
+        record["criteria"][1]["id"] = record["criteria"][0]["id"]
+        with self.assertRaisesRegex(acceptance.AcceptanceError, "duplicate criterion id"):
+            acceptance._criteria(record, PACKAGE)
 
     def test_documented_normal_task_command_invokes_helper(self):
         start = (ROOT / "START_HERE.md").read_text(encoding="utf-8")

@@ -81,10 +81,14 @@
         accomplishment: ['wording', 'metric_value', 'metric_label']
     };
     var FIELD_INPUTS = {
-        role: {role_title: 'resume-intake-role-title', employer_name: 'resume-intake-employer'},
+        role: {role_title: 'resume-intake-role-title', employer_name: 'resume-intake-employer',
+               current_role: 'resume-intake-current-role', date_precision: 'resume-intake-role-date-precision',
+               start_date: 'resume-intake-role-start', end_date: 'resume-intake-role-end'},
         skill: {name: 'resume-intake-skill'},
         education: {title: 'resume-intake-education-title', institution_name: 'resume-intake-institution',
-                    education_status: 'resume-intake-education-status'},
+                    education_status: 'resume-intake-education-status',
+                    date_precision: 'resume-intake-education-date-precision',
+                    start_date: 'resume-intake-education-start', end_date: 'resume-intake-education-end'},
         credential: {name: 'resume-intake-credential', issuer: 'resume-intake-issuer',
                      completion_status: 'resume-intake-credential-status',
                      issue_date: 'resume-intake-credential-issue-date'},
@@ -258,8 +262,20 @@
             }
             var trimmed = raw.trim();
             if (trimmed) {
-                values[name] = trimmed;
+                values[name] = name === 'current_role' ? trimmed === 'true' : trimmed;
             }
+        });
+        ['start_date', 'end_date'].forEach(function (name) {
+            if (!values[name]) return;
+            var precision = values.date_precision;
+            var pattern = {year: /^\d{4}$/, month: /^\d{4}-\d{2}$/, day: /^\d{4}-\d{2}-\d{2}$/}[precision];
+            if (!pattern || !pattern.test(values[name])) {
+                throw new Error('Choose date detail and use YYYY, YYYY-MM or YYYY-MM-DD to match it. Leave unknown dates empty.');
+            }
+            // Existing canonical precision encoding; the supplied detail is
+            // retained and presentation never claims these placeholder days.
+            if (precision === 'year') values[name] += '-01-01';
+            if (precision === 'month') values[name] += '-01';
         });
         return values;
     }
@@ -401,6 +417,23 @@
             item.appendChild(document.createTextNode(' ' + row.label + ' \u00b7 ' + state));
             if (row.message) {
                 item.appendChild(document.createTextNode(' \u00b7 ' + row.message));
+            }
+            if (row.kind === 'document' && (row.status === 'selected' || row.status === 'failed')) {
+                var remove = document.createElement('button');
+                remove.type = 'button';
+                remove.className = 'resume-intake__quiet';
+                remove.textContent = 'Remove';
+                remove.setAttribute('aria-label', 'Remove ' + row.label);
+                remove.disabled = Boolean(pendingAdd) || addButton.disabled;
+                remove.addEventListener('click', function () {
+                    if (pendingAdd || addButton.disabled) return;
+                    attachments = attachments.filter(function (entry) { return entry.client_key !== row.client_key; });
+                    renderAttachments();
+                    refreshDraftLabel();
+                    setStatus('Removed this unsent attachment. Your other input is kept.', 'ok');
+                });
+                item.appendChild(document.createTextNode(' '));
+                item.appendChild(remove);
             }
             if ((row.status === 'failed' || row.status === 'pending') && row.retryable && row.blob) {
                 var retry = document.createElement('button');
@@ -836,6 +869,7 @@
             }
         });
         addButton.disabled = true;
+        renderAttachments();
         setStatus('Adding\u2026', 'ok');
         send(urls.submit, {method: 'POST', body: form}).then(function (result) {
             addButton.disabled = false;
@@ -843,6 +877,7 @@
                 // A definitive refusal means this payload will never be
                 // accepted as-is: the next attempt gets a fresh key.
                 pendingAdd = null;
+                renderAttachments();
                 setStatus(result.payload.message ||
                     'That Add could not be completed. Your input is still here.', 'error');
                 return;
@@ -1151,7 +1186,17 @@
             setStatus('Choose a type for a direct fact, or just type your answer.', 'error');
             return;
         }
-        var values = valuesFor(type, fieldsForType(type));
+        var values;
+        try {
+            values = valuesFor(type, fieldsForType(type));
+        } catch (error) {
+            setStatus(error.message, 'error');
+            return;
+        }
+        if (type === 'role' && values.current_role === true && values.end_date) {
+            setStatus('A current role has no end date. Remove the end date or choose Past role.', 'error');
+            return;
+        }
         var clears = clearsForType(type);
         var subjectField = {role: 'role_title', education: 'title', credential: 'name',
                             skill: 'name', accomplishment: 'wording'}[type];
@@ -1197,6 +1242,11 @@
             explicit_clears: clears,
             parent_key: parentKey,
             label: values[subjectField]
+        });
+        // A subsequent fact must not inherit dates/currentness from this one.
+        ['date_precision', 'start_date', 'end_date', 'current_role'].forEach(function (name) {
+            var id = (FIELD_INPUTS[type] || {})[name];
+            if (id) document.getElementById(id).value = '';
         });
         typeSelect.value = '';
         syncDirectFields();

@@ -26,6 +26,7 @@
     <h3>{{ words.role_title or words.title or words.name or words.skill_name or words.credential_name or words.degree_name or words.institution_name or ('Achievement' if words.wording else 'Shared information') }}</h3>
     {% if words.employer_name or words.institution_name or words.issuer or words.issuer_name %}<p class="resume-publication__organization">{{ words.employer_name or words.institution_name or words.issuer or words.issuer_name }}</p>{% endif %}
     {% if words.date_precision != 'unknown' and (words.start_date or words.end_date or words.issue_date) %}<p class="resume-publication__dates">{{ resume_date(words.start_date or words.issue_date, words.date_precision) }}{% if words.current_role %} – Present{% elif words.end_date %}{% if words.start_date or words.issue_date %} – {% endif %}{{ resume_date(words.end_date, words.date_precision) }}{% endif %}</p>{% endif %}
+    {% if words.date_precision == 'unknown' %}<p class="resume-publication__dates">{% if words.current_role %}Current role · {% endif %}Dates not supplied</p>{% endif %}
     {% if words.education_status %}<p class="resume-publication__education-status">{{ {'planned': 'Planned', 'in_progress': 'In progress', 'completed': 'Completed', 'incomplete': 'Incomplete', 'withdrawn': 'Withdrawn'}.get(words.education_status, words.education_status | replace('_', ' ') | capitalize) }}</p>{% endif %}
     {% if words.location_text %}<p>{{ words.location_text }}</p>{% endif %}
     {% if words.degree_name or words.field_of_study %}<p>{{ words.degree_name or '' }}{% if words.degree_name and words.field_of_study %} · {% endif %}{{ words.field_of_study or '' }}</p>{% endif %}
@@ -39,7 +40,7 @@
 <figure class="resume-publication__media">
     {% set crop = media.crop %}
     <div class="resume-publication__crop resume-publication__crop--{{ slot }}">
-    <img src="{{ url_for('profile_resume_media', profile_slug=profile_slug, slot=slot, revision=public_publication.publication_revision) }}" alt="{{ '' if media.decorative else media.alt_text }}" loading="lazy"{% if crop and crop.width > 0 and crop.height > 0 %} style="width: {{ 100 / crop.width }}%; height: {{ 100 / crop.height }}%; left: {{ -100 * crop.x / crop.width }}%; top: {{ -100 * crop.y / crop.height }}%;"{% endif %}>
+    <img src="{{ url_for('resume_publication.preview_resume_media', slot=slot, expected=media.preview_digest) if is_private_preview else url_for('profile_resume_media', profile_slug=profile_slug, slot=slot, revision=public_publication.publication_revision) }}" alt="{{ '' if media.decorative else media.alt_text }}" loading="lazy"{% if crop and crop.width > 0 and crop.height > 0 %} style="width: {{ 100 / crop.width }}%; height: {{ 100 / crop.height }}%; left: {{ -100 * crop.x / crop.width }}%; top: {{ -100 * crop.y / crop.height }}%;"{% endif %}>
     </div>
     {% if media.caption or media.provenance_label %}<figcaption>{% if media.caption %}{{ media.caption }}{% endif %}{% if media.provenance_label %}<span>{{ media.provenance_label }}</span>{% endif %}</figcaption>{% endif %}
 </figure>
@@ -78,14 +79,14 @@
 {% endmacro %}
 
 {% if is_public_reader %}
-<section class="owner-app resume-publication resume-publication--public{% if visitor_ai_enabled %} resume-publication--with-ai{% endif %}" aria-labelledby="resume-publication-title">
+<section class="owner-app resume-publication resume-publication--public{% if visitor_ai_enabled %} resume-publication--with-ai{% endif %}" aria-labelledby="{{ 'resume-preview-title' if is_private_preview else 'resume-publication-title' }}">
     {% set entries = (public_publication.display or {}).values() | list %}
     {% set stories = entries | selectattr('presentation_section', 'equalto', 'story') | list %}
     {% set strengths = entries | selectattr('canonical_type', 'equalto', 'skill') | list %}
     {% set experience = entries | rejectattr('presentation_section', 'equalto', 'story') | rejectattr('canonical_type', 'equalto', 'skill') | list %}
     <div class="resume-publication__layout">
     <nav class="resume-publication__sections" aria-label="Resume sections">
-        <a href="#resume-publication-title" aria-current="location">Overview</a>
+        <a href="#{{ 'resume-preview-title' if is_private_preview else 'resume-publication-title' }}" aria-current="location">Overview</a>
         {% if stories %}<a href="#resume-story">My Story</a>{% endif %}
         {% if experience %}<a href="#resume-experience">Experience</a>{% endif %}
         {% if strengths %}<a href="#resume-strengths">Strengths</a>{% endif %}
@@ -93,12 +94,13 @@
     <div class="owner-app__panel resume-publication__panel">
         <header class="resume-publication__intro">
             <p class="owner-app__eyebrow">Resume</p>
-            <h1 id="resume-publication-title">{{ public_publication.public_identity.display_name if public_publication.public_identity else 'Published Resume' }}</h1>
+            <h1 id="{{ 'resume-preview-title' if is_private_preview else 'resume-publication-title' }}"{% if is_private_preview %} tabindex="-1"{% endif %}>{{ public_publication.public_identity.display_name if public_publication.public_identity else ('Private Resume preview' if is_private_preview else 'Published Resume') }}</h1>
+            {% if is_private_preview %}<p class="resume-editor__privacy-note">Private draft preview. Only you can see this. Nothing is published and your saved sharing choices are unchanged.</p>{% endif %}
             {% if public_publication.public_identity %}
             <p class="resume-publication__headline">{{ public_publication.public_identity.headline }}</p>
             {% if public_publication.public_identity.location %}<p>{{ public_publication.public_identity.location }}</p>{% endif %}
             {% endif %}
-            {% if not public_publication.public_identity %}<p>Explore the experience this member has chosen to share.</p>{% endif %}
+            {% if not public_publication.public_identity %}<p>{{ 'Preview the information you selected. Sharing is unchanged.' if is_private_preview else 'Explore the experience this member has chosen to share.' }}</p>{% endif %}
             {% if visitor_ai_enabled %}<button class="visitor-ai__open" id="visitor-ai-open" type="button" aria-controls="visitor-ai-panel">{{ visitor_ai_heading }}</button>{% endif %}
         </header>
         <div class="resume-publication__guest" data-publication-revision="{{ public_publication.publication_revision }}">
@@ -124,7 +126,7 @@
                 <div class="resume-publication__strengths">{% for item in strengths %}{{ resume_entry(item) }}{% endfor %}</div>
             </section>
             {% endif %}
-            {% if not entries %}<p class="resume-publication__empty">No display entries are currently published.</p>{% endif %}
+            {% if not entries %}<p class="resume-publication__empty">{{ 'No display entries are selected for this private preview.' if is_private_preview else 'No display entries are currently published.' }}</p>{% endif %}
         </div>
     </div>
     {% if visitor_ai_enabled %}{{ ai_panel(false) }}{% endif %}
@@ -152,6 +154,10 @@
     </div>
     {% if visitor_ai_enabled %}{{ ai_panel(true) }}{% endif %}
     </div>
+</section>
+<section id="resume-private-preview" aria-label="Private Resume layout preview" hidden>
+    <button type="button" class="resume-editor__button resume-editor__button--quiet" id="resume-private-preview-close">Close Resume preview</button>
+    <div id="resume-private-preview-content"></div>
 </section>
 {% endif %}
 {% if not is_public_reader or visitor_ai_enabled %}

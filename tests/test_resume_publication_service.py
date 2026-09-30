@@ -31,11 +31,91 @@ from services.resume_publication_service import (
     memory_resume_publication_service,
 )
 from services.resume_publication_validation import validate_candidate
+from services.resume_publication_contracts import ContractError
 from tests.test_resume_publication_contracts import fixture
 from tests.mvp1_acceptance_support import SharedMvp1Fixture
 
 
 class IntegratedDraftPublicationTests(unittest.TestCase):
+    def test_private_preview_uses_authoritative_strength_and_explicit_story_metadata(self):
+        shared,owner,role,_ = self._saved_edit()
+        skill,story = str(uuid4()),str(uuid4())
+        for key,kind,values in [(skill,"skill",{"skill_name":"Python","skill_summary":"Fictional strength"}),
+                (story,"knowledge",{"title":"My Story","wording":"A fictional personal introduction.","classification":"personal"})]:
+            shared.policy.commit(owner,{"type":"create","request_id":str(uuid4()),"entry_key":key,"canonical_type":kind,"values":values})
+        item = shared.canonical.get_item(owner,story)
+        shared.draft.commit(owner,{"type":"bind_story","request_id":str(uuid4()),"record_key":story,
+            "expected_content_token":item["content_token"],"expected_access_revision":item["access_revision"],
+            "expected_draft_version":shared.draft.get_workspace(owner)["draft_version"]})
+        reviewed = shared.publication.review_for_owner(owner,{"entries":[
+            {"entry_key":key,"resume_display":True,"visitor_ai":False} for key in (role,skill,story)]}).reviewed
+        payload={"candidate":shared.publication.publish_candidate(reviewed),"reviewed_digest":reviewed.digest,"profile_identity":None}
+        preview=shared.publication.draft_preview(owner,payload)
+        self.assertEqual(preview["display"][skill]["canonical_type"],"skill")
+        self.assertEqual(preview["display"][story]["presentation_section"],"story")
+        self.assertEqual(preview["display"][role]["presentation_section"],"entry")
+        self.assertFalse(preview["sharing_enabled"])
+
+    def test_private_preview_rejects_changed_draft_and_withdrawn_pinned_profile(self):
+        from services.mvp1_profile_binding import Mvp1ProfileBinding
+        from services.profile_core_service import InMemoryProfileCoreStore, ProfileCoreService, ProfileIdentityDraft, make_profile_draft
+        shared, owner, key, _ = self._saved_edit()
+        draft = make_profile_draft(owner_key=owner, slug="member-a",
+            identity=ProfileIdentityDraft("Synthetic Alex", "Engineer", None, "Fictional test identity"))
+        store = InMemoryProfileCoreStore((draft,))
+        core = ProfileCoreService(store)
+        shared.publication.profile_binding = Mvp1ProfileBinding(store)
+        context = core.owner_context(actor_key=owner, subject_owner_key=owner, slug="member-a", purpose="edit")
+        approval = core.review_publication(context, expected_draft_version=draft.version, expected_public_revision=None)
+        core.publish_publication(context, expected_draft_version=draft.version, expected_public_revision=None,
+            candidate_digest=approval["candidate_digest"], idempotency_key=str(uuid4()), confirmed=True)
+        reviewed = shared.publication.review_for_owner(owner, {"entries":[
+            {"entry_key":key,"resume_display":True,"visitor_ai":False}]}).reviewed
+        payload = {"candidate":shared.publication.publish_candidate(reviewed), "reviewed_digest":reviewed.digest,
+            "profile_identity":reviewed.candidate.profile_identity.to_payload()}
+        self.assertEqual(shared.publication.draft_preview(owner,payload)["public_identity"]["display_name"], "Synthetic Alex")
+        core.withdraw_publication(context, expected_public_revision=reviewed.candidate.profile_identity.revision_key,
+            idempotency_key=str(uuid4()), confirmed=True)
+        with self.assertRaises((PublicationConflictError, PublicationDenied)):
+            shared.publication.draft_preview(owner,payload)
+        # A new private overlay changes the complete candidate as well.
+        shared.publication.profile_binding = None
+        reviewed = shared.publication.review_for_owner(owner, {"entries":[
+            {"entry_key":key,"resume_display":True,"visitor_ai":False}]}).reviewed
+        payload = {"candidate":shared.publication.publish_candidate(reviewed), "reviewed_digest":reviewed.digest,"profile_identity":None}
+        item = shared.canonical.get_item(owner,key)
+        shared.draft.commit(owner,{"type":"save_item","request_id":str(uuid4()),"record_key":key,"record_type":"role",
+            "expected_content_token":item["content_token"],"expected_access_revision":item["access_revision"],
+            "expected_draft_version":shared.draft.get_workspace(owner)["draft_version"],"values":{"summary":"Another private draft"}})
+        with self.assertRaises((PublicationConflictError, PublicationDenied)):
+            shared.publication.draft_preview(owner,payload)
+
+    def test_private_preview_revalidates_complete_candidate_without_any_saved_changes(self):
+        shared, owner, key, payload = self._saved_edit()
+        before = (copy.deepcopy(shared.policy.repository.load_owner(owner)),
+                  copy.deepcopy(shared.draft.repository.load_owner(owner)),
+                  copy.deepcopy(shared.publication.repository.load_owner(owner)))
+        shared.publication._pending_reviews.clear()
+        preview = shared.publication.draft_preview(owner, payload)
+        self.assertFalse(preview["published"])
+        self.assertFalse(preview["sharing_enabled"])
+        self.assertEqual(preview["display"][key]["canonical_type"], "role")
+        self.assertEqual(preview["display"][key]["wording"]["summary"], "Reviewed new wording.")
+        self.assertEqual(before, (shared.policy.repository.load_owner(owner),
+            shared.draft.repository.load_owner(owner), shared.publication.repository.load_owner(owner)))
+        changed = copy.deepcopy(payload)
+        changed["candidate"]["entries"][0]["resume_display"] = False
+        with self.assertRaises((PublicationConflictError, PublicationDenied)):
+            shared.publication.draft_preview(owner, changed)
+        with self.assertRaises((PublicationValidationError, PublicationConflictError, PublicationDenied, ContractError)):
+            shared.publication.draft_preview("member-b", payload)
+        row = shared.policy.list_entries(owner)["entries"][0]
+        shared.policy.commit(owner, {"type":"edit", "request_id":str(uuid4()), "entry_key":key,
+            "expected_content_version":row["content_version"], "expected_access_revision":row["access_revision"],
+            "values":{"summary":"New canonical fact", "role_title":"Engineer", "employer_name":"Synthetic Company"}})
+        with self.assertRaises((PublicationConflictError, PublicationDenied)):
+            shared.publication.draft_preview(owner, payload)
+
     def test_story_banner_is_hidden_without_displayed_story_and_restriction_removes_it(self):
         shared = SharedMvp1Fixture()
         owner, key = "member-a", str(uuid4())
@@ -197,7 +277,11 @@ class IntegratedDraftPublicationTests(unittest.TestCase):
         self.assertEqual(envelope["placements"][0]["crop"], placement.crop.as_dict())
         command = {"type": "publish", "request_id": str(uuid4()), "slug": "alice",
             "reviewed_digest": result.reviewed.digest, "candidate": envelope, "profile_identity": None}
+        preview = shared.publication.draft_preview(owner, command)
+        self.assertIn("experience_support", preview["media"])
         shared.media_sources.update_owner_photo(owner_id=owner, source_id=source_key, lifecycle="restricted")
+        with self.assertRaises(PublicationUnavailableError):
+            shared.publication.draft_preview(owner, command)
         with self.assertRaises(PublicationUnavailableError):
             shared.publication.commit(owner, command)
         self.assertIsNone(shared.publication.owner_preview(owner)["current"])

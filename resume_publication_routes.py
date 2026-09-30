@@ -198,18 +198,44 @@ def get_resume_publication_page():
     )
 
 
-@resume_publication.get("/api/resume-publication/me/preview")
+@resume_publication.route("/api/resume-publication/me/preview", methods=["GET", "POST"])
 def preview_resume_publication():
     identity = _identity_or_not_found()
     if identity is None:
         return jsonify({"success": False, "message": "Not found."}), 404
     try:
-        result = _service().draft_preview(identity.user_key)
+        payload = _json_body() if request.method == "POST" else None
+        result = _service().draft_preview(identity.user_key, payload)
+        if request.method == "POST":
+            result["html"] = render_template(
+                "resume_publication.html", page_title="Private Resume preview",
+                member=identity, is_public_reader=True, is_private_preview=True,
+                public_publication=result, visitor_ai_enabled=False, profile_slug=None,
+            )
+    except (PublicationValidationError, ContractError) as error:
+        return jsonify({"success": False, "code": "invalid", "message": str(error)}), 400
+    except PublicationDenied:
+        return jsonify({"success": False, "code": "stale_preview", "message": "The private preview changed. Review again."}), 409
     except PublicationConflictError as error:
         return jsonify({"success": False, "code": error.code, "message": str(error)}), 409
     except PublicationUnavailableError:
         return jsonify({"success": False, "code": "unavailable", "message": "Publication is unavailable."}), 503
     return jsonify({"success": True, **result, "published": False})
+
+
+@resume_publication.get("/api/resume-publication/me/preview/media/<string:slot>")
+def preview_resume_media(slot):
+    identity = _identity_or_not_found()
+    if identity is None:
+        return jsonify({"success": False, "message": "Not found."}), 404
+    from resume_media_routes import _media_response
+    from services.resume_media_service import ResumeMediaError
+    from services.resume_media_application import ResumeMediaApplicationUnavailable
+    try:
+        opened = _service().open_private_preview_media(identity.user_key, slot, request.args.get("expected"))
+    except (PublicationDenied, PublicationUnavailableError, ResumeMediaError, ResumeMediaApplicationUnavailable):
+        return jsonify({"success": False, "message": "Private preview media is unavailable. Review again."}), 404
+    return _media_response(opened)
 
 
 @resume_publication.post("/api/resume-publication/me/review")

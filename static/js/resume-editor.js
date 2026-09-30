@@ -11,8 +11,8 @@
     let pendingEdit = null;
     let editInFlight = false;
     const fieldOrder = {
-        role: ["role_title", "employer_name", "summary", "location_text"],
-        education: ["title", "institution_name", "field_of_study", "education_status", "summary"],
+        role: ["role_title", "employer_name", "summary", "location_text", "date_precision", "start_date", "end_date", "current_role"],
+        education: ["title", "institution_name", "field_of_study", "education_status", "summary", "date_precision", "start_date", "end_date"],
         credential: ["name", "issuer", "completion_status", "identifier"],
         skill: ["name", "summary"],
         accomplishment: ["wording", "metric_value", "metric_label"],
@@ -66,19 +66,42 @@
         fields.forEach(function (name) {
             const field = form.elements.namedItem(name);
             if (field) {
-                merged[name] = field.value;
+                merged[name] = field.type === "checkbox" ? field.checked : field.value;
             }
         });
+        if (["role", "education"].includes(recordType)) {
+            ["start_date", "end_date"].forEach(function (name) {
+                const raw = merged[name].trim();
+                const precision = merged.date_precision;
+                if (!raw) { merged[name] = null; return; }
+                const pattern = {year: /^\d{4}$/, month: /^\d{4}-\d{2}$/, day: /^\d{4}-\d{2}-\d{2}$/,
+                    approximate: /^\d{4}-\d{2}-\d{2}$/, unknown: /^\d{4}-\d{2}-\d{2}$/}[precision];
+                if (!pattern || !pattern.test(raw)) throw new Error("Use YYYY, YYYY-MM or YYYY-MM-DD to match date detail. Leave unknown dates empty.");
+                merged[name] = raw + (precision === "year" ? "-01-01" : precision === "month" ? "-01" : "");
+            });
+        }
         return merged;
+    }
+
+    function dateText(value, precision) {
+        if (!value || precision === "unknown" || !precision) return "";
+        return String(value).slice(0, precision === "year" ? 4 : precision === "month" ? 7 : 10);
+    }
+
+    function setField(field, value, source) {
+        if (field.type === "checkbox") field.checked = value === true;
+        else if (["start_date", "end_date"].includes(field.name)) {
+            // Preserve pre-existing unqualified date values in the edit form;
+            // an unknown precision never presents them as established dates.
+            field.value = dateText(value, source.date_precision) || (value || "");
+        } else field.value = value == null ? "" : value;
     }
 
     function fillForm(form, item) {
         const source = Object.assign({}, item.values || {}, item.proposed_values || {});
         Object.keys(source).forEach(function (name) {
             const field = form.elements.namedItem(name);
-            if (field && source[name] != null) {
-                field.value = source[name];
-            }
+            if (field) setField(field, source[name], source);
         });
     }
 
@@ -89,9 +112,7 @@
         }
         Object.keys(proposed).forEach(function (name) {
             const field = form.elements.namedItem(name);
-            if (field && proposed[name] != null) {
-                field.value = proposed[name];
-            }
+            if (field) setField(field, proposed[name], proposed);
         });
     }
 
@@ -101,7 +122,9 @@
             setStatus("Retry the unresolved save before saving another entry.", "error");
             return;
         }
-        const proposed = valuesFromForm(form, item);
+        let proposed;
+        try { proposed = valuesFromForm(form, item); }
+        catch (error) { setStatus(error.message, "error"); return; }
         if (!pendingEdit) pendingEdit = {
             request_id: requestId(),
             type: "save_item",
@@ -114,7 +137,7 @@
         };
         const save = form.querySelector('[type="submit"]');
         function lock(locked) {
-            form.querySelectorAll("input, textarea, button").forEach(function (field) {
+            form.querySelectorAll("input, select, textarea, button").forEach(function (field) {
                 field.disabled = locked && field !== save;
             });
         }
@@ -165,6 +188,15 @@
         detail.textContent = [values.employer_name || values.institution_name || values.issuer,
             values.location_text].filter(Boolean).join(" · ");
         if (detail.textContent) card.appendChild(detail);
+        if (["role", "education"].includes(item.record_type)) {
+            const dates = document.createElement("p");
+            dates.className = "resume-editor__entry-detail";
+            const start = dateText(values.start_date, values.date_precision);
+            const end = dateText(values.end_date, values.date_precision);
+            dates.textContent = [start, values.current_role === true ? "Present" : end].filter(Boolean).join(" – ");
+            if (!start && !end) dates.textContent = (values.current_role === true ? "Current role · " : "") + "Dates not supplied";
+            card.appendChild(dates);
+        }
         const wording = document.createElement("p");
         wording.className = "resume-editor__entry-wording";
         wording.textContent = values.summary || (heading.textContent !== values.wording ? values.wording : "") || "";
@@ -194,13 +226,23 @@
             const label = document.createElement("label");
             const fieldId = item.record_key + "-" + name;
             label.setAttribute("for", fieldId);
-            label.textContent = name.replace(/_/g, " ");
+            label.textContent = name === "date_precision" ? "Date detail" : name === "current_role" ? "Current role" : name.replace(/_/g, " ");
             let field;
-            if (name === "summary" || name === "wording") {
+            if (name === "date_precision") {
+                field = document.createElement("select");
+                [["unknown", "Not supplied"], ["year", "Year"], ["month", "Month"], ["day", "Exact day"]]
+                    .concat(item.record_type === "education" ? [["approximate", "Approximate"]] : [])
+                    .forEach(function (option) { field.add(new Option(option[1], option[0])); });
+            } else if (name === "summary" || name === "wording") {
                 field = document.createElement("textarea");
             } else {
                 field = document.createElement("input");
-                field.type = "text";
+                field.type = name === "current_role" ? "checkbox" : "text";
+                if (name === "current_role") field.style.width = "auto";
+                if (["start_date", "end_date"].includes(name)) {
+                    field.placeholder = "YYYY, YYYY-MM or YYYY-MM-DD";
+                    field.maxLength = 10;
+                }
             }
             field.id = fieldId;
             field.name = name;
@@ -208,6 +250,18 @@
             form.appendChild(field);
         });
         fillForm(form, item);
+        if (["role", "education"].includes(item.record_type)) {
+            const hint = document.createElement("p");
+            hint.textContent = "Use only the date detail you know. Leave unknown dates empty. A current role has no end date.";
+            form.appendChild(hint);
+            form.elements.namedItem("date_precision").addEventListener("change", function () {
+                const precision = this.value;
+                ["start_date", "end_date"].forEach(function (name) {
+                    const field = form.elements.namedItem(name);
+                    if (field.value && precision !== "unknown") field.value = dateText(field.value, precision);
+                });
+            });
+        }
 
         const actions = document.createElement("p");
         actions.className = "resume-editor__toolbar";

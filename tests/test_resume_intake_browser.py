@@ -195,6 +195,70 @@ def start_browser(cls):
     "Playwright and Google Chrome are required for the composer browser proof",
 )
 class ResumeIntakeBrowserTests(unittest.TestCase):
+    def test_member_dates_and_boolean_currentness_save_reload_and_editor_remain_faithful(self):
+        owner = self._use_owner("browser-career-dates")
+        page = self._new_page(viewport={"width":1440,"height":1000})
+        page.goto(f"{self.base_url}/app/resume")
+        for title, detail, start, end, current in [
+            ("Past position","year","1993","1996","false"),
+            ("Unknown position","","","",""),
+            ("Current position","month","2022-03","","true"),
+        ]:
+            page.locator("#resume-intake-type").select_option("role")
+            page.locator("#resume-intake-role-title").fill(title)
+            page.locator("#resume-intake-employer").fill("Fictional Employer")
+            page.locator("#resume-intake-role-date-precision").select_option(detail)
+            page.locator("#resume-intake-role-start").fill(start)
+            page.locator("#resume-intake-role-end").fill(end)
+            page.locator("#resume-intake-current-role").select_option(current)
+            page.locator("#resume-intake-add-fact").click()
+        page.locator("#resume-intake-add").click()
+        page.locator("#resume-intake-receipt").get_by_text("3 saved privately",exact=False).wait_for(timeout=15000)
+        page.reload()
+        cards = page.locator("#resume-editor-lists article")
+        cards.first.wait_for()
+        self.assertEqual(cards.locator("h3").all_text_contents(),["Current position","Past position","Unknown position"])
+        current = cards.filter(has=page.get_by_role("heading",name="Current position",exact=True))
+        self.assertIn("2022-03 – Present",current.inner_text())
+        self.assertNotIn("2022-03-01",current.inner_text())
+        current.locator("summary").click()
+        current.get_by_label("Date detail",exact=True).select_option("year")
+        current.get_by_role("button",name="Save draft",exact=True).click()
+        page.locator("#resume-editor-status").get_by_text("Draft saved",exact=False).wait_for()
+        page.reload()
+        workspace = self.draft_service.get_workspace(owner)
+        values = {**workspace["items"][0]["values"],**(workspace["items"][0].get("proposed_values") or {})}
+        self.assertIs(values["current_role"],True)
+        self.assertEqual((values["start_date"],values["date_precision"]),("2022-01-01","year"))
+        unknown = next(row for row in workspace["items"] if row["values"]["role_title"]=="Unknown position")
+        self.assertIsNone(unknown["values"]["start_date"])
+        self.assertEqual(unknown["values"]["date_precision"],"unknown")
+        self.assertTrue(all(not row["resume_display"] and not row["visitor_ai"] for row in workspace["items"]))
+
+    def test_remove_refused_file_preserves_new_text_queued_fact_and_other_attachment(self):
+        self._use_owner("browser-remove-refused")
+        page = self._new_page()
+        page.goto(f"{self.base_url}/app/resume")
+        page.locator("#resume-intake-file").set_input_files([
+            {"name":"refused.bin","mimeType":"application/octet-stream","buffer":b"refused"},
+            {"name":"empty.txt","mimeType":"text/plain","buffer":b""},
+        ])
+        page.locator("#resume-intake-add").click()
+        page.locator("#resume-intake-receipt").get_by_text("2 could not be saved",exact=False).wait_for()
+        page.locator("#resume-intake-text").fill("Keep my newer unsent words.")
+        page.locator("#resume-intake-type").select_option("skill")
+        page.locator("#resume-intake-skill").fill("Member chosen strength")
+        page.locator("#resume-intake-add-fact").click()
+        page.get_by_role("button",name="Remove refused.bin",exact=True).click()
+        self.assertNotIn("refused.bin",page.locator("#resume-intake-attachments").inner_text())
+        self.assertIn("empty.txt",page.locator("#resume-intake-attachments").inner_text())
+        self.assertEqual(page.locator("#resume-intake-text").input_value(),"Keep my newer unsent words.")
+        self.assertIn("Member chosen strength",page.locator("#resume-intake-queued").inner_text())
+        page.get_by_role("button",name="Remove empty.txt",exact=True).click()
+        self.assertEqual(page.locator("#resume-intake-attachments li").count(),0)
+        # Navigation protection remains for the still-unsent text/fact.
+        self.assertIn("Not added yet",page.locator("#resume-intake-draft-label").inner_text())
+
     @classmethod
     def setUpClass(cls):
         install_intake_runtime_fixtures(cls)
@@ -413,8 +477,11 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         page.on("request", capture)
         page.goto(f"{self.base_url}/app/resume", wait_until="load")
         page.locator("#resume-intake-text").fill("Recover me after a dropped response.")
+        page.locator("#resume-intake-file").set_input_files({
+            "name":"uncertain.bin","mimeType":"application/octet-stream","buffer":b"unchanged bytes"})
         page.locator("#resume-intake-add").click()
         page.locator("#resume-intake-status").get_by_text("unsent", exact=False).wait_for(timeout=15000)
+        self.assertTrue(page.get_by_role("button",name="Remove uncertain.bin",exact=True).is_disabled())
         # The client keeps the same request and every byte for the retry.
         page.locator("#resume-intake-add").click()
         page.locator("#resume-intake-receipt").get_by_text("needs your review", exact=False).first.wait_for(
@@ -423,6 +490,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.assertEqual(len(request_ids), 2)
         self.assertEqual(request_ids[0], request_ids[1])
         self.assertEqual(len(self.repository.load_owner(owner)["submissions"]), 1)
+        self.assertFalse(page.get_by_role("button",name="Remove uncertain.bin",exact=True).is_disabled())
 
     def test_mobile_sheet_dismiss_and_reopen_preserves_queued_and_attached_input(self):
         self._use_owner("browser-sheet")

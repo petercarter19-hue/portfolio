@@ -65,3 +65,26 @@ passed and failed, reproducible defects, fixes independently retested, visual
 correspondence and remaining limitations. Do not mark unattempted operations as
 passed. The final review assignment supplies the exact frozen candidate; this
 fixture document by itself is not a freeze, review receipt or acceptance.
+
+## Three career-persona extension
+
+For `PS-MVP1-THREE-PERSONA-ACCEPTANCE-001`, the same interactive server admits
+three separate, initially empty synthetic owners: A for Riley Finch (early
+graduate), B for Morgan Vale (mid career), and C for Casey Rowan (extensive
+history). Selecting an account does not seed career content. Existing G test
+setup remains explicit and unchanged.
+
+The `personas/` bundle contains clearly fictional TXT inputs and an expected
+fact manifest. Reupload the same base file for duplicate checks; use Morgan's
+`conflicting-update.txt` for an unresolved start-date conflict, `empty.txt` for
+empty input, and `unsupported-input.bin` for unsupported-file recovery. Do not
+invent missing dates, convert the course certificate into a license, or treat
+the career-stage differences as protected-trait assumptions.
+
+This server's intake uses the deterministic uncertain/manual path, not a live
+structured career extractor. Its visitor AI quotes supplied text. Same-process
+save/reload/return is memory evidence; a restart clears all owners. Local
+account selection does not qualify invited sign-in. Hosted SQL/provider,
+physical-device and real-human onboarding timing remain separate. Observe
+which Resume projection/template controls actually exist; this bundle adds no
+production feature, template catalogue or visual direction.

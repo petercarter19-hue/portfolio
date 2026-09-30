@@ -130,6 +130,29 @@ class BarrierDraftStore(InMemoryResumeDraftRepository):
 
 
 class ResumeDraftServiceTests(unittest.TestCase):
+    def test_saved_date_precision_and_current_role_order_survive_reload_privately(self):
+        keys = []
+        for title, values in [
+            ("Old role", {"start_date":"1993-08-01", "end_date":"1996-07-01", "date_precision":"year", "current_role":False}),
+            ("Unknown role", {}),
+            ("Current role", {"start_date":"2022-03-01", "date_precision":"month", "current_role":True}),
+        ]:
+            key = str(uuid4())
+            keys.append(key)
+            self.service.commit(OWNER_B, {"type":"create_private_item", "request_id":str(uuid4()),
+                "record_key":key, "record_type":"role", "values":{
+                    "role_title":title, "employer_name":"Synthetic Company", **values}})
+        reloaded = ResumeDraftService(repository=self.repository, catalog=self.catalog).get_workspace(OWNER_B)
+        self.assertEqual([item["record_key"] for item in reloaded["items"]], [keys[2],keys[0],keys[1]])
+        values = [item["values"] for item in reloaded["items"]]
+        self.assertIs(values[0]["current_role"], True)
+        self.assertEqual(values[0]["start_date"], "2022-03-01")
+        self.assertEqual(values[1]["start_date"], "1993-01-01")
+        self.assertEqual(values[1]["date_precision"], "year")
+        self.assertIsNone(values[2]["start_date"])
+        self.assertEqual(values[2]["date_precision"], "unknown")
+        self.assertTrue(all(not row["resume_display"] and not row["visitor_ai"] for row in reloaded["items"]))
+
     def setUp(self):
         self.catalog = InMemoryCanonicalCatalog()
         self.repository = InMemoryResumeDraftRepository()

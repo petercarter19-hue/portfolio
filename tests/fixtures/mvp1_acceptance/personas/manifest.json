@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "classification": "clearly fictional test inputs; no real biography or account",
+  "personas": [
+    {
+      "name": "Riley Finch",
+      "career_stage": "early graduate",
+      "synthetic_owner": "g-member-a",
+      "source": "early-career.txt",
+      "expected_career_items": {"education": 1, "internship": 1, "project": 1},
+      "critical_facts": ["Example Lake College", "May 2026", "June through August 2025", "240 inventory rows", "class prototype"],
+      "must_not_invent": ["volunteer event date", "volunteer hours", "professional certification", "revenue result", "deployed scheduling service"]
+    },
+    {
+      "name": "Morgan Vale",
+      "career_stage": "mid career",
+      "synthetic_owner": "g-member-b",
+      "source": "mid-career.txt",
+      "expected_career_items": {"education": 1, "roles": 3},
+      "critical_facts": ["Customer Operations Lead", "March 2022", "six-person support team", "18 hours to 12 hours", "four new colleagues"],
+      "must_not_invent": ["May 2016 to July 2017 activity", "SQL expertise", "certification", "company-wide efficiency result"],
+      "conflict_source": "conflicting-update.txt",
+      "unresolved_conflict": "March 2021 versus March 2022 role start"
+    },
+    {
+      "name": "Casey Rowan",
+      "career_stage": "extensive history",
+      "synthetic_owner": "g-member-c",
+      "source": "extensive-history.txt",
+      "expected_career_items": {"education": 1, "roles": 8, "course_certificate": 1},
+      "critical_facts": ["Program Operations Director", "January 2021", "three regional service teams", "September 1993 through July 1996", "course certificate"],
+      "must_not_invent": ["director budget", "director headcount", "outcome percentage", "Project Coordination certificate date", "professional license", "volunteering dates"]
+    }
+  ],
+  "expected_default_visibility": "private; resume_display false; visitor_ai false",
+  "account_admission": "local synthetic chooser only; no invited live sign-in proof",
+  "persistence": "same-process memory save/reload/return only; restart clears",
+  "provider": "deterministic uncertain/manual intake and quoted visitor AI substitutes; no model quality proof"
+}

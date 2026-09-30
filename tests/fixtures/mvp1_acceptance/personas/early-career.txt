@@ -1,0 +1,7 @@
+SYNTHETIC ACCEPTANCE INPUT. All people, organizations and achievements below are fictional test material.
+
+Riley Finch completed a Bachelor of Science in Information Systems at Example Lake College in May 2026. Coursework included database design, accessibility and introductory statistics.
+As a campus capstone project, Riley built a volunteer scheduling prototype using Python and SQLite and tested its keyboard navigation with five fictional classmates. It remained a class prototype, not a deployed service.
+Riley was a Data Support Intern at Example Orchard Cooperative from June through August 2025. Riley cleaned 240 inventory rows and wrote a short handoff guide. No revenue or efficiency result is established.
+Riley volunteered at a neighborhood repair event. The date, hours and team size are not specified.
+Strengths stated by Riley: Python, SQL fundamentals and clear documentation. No professional certifications are supplied.

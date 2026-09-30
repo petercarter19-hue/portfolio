@@ -1,0 +1,3 @@
+SYNTHETIC ACCEPTANCE INPUT. This intentionally conflicts with the mid-career base input and must require member review.
+
+Morgan Vale started as Customer Operations Lead at Example Harbor Tools in March 2021, rather than March 2022. The member has not resolved which start date is correct. Do not silently replace the existing date or invent a reconciliation.

@@ -19,6 +19,8 @@ import json
 from typing import Any
 from uuid import UUID
 
+from services.resume_publication_projection import resume_presentation_key
+
 from services.living_resume_editor_service import (
     LivingResumeEditorValidationError,
     normalize_editor_values,
@@ -397,7 +399,8 @@ class ResumeDraftService:
             "draft_version": snapshot["draft_version"],
             "base_publication_version": snapshot.get("base_publication_version"),
             "story_entry_key": snapshot.get("story_entry_key"),
-            "items": merged,
+            "items": sorted(merged, key=lambda item: resume_presentation_key(
+                item.get("record_type"), {**(item.get("values") or {}), **(item.get("proposed_values") or {})})),
             "capabilities": {
                 "commands": sorted(COMMAND_TYPES),
                 "record_types": sorted(RECORD_TYPES),

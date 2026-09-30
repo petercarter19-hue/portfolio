@@ -90,7 +90,7 @@ def _criteria(record: dict, package: str) -> list[str]:
         criterion_id = row.get("id")
         _need(_text(criterion_id) and _text(row.get("expected"))
               and _text(row.get("verification")), "criterion is incomplete")
-        _need(re.fullmatch(r"[a-z][a-z0-9-]*", criterion_id) is not None,
+        _need(re.fullmatch(r"[a-z][a-z0-9_-]*", criterion_id) is not None,
               f"invalid criterion id: {criterion_id}")
         _need(criterion_id not in ids, f"duplicate criterion id: {criterion_id}")
         ids.append(criterion_id)

@@ -40,6 +40,8 @@ EXPECTED_METHODS = (
 )
 
 INTAKE_METHODS = (
+    'test_member_dates_and_boolean_currentness_save_reload_and_editor_remain_faithful',
+    'test_remove_refused_file_preserves_new_text_queued_fact_and_other_attachment',
     'test_mixed_add_reaches_flask_and_reports_a_truthful_receipt',
     'test_guide_hide_reopen_preserves_unfinished_text',
     'test_in_field_microphone_inserts_without_overwriting_typing',

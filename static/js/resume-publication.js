@@ -9,14 +9,29 @@
     const reviewButton = document.getElementById("resume-publication-review-button");
     const publishButton = document.getElementById("resume-publication-publish-button");
     const sharingOffButton = document.getElementById("resume-publication-sharing-off-button");
+    const previewButton = document.getElementById("resume-publication-preview-button");
+    const previewRegion = document.getElementById("resume-private-preview");
+    const previewContent = document.getElementById("resume-private-preview-content");
+    const previewClose = document.getElementById("resume-private-preview-close");
     const reviewUrl = root.getAttribute("data-review-url");
     const commandsUrl = root.getAttribute("data-commands-url");
+    const previewUrl = root.getAttribute("data-preview-url");
     const entriesNode = document.getElementById("resume-publication-entries");
     let reviewedDigest = null;
     let reviewedIdentity = null;
     let reviewedCandidate = null;
     let pendingPublish = null;
     let inFlight = false;
+
+    function hidePreview(returnFocus) {
+        previewRegion.hidden = true;
+        previewContent.replaceChildren();
+        if (returnFocus) previewButton.focus();
+    }
+    previewClose.addEventListener("click", function () { hidePreview(true); });
+    previewRegion.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") { event.preventDefault(); hidePreview(true); }
+    });
 
     function choices() {
         return Array.from(entriesNode.querySelectorAll("[data-entry-key]")).map(function (row) {
@@ -33,6 +48,17 @@
         return node;
     }
 
+    function reviewValue(field, value, values) {
+        if (["start_date", "end_date"].includes(field)) {
+            const precision = values.date_precision;
+            if (!value || !precision || precision === "unknown") return null;
+            return String(value).slice(0, precision === "year" ? 4 : precision === "month" ? 7 : 10);
+        }
+        if (field === "date_precision") return {unknown:"Not supplied",year:"Year",month:"Month",day:"Exact day",approximate:"Approximate"}[value] || value;
+        if (field === "current_role" && typeof value === "boolean") return value ? "Current role" : "Past role";
+        return value;
+    }
+
     function renderEntries(entries) {
         entriesNode.replaceChildren();
         entries.forEach(function (entry) {
@@ -42,10 +68,11 @@
             textElement("h3", entry.title, section);
             const wording = entry.after || {};
             Object.keys(wording).forEach(function (field) {
-                if (wording[field] !== null && wording[field] !== "") {
+                const value = reviewValue(field, wording[field], wording);
+                if (value !== null && value !== "") {
                     const line = document.createElement("p");
-                    textElement("strong", field.replaceAll("_", " ") + ": ", line);
-                    textElement("span", wording[field], line);
+                    textElement("strong", (field === "date_precision" ? "date detail" : field.replaceAll("_", " ")) + ": ", line);
+                    textElement("span", value, line);
                     section.appendChild(line);
                 }
             });
@@ -55,9 +82,9 @@
                 entry.changes.forEach(function (change) {
                     const line = document.createElement("p");
                     textElement("strong", change.field.replaceAll("_", " ") + ": ", line);
-                    textElement("del", change.before, line);
+                    textElement("del", reviewValue(change.field, change.before, entry.before || {}), line);
                     textElement("span", " → ", line);
-                    textElement("ins", change.after, line);
+                    textElement("ins", reviewValue(change.field, change.after, wording), line);
                     changes.appendChild(line);
                 });
                 section.appendChild(changes);
@@ -74,6 +101,8 @@
                     reviewedDigest = null;
                     reviewedCandidate = null;
                     publishButton.disabled = true;
+                    previewButton.disabled = true;
+                    hidePreview(false);
                     digestNode.hidden = true;
                     setStatus("Review your updated sharing choices before publishing.");
                 });
@@ -127,6 +156,8 @@
         }
         inFlight = true;
         publishButton.disabled = true;
+        previewButton.disabled = true;
+        hidePreview(false);
         lockChoices(true);
         setStatus("Reviewing current facts. This does not publish.", "ok");
         try {
@@ -148,6 +179,7 @@
                 String(result.payload.display_count || 0) + " entries shown on your Resume. " +
                 String(result.payload.visitor_ai_count || 0) + " entries available to visitor AI.";
             publishButton.disabled = false;
+            previewButton.disabled = false;
             setStatus(
                 "Your information and sharing choices are ready to review. Publish when you are ready to share them.",
                 "ok"
@@ -158,6 +190,47 @@
         } finally {
             inFlight = false;
             lockChoices(false);
+        }
+    });
+
+    previewButton.addEventListener("click", async function () {
+        if (inFlight || pendingPublish || !reviewedDigest || !reviewedCandidate) return;
+        inFlight = true;
+        previewButton.disabled = true;
+        publishButton.disabled = true;
+        lockChoices(true);
+        hidePreview(false);
+        setStatus("Checking the current private draft for your preview. Nothing is published.");
+        try {
+            const result = await send(previewUrl, {
+                candidate: reviewedCandidate, reviewed_digest: reviewedDigest,
+                profile_identity: reviewedIdentity,
+            });
+            if (!result.ok || !result.payload.html || result.payload.digest !== reviewedDigest) {
+                reviewedDigest = null;
+                reviewedCandidate = null;
+                digestNode.hidden = true;
+                setStatus(result.payload.message || "Your draft changed. Review it again before previewing.", "error");
+                return;
+            }
+            // Escaped server rendering reuses the approved composition. Import
+            // only its content section; navigation/scripts are never executed.
+            const documentPreview = new DOMParser().parseFromString(result.payload.html, "text/html");
+            const composition = documentPreview.querySelector(".resume-publication--public");
+            if (!composition) throw new Error("Preview composition unavailable");
+            previewContent.replaceChildren(document.importNode(composition, true));
+            previewRegion.hidden = false;
+            const heading = previewContent.querySelector("#resume-preview-title");
+            if (heading) heading.focus();
+            setStatus("Private draft preview ready. Nothing was published; saved sharing choices are unchanged.");
+        } catch (error) {
+            hidePreview(false);
+            setStatus("The private preview could not finish. Your saved information is unchanged. Try again.", "error");
+        } finally {
+            inFlight = false;
+            lockChoices(false);
+            previewButton.disabled = !reviewedDigest;
+            publishButton.disabled = !reviewedDigest;
         }
     });
 

@@ -43,6 +43,90 @@ def _create_displayed_role(policy, owner, summary="Led team 0."):
 
 
 class ResumePublicationRouteTests(unittest.TestCase):
+    def test_private_composition_media_uses_owner_draft_delivery_and_revocation_fences(self):
+        from unittest.mock import patch
+        from tests.mvp1_acceptance_support import SharedMvp1Fixture
+        from services.resume_media_repository import MediaPlacement, RequestReceipt, provenance_label_for
+        from services.resume_media_service import centered_slot_crop
+        shared=SharedMvp1Fixture()
+        key=str(uuid4())
+        shared.policy.commit("member-a",{"type":"create","request_id":str(uuid4()),"entry_key":key,
+            "canonical_type":"role","values":{"role_title":"Synthetic role","employer_name":"Fictional Company"}})
+        photo=shared.seed_photo("member-a")
+        placement=MediaPlacement("experience_support","owner_photo",photo.source_id,photo.version,photo.digest,
+            centered_slot_crop(slot="experience_support",width=photo.width,height=photo.height),
+            alt_text="Synthetic test landscape",provenance_label=provenance_label_for(source_kind="owner_photo"))
+        shared.media.media_repository.commit_draft(owner_id="member-a",expected_version=0,placements=(placement,),
+            receipt=RequestReceipt("member-a","add",str(uuid4()),"b"*64,"{}"))
+        with patch.dict(app.config,{"RESUME_PUBLICATION_SERVICE":shared.publication,
+                "RESUME_MEDIA_SERVICE":shared.media,"PEERSLATE_RESUME_MEDIA_ENABLED":True}):
+            client=self._client()
+            review=client.post("/api/resume-publication/me/review",headers=self._headers(),json={"entries":[
+                {"entry_key":key,"resume_display":True,"visitor_ai":False}]}).get_json()
+            payload={"candidate":review["candidate"],"reviewed_digest":review["digest"],"profile_identity":None}
+            preview=client.post("/api/resume-publication/me/preview",headers=self._headers(),json=payload)
+            self.assertEqual(preview.status_code,200)
+            url="/api/resume-publication/me/preview/media/experience_support?expected="+preview.get_json()["media"]["experience_support"]["preview_digest"]
+            self.assertIn(url,preview.get_json()["html"])
+            self.assertNotIn('/None/resume/media',preview.get_json()["html"])
+            self.assertEqual(client.get(url).status_code,200)
+            app.config["PEERSLATE_DEV_USER_KEY"]="member-b"
+            self.assertEqual(client.get(url).status_code,404)
+            app.config["PEERSLATE_DEV_USER_KEY"]="member-a"
+            shared.media_sources.update_owner_photo(owner_id="member-a",source_id=photo.source_id,lifecycle="restricted")
+            self.assertEqual(client.get(url).status_code,404)
+            self.assertEqual(client.post("/api/resume-publication/me/preview",headers=self._headers(),json=payload).status_code,503)
+            shared.media_sources.update_owner_photo(owner_id="member-a",source_id=photo.source_id,lifecycle="active")
+            self.assertEqual(client.get(url).status_code,200)
+            replacement=shared.seed_photo("member-a",color=(100,20,30))
+            changed=MediaPlacement("experience_support","owner_photo",replacement.source_id,replacement.version,replacement.digest,
+                centered_slot_crop(slot="experience_support",width=replacement.width,height=replacement.height),
+                alt_text="Different test landscape",provenance_label=provenance_label_for(source_kind="owner_photo"))
+            swap={"done":False}
+            def replace_during_read(*args,**kwargs):
+                if swap["done"]: return
+                swap["done"]=True
+                shared.media.media_repository.commit_draft(owner_id="member-a",expected_version=1,placements=(changed,),
+                    receipt=RequestReceipt("member-a","add",str(uuid4()),"b"*64,"{}"))
+            shared.media_storage.on_open=replace_during_read
+            self.assertEqual(client.get(url).status_code,404)
+            self.assertTrue(swap["done"])
+
+    def test_temporary_choices_preview_approved_layout_privately_and_reject_stale_or_foreign_candidate(self):
+        import copy
+        client = self._client()
+        row = self.policy.list_entries("member-a")["entries"][0]
+        self.policy.commit("member-a", {"type":"change_permissions","request_id":str(uuid4()),
+            "entry_key":self.entry_key,"expected_access_revision":row["access_revision"],
+            "permissions":{"resume_display":False,"visitor_ai":False}})
+        before = copy.deepcopy(self.policy.repository.load_owner("member-a"))
+        review = client.post("/api/resume-publication/me/review", headers=self._headers(), json={"entries":[
+            {"entry_key":self.entry_key,"resume_display":True,"visitor_ai":False}]}).get_json()
+        payload = {"candidate":review["candidate"], "reviewed_digest":review["digest"],
+            "profile_identity":review["profile_identity"],"owner_user_key":"member-b"}
+        response = client.post("/api/resume-publication/me/preview",json=payload,headers=self._headers())
+        self.assertEqual(response.status_code,200)
+        body = response.get_json()
+        self.assertIn('resume-preview-title',body["html"])
+        self.assertIn('Private draft preview',body["html"])
+        self.assertIn('Led team 0.',body["html"])
+        self.assertNotIn('/alice/resume/media/',body["html"])
+        self.assertEqual(body["display"][self.entry_key]["canonical_type"],"role")
+        self.assertFalse(body["published"])
+        self.assertFalse(body["sharing_enabled"])
+        self.assertEqual(response.headers["Cache-Control"],"private, no-store")
+        self.assertEqual(self.policy.repository.load_owner("member-a"),before)
+        self.assertEqual(client.get("/alice/resume").status_code,404)
+        bad = copy.deepcopy(payload); bad["reviewed_digest"] = "0"*64
+        self.assertEqual(client.post("/api/resume-publication/me/preview",json=bad,headers=self._headers()).status_code,409)
+        app.config["PEERSLATE_DEV_USER_KEY"]="member-b"
+        foreign = client.post("/api/resume-publication/me/preview",json=payload,headers=self._headers())
+        self.assertIn(foreign.status_code,(400,409))
+        self.assertNotIn('Led team 0.',foreign.get_data(as_text=True))
+        app.config["PEERSLATE_ALLOW_DEV_IDENTITY"]=False
+        app.config["PEERSLATE_DEV_USER_KEY"]=None
+        self.assertEqual(client.post("/api/resume-publication/me/preview",json=payload,headers=self._headers()).status_code,404)
+
     def setUp(self):
         self.policy = EntryPolicyService(repository=InMemoryEntryPolicyRepository())
         self.service = memory_resume_publication_service()

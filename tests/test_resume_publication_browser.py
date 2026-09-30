@@ -69,6 +69,43 @@ def _create_role(policy, owner, summary="Led team 0.", display=True, visitor_ai=
 
 @unittest.skipUnless(sync_playwright and CHROME_EXECUTABLE, "pinned Chromium is unavailable")
 class ResumePublicationBrowserTests(unittest.TestCase):
+    def test_private_composition_preview_uses_temporary_choices_and_returns_keyboard_focus(self):
+        import copy
+        key = _create_role(self.policy,self.owner,summary="Private preview-only wording.",display=False,visitor_ai=False)
+        row=next(item for item in self.policy.list_entries(self.owner)["entries"] if item["entry_key"]==key)
+        self.policy.commit(self.owner,{"type":"edit","request_id":str(uuid4()),"entry_key":key,
+            "expected_content_version":row["content_version"],"expected_access_revision":row["access_revision"],
+            "values":{"role_title":"Lead","employer_name":"PeerSlate","summary":"Private preview-only wording.",
+                "date_precision":"month","start_date":"2022-03-01","current_role":True}})
+        before = (copy.deepcopy(self.policy.repository.load_owner(self.owner)),
+                  copy.deepcopy(self.service.repository.load_owner(self.owner)))
+        page = self._owner_page()
+        self.addCleanup(page.close)
+        page.goto(f"{self._origin()}/app/resume/publication")
+        page.locator("#resume-publication-review-button").click()
+        page.locator("#resume-publication-digest:not([hidden])").wait_for()
+        self.assertNotIn("2022-03-01",page.locator(f'[data-entry-key="{key}"]').inner_text())
+        self.assertIn("2022-03",page.locator(f'[data-entry-key="{key}"]').inner_text())
+        page.locator(f'[data-entry-key="{key}"] [data-permission="resume_display"]').check()
+        page.locator("#resume-publication-review-button").click()
+        page.locator("#resume-publication-digest:not([hidden])").wait_for()
+        page.locator("#resume-publication-preview-button").focus()
+        page.keyboard.press("Enter")
+        page.locator("#resume-private-preview:not([hidden]) .resume-publication__guest").wait_for()
+        self.assertIn("Private preview-only wording.",page.locator("#resume-private-preview-content").inner_text())
+        self.assertIn("Nothing is published",page.locator("#resume-private-preview-content").inner_text())
+        self.assertEqual(page.evaluate("document.activeElement.id"),"resume-preview-title")
+        self.assertEqual(before,(self.policy.repository.load_owner(self.owner),self.service.repository.load_owner(self.owner)))
+        # The composition occupies the page width, outside the narrow owner/AI rail.
+        page.set_viewport_size({"width":320,"height":740})
+        self.assertGreater(page.locator("#resume-private-preview-content .resume-publication__timeline").bounding_box()["width"],200)
+        self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"),320)
+        page.keyboard.press("Escape")
+        self.assertFalse(page.locator("#resume-private-preview").is_visible())
+        self.assertEqual(page.evaluate("document.activeElement.id"),"resume-publication-preview-button")
+        page.locator(f'[data-entry-key="{key}"] [data-permission="resume_display"]').uncheck()
+        self.assertTrue(page.locator("#resume-publication-preview-button").is_disabled())
+
     @classmethod
     def setUpClass(cls):
         from app import app

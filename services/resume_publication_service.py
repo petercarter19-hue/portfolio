@@ -39,7 +39,7 @@ from services.resume_publication_contracts import (
     UsePurpose,
     _context_from_authorized_server,
 )
-from services.resume_publication_projection import publication_evidence_version
+from services.resume_publication_projection import publication_evidence_version, ordered_resume_display
 from services.resume_publication_repository import (
     InMemoryResumePublicationRepository,
     PublicationConflictError,
@@ -244,20 +244,80 @@ class ResumePublicationService:
         return rows
 
     def draft_preview(self, owner, payload=None):
-        result = self.review_for_owner(owner, payload)
-        if result.reviewed is None:
-            raise PublicationConflictError("stale_preview", "The private preview changed. Review again.")
-        reviewed = result.reviewed
+        if payload is not None:
+            if type(payload) is not dict or type(payload.get("candidate")) is not dict:
+                raise PublicationValidationError("Review and submit the complete Resume candidate.")
+            # This existing seam only rebuilds/validates; it never commits.
+            reviewed = self._review_publish(owner, payload)
+        else:
+            result = self.review_for_owner(owner)
+            if result.reviewed is None:
+                raise PublicationConflictError("stale_preview", "The private preview changed. Review again.")
+            reviewed = result.reviewed
         from services.resume_publication_validation import _placement
         sharing = self._load(owner)
-        return {"published": False, "preview_only": True, "read_state": "current",
+        list_for_review = getattr(self.policy_service, "list_publication_entries", self.policy_service.list_entries)
+        types = {row["entry_key"]: row["canonical_type"] for row in list_for_review(owner)["entries"]}
+        display = {}
+        for item in reviewed.display.entries:
+            if item.ref.entry_key not in types:
+                raise PublicationConflictError("stale_preview", "The private preview changed. Review again.")
+            display[item.ref.entry_key] = {
+                "canonical_type": types[item.ref.entry_key],
+                "presentation_section": "story" if item.ref.entry_key == reviewed.candidate.story_entry_key else "entry",
+                "wording": _wording_map(item.wording)}
+        media = {item.slot: _placement(item) for item in reviewed.display.placements}
+        media = self._visible_media(display, media) if self.media_application is not None else {}
+        for placement in media.values():
+            placement["preview_digest"] = _digest(placement)
+        presented = {"published": False, "preview_only": True, "read_state": "current",
             "sharing_enabled": bool(sharing["sharing_enabled"]),
             "publication_revision": sharing["publication_revision"],
             "digest": reviewed.digest,
-            "display": {item.ref.entry_key: {"wording": _wording_map(item.wording)} for item in reviewed.display.entries},
-            "media": {item.slot: _placement(item) for item in reviewed.display.placements},
+            "display": ordered_resume_display(display),
+            "media": media,
             "public_identity": self._public_identity(owner,
                 reviewed.candidate.profile_identity.to_payload() if reviewed.candidate.profile_identity else None)}
+        # Recheck the pinned candidate after constructing presentation metadata.
+        # Authority never comes from process-local pending-review memory.
+        if payload is not None:
+            self._review_publish(owner, payload)
+        return presented
+
+    def open_private_preview_media(self, owner: str, slot: str, expected: str):
+        """Owner draft bytes pinned to the reviewed placement, never latest fallback."""
+        if slot not in {"story_banner", "experience_support"} or not isinstance(expected, str) or len(expected) != 64:
+            raise PublicationDenied("denied", "Private preview media is unavailable.")
+        if self.media_application is None or self.draft_service is None:
+            raise PublicationUnavailableError("Private preview media is unavailable.")
+        from services.resume_publication_validation import _placement
+        try:
+            workspace = self.draft_service.get_workspace(owner)
+            if workspace.get("capabilities", {}).get("canonical_read") != "ok":
+                raise PublicationUnavailableError("Private preview media is unavailable.")
+            draft_version = workspace["draft_version"]
+        except Exception as error:
+            raise PublicationUnavailableError("Private preview media is unavailable.") from error
+        port = DraftMediaPublicationPort(self.media_application)
+        def check():
+            try:
+                placements, _ = port.read_draft(owner, draft_version)
+                selected = next((item for item in placements if item.slot == slot), None)
+                if selected is None or _digest(_placement(selected)) != expected:
+                    raise PublicationDenied("stale_preview", "Private preview media changed.")
+            except PublicationDenied:
+                raise
+            except Exception as error:
+                raise PublicationDenied("stale_preview", "Private preview media changed.") from error
+        check()
+        opened = self.media_application.open_draft_placement_media(owner_id=owner, slot=slot)
+        try:
+            check()
+        except Exception:
+            if isinstance(opened, dict) and opened.get("stream"):
+                opened["stream"].close()
+            raise
+        return opened
 
     def review_for_owner(self, owner: str, payload: dict | None = None, *, candidate=None):
         """Review current durable policy/draft/media. Does not write."""
@@ -393,7 +453,7 @@ class ResumePublicationService:
             presented = {
                 "revision": current["revision"],
                 "digest": current["digest"],
-                "display": copy.deepcopy(current["display"]),
+                "display": ordered_resume_display(copy.deepcopy(current["display"])),
                 "visitor_ai": copy.deepcopy(current["visitor_ai"]),
                 "media": copy.deepcopy(current["media"]),
                 "profile_identity": copy.deepcopy(current.get("profile_identity")),
@@ -443,7 +503,7 @@ class ResumePublicationService:
             "cache_control": "private,no-store",
             "sharing_enabled": True,
             "publication_revision": current["revision"],
-            "display": copy.deepcopy(current["display"]),
+            "display": ordered_resume_display(copy.deepcopy(current["display"])),
             "media": media,
             "public_identity": self._public_identity(owner, current.get("profile_identity")),
         }
@@ -494,7 +554,7 @@ class ResumePublicationService:
             "cache_control": "private,no-store",
             "sharing_enabled": True,
             "publication_revision": row.get("publication_revision"),
-            "display": display or {},
+            "display": ordered_resume_display(display or {}),
             "media": media,
             "public_identity": self._public_identity(
                 row.get("owner_user_key"),

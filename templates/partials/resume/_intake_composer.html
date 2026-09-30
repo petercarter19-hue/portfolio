@@ -67,6 +67,29 @@
                     <label for="resume-intake-employer">Employer</label>
                     <input id="resume-intake-employer" name="employer_name" type="text" maxlength="300" autocomplete="off">
                 </p>
+                <p data-role-field hidden>
+                    <label for="resume-intake-current-role">Role status (optional)</label>
+                    <select id="resume-intake-current-role">
+                        <option value="">Not supplied</option>
+                        <option value="true">Current role</option>
+                        <option value="false">Past role</option>
+                    </select>
+                </p>
+                <p data-role-field hidden>
+                    <label for="resume-intake-role-date-precision">Role date detail (optional)</label>
+                    <select id="resume-intake-role-date-precision">
+                        <option value="">Not supplied</option>
+                        <option value="year">Year</option><option value="month">Month</option><option value="day">Exact day</option>
+                    </select>
+                </p>
+                <p data-role-field hidden>
+                    <label for="resume-intake-role-start">Role start date (optional)</label>
+                    <input id="resume-intake-role-start" type="text" maxlength="10" placeholder="YYYY, YYYY-MM or YYYY-MM-DD" aria-describedby="resume-intake-date-hint">
+                </p>
+                <p data-role-field hidden>
+                    <label for="resume-intake-role-end">Role end date (optional)</label>
+                    <input id="resume-intake-role-end" type="text" maxlength="10" placeholder="YYYY, YYYY-MM or YYYY-MM-DD" aria-describedby="resume-intake-date-hint">
+                </p>
                 <p data-skill-field hidden>
                     <label for="resume-intake-skill">Strength</label>
                     <input id="resume-intake-skill" name="name" type="text" maxlength="200" autocomplete="off">
@@ -90,6 +113,22 @@
                         <option value="withdrawn">Withdrawn</option>
                     </select>
                 </p>
+                <p data-education-field hidden>
+                    <label for="resume-intake-education-date-precision">Education date detail (optional)</label>
+                    <select id="resume-intake-education-date-precision">
+                        <option value="">Not supplied</option>
+                        <option value="year">Year</option><option value="month">Month</option><option value="day">Exact day</option>
+                    </select>
+                </p>
+                <p data-education-field hidden>
+                    <label for="resume-intake-education-start">Education start date (optional)</label>
+                    <input id="resume-intake-education-start" type="text" maxlength="10" placeholder="YYYY, YYYY-MM or YYYY-MM-DD" aria-describedby="resume-intake-date-hint">
+                </p>
+                <p data-education-field hidden>
+                    <label for="resume-intake-education-end">Education completion or end date (optional)</label>
+                    <input id="resume-intake-education-end" type="text" maxlength="10" placeholder="YYYY, YYYY-MM or YYYY-MM-DD" aria-describedby="resume-intake-date-hint">
+                </p>
+                <p id="resume-intake-date-hint" class="resume-intake__hint">Use only the date detail you know. Leave unknown dates empty. A current role has no end date.</p>
                 <p data-credential-field hidden>
                     <label for="resume-intake-credential">Credential</label>
                     <input id="resume-intake-credential" name="credential_name" type="text" maxlength="300" autocomplete="off">
