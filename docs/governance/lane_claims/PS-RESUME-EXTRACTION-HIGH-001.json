@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-RESUME-EXTRACTION-HIGH-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Support explicit HIGH reasoning alongside existing medium and default xhigh only for owner MyData Luna intake extraction. Preserve maximum128000, identical typed schema and prompt, source validation, private member-approved proposals, manual recovery, no retry and no model fallback. Offline focused regressions, independent exact-candidate review, required CI, accepted merge and close. Parent owns synthetic paid HIGH comparisons. No worker paid calls or deployment, flags, factory, default-model, privacy, retention, storage, schema, identity or voice expansion.",
   "assignment": "implementation",
   "writer_ref": "session:01a0f3b8-a1c6-7c92-935c-a2ffa3eab96c",
@@ -31,6 +31,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "6dc2fb946abdca02c8e6c2cb35ef2a182d1fe6b7",
+  "closed_at": "2026-09-30T21:33:21Z"
 }
