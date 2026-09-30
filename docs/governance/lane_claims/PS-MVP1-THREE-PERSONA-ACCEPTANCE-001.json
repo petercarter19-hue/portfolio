@@ -34,7 +34,9 @@
     "tests/test_resume_publication_routes.py",
     "tests/test_resume_publication_browser.py",
     "scripts/package_acceptance.py",
-    "tests/test_package_acceptance.py"
+    "tests/test_package_acceptance.py",
+    "scripts/run_resume_publication_browser_tests.py",
+    "scripts/run_mvp1_acceptance_browser_tests.py"
   ],
   "domains": [
     "mvp1:three-persona-onboarding-acceptance",
