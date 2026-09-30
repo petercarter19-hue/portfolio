@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "package": "PS-ASK-PETE-LUNA-SINGLE-CALL-001",
+  "state": "active",
+  "outcome": "Replace the public Ask Pete Foundry two-call Luna generation and semantic support verdict with at most one strict low-reasoning Luna selection call over all 15 manifest-approved full public records. Server code constructs factual answer text and exact citations only from selected context-bearing approved passages, preserves the 20-second deadline, source authorization and currentness, privacy/refusal/non-ranking boundaries, meaningful unknowns, all four purpose contracts, unavailable fallback and Haiku/shared-provider isolation. Prove successful useful answers, including a coherent 100-140-word recruiter brief, plus negative cases. Deliver through focused tests, self-review, independent exact-candidate review, required CI and accepted Azure PR merge. Production authority, paid Luna sampling, deployment, enablement, schema, identity and billing changes are withheld from this claim.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0f036-a425-70b1-be17-d34a213f0e79",
+  "branch": "codex/2026-09-29-ask-pete-luna-single-call-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "345c0a104b59509a6e543e002e933e3a6d4d5406",
+  "owner_outcome_ref": "session:01a0f011-5b42-78f1-afad-2b81243d2998/event:evt-57f3a919-2cb4-4f2b-8bf8-1b96f2430823",
+  "surfaces": [
+    "services/ask_pete/foundry_provider.py",
+    "services/ask_pete/fact_selection.py",
+    "services/ask_pete/runtime.py",
+    "prompts/ask_pete/luna_fact_selection_v1.md",
+    "tests/ask_pete/test_live_foundry.py",
+    "tests/ask_pete/test_fact_selection.py",
+    "docs/governance/lane_claims/PS-ASK-PETE-LUNA-SINGLE-CALL-001.json",
+    "docs/governance/lane_claims/evidence/PS-ASK-PETE-LUNA-SINGLE-CALL-001.md",
+    "docs/governance/lane_claims/receipts/PS-ASK-PETE-LUNA-SINGLE-CALL-001.json"
+  ],
+  "domains": [
+    "ask-pete:live-foundry"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-ASK-PETE-LUNA-SINGLE-CALL-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
