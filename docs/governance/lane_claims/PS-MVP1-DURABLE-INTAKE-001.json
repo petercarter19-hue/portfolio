@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-DURABLE-INTAKE-001",
+  "state": "active",
+  "outcome": "Complete the remaining MVP1 durable intake prerequisite inside the accepted architecture: owner-scoped unfinished composer draft reload and CAS, atomic source-bound extracted keep-separate actions, one additive governed migration, focused isolation/version/replay/rollback evidence and a separately admitted bounded disposable SQL proof driver, independent exact-SHA review, accepted source merge and normal close. Preserve accepted MVP1 engine/persona/progress results. No factory/provider wiring, original-byte retention choice, schema application, deployment, feature enablement or production/data mutation.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0f435-a3f3-7772-b22b-49050330b295",
+  "branch": "codex/2026-09-30-mvp1-durable-intake-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "3cc69c840372ab3ea4c89d043d226e95548dc7e7",
+  "owner_outcome_ref": "session:01a0f424-566c-70c2-bf77-55043f130ff5/owner-selection:2026-09-30/remaining-mvp1-durable-intake",
+  "surfaces": [
+    "services/resume_intake_repository.py",
+    "services/resume_intake_service.py",
+    "services/database_service.py",
+    "tests/test_resume_intake_sql.py",
+    "tests/test_my_data_drafts.py",
+    "tests/test_resume_intake_durable_sql.py",
+    "SQL FIles/Migrations/registry.json",
+    "SQL FIles/Migrations/PS-RESUME-INTAKE-002_durable_composer.sql",
+    "SQL FIles/Migrations/PS-RESUME-INTAKE-002_durable_composer_rollback.sql",
+    "SQL FIles/Verification/PS-RESUME-INTAKE-002_durable_composer_verify.sql",
+    "docs/governance/lane_claims/PS-MVP1-DURABLE-INTAKE-001.json",
+    "docs/governance/lane_claims/receipts/PS-MVP1-DURABLE-INTAKE-001.json",
+    "docs/governance/lane_claims/evidence/PS-MVP1-DURABLE-INTAKE-001.md",
+    "scripts/run_resume_intake_sql_proof.py",
+    "tests/test_resume_intake_sql_engine.py",
+    "tests/test_resume_intake_sql_proof_runner.py",
+    "azure-pipelines-resume-intake-sql-proof.yml"
+  ],
+  "domains": [
+    "runtime:resume-intake-persistence",
+    "schema:resume-intake-durable",
+    "testing:resume-intake-durable",
+    "tooling:resume-intake-sql-proof"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MVP1-DURABLE-INTAKE-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
