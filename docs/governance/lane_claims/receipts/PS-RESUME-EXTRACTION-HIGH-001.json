@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-RESUME-EXTRACTION-HIGH-001",
+  "candidate_sha": "90987efcb2847c110f2939ee1281a79b333dd6ff",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a0f1f2-af64-73e0-98be-c4d4970e08bc",
+  "result": "pass",
+  "reviewed_at": "2026-09-30T19:54:04Z",
+  "findings": [],
+  "evidence_ref": "X:/PeerSlate/evidence/PS-RESUME-EXTRACTION-HIGH-001/independent-review/SOURCE_HIGH_REVIEW_90987ef.json; sha256:4c18cf2f214102a9faf4c2def8fcf77bab1a59d3e975262549427b4c678ecf11"
+}

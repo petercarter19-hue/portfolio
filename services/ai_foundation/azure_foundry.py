@@ -23,7 +23,7 @@ from .contracts import (
     ALLOWED_REASONING_EFFORTS,
     Audience,
     ExtractionPurpose,
-    REASONING_EFFORT_MEDIUM,
+    REASONING_EFFORT_XHIGH,
     StructuredRequest,
     StructuredResult,
 )
@@ -557,7 +557,7 @@ class AzureFoundryResponsesProvider:
     ) -> StructuredResult:
         """Run one strict call with explicit extraction calibration options.
 
-        Medium, raised allowance and nondefault receive timeout are limited to
+        Medium, high, raised allowance and nondefault receive timeout are limited to
         owner My Data extraction on Luna. Other defaults remain unchanged.
         ``receive_timeout_seconds`` is the second tuple quantity; default
         UrllibTransport sums it with connection5 (read1190 means socket1195),
@@ -572,8 +572,8 @@ class AzureFoundryResponsesProvider:
             and request.audience == Audience.OWNER
             and self._deployment == DEFAULT_DEPLOYMENT
         )
-        if request.reasoning_effort == REASONING_EFFORT_MEDIUM and not extraction_scope:
-            raise ValueError("medium requires owner My Data Luna extraction")
+        if request.reasoning_effort != REASONING_EFFORT_XHIGH and not extraction_scope:
+            raise ValueError(f"{request.reasoning_effort} requires owner My Data Luna extraction")
         text_format = self._strict_text_format(request.schema_name, response_schema)
         output_tokens = self._maximum_output_tokens if maximum_output_tokens is None else maximum_output_tokens
         if (isinstance(output_tokens, bool) or not isinstance(output_tokens, int)

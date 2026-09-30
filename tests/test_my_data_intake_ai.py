@@ -184,26 +184,29 @@ class AdapterContractTests(unittest.TestCase):
             adapter.build_request("   ")
         self.assertEqual(adapter.calls, [])
 
-    def test_explicit_medium_and_scoped_allowance_are_emitted_without_changing_default(self):
+    def test_explicit_medium_high_and_scoped_allowance_preserve_default(self):
         calls = []
         def provider(request, **kwargs):
             calls.append((request, kwargs))
             return {"candidates": []}
-        for effort in ("xhigh", "medium"):
+        for effort in ("xhigh", "medium", "high"):
             adapter = MyDataExtractionAdapter(provider, reasoning_effort=effort)
             self.assertEqual(adapter.maximum_output_tokens, 128000)
             self.assertEqual(adapter.extract("Fictional material.", allowed_fields={}), [])
-        self.assertEqual([row[0].reasoning_effort for row in calls], ["xhigh", "medium"])
-        self.assertEqual([row[1]["maximum_output_tokens"] for row in calls], [128000,128000])
-        self.assertEqual(calls[0][0].instructions, calls[1][0].instructions)
-        self.assertEqual(calls[0][1]["response_schema"], calls[1][1]["response_schema"])
+        self.assertEqual([row[0].reasoning_effort for row in calls], ["xhigh", "medium", "high"])
+        self.assertEqual([row[1]["maximum_output_tokens"] for row in calls], [128000,128000,128000])
+        for request, kwargs in calls[1:]:
+            self.assertEqual(calls[0][0].instructions, request.instructions)
+            self.assertEqual(calls[0][0].input_text, request.input_text)
+            self.assertEqual(calls[0][1]["response_schema"], kwargs["response_schema"])
         self.assertEqual(MyDataExtractionAdapter().reasoning_effort, "xhigh")
 
-    def test_medium_matching_and_invalid_allowances_refuse_before_provider(self):
+    def test_nondefault_matching_and_invalid_allowances_refuse_before_provider(self):
         calls = []
-        adapter = MyDataExtractionAdapter(lambda **kw: calls.append(kw), reasoning_effort="medium")
-        with self.assertRaises(ValueError):
-            adapter.build_request("Material", purpose=ExtractionPurpose.MY_DATA_INTAKE_MATCHING)
+        for effort in ("medium", "high"):
+            adapter = MyDataExtractionAdapter(lambda **kw: calls.append(kw), reasoning_effort=effort)
+            with self.subTest(effort=effort), self.assertRaises(ValueError):
+                adapter.build_request("Material", purpose=ExtractionPurpose.MY_DATA_INTAKE_MATCHING)
         for value in (True,0,-1,128001,1.5,"128000"):
             with self.subTest(value=value), self.assertRaises(ExtractionError):
                 MyDataExtractionAdapter(maximum_output_tokens=value)
@@ -211,6 +214,21 @@ class AdapterContractTests(unittest.TestCase):
             with self.subTest(effort=effort), self.assertRaises(ExtractionError):
                 MyDataExtractionAdapter(reasoning_effort=effort)
         self.assertEqual(calls, [])
+
+    def test_nondefault_effort_requires_owner_my_data_extraction(self):
+        for effort in ("medium", "high"):
+            for changes in ({"product": "unrelated"},
+                            {"purpose": ExtractionPurpose.MY_DATA_INTAKE_MATCHING},
+                            {"audience": Audience.PUBLIC},
+                            {"audience": Audience.AUTHORIZED_RECRUITER}):
+                options = dict(request_id="synthetic-scope", product="my_data_intake",
+                               purpose=ExtractionPurpose.MY_DATA_INTAKE_EXTRACTION,
+                               audience=Audience.OWNER, subject_key="synthetic:member",
+                               instructions="Private proposal only.", input_text="Fictional material.",
+                               schema_name=EXTRACTION_SCHEMA_NAME, reasoning_effort=effort)
+                options.update(changes)
+                with self.subTest(effort=effort, changes=changes), self.assertRaises(ValueError):
+                    StructuredRequest(**options)
 
     def test_type_fields_are_exact_existing_canonical_editor_contract(self):
         from services.resume_intake_service import EDITOR_FIELDS

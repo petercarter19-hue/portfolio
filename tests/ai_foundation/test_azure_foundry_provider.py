@@ -781,9 +781,9 @@ class StructuredCalibrationTests(unittest.TestCase):
         options.update(changes)
         return StructuredRequest(**options)
 
-    def test_actual_adapter_emits_both_efforts_same_schema_and_persisted128000(self):
+    def test_actual_adapter_emits_all_efforts_same_schema_and_persisted128000(self):
         wires=[]
-        for effort in ("xhigh","medium"):
+        for effort in ("xhigh","medium","high"):
             provider,transport,usages,ledger,_=self.provider(maximum_input_bytes=65536)
             adapter=MyDataExtractionAdapter(partial(provider.respond,receive_timeout_seconds=1190),
                                             reasoning_effort=effort)
@@ -795,13 +795,15 @@ class StructuredCalibrationTests(unittest.TestCase):
             self.assertEqual(wire["json"]["reasoning"],{"effort":effort})
             self.assertEqual(wire["timeout"],(5.0,1190.0))
             self.assertEqual(usages[0].maximum_output_tokens,128000)
+            self.assertEqual(usages[0].reasoning_effort,effort)
+            self.assertFalse(wire["json"]["store"])
             self.assertEqual(usages[0].urllib_socket_timeout_seconds,1195)
             self.assertEqual(usages[0].response_status,"completed")
             self.assertEqual(ledger.snapshot()["reserved_micro_usd"],0)
             wires.append(wire["json"])
-        self.assertEqual(wires[0]["text"],wires[1]["text"])
-        self.assertEqual(wires[0]["input"],wires[1]["input"])
-        self.assertEqual(wires[0]["instructions"],wires[1]["instructions"])
+        for wire in wires[1:]:
+            self.assertEqual({k:v for k,v in wires[0].items() if k != "reasoning"},
+                             {k:v for k,v in wire.items() if k != "reasoning"})
 
     def test_unrelated_structured_default_stays700_and90_with_unknown_subsets(self):
         provider,transport,usages,_,_=self.provider()
@@ -896,10 +898,29 @@ class StructuredCalibrationTests(unittest.TestCase):
                         provider.respond(request,response_schema=EXTRACTION_RESPONSE_SCHEMA,**config)
                 self.assertEqual(transport.calls,[])
                 self.assertEqual(credentials,[])
-        provider,transport,_,_,credentials=self.provider(deployment="gpt-6-luna")
-        with self.assertRaises(ValueError):
-            provider.respond(self.request(reasoning_effort="medium"),response_schema=EXTRACTION_RESPONSE_SCHEMA)
-        self.assertEqual((transport.calls,credentials),([],[]))
+        for effort in ("medium", "high"):
+            provider,transport,usages,ledger,credentials=self.provider(deployment="gpt-6-luna")
+            before=ledger.snapshot()
+            with self.subTest(effort=effort), self.assertRaises(ValueError):
+                provider.respond(self.request(reasoning_effort=effort),response_schema=EXTRACTION_RESPONSE_SCHEMA)
+            self.assertEqual((transport.calls,credentials,usages),([],[],[]))
+            self.assertEqual(ledger.snapshot(),before)
+
+    def test_provider_rechecks_nondefault_scope_before_credentials_spend_or_transport(self):
+        # Deliberately bypass the frozen contract to prove the provider's own guard.
+        for effort in ("medium", "high"):
+            for field,value in (("product","unrelated"),
+                                ("purpose",ExtractionPurpose.MY_DATA_INTAKE_MATCHING),
+                                ("audience",Audience.PUBLIC),
+                                ("audience",Audience.AUTHORIZED_RECRUITER)):
+                provider,transport,usages,ledger,credentials=self.provider()
+                request=self.request(reasoning_effort=effort)
+                object.__setattr__(request,field,value)
+                before=ledger.snapshot()
+                with self.subTest(effort=effort,field=field), self.assertRaises(ValueError):
+                    provider.respond(request,response_schema=EXTRACTION_RESPONSE_SCHEMA)
+                self.assertEqual((transport.calls,credentials,usages),([],[],[]))
+                self.assertEqual(ledger.snapshot(),before)
 
     def test_timeout_does_not_retry_and_preserves_unknown_usage(self):
         provider,transport,usages,ledger,_=self.provider()

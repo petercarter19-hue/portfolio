@@ -71,10 +71,13 @@ class ExtractionPurpose(str, Enum):
     MY_DATA_INTAKE_MATCHING = "my_data_intake_matching"
 
 
-#: Medium is an explicit My Data extraction comparison; matching keeps xhigh.
+#: Medium and high are explicit My Data extraction comparisons; matching keeps xhigh.
 REASONING_EFFORT_XHIGH = "xhigh"
 REASONING_EFFORT_MEDIUM = "medium"
-ALLOWED_REASONING_EFFORTS = frozenset({REASONING_EFFORT_XHIGH, REASONING_EFFORT_MEDIUM})
+REASONING_EFFORT_HIGH = "high"
+ALLOWED_REASONING_EFFORTS = frozenset(
+    {REASONING_EFFORT_XHIGH, REASONING_EFFORT_MEDIUM, REASONING_EFFORT_HIGH}
+)
 
 
 @dataclass(frozen=True)
@@ -239,7 +242,7 @@ class StructuredRequest:
     ``instructions`` carry the closed extraction contract and ``input_text``
     carries member material as data. ``schema_name`` selects the exact JSON
     schema the provider must satisfy, and ``reasoning_effort`` must be the
-    default ``xhigh`` value. Explicit ``medium`` is limited to owner My Data
+    default ``xhigh`` value. Explicit ``medium`` or ``high`` is limited to owner My Data
     extraction; matching and other products do not inherit that selection.
     """
 
@@ -266,12 +269,12 @@ class StructuredRequest:
             raise ValueError("audience must be an Audience")
         if not isinstance(self.reasoning_effort, str) or self.reasoning_effort not in ALLOWED_REASONING_EFFORTS:
             raise ValueError("reasoning effort is not the accepted contract value")
-        if self.reasoning_effort == REASONING_EFFORT_MEDIUM and (
+        if self.reasoning_effort != REASONING_EFFORT_XHIGH and (
             self.product != "my_data_intake"
             or self.purpose != ExtractionPurpose.MY_DATA_INTAKE_EXTRACTION
             or self.audience != Audience.OWNER
         ):
-            raise ValueError("medium reasoning requires owner My Data extraction")
+            raise ValueError(f"{self.reasoning_effort} reasoning requires owner My Data extraction")
 
 
 @dataclass(frozen=True)
