@@ -19,7 +19,8 @@
     "tests/ai_foundation/test_azure_foundry_provider.py",
     "docs/governance/lane_claims/PS-RESUME-EXTRACTION-CALIBRATION-001.json",
     "docs/governance/lane_claims/receipts/PS-RESUME-EXTRACTION-CALIBRATION-001.json",
-    "docs/governance/lane_claims/evidence/PS-RESUME-EXTRACTION-CALIBRATION-001.md"
+    "docs/governance/lane_claims/evidence/PS-RESUME-EXTRACTION-CALIBRATION-001.md",
+    "tests/test_resume_intake_browser.py"
   ],
   "domains": [
     "ai:my-data-intake-extraction",
