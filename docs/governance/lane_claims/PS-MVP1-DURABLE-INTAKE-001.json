@@ -28,7 +28,11 @@
     "scripts/run_resume_intake_sql_proof.py",
     "tests/test_resume_intake_sql_engine.py",
     "tests/test_resume_intake_sql_proof_runner.py",
-    "azure-pipelines-resume-intake-sql-proof.yml"
+    "azure-pipelines-resume-intake-sql-proof.yml",
+    "tests/test_entry_policy_sql.py",
+    "tests/test_resume_draft_sql.py",
+    "tests/test_resume_education_migration.py",
+    "tests/test_living_resume_editor_migration.py"
   ],
   "domains": [
     "runtime:resume-intake-persistence",
