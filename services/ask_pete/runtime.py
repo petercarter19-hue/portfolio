@@ -122,7 +122,7 @@ def _answer_foundry(*, root_path, endpoint, question, requested_action,
         provider = FoundryGroundedProvider(
             endpoint=endpoint, token_provider=_foundry_token,
             subject_display_name=catalog.subject_display_name,
-            prompt_path=root_path / "prompts" / "ask_pete" / "grounded_public_v1.md",
+            prompt_path=root_path / "prompts" / "ask_pete" / "luna_fact_selection_v1.md",
             deadline=deadline, event_sink=emit,
         )
         service = AskPeteService(catalog=catalog, provider=provider, trace_sink=record_trace,
