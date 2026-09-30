@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-ASK-PETE-LUNA-SINGLE-CALL-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Replace the public Ask Pete Foundry two-call Luna generation and semantic support verdict with at most one strict low-reasoning Luna selection call over all 15 manifest-approved full public records. Server code constructs factual answer text and exact citations only from selected context-bearing approved passages, preserves the 20-second deadline, source authorization and currentness, privacy/refusal/non-ranking boundaries, meaningful unknowns, all four purpose contracts, unavailable fallback and Haiku/shared-provider isolation. Prove successful useful answers, including a coherent 100-140-word recruiter brief, plus negative cases. Deliver through focused tests, self-review, independent exact-candidate review, required CI and accepted Azure PR merge. Production authority, paid Luna sampling, deployment, enablement, schema, identity and billing changes are withheld from this claim.",
   "assignment": "implementation",
   "writer_ref": "session:01a0f036-a425-70b1-be17-d34a213f0e79",
@@ -33,6 +33,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "639bc3dba3f14053446724e672ada76a63b1954e",
+  "closed_at": "2026-09-30T09:38:15Z"
 }
