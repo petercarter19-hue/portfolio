@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "package": "PS-RESUME-EXTRACTION-HIGH-001",
+  "state": "active",
+  "outcome": "Support explicit HIGH reasoning alongside existing medium and default xhigh only for owner MyData Luna intake extraction. Preserve maximum128000, identical typed schema and prompt, source validation, private member-approved proposals, manual recovery, no retry and no model fallback. Offline focused regressions, independent exact-candidate review, required CI, accepted merge and close. Parent owns synthetic paid HIGH comparisons. No worker paid calls or deployment, flags, factory, default-model, privacy, retention, storage, schema, identity or voice expansion.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0f3b8-a1c6-7c92-935c-a2ffa3eab96c",
+  "branch": "codex/2026-09-30-resume-extraction-high-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "d38996e39c8f74163243b600e7a413ac6a228ae7",
+  "owner_outcome_ref": "session:01a0f011-5b42-78f1-afad-2b81243d2998/event:evt-02b8ed60-88a7-4e30-bf47-3b9c0bfd780a",
+  "surfaces": [
+    "services/my_data_extraction_adapter.py",
+    "services/ai_foundation/contracts.py",
+    "services/ai_foundation/azure_foundry.py",
+    "tests/test_my_data_intake_ai.py",
+    "tests/ai_foundation/test_azure_foundry_provider.py",
+    "docs/governance/lane_claims/PS-RESUME-EXTRACTION-HIGH-001.json",
+    "docs/governance/lane_claims/receipts/PS-RESUME-EXTRACTION-HIGH-001.json",
+    "docs/governance/lane_claims/evidence/PS-RESUME-EXTRACTION-HIGH-001.md"
+  ],
+  "domains": [
+    "ai:my-data-intake-extraction",
+    "testing:my-data-extraction-high"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-RESUME-EXTRACTION-HIGH-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
