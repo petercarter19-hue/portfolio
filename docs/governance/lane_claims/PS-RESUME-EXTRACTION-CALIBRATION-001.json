@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-RESUME-EXTRACTION-CALIBRATION-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Repair My Data GPT5.6-Luna extraction instructions, settings and strict output for the selected Luna-first three-fictional-career calibration. Persist scoped allowance128000; support explicit medium and defaultxhigh extraction with identical revised prompt/schema; preserve source/quote/type/unknown validation, private proposals, member confirmation, manual fallback and no retry. Expose calibration-only receive1190, emitted tuple(5,1190), effective Urllib socket1195 and separate parent absolute deadline1200; other callers retain defaults. Reject incomplete generation even if JSON decodes, preserving available safe bounded request/config/usage/status metadata. Implement offline contract/regression checks, freeze, obtain independent review, required CI, normal accepted merge and close. Parent owns deployment binding, at most six fresh once-only paid synthetic calls and independent actual-output review; spent failed operation is immutable. No writer paid/cloud calls, Sol comparison, voice, policy/schema/factory/identity/storage/flags or live enablement.",
   "assignment": "implementation",
   "writer_ref": "session:01a0f1ae-2ca7-72a2-91cb-1c0895f35a34",
@@ -32,6 +32,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "8910f447cb6c96bf70603acba83a2229ff18c366",
+  "closed_at": "2026-09-30T17:47:07Z"
 }
