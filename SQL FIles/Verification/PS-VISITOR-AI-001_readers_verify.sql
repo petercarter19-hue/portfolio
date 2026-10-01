@@ -13,4 +13,4 @@ IF NOT EXISTS(SELECT 1 FROM sys.database_permissions
 IF OBJECT_DEFINITION(OBJECT_ID(N'dbo.usp_GetMemberVisitorAiBySlug')) NOT LIKE N'%@OwnerPreview=0%'
  OR OBJECT_DEFINITION(OBJECT_ID(N'dbo.usp_GetMemberVisitorAiPreviewForOwner')) NOT LIKE N'%@OwnerPreview=1%'
  THROW 54213, 'Visitor AI wrapper use boundary is missing.', 1;
-SELECT N'PS-VISITOR-AI-001' migration_id,N'passed' verification_status;
+SELECT N'PS-VISITOR-AI-001' migration_id,N'passed' verification_status,CAST(1 AS bit) AS verified;

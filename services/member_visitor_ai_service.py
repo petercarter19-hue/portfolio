@@ -512,7 +512,13 @@ from services.ai_foundation.citation_validator import authorize_sources
 from services.ai_foundation.limits import ExecutionLimits
 
 
+from services.ai_foundation.codec import MEMBER_VISITOR_ANSWER_SCHEMA, MEMBER_VISITOR_SUPPORT_SCHEMA
+
+
 class _VisitorFoundryAnswer(AzureFoundryResponsesProvider):
+    def _answer_schema(self):
+        return MEMBER_VISITOR_ANSWER_SCHEMA
+
     @staticmethod
     def _instructions():
         return (
@@ -536,6 +542,9 @@ class _VisitorFoundryAnswer(AzureFoundryResponsesProvider):
 
 
 class _VisitorFoundrySupport(AzureFoundryResponsesProvider):
+    def _answer_schema(self):
+        return MEMBER_VISITOR_SUPPORT_SCHEMA
+
     @staticmethod
     def _instructions():
         return (
@@ -659,14 +668,19 @@ def build_configured_visitor_ai(repository, settings, *, token_provider, transpo
             {'input_micro_usd_per_million', 'output_micro_usd_per_million', 'schedule_ref'}
             or any(type(prices.get(key)) is not int or prices[key] < 1
                    for key in ('input_micro_usd_per_million', 'output_micro_usd_per_million'))
-            or type(prices['schedule_ref']) is not str):
+            or type(prices['schedule_ref']) is not str
+            or prices['input_micro_usd_per_million'] < 1000000
+            or prices['output_micro_usd_per_million'] < 6000000):
         raise ValueError('explicit conservative price schedule required')
     price = LunaPriceSchedule(**prices)
     reservation = price.estimate_micro_usd(input_tokens=provider_limits['maximum_input_tokens'],
                                            output_tokens=provider_limits['maximum_output_tokens'])
     if limits.cost_units_per_request < 2 * reservation:
         raise ValueError('aggregate reservation must cover answer and semantic check')
+    if settings['deployment'] != 'gpt-6-luna':
+        raise ValueError('Selected member visitor AI requires the verified native Luna alias.')
     arguments = dict(endpoint=settings['endpoint'], deployment=settings['deployment'], token_provider=token_provider,
+                     answer_reasoning_effort='low', answer_json_schema=MEMBER_VISITOR_ANSWER_SCHEMA,
                      transport=_DeadlineFoundryTransport(transport or UrllibTransport()), price_schedule=price,
                      **provider_limits)
     # Validate existing provider origin/deployment rules now, without HTTP/token calls.

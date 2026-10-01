@@ -38,3 +38,5 @@ pypdf==6.19.0          # Pure-Python, dependency-free PDF text extraction for
                        # Needs its own Azure App Service Python 3.14 boot
                        # verification before this pin is trusted in production
                        # (docs/initiatives/PS-OPPORTUNITY-SLATE-001).
+
+av==18.1.0           # Dedicated bounded Resume WebM/Opus and PCM duration inspection

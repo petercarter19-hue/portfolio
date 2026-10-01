@@ -1004,7 +1004,31 @@ app.register_blueprint(entry_policy)
 app.register_blueprint(resume_draft)
 # PS-MVP1-INTAKE-GUIDE-001. Registered unconditionally; the flag gate lives in
 # the blueprint so off remains a neutral 404 without a missing route. The
-# unselected onboarding policy stays a second, independent refusal.
+# selected onboarding policy remains independent of operational enablement.
+from services.resume_intake_runtime import build_hosted_resume_intake
+if app.config['PEERSLATE_RESUME_INTAKE_ENABLED']:
+    app.config.update(
+        RESUME_ORIGINAL_BLOB_ACCOUNT_URL=os.environ.get('RESUME_ORIGINAL_BLOB_ACCOUNT_URL', ''),
+        RESUME_ORIGINAL_BLOB_CONTAINER=os.environ.get('RESUME_ORIGINAL_BLOB_CONTAINER', ''),
+        RESUME_INTAKE_PROVIDER_CONFIGURATION=os.environ.get('RESUME_INTAKE_PROVIDER_CONFIGURATION'),
+    )
+    app.config['RESUME_INTAKE_SERVICE'] = build_hosted_resume_intake(app.config)
+# Separate private assistance flags never enable production implicitly.
+app.config['PEERSLATE_RESUME_SYNTHESIS_ENABLED'] = os.environ.get('PEERSLATE_RESUME_SYNTHESIS_ENABLED', '').lower() == 'true'
+app.config['PEERSLATE_RESUME_INTERVIEW_ENABLED'] = os.environ.get('PEERSLATE_RESUME_INTERVIEW_ENABLED', '').lower() == 'true'
+if (app.config['PEERSLATE_RESUME_INTAKE_ENABLED'] and app.config.get('PEERSLATE_RESUME_EDITOR_ENABLED')
+        and (app.config['PEERSLATE_RESUME_SYNTHESIS_ENABLED'] or app.config['PEERSLATE_RESUME_INTERVIEW_ENABLED'])):
+    from services.resume_intake_runtime import build_private_resume_assistance
+    from services.entry_policy_repository import SqlEntryPolicyRepository
+    from services.database_service import database_service
+    try:
+        intake = app.config['RESUME_INTAKE_SERVICE']
+        app.config['RESUME_PRIVATE_ASSISTANCE_CONFIGURATION'] = os.environ.get('RESUME_PRIVATE_ASSISTANCE_CONFIGURATION')
+        app.config['RESUME_PRIVATE_ASSISTANCE_SERVICE'] = build_private_resume_assistance(app.config,
+            draft_service=intake.draft_service, catalog=intake.draft_service.catalog,
+            policy_repository=SqlEntryPolicyRepository(database_service), database=database_service)
+    except Exception:
+        app.logger.error('Private Resume assistance configuration is unavailable.')
 app.register_blueprint(resume_intake)
 # PS-MVP1-MEDIA-INTEGRATION-001. Registered unconditionally; the flag gate
 # lives in the blueprint so off remains a neutral 404 without a missing route.

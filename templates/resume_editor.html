@@ -127,6 +127,46 @@
         <p id="resume-editor-story-preview">No Story selected. Choose a saved personal entry to preview your introduction.</p>
         {% endif %}
 
+        {% if config.get('PEERSLATE_RESUME_INTAKE_ENABLED', false) and (config.get('PEERSLATE_RESUME_SYNTHESIS_ENABLED', false) or config.get('PEERSLATE_RESUME_INTERVIEW_ENABLED', false)) %}
+        <section class="resume-editor__add" id="resume-private-assistance" aria-labelledby="resume-private-assistance-title"
+            data-synthesis-url="{{ url_for('resume_intake.post_private_synthesis') }}"
+            data-confirm-url="{{ url_for('resume_intake.post_private_synthesis_confirmation') }}"
+            data-interview-url="{{ url_for('resume_intake.post_private_interview') }}">
+            <h2 id="resume-private-assistance-title">Optional private assistance</h2>
+            <p>AI proposes wording and questions. Review everything; nothing is saved or published automatically. Your manual editor stays available.</p>
+            {% if config.get('PEERSLATE_RESUME_SYNTHESIS_ENABLED', false) %}
+            <form id="resume-synthesis-form">
+                <label for="resume-synthesis-task">What would you like help with?</label>
+                <textarea id="resume-synthesis-task" rows="3" maxlength="8000" required></textarea>
+                <label for="resume-synthesis-target">Optional field to revise</label>
+                <select id="resume-synthesis-target"><option value="">Preview only</option></select>
+                <button type="submit" class="resume-editor__button">Create private preview</button>
+            </form>
+            <div id="resume-synthesis-preview" hidden style="min-width: 0; max-width: 100%;">
+                <pre id="resume-synthesis-text" style="white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; max-width: 100%; font: inherit;"></pre>
+                <p id="resume-synthesis-uncertainties"></p>
+                <label for="resume-synthesis-wording">Wording you choose to save in the selected field</label>
+                <textarea id="resume-synthesis-wording" rows="4" maxlength="8000"></textarea>
+                <button type="button" class="resume-editor__button" id="resume-synthesis-confirm" disabled>Save selected wording privately</button>
+            </div>
+            {% endif %}
+            {% if config.get('PEERSLATE_RESUME_INTERVIEW_ENABLED', false) %}
+            <form id="resume-career-interview-form">
+                <label for="resume-career-interview-statement">Tell us about one experience or contribution</label>
+                <textarea id="resume-career-interview-statement" rows="4" maxlength="8000" required></textarea>
+                <button type="submit" class="resume-editor__button">Ask a career question</button>
+            </form>
+            <div id="resume-career-interview-preview" hidden>
+                <p id="resume-career-interview-response"></p>
+                <p id="resume-career-interview-question"></p>
+                <p>Review any suggested facts below. Use your composer or manual editor to add the facts you choose.</p>
+                <ul id="resume-career-interview-candidates"></ul>
+            </div>
+            {% endif %}
+            <p id="resume-private-assistance-status" role="status" aria-live="polite"></p>
+        </section>
+        {% endif %}
+
         <div id="resume-editor-lists" data-workspace-url="{{ workspace_url }}" data-commands-url="{{ commands_url }}" data-review-url="{{ review_url }}"></div>
 
         <section class="resume-editor__add" aria-labelledby="resume-editor-add-title">

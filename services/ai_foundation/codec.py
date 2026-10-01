@@ -209,3 +209,44 @@ def parse_grounded_answer(payload: Mapping[str, Any]) -> GroundedAnswer:
             optional=True,
         ),
     )
+
+
+# Selected member/public answer contract. The existing codec and source/span
+# authorizer still validate the returned object; schema is transport enforcement.
+MEMBER_VISITOR_ANSWER_SCHEMA = {
+    "type": "object", "additionalProperties": False,
+    "properties": {
+        "answer_id": {"type": "string"},
+        "state": {"type": "string", "enum": ["supported", "not_established", "ambiguous", "unavailable"]},
+        "summary": {"type": "string"},
+        "claims": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {
+                "claim_id": {"type": "string"}, "text": {"type": "string"},
+                "kind": {"type": "string", "enum": ["evidence"]},
+                "state": {"type": "string", "enum": ["supported"]},
+                "limitation": {"type": "null"},
+                "citations": {"type": "array", "items": {
+                    "type": "object", "additionalProperties": False,
+                    "properties": {
+                        "claim_id": {"type": "string"}, "source_version_key": {"type": "string"},
+                        "start": {"type": "integer"}, "end": {"type": "integer"}, "excerpt": {"type": "string"}},
+                    "required": ["claim_id", "source_version_key", "start", "end", "excerpt"]}}},
+            "required": ["claim_id", "text", "kind", "state", "citations", "limitation"]}},
+        "follow_up_questions": {"type": "array", "items": {"type": "string"}},
+        "handoff": {"type": "null"}, "model_name": {"type": "null"},
+        "prompt_contract_version": {"type": ["string", "null"]}},
+    "required": ["answer_id", "state", "summary", "claims", "follow_up_questions", "handoff", "model_name", "prompt_contract_version"],
+}
+
+MEMBER_VISITOR_SUPPORT_SCHEMA = {
+    "type": "object", "additionalProperties": False,
+    "properties": {
+        "verdict": {"type": "string", "enum": ["supported", "unsupported", "unavailable"]},
+        "summary_supported": {"type": "boolean"},
+        "claims": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {"claim_id": {"type": "string"}, "supported": {"type": "boolean"}},
+            "required": ["claim_id", "supported"]}}},
+    "required": ["verdict", "summary_supported", "claims"],
+}

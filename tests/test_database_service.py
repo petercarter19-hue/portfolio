@@ -508,6 +508,14 @@ class DatabaseServiceTests(unittest.TestCase):
         # commands use. Publication, worker, catalog-write and storage
         # procedures stay off this exact set, and allowlisting does not apply
         # the proposed PS-RESUME-MEDIA-001 schema.
+        # Hosted owner/readiness names only; worker cleanup stays excluded.
+        resume_hosted = {
+            "usp_GetResumeOriginalFilesForOwner",
+            "usp_CommitResumeOriginalFileForOwner",
+            "usp_GetResumeHostedReadiness",
+            "usp_ReserveResumeHostedExtractionForOwner",
+            "usp_FinishResumeHostedExtractionForOwner",
+        }
         resume_media = {
             "usp_GetResumeMediaDraftForOwner",
             "usp_CommitResumeMediaCommandForOwner",
@@ -549,6 +557,7 @@ class DatabaseServiceTests(unittest.TestCase):
             | entry_policy
             | resume_draft
             | resume_intake
+            | resume_hosted
             | resume_media
             | resume_publication
             | visitor_ai
@@ -573,12 +582,13 @@ class DatabaseServiceTests(unittest.TestCase):
             entry_policy,
             resume_draft,
             resume_intake,
+            resume_hosted,
             resume_media,
             resume_publication,
             visitor_ai,
         )
         self.assertEqual(sum(len(group) for group in groups), len(expected))
-        self.assertEqual(len(expected), 180)
+        self.assertEqual(len(expected), 185)
         self.assertEqual(set(ALLOWED_PROCEDURES), expected)
 
     def test_visitor_ai_internal_helper_is_not_browser_executable(self):

@@ -21,7 +21,7 @@
  *    guide, and a mobile sheet with a floating "Guide me" reopen chip.
  *
  * No draft is written to browser storage: sensitive drafts are not persisted
- * client-side as a workaround for the withheld onboarding retention policy.
+ * client-side. Owner-scoped durable drafts use the selected retention policy.
  */
 (function () {
     'use strict';
@@ -37,6 +37,7 @@
         recording: root.getAttribute('data-intake-recording-url'),
         decision: root.getAttribute('data-intake-decision-url'),
         purge: root.getAttribute('data-intake-purge-url'),
+        originals: root.getAttribute('data-intake-originals-url'),
         guide: root.getAttribute('data-guide-url'),
         guideStatus: root.getAttribute('data-guide-status-url')
     };
@@ -580,6 +581,7 @@
             var wordingField = null;
             var parentField = null;
             var employerField = null;
+            var employmentTypeField = null;
             var institutionField = null;
             var issuerField = null;
             var educationStatusField = null;
@@ -604,6 +606,9 @@
                 item.appendChild(typeWrap);
                 if (proposal.record_type && proposal.record_type !== 'unspecified') {
                     typeField.value = proposal.record_type;
+                    // Typed candidates retain their server-held type binding.
+                    // Only unspecified wording needs the member to choose a type.
+                    typeField.disabled = true;
                 }
 
                 var wordingLabel = document.createElement('label');
@@ -662,8 +667,23 @@
                         option.textContent = choice[1];
                         field.appendChild(option);
                     });
-                    if (selected) {
-                        field.value = selected;
+                    if (selected !== null && selected !== undefined && selected !== '') {
+                        // Only spelling case of an existing closed value is an alias.
+                        var canonical = String(selected).toLowerCase();
+                        var known = choices.some(function (choice) { return choice[0] === canonical; });
+                        if (known) {
+                            field.value = canonical;
+                        } else {
+                            var unsupported = new Option('Source value: ' + selected + ' (choose a supported value)', String(selected));
+                            unsupported.disabled = true;
+                            unsupported.selected = true;
+                            field.appendChild(unsupported);
+                        }
+                        if (String(selected) !== field.value) {
+                            var sourceNote = document.createElement('span');
+                            sourceNote.textContent = ' Source value: ' + selected;
+                            wrap.appendChild(sourceNote);
+                        }
                     }
                     wrap.appendChild(label);
                     wrap.appendChild(field);
@@ -671,6 +691,11 @@
                     return field;
                 }
 
+                employmentTypeField = statusField('Employment type', 'data-proposal-employment-type', [
+                    ['', 'Not supplied'], ['full_time', 'Full time'], ['part_time', 'Part time'],
+                    ['contract', 'Contract'], ['freelance', 'Freelance'], ['internship', 'Internship'],
+                    ['volunteer', 'Volunteer'], ['military', 'Military'], ['other', 'Other']
+                ], proposed.employment_type);
                 educationStatusField = statusField('Status', 'data-proposal-education-status', [
                     ['in_progress', 'In progress'], ['completed', 'Completed'], ['planned', 'Planned'],
                     ['admitted', 'Admitted'], ['paused', 'Paused'], ['withdrawn', 'Withdrawn']
@@ -694,6 +719,7 @@
                 function syncProposalDetails() {
                     var type = typeField.value;
                     employerField.parentNode.hidden = type !== 'role';
+                    employmentTypeField.parentNode.hidden = type !== 'role';
                     institutionField.parentNode.hidden = type !== 'education';
                     educationStatusField.parentNode.hidden = type !== 'education';
                     issuerField.parentNode.hidden = type !== 'credential';
@@ -731,12 +757,36 @@
                         setStatus('Add your wording before saving.', 'error');
                         return;
                     }
-                    confirmed = {record_type: type};
+                    confirmed = {};
+                    if (proposal.record_type === type) {
+                        // Preserve the reviewed typed proposal's other facts,
+                        // including dates, limitations and boolean currentness.
+                        // record_type belongs to the proposal, not editor values.
+                        (FIELDS[type] || []).forEach(function (name) {
+                            var proposedValue = (proposal.proposed_values || {})[name];
+                            if (proposedValue !== null && proposedValue !== undefined) {
+                                confirmed[name] = proposedValue;
+                            }
+                        });
+                    } else if (!proposal.record_type || proposal.record_type === 'unspecified') {
+                        confirmed.record_type = type;
+                    } else {
+                        setStatus('That proposal type changed. Reload before saving.', 'error');
+                        return;
+                    }
                     var subject = {role: 'role_title', education: 'title',
                                    credential: 'name', skill: 'name',
                                    accomplishment: 'wording'}[type];
                     confirmed[subject] = value;
+                    var closedFields = type === 'role' ? [employmentTypeField] :
+                        type === 'education' ? [educationStatusField] :
+                        type === 'credential' ? [credentialStatusField] : [];
+                    if (closedFields.some(function (field) { return field.selectedOptions[0].disabled; })) {
+                        setStatus('Review the source value and choose a supported value before saving.', 'error');
+                        return;
+                    }
                     if (type === 'role') {
+                        confirmed.employment_type = employmentTypeField.value || null;
                         confirmed.employer_name = employerField.value.trim();
                         if (!confirmed.employer_name) {
                             setStatus('Add the employer for this role.', 'error');
@@ -756,6 +806,10 @@
                                 setStatus('Add the issue date for a completed credential.', 'error');
                                 return;
                             }
+                        } else {
+                            // The member changed completion status: completion dates no longer apply.
+                            confirmed.issue_date = null;
+                            confirmed.expiration_date = null;
                         }
                     }
                     if (type === 'education') {
@@ -790,6 +844,7 @@
                         return;
                     }
                     setStatus(result.payload.message || 'Saved privately.', 'ok');
+                    document.dispatchEvent(new Event('resume-intake-fact-saved'));
                     load();
                 });
             });
@@ -841,6 +896,63 @@
         applyQuestion(guide);
     }
 
+    function refreshOriginals() {
+        var list = document.getElementById('resume-intake-originals');
+        if (!list || !urls.originals) return Promise.resolve();
+        return send(urls.originals).then(function (result) {
+            list.replaceChildren();
+            if (!result.response.ok || !result.payload.success) {
+                var error = document.createElement('li');
+                error.textContent = 'Original files are unavailable right now.';
+                list.appendChild(error); return;
+            }
+            var rows = (result.payload.originals || []).filter(function (row) { return row.state !== 'deleted'; });
+            if (!rows.length) {
+                var empty = document.createElement('li'); empty.textContent = 'No original files retained.';
+                list.appendChild(empty); return;
+            }
+            rows.forEach(function (row, index) {
+                var item = document.createElement('li');
+                var title = document.createElement('span');
+                var type = row.content_type === 'application/pdf' ? 'PDF' : (row.content_type === 'text/plain' ? 'text' : 'Word');
+                title.textContent = type + ' original ' + (index + 1) + ' '; item.appendChild(title);
+                if (row.downloadable) {
+                    var link = document.createElement('a');
+                    link.href = urls.originals + '/' + encodeURIComponent(row.original_key);
+                    link.textContent = 'Download'; item.appendChild(link);
+                }
+                var button = document.createElement('button');
+                button.type = 'button'; button.className = 'resume-intake__quiet';
+                button.textContent = row.state === 'delete_pending' ? 'Retry deletion' : 'Delete original';
+                button.setAttribute('aria-label', button.textContent + ' ' + type + ' ' + (index + 1));
+                var deletionRequest = requestId();
+                button.addEventListener('click', function () {
+                    button.disabled = true;
+                    send(urls.originals + '/' + encodeURIComponent(row.original_key), {
+                        method: 'DELETE', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({request_id: deletionRequest, expected_version: row.version})
+                    }).then(function (reply) {
+                        if (!reply.response.ok || !reply.payload.success) {
+                            setStatus(reply.payload.message || 'The original could not be deleted. Try again.', 'error');
+                            button.disabled = false; return;
+                        }
+                        setStatus(reply.payload.outcome === 'delete_pending'
+                            ? 'The original is unavailable while deletion finishes. You can retry.'
+                            : 'Original deleted. Its extracted text is kept.', 'ok');
+                        refreshOriginals();
+                    }).catch(function () {
+                        button.disabled = false;
+                        setStatus('Deletion did not finish. Try again to check it.', 'error');
+                    });
+                });
+                item.appendChild(button); list.appendChild(item);
+            });
+        }).catch(function () {
+            list.replaceChildren(); var error = document.createElement('li');
+            error.textContent = 'Original files are unavailable right now.'; list.appendChild(error);
+        });
+    }
+
     function load() {
         return fetch(urls.workspace, {credentials: 'same-origin'})
             .then(function (response) {
@@ -858,6 +970,12 @@
                     setStatus(result.payload.message || 'The composer could not be loaded.', 'error');
                     return null;
                 }
+                var policyText = document.getElementById('resume-intake-policy');
+                var policy = result.payload.policy || {};
+                if (policyText) policyText.textContent = policy.selected
+                    ? 'Selectable-text PDF, Word or text files up to ' + (policy.max_document_bytes / 1000000) + ' MB each. English recordings up to ' + (policy.max_recording_seconds / 60) + ' minutes; you can add more than one. ' + policy.retention_statement
+                    : 'Synthetic fixture policy only. Real onboarding retention is unavailable.';
+                refreshOriginals();
                 renderProposals(result.payload.pending_proposals || []);
                 renderReceipt(result.payload.last_receipt || null);
                 return fetch(urls.guide, {credentials: 'same-origin'})

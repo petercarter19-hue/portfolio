@@ -4,14 +4,10 @@ REGISTERED, AND OFF. ``app.py`` registers this blueprint unconditionally and
 the gate is ``PEERSLATE_RESUME_INTAKE_ENABLED`` read with ``is True``; off is a
 neutral 404 before any identity or storage work.
 
-Two independent gates keep it fail-closed:
-
-* the feature flag above, and
-* ``PEERSLATE_RESUME_INTAKE_FIXTURE_POLICY_ENABLED`` -- because Resume
-  onboarding's file/voice limits and retention are not selected, the composer
-  refuses to run on the labelled synthetic fixture policy unless that second
-  flag is explicitly on. Turning the feature flag on does not silently select
-  onboarding policy.
+The owner-selected policy is independent of feature enablement. Explicit
+synthetic fixture policies still require the separate fixture flag and never
+qualify durable production storage. The hosted factory requires applied SQL
+and fails closed when storage or processing capabilities are unavailable.
 
 Identity is server-derived. Client owner ids, table names and permission
 bypass fields are refused. Responses are private, no-store.
@@ -20,9 +16,10 @@ bypass fields are refused. Responses are private, no-store.
 from __future__ import annotations
 
 import json
+from io import BytesIO
 from types import MappingProxyType
 
-from flask import Blueprint, abort, current_app, jsonify, request
+from flask import Blueprint, abort, current_app, jsonify, request, send_file
 
 from identity import AuthenticationRequired, get_current_identity
 from services.resume_guide_service import (
@@ -51,6 +48,12 @@ register_manual_edit_observer()
 
 PLANNED_RATE_LIMITS = MappingProxyType(
     {
+        "resume_intake.post_private_synthesis": "10 per hour",
+        "resume_intake.post_private_synthesis_confirmation": "30 per hour",
+        "resume_intake.post_private_interview": "20 per hour",
+        "resume_intake.get_original_files": "60 per minute",
+        "resume_intake.get_original_file": "30 per hour",
+        "resume_intake.delete_original_file": "30 per hour",
         "resume_intake.get_intake_workspace": "60 per minute",
         "resume_intake.get_guide_state": "60 per minute",
         "resume_intake.post_submission": "30 per hour",
@@ -94,6 +97,21 @@ def gate_and_protect_writes():
             return jsonify({"success": False, "message": "Not found."}), 404
     elif not _enabled():
         abort(404)
+    private_kind = {
+        "resume_intake.post_private_synthesis": "SYNTHESIS",
+        "resume_intake.post_private_synthesis_confirmation": "SYNTHESIS",
+        "resume_intake.post_private_interview": "INTERVIEW",
+    }.get(request.endpoint)
+    if private_kind and (current_app.config.get("PEERSLATE_RESUME_EDITOR_ENABLED") is not True
+            or current_app.config.get("PEERSLATE_RESUME_" + private_kind + "_ENABLED") is not True):
+        return jsonify({"success": False, "message": "Not found."}), 404
+    # Override the application two-MB ceiling only for these bounded private
+    # multipart endpoints. File bytes, parser text and audio remain separate.
+    if request.endpoint == "resume_intake.post_submission":
+        policy = _service().policy()
+        request.max_content_length = policy.max_documents_per_submission * policy.max_document_bytes + 256_000
+    elif request.endpoint == "resume_intake.post_recording":
+        request.max_content_length = _service().policy().max_recording_bytes + 256_000
     if request.method not in {"POST", "PATCH", "PUT", "DELETE"}:
         return None
     if request.headers.get("X-PeerSlate-Request") != "same-origin":
@@ -405,3 +423,136 @@ def post_guide_status():
             "message": "The guide is unavailable right now.",
         }), 503
     return jsonify({"success": True, **result})
+
+
+def _original_files_service():
+    service = _service()
+    files = getattr(service, "original_files", None)
+    if files is None:
+        raise ResumeIntakeUnavailableError()
+    if hasattr(service, "_require_schema"):
+        service._require_schema()
+    return files
+
+
+def _original_error(error):
+    from services.resume_original_file_repository import OriginalFileConflict, OriginalFileNotFound
+    if isinstance(error, OriginalFileNotFound):
+        return jsonify({"success": False, "code": "not_found", "message": "Not found."}), 404
+    if isinstance(error, OriginalFileConflict):
+        return jsonify({"success": False, "code": "changed", "message": "That original changed. Refresh and try again."}), 409
+    return jsonify({"success": False, "code": "unavailable", "message": "Original files are unavailable right now."}), 503
+
+
+@resume_intake.get("/api/resume-intake/me/originals")
+def get_original_files():
+    identity = _identity_or_not_found()
+    if identity is None:
+        return jsonify({"success": False, "message": "Not found."}), 404
+    from services.resume_original_file_repository import OriginalFileUnavailable
+    try:
+        files = _original_files_service().list(identity.user_key)
+    except (OriginalFileUnavailable, ResumeIntakeUnavailableError) as error:
+        return _original_error(error)
+    return jsonify({"success": True, "originals": files})
+
+
+@resume_intake.get("/api/resume-intake/me/originals/<uuid:original_key>")
+def get_original_file(original_key):
+    identity = _identity_or_not_found()
+    if identity is None:
+        return jsonify({"success": False, "message": "Not found."}), 404
+    from services.resume_original_file_repository import OriginalFileNotFound, OriginalFileUnavailable
+    try:
+        data, content_type = _original_files_service().download(identity.user_key, str(original_key))
+    except (OriginalFileNotFound, OriginalFileUnavailable, ResumeIntakeUnavailableError) as error:
+        return _original_error(error)
+    extension = {"application/pdf": "pdf", "text/plain": "txt",
+                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx"}[content_type]
+    return send_file(BytesIO(data), mimetype=content_type, as_attachment=True,
+                     download_name="resume-original." + extension, max_age=0)
+
+
+@resume_intake.delete("/api/resume-intake/me/originals/<uuid:original_key>")
+def delete_original_file(original_key):
+    identity = _identity_or_not_found()
+    if identity is None:
+        return jsonify({"success": False, "message": "Not found."}), 404
+    from services.resume_original_file_repository import OriginalFileConflict, OriginalFileNotFound, OriginalFileUnavailable
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict) or set(payload) != {"expected_version", "request_id"}:
+        return jsonify({"success": False, "code": "invalid", "message": "Invalid original file request."}), 400
+    try:
+        result = _original_files_service().delete(identity.user_key, str(original_key),
+            expected_version=payload["expected_version"], request_id=payload["request_id"])
+    except ValueError:
+        return jsonify({"success": False, "code": "invalid", "message": "Invalid original file request."}), 400
+    except (OriginalFileConflict, OriginalFileNotFound, OriginalFileUnavailable, ResumeIntakeUnavailableError) as error:
+        return _original_error(error)
+    return jsonify(result), 202 if result["outcome"] == "delete_pending" else 200
+
+
+def _private_assistance(kind, method):
+    # Flag off is neutral before identity, parsing, signing, SQL or provider I/O.
+    if (current_app.config.get('PEERSLATE_RESUME_EDITOR_ENABLED') is not True
+            or current_app.config.get('PEERSLATE_RESUME_' + kind.upper() + '_ENABLED') is not True):
+        return jsonify({'success': False, 'message': 'Not found.'}), 404
+    identity = _identity_or_not_found()
+    if identity is None:
+        return jsonify({'success': False, 'message': 'Not found.'}), 404
+    service = current_app.config.get('RESUME_PRIVATE_ASSISTANCE_SERVICE')
+    if service is None:
+        return jsonify({'success': False, 'code': 'unavailable',
+            'message': 'Private assistance is unavailable. Your manual editor remains available.'}), 503
+    # Private owner/body limits are independent of provider complete-wire limits.
+    if request.content_length is not None and request.content_length > 100000:
+        return jsonify({'success': False, 'code': 'invalid', 'message': 'Request too large.'}), 413
+    raw = request.stream.read(100001)
+    if len(raw) > 100000:
+        return jsonify({'success': False, 'code': 'invalid', 'message': 'Request too large.'}), 413
+    from services.resume_intake_runtime import SynthesisError
+    from services.ai_foundation.errors import ProviderUnavailableError, ExecutionLimitError
+    from services.resume_draft_service import (
+        ResumeDraftConflictError, ResumeDraftValidationError, ResumeDraftUnavailableError,
+    )
+    from services.my_data_extraction_adapter import ExtractionError
+    try:
+        def closed_pairs(pairs):
+            result = {}
+            for key, value in pairs:
+                if key in result:
+                    raise ValueError('duplicate field')
+                result[key] = value
+            return result
+        payload = json.loads(raw, object_pairs_hook=closed_pairs)
+        result = getattr(service, method)(identity.user_key, payload)
+    except ResumeDraftConflictError as error:
+        return jsonify({'success': False, 'code': 'changed', 'message': str(error),
+                        'proposed_values': error.proposed}), 409
+    except SynthesisError as error:
+        code = error.code
+        status = 404 if code == 'not_found' else 409 if code == 'changed' else 503 if code == 'unavailable' else 400
+        return jsonify({'success': False, 'code': code,
+            'message': 'Private assistance could not complete. Your words and manual editor remain available.'}), status
+    except (ProviderUnavailableError, ExecutionLimitError, ResumeDraftUnavailableError):
+        return jsonify({'success': False, 'code': 'unavailable',
+            'message': 'Private assistance is unavailable. Your manual editor remains available.'}), 503
+    except (ValueError, TypeError, KeyError, ResumeDraftValidationError, ExtractionError):
+        return jsonify({'success': False, 'code': 'invalid',
+                        'message': 'Review the request and try again. Your words are preserved.'}), 400
+    return jsonify({'success': True, **result})
+
+
+@resume_intake.post('/api/resume-synthesis/me/proposals')
+def post_private_synthesis():
+    return _private_assistance('synthesis', 'generate')
+
+
+@resume_intake.post('/api/resume-synthesis/me/confirm')
+def post_private_synthesis_confirmation():
+    return _private_assistance('synthesis', 'confirm')
+
+
+@resume_intake.post('/api/resume-interview/me/turn')
+def post_private_interview():
+    return _private_assistance('interview', 'interview')

@@ -1,25 +1,10 @@
-"""Entrance-specific intake policy for MVP1 increment C.
+"""Selected entrance-specific file, voice and retention policies.
 
-The C composer, document parser seam and transcription adapter are shared
-between Settings > My Data and Resume onboarding. Their *policies* are not
-shared: My Data's accepted limits were selected by the owner, and Resume
-onboarding's limits, retention and source-cleanup promises have NOT been
-selected for onboarding.
-
-This module therefore keeps the boundary explicit and parametric:
-
-* :data:`MY_DATA_POLICY` is the already accepted My Data contract.
-* :data:`FIXTURE_RESUME_ONBOARDING_POLICY` is clearly labelled synthetic fixture
-  policy. It reuses My Data's numbers so code and tests have something
-  concrete to run against, and it is ``selected=False`` so nothing may treat
-  those numbers as an onboarding promise.
-* :data:`SELECTED_RESUME_ONBOARDING_POLICY` is ``None`` until the owner decides.
-
-Operational enablement is fail-closed and default-off. Two independent gates
-exist: the feature flag (nothing runs at all when it is off) and the
-fixture-policy flag (the unselected onboarding policy refuses to be silently
-substituted by fixture numbers). Durable persistence additionally requires a
-selected policy and a live store; the in-memory store is test-only.
+Resume onboarding has the owner's 2026-09-30 selected 50MB/5-minute/private
+original-file policy. My Data retains its separate accepted limits. Synthetic
+fixture policy remains explicit for tests and never qualifies durable storage.
+Operational enablement is independent and fails closed without applied SQL and
+private storage/provider prerequisites.
 """
 
 from __future__ import annotations
@@ -162,23 +147,31 @@ FIXTURE_RESUME_ONBOARDING_POLICY = IntakePolicy(
     **MY_DATA_LIMITS,
 )
 
-# The owner has not selected Resume onboarding policy. None means "unselected".
-SELECTED_RESUME_ONBOARDING_POLICY: IntakePolicy | None = None
+# Owner selected 50MB/5-minute recordings/private originals on 2026-09-30.
+SELECTED_RESUME_ONBOARDING_POLICY = IntakePolicy(
+    entrance=ENTRANCE_RESUME_ONBOARDING,
+    label="Resume onboarding (selected)", version=2, selected=True, fixture=False,
+    **{**MY_DATA_LIMITS, "max_document_bytes": 50_000_000, "max_recording_seconds": 300.0},
+    retention_statement=(
+        "Unfinished drafts expire after 30 days of inactivity. Original files "
+        "are kept privately until you delete them; deleting an original keeps "
+        "its extracted text unless you also remove that source. Removing parsed "
+        "input never deletes its original file. Audio is "
+        "removed after transcription."
+    ),
+)
 
+# Legacy export retained for clients that inspect the decision document.
 RECOMMENDED_ONBOARDING_DECISION = {
-    "decision": "Select Resume onboarding file, voice and retention promises.",
+    "decision": "Owner-selected Resume onboarding file, voice and retention promises.",
     "recommendation": (
-        "Adopt the same selectable-text PDF/DOCX/TXT ceiling (10,000,000 bytes "
-        "each), English recordings up to three minutes with additional "
-        "recordings in one draft, 30-day inactive-draft expiry, private source "
-        "inspection and deletion, and post-transcription audio cleanup - the "
-        "My Data contract - and state them in the onboarding UI before durable "
-        "enablement."
+        "Selectable-text PDF/DOCX/TXT up to 50,000,000 bytes each; English "
+        "recordings up to300 seconds;30-day unfinished-draft expiry; private "
+        "originals kept until member deletion; audio removed after transcription."
     ),
     "why_it_matters": (
-        "The composer must not promise recovery, retention or inspection it "
-        "cannot honour. Until this is selected, onboarding persistence stays "
-        "disabled and only the labelled synthetic fixture policy runs."
+        "Runtime enablement still requires applied SQL, private original storage "
+        "and scoped processing configuration; missing capabilities preserve manual input."
     ),
 }
 
@@ -224,6 +217,12 @@ def sweep_parameters(policy: IntakePolicy) -> dict[str, Any]:
     become an onboarding retention promise.
     """
 
+    if policy.entrance == ENTRANCE_RESUME_ONBOARDING and policy.durable_persistence_allowed:
+        # Composer reads/sweep_drafts enforce30day unfinished-draft expiry.
+        # This legacy source-sweep seam has no authority over retained inputs.
+        return {"scheduled": False, "entrance": policy.entrance,
+                "inactivity_days": None, "draft_inactivity_days": policy.draft_inactivity_days,
+                "reason": "legacy_source_sweep_not_authorized"}
     if not policy.durable_persistence_allowed or policy.draft_inactivity_days is None:
         return {
             "scheduled": False,

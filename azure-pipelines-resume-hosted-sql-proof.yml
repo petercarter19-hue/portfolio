@@ -1,0 +1,60 @@
+# Hosted isolated synthetic proof. No automatic trigger and no production connection.
+# Queue consistency does not authenticate Pete; dispatcher verifies a fresh,
+# one-use exact-source/plan authorization before setting executeAuthorized.
+trigger: none
+pr: none
+schedules: []
+parameters:
+  - name: expectedSourceSha
+    type: string
+    default: ''
+  - name: executeAuthorized
+    type: boolean
+    default: false
+  - name: authorizationRef
+    type: string
+    default: ''
+  - name: expectedPlanDigest
+    type: string
+    default: ''
+jobs:
+  - job: ResumeHostedSqlProof
+    timeoutInMinutes: 45
+    cancelTimeoutInMinutes: 5
+    pool:
+      vmImage: ubuntu-22.04
+    steps:
+      - checkout: self
+        clean: true
+        fetchDepth: 1
+        persistCredentials: false
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: '3.12'
+      - bash: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_SOURCE_SHA}"
+          test "${BUILD_SOURCEVERSION}" = "${EXPECTED_SOURCE_SHA}"
+          python -B scripts/run_resume_hosted_sql_proof.py --plan > "${BUILD_ARTIFACTSTAGINGDIRECTORY}/plan.json"
+        displayName: Verify exact checkout and emit Hosted plan
+        env:
+          EXPECTED_SOURCE_SHA: ${{ parameters.expectedSourceSha }}
+      - bash: |
+          set -euo pipefail
+          python -B scripts/run_resume_hosted_sql_proof.py --execute \
+            --source-sha "${PEERSLATE_RESUME_HOSTED_EXPECTED_SHA}" \
+            --authorization-ref "${PEERSLATE_RESUME_HOSTED_AUTHORIZATION_REF}" \
+            --expected-plan-digest "${PEERSLATE_RESUME_HOSTED_PLAN_DIGEST}" \
+            --evidence "${BUILD_ARTIFACTSTAGINGDIRECTORY}/evidence.json"
+        displayName: Execute separately authorized Hosted proof and cleanup
+        condition: and(succeeded(), eq('${{ parameters.executeAuthorized }}', 'True'), ne('${{ parameters.authorizationRef }}', ''))
+        env:
+          PEERSLATE_RESUME_HOSTED_PLAN_DIGEST: ${{ parameters.expectedPlanDigest }}
+          PEERSLATE_RESUME_HOSTED_EXECUTE: authorized
+          PEERSLATE_RESUME_HOSTED_EXPECTED_SHA: ${{ parameters.expectedSourceSha }}
+          PEERSLATE_RESUME_HOSTED_AUTHORIZATION_REF: ${{ parameters.authorizationRef }}
+      - task: PublishPipelineArtifact@1
+        condition: always()
+        inputs:
+          targetPath: $(Build.ArtifactStagingDirectory)
+          artifact: resume-hosted-sql-proof

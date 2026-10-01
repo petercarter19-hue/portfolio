@@ -517,7 +517,7 @@ def visitor_http_stack(**limit_overrides):
 
 def configured_foundry_settings():
     from tests.test_member_visitor_ai_service import operational_limits
-    return {'endpoint':'https://synthetic-f.openai.azure.com', 'deployment':'synthetic-configured-deployment',
+    return {'endpoint':'https://synthetic-f.openai.azure.com', 'deployment':'gpt-6-luna',
         'scope':'single_process',
         'limits':vars(operational_limits(timeout_seconds=5, cost_units_per_request=60000,
                                         aggregate_cost_units_per_window=1200000)),
@@ -783,7 +783,7 @@ class VisitorAiRouteTests(unittest.TestCase):
         self.assertEqual(evaluation['claims'][0]['citations'][0]['excerpt'], response.json['citations'][0]['excerpt'])
         for call in transport.calls:
             self.assertFalse(call['body']['store'])
-            self.assertEqual(call['body']['model'], 'synthetic-configured-deployment')
+            self.assertEqual(call['body']['model'], 'gpt-6-luna')
             self.assertEqual(call['body']['max_output_tokens'], 2000)
             self.assertLessEqual(sum(call['timeout']), 5)
         self.assertNotIn('synthetic PeerSlate product-quality evaluation', generation['body']['instructions'])

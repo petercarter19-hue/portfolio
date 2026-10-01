@@ -29,6 +29,9 @@ from services.ai_foundation.contracts import (
     REASONING_EFFORT_XHIGH,
     SOL_EXTRACTION_REASONING_EFFORTS,
     STRUCTURED_MODEL_SOL,
+    STRUCTURED_MODEL_NATIVE_LUNA,
+    STRUCTURED_MODEL_LUNA,
+    REASONING_EFFORT_LOW,
     Audience,
     ExtractionPurpose,
     StructuredRequest,
@@ -40,7 +43,7 @@ from services.ai_foundation.errors import (
 )
 
 
-EXTRACTION_MODEL = "gpt-5.6-luna"
+EXTRACTION_MODEL = STRUCTURED_MODEL_NATIVE_LUNA
 EXTRACTION_SCHEMA_NAME = "my_data_intake_extraction_v2"
 EXTRACTION_MAXIMUM_OUTPUT_TOKENS = 128000
 EXTRACTION_OUTCOMES = frozenset(
@@ -377,14 +380,14 @@ class MyDataExtractionAdapter:
         provider=None,
         *,
         model: str = EXTRACTION_MODEL,
-        reasoning_effort: str = REASONING_EFFORT_XHIGH,
+        reasoning_effort: str = REASONING_EFFORT_LOW,
         schema_name: str = EXTRACTION_SCHEMA_NAME,
         maximum_output_tokens: int = EXTRACTION_MAXIMUM_OUTPUT_TOKENS,
     ) -> None:
-        if model not in (EXTRACTION_MODEL, STRUCTURED_MODEL_SOL):
+        if model not in (EXTRACTION_MODEL, STRUCTURED_MODEL_SOL, STRUCTURED_MODEL_LUNA):
             raise ExtractionError("unsupported_model")
-        efforts = (SOL_EXTRACTION_REASONING_EFFORTS
-                   if model == STRUCTURED_MODEL_SOL else ALLOWED_REASONING_EFFORTS)
+        efforts = ({REASONING_EFFORT_LOW} if model == STRUCTURED_MODEL_NATIVE_LUNA else
+                   SOL_EXTRACTION_REASONING_EFFORTS if model == STRUCTURED_MODEL_SOL else ALLOWED_REASONING_EFFORTS)
         if not isinstance(reasoning_effort, str) or reasoning_effort not in efforts:
             raise ExtractionError("unsupported_effort")
         if (isinstance(maximum_output_tokens, bool)
@@ -482,7 +485,7 @@ class MyDataExtractionAdapter:
             if result.schema_name != self._schema_name:
                 raise ExtractionError("schema_mismatch")
             if (result.model_name not in (None, self._model)
-                    or (self._model == STRUCTURED_MODEL_SOL and result.model_name is None)):
+                    or (self._model in (STRUCTURED_MODEL_SOL, STRUCTURED_MODEL_NATIVE_LUNA) and result.model_name is None)):
                 raise ExtractionError("model_mismatch")
         return validate_extraction_payload(
             payload, text=(text or "").strip(), allowed_fields=allowed_fields,

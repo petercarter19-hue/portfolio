@@ -1,8 +1,7 @@
 """Parametric entrance-policy checks for MVP1 increment C.
 
-These prove the boundary, not the product decision: Resume onboarding's
-numbers are synthetic fixtures, durable onboarding persistence is withheld,
-and My Data's already accepted limits are represented separately.
+Owner-selected Resume limits remain separate from parsed-text/audio bounds
+and My Data. Synthetic fixture policies never qualify durable storage.
 """
 
 from __future__ import annotations
@@ -39,10 +38,18 @@ class ResumeIntakePolicyTests(unittest.TestCase):
         self.assertFalse(document["durable_persistence_allowed"])
         self.assertFalse(document["selected"])
 
-    def test_no_resume_onboarding_policy_is_selected_yet(self):
-        self.assertIsNone(SELECTED_RESUME_ONBOARDING_POLICY)
+    def test_selected_resume_onboarding_policy_has_independent_limits_and_retention(self):
         resolved = resolve_policy(ENTRANCE_RESUME_ONBOARDING)
-        self.assertFalse(resolved.durable_persistence_allowed)
+        self.assertIs(resolved,SELECTED_RESUME_ONBOARDING_POLICY)
+        self.assertTrue(resolved.durable_persistence_allowed)
+        self.assertEqual(resolved.max_document_bytes,50_000_000)
+        self.assertEqual(resolved.max_recording_seconds,300.0)
+        self.assertEqual(resolved.max_text_units,20_000)
+        self.assertEqual(resolved.max_recording_bytes,20*1024*1024)
+        self.assertEqual(resolved.draft_inactivity_days,30)
+        self.assertIn('until you delete',resolved.retention_statement)
+        self.assertIn('never deletes',resolved.retention_statement)
+        self.assertTrue(resolved.cleanup_audio_after_transcription)
 
     def test_my_data_policy_is_selected_and_distinct(self):
         self.assertTrue(MY_DATA_POLICY.selected)
@@ -79,13 +86,13 @@ class ResumeIntakePolicyTests(unittest.TestCase):
         selected = selected_policy_for_tests(max_text_units=123)
         self.assertTrue(selected.durable_persistence_allowed)
         self.assertFalse(SELECTED_RESUME_ONBOARDING_POLICY is selected)
-        self.assertIsNone(SELECTED_RESUME_ONBOARDING_POLICY)
+        self.assertEqual(SELECTED_RESUME_ONBOARDING_POLICY.max_document_bytes,50_000_000)
         self.assertEqual(selected.max_text_units, 123)
 
-    def test_recommendation_names_the_remaining_decision(self):
+    def test_legacy_decision_document_reports_settled_owner_selection(self):
         self.assertIn("retention", RECOMMENDED_ONBOARDING_DECISION["decision"].lower())
-        self.assertIn("10,000,000", RECOMMENDED_ONBOARDING_DECISION["recommendation"])
-        self.assertIn("disabled", RECOMMENDED_ONBOARDING_DECISION["why_it_matters"])
+        self.assertIn("50,000,000", RECOMMENDED_ONBOARDING_DECISION["recommendation"])
+        self.assertIn("applied SQL", RECOMMENDED_ONBOARDING_DECISION["why_it_matters"])
 
     def test_audio_has_its_own_parametric_byte_ceiling(self):
         self.assertNotEqual(MY_DATA_POLICY.max_recording_bytes, MY_DATA_POLICY.max_document_bytes)
@@ -103,8 +110,9 @@ class ResumeIntakePolicyTests(unittest.TestCase):
         self.assertEqual(fixture["reason"], "policy_not_selected")
         self.assertEqual(fixture["entrance"], ENTRANCE_RESUME_ONBOARDING)
         selected = sweep_parameters(selected_policy_for_tests())
-        self.assertTrue(selected["scheduled"])
-        self.assertEqual(selected["inactivity_days"], 30)
+        self.assertFalse(selected["scheduled"])
+        self.assertEqual(selected["draft_inactivity_days"],30)
+        self.assertEqual(selected["reason"],"legacy_source_sweep_not_authorized")
         self.assertEqual(selected["entrance"], ENTRANCE_RESUME_ONBOARDING)
         self.assertEqual(
             sweep_parameters(MY_DATA_POLICY)["entrance"], ENTRANCE_MY_DATA

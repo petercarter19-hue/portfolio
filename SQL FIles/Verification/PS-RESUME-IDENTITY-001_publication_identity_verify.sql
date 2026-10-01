@@ -25,4 +25,4 @@ IF COL_LENGTH(N'dbo.resume_media_command_receipts',N'catalog_source_bound') IS N
 IF ISNULL(OBJECT_DEFINITION(OBJECT_ID(N'dbo.usp_CommitResumeMediaCommandForOwner')),N'') NOT LIKE N'%usp_ResumePublicationGuardLegacyMutator%'
     OR ISNULL(OBJECT_DEFINITION(OBJECT_ID(N'dbo.usp_CommitResumeDraftCommandForOwner')),N'') NOT LIKE N'%usp_ResumePublicationGuardLegacyMutator%'
     THROW 54329, 'Existing publication mutator guards are absent.', 1;
-SELECT migration_id=N'PS-RESUME-IDENTITY-001', verification=N'structural_only';
+SELECT migration_id=N'PS-RESUME-IDENTITY-001', verification=N'structural_only',CAST(1 AS bit) AS verified;

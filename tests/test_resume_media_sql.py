@@ -62,7 +62,11 @@ class ResumeMediaSqlTests(unittest.TestCase):
         entry = next(
             item for item in self.registry["migrations"] if item["id"] == "PS-RESUME-MEDIA-001"
         )
-        self.assertIsNone(entry["gate"])
+        # Honest null until actual proof; imported proofs must match unchanged SQL.
+        if entry["gate"] is not None:
+            from scripts.migration_registry import GateProof, executable_sha256
+            proof = GateProof.from_json(entry["id"], entry["gate"])
+            self.assertEqual(proof.executable_sha256, executable_sha256(ROOT / entry["forward"]))
         self.assertEqual(
             entry["requires"], ["PS-RESUME-DRAFT-001", "PS-CAPTURE-MEDIA-001"]
         )

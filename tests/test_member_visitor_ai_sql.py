@@ -11,7 +11,11 @@ class SqlSourceTests(unittest.TestCase):
         registry=json.loads((ROOT/'SQL FIles/Migrations/registry.json').read_text(encoding='utf-8'))
         entry=next(x for x in registry['migrations'] if x['id']=='PS-VISITOR-AI-001')
         self.assertEqual(entry['requires'],['PS-RESUME-PUBLICATION-001'])
-        self.assertIsNone(entry['gate'])
+        # Honest null until actual proof; imported proofs must match unchanged SQL.
+        if entry["gate"] is not None:
+            from scripts.migration_registry import GateProof, executable_sha256
+            proof = GateProof.from_json(entry["id"], entry["gate"])
+            self.assertEqual(proof.executable_sha256, executable_sha256(ROOT / entry["forward"]))
         rollback=(ROOT/entry['rollback']).read_text(encoding='utf-8')
         self.assertNotIn('DROP TABLE',rollback.upper())
         self.assertNotIn('DELETE dbo.resume_',rollback)

@@ -21,7 +21,7 @@ from services.resume_draft_repository import (
 from services.resume_draft_service import ResumeDraftService
 from services.resume_guide_service import ResumeGuideService
 from services.resume_intake_document_adapter import ResumeDocumentAdapter
-from services.resume_intake_policy import selected_policy_for_tests
+from services.resume_intake_policy import selected_policy_for_tests,fixture_policy_for_tests
 from services.resume_intake_repository import (
     InMemoryResumeIntakeRepository,
     ResumeIntakeStoreUnavailable,
@@ -610,7 +610,7 @@ class PolicyBoundaryHttpTests(IntakeRoutesTestCase):
 class PolicyGateHttpTests(IntakeRoutesTestCase):
     def test_unselected_onboarding_policy_refuses_instead_of_using_fixtures(self):
         app.config.update(PEERSLATE_RESUME_INTAKE_FIXTURE_POLICY_ENABLED=False)
-        self.service._policy = None  # resolve the real (unselected) onboarding policy
+        self.service._policy = fixture_policy_for_tests()  # explicitly unselected policy stays refused
         response = self.submission(
             self.client(),
             {"type": "add_submission", "request_id": str(uuid4()), "text": "hello"},
@@ -950,3 +950,249 @@ class ExtractedKeepSeparateHttpTests(IntakeRoutesTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# Selected model/private assistance integration regressions; fixtures only.
+class RouteBoundaryTests(unittest.TestCase):
+    def test_private_flag_off_precedes_cross_origin_and_identity(self):
+        from unittest.mock import patch
+        self.app.config['PEERSLATE_RESUME_SYNTHESIS_ENABLED'] = False
+        with patch.object(self.routes, '_identity_or_not_found') as identity:
+            result = self.client.post('/api/resume-synthesis/me/proposals', json={},
+                                      headers={'Origin': 'https://other.invalid'})
+            self.assertEqual(result.status_code, 404)
+            identity.assert_not_called()
+        self.service.generate.assert_not_called()
+
+    def setUp(self):
+        from flask import Flask
+        import resume_intake_routes
+        from unittest.mock import Mock, patch
+        from types import SimpleNamespace
+        self.routes = resume_intake_routes
+        self.app = Flask(__name__)
+        self.app.config.update(TESTING=True, PEERSLATE_RESUME_INTAKE_ENABLED=True,
+            PEERSLATE_RESUME_EDITOR_ENABLED=True, PEERSLATE_RESUME_SYNTHESIS_ENABLED=True,
+            PEERSLATE_RESUME_INTERVIEW_ENABLED=True)
+        self.service = Mock()
+        self.app.config['RESUME_PRIVATE_ASSISTANCE_SERVICE'] = self.service
+        self.app.register_blueprint(resume_intake_routes.resume_intake)
+        self.client = self.app.test_client()
+        self.identity = patch.object(resume_intake_routes, '_identity_or_not_found',
+                                      return_value=SimpleNamespace(user_key='fiction-owner'))
+        self.identity.start()
+        self.addCleanup(self.identity.stop)
+
+    def test_off_same_origin_and_private_headers(self):
+        self.app.config['PEERSLATE_RESUME_SYNTHESIS_ENABLED'] = False
+        result = self.client.post('/api/resume-synthesis/me/proposals', json={},
+                                  headers={'X-PeerSlate-Request': 'same-origin'})
+        self.assertEqual(result.status_code, 404)
+        self.service.generate.assert_not_called()
+        self.app.config['PEERSLATE_RESUME_SYNTHESIS_ENABLED'] = True
+        self.assertEqual(self.client.post('/api/resume-synthesis/me/proposals', json={}).status_code, 403)
+        self.service.generate.return_value = {'state': 'proposal', 'saved': False, 'publishes': False}
+        result = self.client.post('/api/resume-synthesis/me/proposals', json={'request_id': str(uuid4())},
+                                  headers={'X-PeerSlate-Request': 'same-origin'})
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(result.headers['Cache-Control'], 'private, no-store')
+        self.assertEqual(result.headers['X-Content-Type-Options'], 'nosniff')
+        self.assertEqual(self.service.generate.call_args.args[0], 'fiction-owner')
+
+    def test_duplicate_keys_and_overlimit_body_refuse_before_service(self):
+        for data, expected in [(b'{"request_id":"a","request_id":"b"}', 400), (b' ' * 100001, 413)]:
+            response = self.client.post('/api/resume-synthesis/me/proposals', data=data,
+                content_type='application/json', headers={'X-PeerSlate-Request': 'same-origin'})
+            self.assertEqual(response.status_code, expected)
+        self.service.generate.assert_not_called()
+
+
+from tests.test_resume_intake_browser import (
+    CHROME_EXECUTABLE, sync_playwright, install_intake_runtime_fixtures, start_browser,
+)
+
+
+@unittest.skipUnless(sync_playwright is not None and CHROME_EXECUTABLE,
+    'Playwright and Chrome required for typed candidate click-to-save proof')
+class TypedExtractionReviewBrowserTests(unittest.TestCase):
+    """Actual UI and Flask save; deterministic extraction, never a model call."""
+
+    @classmethod
+    def setUpClass(cls):
+        install_intake_runtime_fixtures(cls)
+        start_browser(cls)
+
+    def test_private_preview_long_paragraph_wraps_without_changing_text_or_saving(self):
+        from unittest.mock import Mock, patch
+        text = ('Independent Projects\n\n' +
+            'An independent ETL pilot retained the documented limitations and source attribution. ' * 35 +
+            '\n\n' + 'UnbrokenFixtureReference' * 35)
+        service = Mock()
+        service.generate.return_value = {'state': 'proposal', 'saved': False, 'publishes': False,
+            'proof': 'display-fixture-only', 'proposal': {'resume_text': text, 'uncertainties': []}}
+        owner = 'private-preview-wrap-browser'
+        with patch.dict(app.config, {'PEERSLATE_RESUME_SYNTHESIS_ENABLED': True,
+                'RESUME_PRIVATE_ASSISTANCE_SERVICE': service, 'PEERSLATE_DEV_USER_KEY': owner}):
+            for width in (1440, 390):
+                with self.subTest(viewport_width=width):
+                    context = self.browser.new_context(viewport={'width': width, 'height': 1000})
+                    try:
+                        page = context.new_page()
+                        page.route('https://fonts.**', lambda route: route.abort())
+                        page.goto(self.base_url + '/app/resume')
+                        guide_hide = page.locator('#resume-intake-hide')
+                        if guide_hide.is_visible():
+                            guide_hide.click()
+                        page.locator('#resume-synthesis-task').fill('Preview the independent contribution.')
+                        page.locator('#resume-synthesis-form button[type="submit"]').click()
+                        output = page.locator('#resume-synthesis-text')
+                        output.wait_for(state='visible')
+                        self.assertEqual(output.text_content(), text)
+                        layout = output.evaluate('''element => {
+                            const box = element.getBoundingClientRect();
+                            const style = getComputedStyle(element);
+                            return {client: element.clientWidth, scroll: element.scrollWidth,
+                                right: box.right, viewport: innerWidth, height: box.height,
+                                lineHeight: parseFloat(style.lineHeight), whiteSpace: style.whiteSpace};
+                        }''')
+                        self.assertEqual(layout['whiteSpace'], 'pre-wrap')
+                        self.assertLessEqual(layout['scroll'], layout['client'] + 1)
+                        self.assertLessEqual(layout['right'], layout['viewport'] + 1)
+                        self.assertGreater(layout['height'], layout['lineHeight'] * 6)
+                        self.assertTrue(page.locator('#resume-synthesis-confirm').is_disabled())
+                        self.assertEqual(self.catalog.list_items(owner), [])
+                        service.confirm.assert_not_called()
+                    finally:
+                        context.close()
+        self.assertEqual(service.generate.call_count, 2)
+
+    def test_reviewed_typed_role_and_education_preserve_values_on_save_and_reload(self):
+        from services.my_data_extraction_adapter import MyDataExtractionAdapter, EXTRACTION_VALUE_FIELDS
+        text = ('Riley was a Data Support Intern at Example Orchard Cooperative from June through August 2025. '
+                'Riley cleaned 240 inventory rows and wrote a short handoff guide. No efficiency result is established. '
+                'Riley completed a Bachelor of Science in Information Systems at Example Lake College in May 2026.')
+        role_quote, education_quote = text.rsplit('Riley completed', 1)
+        education_quote = 'Riley completed' + education_quote
+        values = {
+            'role': {'role_title': 'Data Support Intern', 'employer_name': 'Example Orchard Cooperative',
+                'summary': 'Cleaned 240 inventory rows and wrote a handoff guide. No efficiency result is established.',
+                'start_date': '2025-06-01', 'end_date': '2025-08-01', 'date_precision': 'month',
+                'current_role': False, 'employment_type': 'Internship'},
+            'education': {'title': 'Bachelor of Science in Information Systems',
+                'institution_name': 'Example Lake College', 'degree_name': 'Bachelor of Science',
+                'field_of_study': 'Information Systems', 'education_status': 'completed',
+                'end_date': '2026-05-01', 'date_precision': 'month'},
+        }
+        def extract(*args, **kwargs):
+            return {'candidates': [{'record_type': kind,
+                'values': {field: values[kind].get(field) for field in EXTRACTION_VALUE_FIELDS[kind]},
+                'quote': quote, 'outcome': 'new', 'match_reference': None, 'confidence': 'certain'}
+                for kind, quote in [('role', role_quote), ('education', education_quote)]]}
+        self.intake_service._extraction_adapter = MyDataExtractionAdapter(provider=extract)
+        owner = 'typed-extraction-review-browser'
+        app.config['PEERSLATE_DEV_USER_KEY'] = owner
+        context = self.browser.new_context(viewport={'width': 1440, 'height': 1000})
+        self.addCleanup(context.close)
+        page = context.new_page()
+        page.route('https://fonts.**', lambda route: route.abort())
+        confirmations = []
+        page.on('request', lambda request: confirmations.append(request.post_data_json)
+            if request.url.endswith('/api/resume-intake/me/proposals/decision') else None)
+        page.goto(self.base_url + '/app/resume')
+        page.locator('#resume-intake-text').fill(text)
+        page.locator('#resume-intake-add').click()
+        proposals = page.locator('#resume-intake-proposals > li:not(.resume-intake__hint)')
+        proposals.nth(1).wait_for()
+        self.assertEqual(proposals.count(), 2)
+        self.assertEqual(self.catalog.list_items(owner), [])  # Review is not a canonical save.
+        for kind in ('role', 'education'):
+            proposal = proposals.first
+            self.assertTrue(proposal.get_by_role('combobox', name='Save this as', exact=True).is_disabled())
+            proposal.get_by_role('button', name='Save this privately', exact=True).click()
+            page.wait_for_function('(count) => document.querySelectorAll("#resume-intake-proposals > li:not(.resume-intake__hint)").length === count',
+                arg=1 if kind == 'role' else 0)
+            confirmed = confirmations[-1]['confirmed_values']
+            self.assertNotIn('record_type', confirmed)
+            page.get_by_role('heading', name=values[kind].get('role_title') or values[kind]['title'], exact=True).wait_for()
+            for field, value in values[kind].items():
+                self.assertEqual(confirmed[field], 'internship' if field == 'employment_type' else value)
+        page.reload()
+        rows = self.draft_service.get_workspace(owner)['items']
+        self.assertEqual(len(rows), 2)
+        for row in rows:
+            self.assertFalse(row['resume_display'])
+            self.assertFalse(row['visitor_ai'])
+            for field, value in values[row['record_type']].items():
+                self.assertEqual(row['values'][field], 'internship' if field == 'employment_type' else value)
+
+    def _proposal_page(self, owner, kind, values, text):
+        from services.my_data_extraction_adapter import MyDataExtractionAdapter, EXTRACTION_VALUE_FIELDS
+        self.intake_service._extraction_adapter = MyDataExtractionAdapter(provider=lambda *args, **kwargs: {
+            'candidates': [{'record_type': kind,
+                'values': {field: values.get(field) for field in EXTRACTION_VALUE_FIELDS[kind]},
+                'quote': text, 'outcome': 'new', 'match_reference': None, 'confidence': 'certain'}]})
+        app.config['PEERSLATE_DEV_USER_KEY'] = owner
+        context = self.browser.new_context(viewport={'width': 1440, 'height': 1000})
+        self.addCleanup(context.close)
+        page = context.new_page()
+        page.route('https://fonts.**', lambda route: route.abort())
+        page.goto(self.base_url + '/app/resume')
+        page.locator('#resume-intake-text').fill(text)
+        page.locator('#resume-intake-add').click()
+        proposal = page.locator('#resume-intake-proposals > li:not(.resume-intake__hint)').first
+        proposal.wait_for()
+        return page, proposal
+
+    def test_unsupported_employment_type_requires_visible_explicit_correction(self):
+        owner = 'unsupported-employment-browser'
+        page, proposal = self._proposal_page(owner, 'role', {
+            'role_title': 'Assistant', 'employer_name': 'Example Cooperative',
+            'employment_type': 'Seasonal fellowship', 'summary': 'An explicitly described seasonal fellowship.'},
+            'Riley worked as an Assistant at Example Cooperative in a seasonal fellowship.')
+        employment = proposal.get_by_role('combobox', name='Employment type', exact=True)
+        self.assertIn('Source value: Seasonal fellowship', employment.inner_text())
+        self.assertEqual(employment.input_value(), 'Seasonal fellowship')
+        proposal.get_by_role('button', name='Save this privately', exact=True).click()
+        page.wait_for_function("document.querySelector('#resume-intake-status').textContent.includes('choose a supported value')")
+        self.assertEqual(self.catalog.list_items(owner), [])
+        employment.select_option('other')
+        proposal.get_by_role('button', name='Save this privately', exact=True).click()
+        page.get_by_role('heading', name='Assistant', exact=True).wait_for()
+        row = self.draft_service.get_workspace(owner)['items'][0]
+        self.assertEqual(row['values']['employment_type'], 'other')
+        self.assertEqual(row['values']['summary'], 'An explicitly described seasonal fellowship.')
+
+    def test_member_changes_completed_credential_status_without_stale_dates(self):
+        for status in ('planned', 'in_progress'):
+            with self.subTest(status=status):
+                owner = 'credential-status-' + status
+                page, proposal = self._proposal_page(owner, 'credential', {
+                    'name': 'Example License', 'issuer': 'Example Board', 'completion_status': 'completed',
+                    'issue_date': '2024-06-01', 'expiration_date': '2027-06-01', 'identifier': 'fixture-credential'},
+                    'Riley completed Example License issued by Example Board on June 1, 2024, expiring June 1, 2027.')
+                proposal.get_by_role('combobox', name='Status', exact=True).select_option(status)
+                self.assertTrue(proposal.locator('[data-proposal-issue-date]').is_hidden())
+                proposal.get_by_role('button', name='Save this privately', exact=True).click()
+                page.get_by_role('heading', name='Example License', exact=True).wait_for()
+                row = self.draft_service.get_workspace(owner)['items'][0]
+                self.assertEqual(row['values']['completion_status'], status)
+                self.assertIsNone(row['values']['issue_date'])
+                self.assertIsNone(row['values']['expiration_date'])
+                self.assertEqual(row['values']['identifier'], 'fixture-credential')
+
+    def test_fact_saved_refresh_does_not_replace_unsaved_editor_wording(self):
+        owner = 'unsaved-editor-browser'
+        self.catalog.create_private(owner, {'record_key': str(uuid4()), 'record_type': 'skill',
+            'values': {'name': 'Existing strength', 'summary': 'Original summary'},
+            'resume_display': False, 'visitor_ai': False})
+        page, proposal = self._proposal_page(owner, 'skill', {'name': 'New strength'},
+            'Riley has a new strength.')
+        page.get_by_role('heading', name='Existing strength', exact=True).wait_for()
+        page.get_by_text('Edit', exact=True).first.click()
+        summary = page.locator('#resume-editor-lists textarea[name="summary"]')
+        summary.fill('My unsaved manual wording')
+        proposal.get_by_role('button', name='Save this privately', exact=True).click()
+        page.wait_for_function("document.querySelector('#resume-editor-status').textContent.includes('unsaved edits are kept')")
+        self.assertEqual(summary.input_value(), 'My unsaved manual wording')
+        self.assertEqual(len(self.catalog.list_items(owner)), 2)
+        self.assertEqual(page.get_by_role('heading', name='New strength', exact=True).count(), 0)

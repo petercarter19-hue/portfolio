@@ -220,11 +220,66 @@ class RegistryContractTests(unittest.TestCase):
             rollback = migration.rollback_path().read_text(encoding="utf-8")
             self.assertRegex(
                 rollback,
-                r"DELETE\s+dbo\.schema_migrations",
+                r"DELETE\s+(?:FROM\s+)?dbo\.schema_migrations(?![\w$#@])",
                 f"{migration.rollback_path().name} does not remove its ledger "
                 "row, so a rollback would leave the database claiming a "
                 "migration it no longer carries.",
             )
+
+
+    def _exercise_ledger_delete_guard(self, rollback_sql):
+        # Invoke the actual complete registration/deregistration guard, with
+        # bounded fictional files; no database is contacted.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            forward = root / "forward.sql"
+            rollback = root / "rollback.sql"
+            forward.write_text(
+                "INSERT dbo.schema_migrations(migration_id) VALUES(N'PS-LEDGER-SYNTAX-001');",
+                encoding="utf-8",
+            )
+            rollback.write_text(rollback_sql, encoding="utf-8")
+            probe = RegistryContractTests(
+                "test_every_migration_registers_itself_and_its_rollback_deregisters"
+            )
+            probe.registry = [SimpleNamespace(
+                migration_id="PS-LEDGER-SYNTAX-001",
+                forward_path=lambda: forward,
+                rollback_path=lambda: rollback,
+            )]
+            probe.test_every_migration_registers_itself_and_its_rollback_deregisters()
+
+    def test_ledger_delete_guard_accepts_both_supported_tsql_forms(self):
+        for statement in (
+            "DELETE dbo.schema_migrations WHERE migration_id=N'PS-LEDGER-SYNTAX-001';",
+            "DELETE FROM dbo.schema_migrations WHERE migration_id=N'PS-LEDGER-SYNTAX-001';",
+        ):
+            with self.subTest(statement=statement):
+                self._exercise_ledger_delete_guard(statement)
+
+    def test_ledger_delete_guard_refuses_missing_or_wrong_ledger_delete(self):
+        for statement in (
+            "SELECT * FROM dbo.schema_migrations;",
+            "DELETE FROM dbo.unrelated_table;",
+            "DELETE dbo.unrelated_table;",
+            "DELETE FROM archive.schema_migrations;",
+            'DELETE dbo.schema_migrations_archive;',
+            'DELETE dbo.schema_migrations_backup;',
+            'DELETE dbo.schema_migrations2;',
+            'DELETE dbo.schema_migrations$archive;',
+            'DELETE dbo.schema_migrations#archive;',
+            'DELETE dbo.schema_migrations@archive;',
+            'DELETE FROM dbo.schema_migrations_archive;',
+            'DELETE FROM dbo.schema_migrations_backup;',
+            'DELETE FROM dbo.schema_migrations2;',
+            'DELETE FROM dbo.schema_migrations$archive;',
+            'DELETE FROM dbo.schema_migrations#archive;',
+            'DELETE FROM dbo.schema_migrations@archive;',
+        ):
+            with self.subTest(statement=statement):
+                with self.assertRaises(AssertionError):
+                    self._exercise_ledger_delete_guard(statement)
+
 
 
 class GateProofTests(unittest.TestCase):

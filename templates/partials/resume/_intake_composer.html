@@ -14,6 +14,7 @@
     data-intake-submit-url="{{ url_for('resume_intake.post_submission') }}"
     data-intake-recording-url="{{ url_for('resume_intake.post_recording') }}"
     data-intake-decision-url="{{ url_for('resume_intake.post_proposal_decision') }}"
+    data-intake-originals-url="{{ url_for('resume_intake.get_original_files') }}"
     data-intake-purge-url="{{ url_for('resume_intake.post_source_purge') }}"
     data-guide-url="{{ url_for('resume_intake.get_guide_state') }}"
     data-guide-status-url="{{ url_for('resume_intake.post_guide_status') }}"
@@ -169,6 +170,7 @@
             <ul class="resume-intake__queued" id="resume-intake-queued" aria-label="Facts queued for this Add"></ul>
         </section>
 
+        <p class="resume-intake__hint" id="resume-intake-policy">Files and recordings stay private.</p>
         <form class="resume-intake__composer" id="resume-intake-composer" enctype="multipart/form-data">
             <label class="resume-intake__sr" for="resume-intake-text">Your answer</label>
             <textarea
@@ -219,6 +221,12 @@
             <button type="button" class="resume-intake__quiet" id="resume-intake-complete">Mark guide complete</button>
         </p>
     </div>
+
+    <section class="resume-intake__pending" aria-labelledby="resume-intake-originals-title">
+        <h3 id="resume-intake-originals-title">Your original files</h3>
+        <p class="resume-intake__hint">Download or delete a private original. Deleting it keeps the extracted text; remove that source separately to delete its text.</p>
+        <ul class="resume-intake__attachments" id="resume-intake-originals"></ul>
+    </section>
 
     <section class="resume-intake__pending" aria-labelledby="resume-intake-pending-title">
         <h3 id="resume-intake-pending-title">Waiting for your decision</h3>

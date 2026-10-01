@@ -301,6 +301,7 @@
 
     function renderWorkspace(payload) {
         workspace = payload;
+        refreshAssistanceTargets();
         // Retain the live media nodes and handlers across workspace reloads.
         const experienceMedia = document.getElementById("resume-editor-experience-media");
         if (experienceMedia) root.before(experienceMedia);
@@ -366,7 +367,16 @@
         }
     }
 
-    async function loadWorkspace() {
+    let displayedFormState = '';
+    function editorFormState() {
+        return JSON.stringify(Array.from(root.querySelectorAll('input, textarea, select'))
+            .concat(Array.from(document.querySelectorAll('#resume-story-choice')))
+            .map(function (field) { return [field.id, field.type === 'checkbox' ? field.checked : field.value]; }));
+    }
+    function hasUnresolvedEditorChanges() {
+        return pendingEdit || editInFlight || pendingStory || editorFormState() !== displayedFormState;
+    }
+    async function loadWorkspace(preserveEdits) {
         const response = await fetch(workspaceUrl, { credentials: "same-origin" });
         const payload = await response.json().catch(function () {
             return {};
@@ -379,9 +389,21 @@
             setStatus(payload.message || "The Resume editor could not be opened.", "error");
             return;
         }
+        if (preserveEdits && hasUnresolvedEditorChanges()) {
+            setStatus("Fact saved privately. Your unsaved edits are kept; reload after saving them to see the new entry.", "ok");
+            return;
+        }
         renderWorkspace(payload);
+        displayedFormState = editorFormState();
     }
 
+    document.addEventListener('resume-intake-fact-saved', function () {
+        if (hasUnresolvedEditorChanges()) {
+            setStatus("Fact saved privately. Your unsaved edits are kept; reload after saving them to see the new entry.", "ok");
+            return;
+        }
+        loadWorkspace(true);
+    });
     document.getElementById("resume-editor-reload").addEventListener("click", function () {
         loadWorkspace();
     });
@@ -496,6 +518,112 @@
                 key ? "Selected for your private Resume draft. Review display and visitor AI before publishing." : "Removed from your private Resume draft. The saved entry is kept.");
         });
     }
+
+    const assistance = document.getElementById("resume-private-assistance");
+    const synthesisForm = document.getElementById("resume-synthesis-form");
+    const synthesisTarget = document.getElementById("resume-synthesis-target");
+    const confirmWording = document.getElementById("resume-synthesis-confirm");
+    const assistanceStatus = document.getElementById("resume-private-assistance-status");
+    let synthesisProposal = null;
+    let assistanceBusy = false;
+
+    function refreshAssistanceTargets() {
+        if (!synthesisTarget) return;
+        const selected = synthesisTarget.value;
+        synthesisTarget.replaceChildren(new Option("Preview only", ""));
+        const prose = {role: "summary", education: "summary", skill: "summary", accomplishment: "wording", knowledge: "wording"};
+        (workspace.items || []).forEach(function (item) {
+            const field = prose[item.record_type];
+            if (!field || item.orphaned || item.draft_is_stale || (!item.editable && item.save_mode !== "draft_overlay")) return;
+            const values = item.proposed_values || item.values || {};
+            const title = values.role_title || values.title || values.name || values.wording || item.record_type;
+            synthesisTarget.add(new Option(String(title).slice(0, 90) + " · " + field, JSON.stringify({record_key: item.record_key, field: field})));
+        });
+        synthesisTarget.value = selected;
+        synthesisProposal = null;
+        if (confirmWording) confirmWording.disabled = true;
+    }
+
+    async function assistanceRequest(url, body) {
+        if (assistanceBusy) return null;
+        assistanceBusy = true;
+        assistance.querySelectorAll("button, input, textarea, select").forEach(control => { control.disabled = true; });
+        assistanceStatus.textContent = "Preparing a private proposal…";
+        try {
+            const result = await send(url, body);
+            if (!result.response.ok) {
+                assistanceStatus.textContent = result.payload.message || "Private assistance is unavailable. Your words and manual editor remain available.";
+                return null;
+            }
+            assistanceStatus.textContent = "Private proposal only. Review it before saving anything.";
+            return result.payload;
+        } catch (_) {
+            // Never automatically retry an uncertain paid dispatch.
+            assistanceStatus.textContent = "The response could not be confirmed. Your words are preserved; use the manual editor.";
+            return null;
+        } finally {
+            assistanceBusy = false;
+            assistance.querySelectorAll("button, input, textarea, select").forEach(control => { control.disabled = false; });
+            if (confirmWording) confirmWording.disabled = !synthesisProposal || !synthesisProposal.target;
+        }
+    }
+
+    if (synthesisForm) {
+        synthesisTarget.addEventListener("change", function () {
+            synthesisProposal = null;
+            confirmWording.disabled = true;
+        });
+        synthesisForm.addEventListener("submit", async function (event) {
+            event.preventDefault();
+            if (!workspace || pendingEdit || editInFlight || pendingStory) return;
+            const target = synthesisTarget.value ? JSON.parse(synthesisTarget.value) : null;
+            synthesisProposal = null;
+            const payload = await assistanceRequest(assistance.dataset.synthesisUrl, {
+                request_id: requestId(), expected_draft_version: workspace.draft_version,
+                task: document.getElementById("resume-synthesis-task").value,
+                selected_targets: target ? [target] : [],
+            });
+            if (!payload) return;
+            synthesisProposal = {proof: payload.proof, target: target};
+            document.getElementById("resume-synthesis-text").textContent = payload.proposal.resume_text;
+            document.getElementById("resume-synthesis-uncertainties").textContent = payload.proposal.uncertainties.join(" · ");
+            document.getElementById("resume-synthesis-wording").value = "";
+            document.getElementById("resume-synthesis-preview").hidden = false;
+            confirmWording.disabled = !target;
+        });
+        confirmWording.addEventListener("click", async function () {
+            if (!synthesisProposal || !synthesisProposal.target || pendingEdit || editInFlight || pendingStory) return;
+            const payload = await assistanceRequest(assistance.dataset.confirmUrl, {
+                proof: synthesisProposal.proof, record_key: synthesisProposal.target.record_key,
+                field: synthesisProposal.target.field, confirm: true,
+                confirmed_text: document.getElementById("resume-synthesis-wording").value,
+            });
+            if (!payload) return;
+            synthesisProposal = null;
+            await loadWorkspace();
+            assistanceStatus.textContent = "Selected wording saved privately. It has not been published.";
+        });
+    }
+    const careerForm = document.getElementById("resume-career-interview-form");
+    if (careerForm) careerForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        if (!workspace) return;
+        const payload = await assistanceRequest(assistance.dataset.interviewUrl, {
+            request_id: requestId(), expected_draft_version: workspace.draft_version,
+            statement: document.getElementById("resume-career-interview-statement").value,
+        });
+        if (!payload) return;
+        document.getElementById("resume-career-interview-response").textContent = payload.response;
+        document.getElementById("resume-career-interview-question").textContent = payload.next_question;
+        const candidates = document.getElementById("resume-career-interview-candidates");
+        candidates.replaceChildren();
+        payload.candidates.forEach(function (candidate) {
+            const row = document.createElement("li");
+            row.textContent = candidate.record_type + ": " + candidate.quote;
+            candidates.appendChild(row);
+        });
+        document.getElementById("resume-career-interview-preview").hidden = false;
+    });
 
     loadWorkspace();
 })();

@@ -331,6 +331,7 @@ class ResumeIntakeService:
         document_pipeline=None,
         extraction_adapter: MyDataExtractionAdapter | None = None,
         matching_exclusions=None,
+        original_files=None,
     ) -> None:
         self.repository = repository or InMemoryResumeIntakeRepository()
         self.draft_service = draft_service or resume_draft_service
@@ -348,6 +349,7 @@ class ResumeIntakeService:
         # configured adapter compares against an empty shortlist rather than
         # risk comparing member material the member excluded from private AI.
         self._matching_exclusions = matching_exclusions
+        self.original_files = original_files
         # Deterministic parser seam. Tests inject a recorder that asserts the
         # exact bytes it received; production leaves it None (the shared seam).
         self._document_pipeline = document_pipeline
@@ -551,7 +553,7 @@ class ResumeIntakeService:
                 proposals: list[dict] = []
                 source_keys: list[str] = []
                 for plan in plans:
-                    source = self._store_source(snapshot, submission_key, submission_version, plan, moment)
+                    source = self._store_source(snapshot, submission_key, submission_version, plan, moment, owner=owner)
                     source_keys.append(source["source_key"])
                     fence = JobFence(
                         source_key=source["source_key"],
@@ -1024,8 +1026,9 @@ class ResumeIntakeService:
             "provenance_retained": True,
             "source_resurrected": False,
             "message": (
-                "That input was removed. Accepted history keeps its provenance, "
-                "never the deleted text."
+                "That parsed input was removed. Accepted history keeps its "
+                "provenance, never the deleted text. Retained original files "
+                "remain private until you delete them separately."
             ),
         }
         snapshot["receipts"][request_id] = {
@@ -1051,7 +1054,11 @@ class ResumeIntakeService:
         except ResumeIntakeStoreUnavailable as error:
             raise ResumeIntakeUnavailableError(proposed={"source_key": source_key}) from error
         winner = self._winner_after_commit(owner, request_id, digest, commit_result)
-        return winner if winner is not None else result
+        result = winner if winner is not None else result
+        # Purging parsed input invalidates proposals, never original ownership.
+        # Only the member's separate original-file deletion creates cleanup intent.
+        result["original_files_retained"] = self.original_files is not None
+        return result
 
     # -- unsubmitted composer drafts ------------------------------------
 
@@ -1881,6 +1888,7 @@ class ResumeIntakeService:
                     "content_type": content_type,
                     "data": data,
                     "sha256": hashlib.sha256(data).hexdigest(),
+                    "byte_length": len(data),
                 }
             else:
                 source = (snapshot.get("sources") or {}).get(attachment.get("source_key"))
@@ -1996,7 +2004,7 @@ class ResumeIntakeService:
                 ))
         return plans
 
-    def _store_source(self, snapshot, submission_key, submission_version, plan, moment):
+    def _store_source(self, snapshot, submission_key, submission_version, plan, moment, *, owner=None):
         if plan.reuse_source_key:
             existing = snapshot["sources"].get(plan.reuse_source_key)
             if existing is not None and existing.get("state") == "active":
@@ -2018,6 +2026,14 @@ class ResumeIntakeService:
             "created_at": moment.isoformat(),
             "origin_client_key": plan.client_key,
         }
+        if plan.kind == "document" and self.original_files is not None:
+            from services.resume_original_file_repository import OriginalFileUnavailable
+            try:
+                self.original_files.retain(owner, source, plan.prepared["data"])
+            except OriginalFileUnavailable:
+                # The member-owned SQL reservation survives; the intake
+                # transaction rolls back and preserves the member's Add input.
+                raise ResumeIntakeStoreUnavailable() from None
         snapshot["sources"][source_key] = source
         return source
 

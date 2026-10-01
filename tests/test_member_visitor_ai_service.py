@@ -285,3 +285,30 @@ class OperationalTests(unittest.TestCase):
                 runtime.run(lambda:self.fail('provider must not run'), client_key='a')
             self.assertTrue(caught.exception.unavailable)
         finally: runtime.close()
+
+
+# Selected model/private assistance integration regressions; fixtures only.
+class PublicContractTests(unittest.TestCase):
+    def test_both_native_low_phases_have_distinct_strict_schema(self):
+        from services.member_visitor_ai_service import (
+            _VisitorFoundryAnswer, _VisitorFoundrySupport, _REQUEST_DEADLINE,
+        )
+        from services.ai_foundation.azure_foundry import SpendLedger, LunaPriceSchedule
+        from services.ai_foundation.contracts import AIRequest, Purpose, Audience
+        from services.ai_foundation.codec import MEMBER_VISITOR_ANSWER_SCHEMA, MEMBER_VISITOR_SUPPORT_SCHEMA
+        request = AIRequest('fiction-request', 'member_visitor_ai', Purpose.EVIDENCE_FINDER,
+                            Audience.PUBLIC, 'fiction-subject', 'What is shared?')
+        for kind, schema in [(_VisitorFoundryAnswer, MEMBER_VISITOR_ANSWER_SCHEMA),
+                             (_VisitorFoundrySupport, MEMBER_VISITOR_SUPPORT_SCHEMA)]:
+            from tests.test_resume_intake_runtime import SelectedPrivateTransport
+            transport = SelectedPrivateTransport()
+            provider = kind(endpoint='https://fixture.openai.azure.com', deployment='gpt-6-luna',
+                token_provider=lambda: 'fiction-token', transport=transport,
+                price_schedule=LunaPriceSchedule(), spend_ledger=SpendLedger(hard_cap_micro_usd=1000000, max_calls=1),
+                maximum_input_tokens=66560, maximum_input_bytes=65536, maximum_output_tokens=700,
+                answer_reasoning_effort='low', answer_json_schema=MEMBER_VISITOR_ANSWER_SCHEMA)
+            provider.answer(request, ())
+            wire = transport.calls[0]['json']
+            self.assertEqual(wire['reasoning'], {'effort': 'low'})
+            self.assertTrue(wire['text']['format']['strict'])
+            self.assertEqual(wire['text']['format']['schema'], schema)

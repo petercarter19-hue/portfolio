@@ -69,11 +69,16 @@ class ExtractionPurpose(str, Enum):
 
     MY_DATA_INTAKE_EXTRACTION = "my_data_intake_extraction"
     MY_DATA_INTAKE_MATCHING = "my_data_intake_matching"
+    RESUME_PRIVATE_SYNTHESIS = "resume_private_synthesis"
+    RESUME_CAREER_INTERVIEW = "resume_career_interview"
 
 
 #: Medium and high are explicit My Data extraction comparisons; matching keeps xhigh.
 STRUCTURED_MODEL_LUNA = "gpt-5.6-luna"
 STRUCTURED_MODEL_SOL = "gpt-6-sol"
+STRUCTURED_MODEL_NATIVE_LUNA = "gpt-6-luna"
+STRUCTURED_MODEL_SOL61 = "gpt-6.1-sol"
+REASONING_EFFORT_LOW = "low"
 # Sol is opt-in only for owner intake extraction; the global Luna set stays closed.
 SOL_EXTRACTION_REASONING_EFFORTS = frozenset({"low", "medium", "high"})
 REASONING_EFFORT_XHIGH = "xhigh"
@@ -273,19 +278,35 @@ class StructuredRequest:
             raise ValueError("purpose must be an ExtractionPurpose")
         if not isinstance(self.audience, Audience):
             raise ValueError("audience must be an Audience")
-        if self.model_name not in (STRUCTURED_MODEL_LUNA, STRUCTURED_MODEL_SOL):
-            raise ValueError("structured model is not the accepted contract value")
-        efforts = (SOL_EXTRACTION_REASONING_EFFORTS
-                   if self.model_name == STRUCTURED_MODEL_SOL else ALLOWED_REASONING_EFFORTS)
-        if not isinstance(self.reasoning_effort, str) or self.reasoning_effort not in efforts:
-            raise ValueError("reasoning effort is not the accepted contract value")
-        if (self.model_name == STRUCTURED_MODEL_SOL
-                or self.reasoning_effort != REASONING_EFFORT_XHIGH) and (
-            self.product != "my_data_intake"
-            or self.purpose != ExtractionPurpose.MY_DATA_INTAKE_EXTRACTION
-            or self.audience != Audience.OWNER
-        ):
-            raise ValueError(f"{self.reasoning_effort} reasoning requires owner My Data extraction")
+        owner_extraction = (self.product == "my_data_intake"
+                            and self.purpose == ExtractionPurpose.MY_DATA_INTAKE_EXTRACTION
+                            and self.audience == Audience.OWNER)
+        selected_private = (self.product == "resume_private_assistance"
+                            and self.audience == Audience.OWNER)
+        if self.model_name == STRUCTURED_MODEL_NATIVE_LUNA:
+            if not owner_extraction or self.reasoning_effort != REASONING_EFFORT_LOW:
+                raise ValueError("Native Luna Low requires owner My Data extraction")
+        elif self.model_name == STRUCTURED_MODEL_SOL61:
+            if (not selected_private or self.purpose != ExtractionPurpose.RESUME_PRIVATE_SYNTHESIS
+                    or self.reasoning_effort != REASONING_EFFORT_HIGH):
+                raise ValueError("Sol6.1 High requires private owner Resume synthesis")
+        elif (self.model_name == STRUCTURED_MODEL_SOL and selected_private
+              and self.purpose == ExtractionPurpose.RESUME_CAREER_INTERVIEW):
+            if self.reasoning_effort != REASONING_EFFORT_LOW:
+                raise ValueError("Career interview requires Sol6 Low")
+        else:
+            if self.model_name not in (STRUCTURED_MODEL_LUNA, STRUCTURED_MODEL_SOL):
+                raise ValueError("structured model is not the accepted contract value")
+            efforts = (SOL_EXTRACTION_REASONING_EFFORTS
+                       if self.model_name == STRUCTURED_MODEL_SOL else ALLOWED_REASONING_EFFORTS)
+            if not isinstance(self.reasoning_effort, str) or self.reasoning_effort not in efforts:
+                raise ValueError("reasoning effort is not the accepted contract value")
+            if self.purpose in {ExtractionPurpose.RESUME_PRIVATE_SYNTHESIS,
+                                ExtractionPurpose.RESUME_CAREER_INTERVIEW}:
+                raise ValueError("Private Resume purposes require their selected model")
+            if (self.model_name == STRUCTURED_MODEL_SOL
+                    or self.reasoning_effort != REASONING_EFFORT_XHIGH) and not owner_extraction:
+                raise ValueError(f"{self.reasoning_effort} reasoning requires owner My Data extraction")
 
 
 @dataclass(frozen=True)

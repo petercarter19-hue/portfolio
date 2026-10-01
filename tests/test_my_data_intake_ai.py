@@ -144,16 +144,16 @@ class AdapterContractTests(unittest.TestCase):
     def test_adapter_pins_model_effort_and_schema(self):
         adapter = DeterministicFakeExtractionAdapter()
         self.assertEqual(adapter.model, EXTRACTION_MODEL)
-        self.assertEqual(adapter.model, "gpt-5.6-luna")
-        self.assertEqual(adapter.reasoning_effort, REASONING_EFFORT_XHIGH)
-        self.assertEqual(adapter.reasoning_effort, "xhigh")
+        self.assertEqual(adapter.model, "gpt-6-luna")
+        self.assertEqual(adapter.reasoning_effort, "low")
+        self.assertEqual(adapter.reasoning_effort, "low")
         self.assertEqual(adapter.schema_name, EXTRACTION_SCHEMA_NAME)
 
     def test_adapter_refuses_other_models_and_efforts(self):
         with self.assertRaises(ExtractionError):
             MyDataExtractionAdapter(provider=lambda *a, **k: {}, model="other-model")
         with self.assertRaises(ExtractionError):
-            MyDataExtractionAdapter(provider=lambda *a, **k: {}, reasoning_effort="low")
+            MyDataExtractionAdapter(provider=lambda *a, **k: {}, reasoning_effort="xhigh")
 
     def test_structured_request_refuses_unsupported_effort(self):
         with self.assertRaises(ValueError):
@@ -174,7 +174,7 @@ class AdapterContractTests(unittest.TestCase):
         request = adapter.build_request("I led the migration.")
         self.assertEqual(request.purpose, ExtractionPurpose.MY_DATA_INTAKE_EXTRACTION)
         self.assertEqual(request.audience, Audience.OWNER)
-        self.assertEqual(request.reasoning_effort, "xhigh")
+        self.assertEqual(request.reasoning_effort, "low")
         self.assertEqual(request.schema_name, EXTRACTION_SCHEMA_NAME)
         self.assertIn("I led the migration.", request.input_text)
 
@@ -190,7 +190,7 @@ class AdapterContractTests(unittest.TestCase):
             calls.append((request, kwargs))
             return {"candidates": []}
         for effort in ("xhigh", "medium", "high"):
-            adapter = MyDataExtractionAdapter(provider, reasoning_effort=effort)
+            adapter = MyDataExtractionAdapter(provider, model="gpt-5.6-luna", reasoning_effort=effort)
             self.assertEqual(adapter.maximum_output_tokens, 128000)
             self.assertEqual(adapter.extract("Fictional material.", allowed_fields={}), [])
         self.assertEqual([row[0].reasoning_effort for row in calls], ["xhigh", "medium", "high"])
@@ -199,18 +199,18 @@ class AdapterContractTests(unittest.TestCase):
             self.assertEqual(calls[0][0].instructions, request.instructions)
             self.assertEqual(calls[0][0].input_text, request.input_text)
             self.assertEqual(calls[0][1]["response_schema"], kwargs["response_schema"])
-        self.assertEqual(MyDataExtractionAdapter().reasoning_effort, "xhigh")
+        self.assertEqual(MyDataExtractionAdapter().reasoning_effort, "low")
 
     def test_nondefault_matching_and_invalid_allowances_refuse_before_provider(self):
         calls = []
         for effort in ("medium", "high"):
-            adapter = MyDataExtractionAdapter(lambda **kw: calls.append(kw), reasoning_effort=effort)
+            adapter = MyDataExtractionAdapter(lambda **kw: calls.append(kw), model="gpt-5.6-luna", reasoning_effort=effort)
             with self.subTest(effort=effort), self.assertRaises(ValueError):
                 adapter.build_request("Material", purpose=ExtractionPurpose.MY_DATA_INTAKE_MATCHING)
         for value in (True,0,-1,128001,1.5,"128000"):
             with self.subTest(value=value), self.assertRaises(ExtractionError):
                 MyDataExtractionAdapter(maximum_output_tokens=value)
-        for effort in (None,True,[],{},"low"):
+        for effort in (None,True,[],{},"xhigh"):
             with self.subTest(effort=effort), self.assertRaises(ExtractionError):
                 MyDataExtractionAdapter(reasoning_effort=effort)
         self.assertEqual(calls, [])
@@ -549,7 +549,7 @@ class ServiceWiringTests(unittest.TestCase):
         # The adapter was asked exactly once, at xhigh, with the strict schema.
         self.assertEqual(len(fake.calls), 1)
         call = fake.calls[0]
-        self.assertEqual(call.request.reasoning_effort, "xhigh")
+        self.assertEqual(call.request.reasoning_effort, "low")
         self.assertEqual(call.schema, EXTRACTION_RESPONSE_SCHEMA)
         self.assertEqual(call.request.audience, Audience.OWNER)
 
@@ -1049,7 +1049,7 @@ class ServiceWiringTests(unittest.TestCase):
         self.assertIn("unavailable right now", row["message"])
         # Exactly one attempt: no silent retry at another effort or model.
         self.assertEqual(len(fake.calls), 1)
-        self.assertEqual(fake.calls[0].request.reasoning_effort, "xhigh")
+        self.assertEqual(fake.calls[0].request.reasoning_effort, "low")
 
     def test_malformed_provider_payload_never_saves(self):
         class BadProvider:
@@ -1499,10 +1499,10 @@ class StrengthenedExtractionTests(unittest.TestCase):
             for effort in efforts:
                 request = MyDataExtractionAdapter(model=model, reasoning_effort=effort).build_request("Material")
                 self.assertEqual((request.model_name, request.reasoning_effort), (model, effort))
-        self.assertEqual(MyDataExtractionAdapter().model, "gpt-5.6-luna")
-        self.assertEqual(MyDataExtractionAdapter().reasoning_effort, "xhigh")
+        self.assertEqual(MyDataExtractionAdapter().model, "gpt-6-luna")
+        self.assertEqual(MyDataExtractionAdapter().reasoning_effort, "low")
         with self.assertRaises(ExtractionError):
-            MyDataExtractionAdapter(model="gpt-6-sol")
+            MyDataExtractionAdapter(model="gpt-6-sol", reasoning_effort="xhigh")
         with self.assertRaises(ValueError):
             MyDataExtractionAdapter(model="gpt-6-sol", reasoning_effort="low").build_request(
                 "Material", purpose=ExtractionPurpose.MY_DATA_INTAKE_MATCHING)

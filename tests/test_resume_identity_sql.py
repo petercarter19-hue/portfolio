@@ -54,7 +54,11 @@ class ResumeIdentityMigrationSourceTests(unittest.TestCase):
         registry = json.loads((ROOT / "SQL FIles/Migrations/registry.json").read_text(encoding="utf-8"))
         rows = registry["migrations"]
         migration = next(row for row in rows if row["id"] == "PS-RESUME-IDENTITY-001")
-        self.assertIsNone(migration["gate"])
+        # Honest null until actual proof; imported proofs must match unchanged SQL.
+        if migration["gate"] is not None:
+            from scripts.migration_registry import GateProof, executable_sha256
+            proof = GateProof.from_json(migration["id"], migration["gate"])
+            self.assertEqual(proof.executable_sha256, executable_sha256(ROOT / migration["forward"]))
         self.assertEqual(set(migration["requires"]), {
             "PS-RESUME-PUBLICATION-001", "PS-PROFILE-002", "PS-WORKSHOP-004", "PS-VISITOR-AI-001"})
         self.assertTrue(set(migration["requires"]) <= {row["id"] for row in rows})

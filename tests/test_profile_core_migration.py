@@ -11,7 +11,11 @@ class ProfileMigrationTests(unittest.TestCase):
         registry = json.loads((ROOT / "SQL FIles/Migrations/registry.json").read_text(encoding="utf-8"))
         matches = [item for item in registry["migrations"] if item["id"] == "PS-PROFILE-002"]
         self.assertEqual(len(matches), 1)
-        self.assertIsNone(matches[0]["gate"])
+        # Honest null until actual proof; imported proofs must match unchanged SQL.
+        if matches[0]["gate"] is not None:
+            from scripts.migration_registry import GateProof, executable_sha256
+            proof = GateProof.from_json(matches[0]["id"], matches[0]["gate"])
+            self.assertEqual(proof.executable_sha256, executable_sha256(ROOT / matches[0]["forward"]))
         self.assertEqual(matches[0]["requires"], ["PS-PLAT-002", "PS-PLAT-005", "PS-AUTH-001", "PS-COMMUNITY-PUBLIC-PILOT-001"])
 
     def test_forward_has_normalized_owner_and_audience_fences(self):

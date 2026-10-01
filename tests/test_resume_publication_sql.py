@@ -49,8 +49,16 @@ class ResumePublicationSqlTests(unittest.TestCase):
     def test_registry_entries_are_proposed_with_null_gates(self):
         catalog = next(item for item in self.registry["migrations"] if item["id"] == "PS-RESUME-CATALOG-001")
         publication = next(item for item in self.registry["migrations"] if item["id"] == "PS-RESUME-PUBLICATION-001")
-        self.assertIsNone(catalog["gate"])
-        self.assertIsNone(publication["gate"])
+        # Honest null until actual proof; imported proofs must match unchanged SQL.
+        if catalog["gate"] is not None:
+            from scripts.migration_registry import GateProof, executable_sha256
+            proof = GateProof.from_json(catalog["id"], catalog["gate"])
+            self.assertEqual(proof.executable_sha256, executable_sha256(ROOT / catalog["forward"]))
+        # Honest null until actual proof; imported proofs must match unchanged SQL.
+        if publication["gate"] is not None:
+            from scripts.migration_registry import GateProof, executable_sha256
+            proof = GateProof.from_json(publication["id"], publication["gate"])
+            self.assertEqual(proof.executable_sha256, executable_sha256(ROOT / publication["forward"]))
         self.assertEqual(catalog["requires"], ["PS-RESUME-MEDIA-001"])
         self.assertEqual(
             publication["requires"],

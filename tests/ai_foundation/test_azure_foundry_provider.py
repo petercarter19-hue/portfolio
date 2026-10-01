@@ -786,7 +786,7 @@ class StructuredCalibrationTests(unittest.TestCase):
         for effort in ("xhigh","medium","high"):
             provider,transport,usages,ledger,_=self.provider(maximum_input_bytes=65536)
             adapter=MyDataExtractionAdapter(partial(provider.respond,receive_timeout_seconds=1190),
-                                            reasoning_effort=effort)
+                                            model="gpt-5.6-luna", reasoning_effort=effort)
             self.assertEqual(adapter.maximum_output_tokens,128000)
             self.assertEqual(adapter.extract("Clearly fictional career.",allowed_fields={}),[])
             self.assertEqual(len(transport.calls),1)
@@ -965,6 +965,16 @@ class SolExtractionRoutingTests(unittest.TestCase):
     payload = StructuredCalibrationTests.payload
     provider = StructuredCalibrationTests.provider
     request = StructuredCalibrationTests.request
+
+    def test_synthesis_binding_cannot_answer_public_before_budget_or_credentials(self):
+        from services.ai_foundation.azure_foundry import SolSynthesisSafetyPriceSchedule
+        provider, transport, usages, ledger, credentials = self.provider(
+            deployment="peerslate-resume-sol61", model_name="gpt-6.1-sol",
+            model_version="2026-09-29", price_schedule=SolSynthesisSafetyPriceSchedule())
+        request, sources = request_and_sources()
+        with self.assertRaises(ValueError):
+            provider.answer(request, sources)
+        self.assertEqual((transport.calls, usages, credentials, ledger.snapshot()["calls"]), ([], [], [], 0))
 
     def configured(self, payload=None, **changes):
         from services.ai_foundation.azure_foundry import SolExtractionPriceSchedule

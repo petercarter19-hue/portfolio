@@ -279,6 +279,13 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_GetResumePublicationMediaAuthorization",
         "usp_GetResumeCatalogAsset",
         "usp_CommitResumeCatalogCommandForOwner",
+        # PS-MVP1-HOSTED-INTAKE-001: five owner/readiness commands only.
+        # System-wide pending-original cleanup stays server-only/unlisted.
+        "usp_GetResumeOriginalFilesForOwner",
+        "usp_CommitResumeOriginalFileForOwner",
+        "usp_GetResumeHostedReadiness",
+        "usp_ReserveResumeHostedExtractionForOwner",
+        "usp_FinishResumeHostedExtractionForOwner",
     }
 )
 
