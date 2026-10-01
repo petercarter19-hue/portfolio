@@ -65,7 +65,8 @@
     "tests/ai_foundation/test_provider_codec.py",
     "tests/test_member_visitor_ai_service.py",
     "tests/test_member_visitor_ai_sources.py",
-    "tests/test_resume_publication_routes.py"
+    "tests/test_resume_publication_routes.py",
+    "tests/test_schema_migration_path.py"
   ],
   "domains": [
     "runtime:resume-intake-hosted",
