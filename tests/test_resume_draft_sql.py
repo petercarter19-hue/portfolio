@@ -39,9 +39,12 @@ class ResumeDraftSqlTests(unittest.TestCase):
         cls.verify = VERIFY.read_text(encoding="utf-8")
         cls.registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
 
-    def test_registry_entry_is_proposed_with_null_gate(self):
+    def test_registry_entry_requires_honest_null_or_matching_gate(self):
         entry = next(item for item in self.registry["migrations"] if item["id"] == "PS-RESUME-DRAFT-001")
-        self.assertIsNone(entry["gate"])
+        if entry["gate"] is not None:
+            from scripts.migration_registry import load_registry, gate_status
+            migration = load_registry(REGISTRY, ROOT).get(entry["id"])
+            self.assertTrue(gate_status(migration, ROOT)[0])
         self.assertEqual(entry["requires"], ["PS-ENTRY-POLICY-001"])
         self.assertEqual(entry["forward"], "SQL FIles/Migrations/proposed/PS-RESUME-DRAFT-001_resume_drafts.sql")
         self.assertEqual(entry["rollback"], "SQL FIles/Migrations/proposed/PS-RESUME-DRAFT-001_resume_drafts_rollback.sql")

@@ -18,7 +18,11 @@ class ResumeEducationMigrationTests(unittest.TestCase):
     def test_proposed_registration_and_closed_rollback_preserve_existing_data(self):
         registry = json.loads((ROOT / 'SQL FIles/Migrations/registry.json').read_text(encoding='utf-8'))['migrations']
         entry = next((x for x in registry if x['id'] == 'PS-RESUME-EDIT-002'))
-        assert entry['requires'] == ['PS-RESUME-EDIT-001'] and entry['gate'] is None
+        assert entry['requires'] == ['PS-RESUME-EDIT-001']
+        if entry['gate'] is not None:
+            from scripts.migration_registry import load_registry, gate_status
+            migration = load_registry(root=ROOT).get(entry['id'])
+            self.assertTrue(gate_status(migration, ROOT)[0])
         assert 'WITH (UPDLOCK, HOLDLOCK)' in ROLLBACK
         assert "WHERE record_type=N'education'" in ROLLBACK
         assert ROLLBACK.index('Rollback refused') < ROLLBACK.index('ALTER TABLE')

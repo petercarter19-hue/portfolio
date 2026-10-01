@@ -995,6 +995,7 @@ class ResumeIntakeService:
                     invalidated_candidates += 1
                 candidate["state"] = "invalidated"
                 candidate.pop("values", None)
+                candidate.pop("canonical_values", None)
                 candidate.pop("consumed_request_id", None)
             source["state"] = "purged"
             source["text"] = None  # purged source text is never resurrected
@@ -1086,6 +1087,10 @@ class ResumeIntakeService:
                 return None
             self._drop_expired_drafts(snapshot, policy, moment)
             row = (snapshot.get("drafts") or {}).get(DRAFT_KEY)
+            if row is not None:
+                # Reads refresh availability without refreshing inactivity.
+                # The draft CAS fences purge and never restores source words.
+                row["attachments"] = self._draft_attachments(snapshot, row.get("attachments") or [])
             return copy.deepcopy(row) if row is not None else None
 
         try:
@@ -1132,7 +1137,9 @@ class ResumeIntakeService:
                     held["reason"] = "draft_missing"
                     held["existing"] = None
                     return
-                version = 1
+                # SQL retains a revision after discard/expiry. Reusing version
+                # one would let an old device overwrite a recreated draft.
+                version = int(snapshot.get("draft_revision") or 0) + 1
             elif expected != int(existing.get("version") or 0):
                 held["outcome"] = "conflict"
                 held["reason"] = "version_changed"
@@ -1309,6 +1316,14 @@ class ResumeIntakeService:
                 "request_digest": stored.get("request_digest"),
             }
         record_type, values = self._server_held_extracted_values(keep)
+        # As in Add, the staged job and submission share the selected policy.
+        # An older owner snapshot must not make the new local job stale before
+        # its SQL transaction can validate the source and lifecycle fences.
+        snapshot["policy_version"] = policy.version
+        source_binding = {
+            "source_key": keep["source_key"], "source_version": keep["source_version"],
+            "override_key": override_key, "record_type": record_type,
+        }
         plan = _ItemPlan(
             client_key=f"keep-extracted:{override_key}",
             kind="structured",
@@ -1421,16 +1436,25 @@ class ResumeIntakeService:
                 keep["state"] = "consumed"
                 keep["consumed_request_id"] = request_id
                 keep.pop("values", None)
+                keep.pop("canonical_values", None)
                 commit_result = unit.commit(
                     owner,
                     snapshot,
-                    procedure=COMMAND_PROCEDURES["add_submission"],
+                    procedure=COMMAND_PROCEDURES["keep_extracted_separate"],
                     request_id=request_id,
-                    payload=_submission_payload(command, snapshot, stored_receipt),
+                    payload={"type": "keep_extracted_separate", "source_binding": source_binding,
+                             "submission": _submission_payload(command, snapshot, stored_receipt)},
                 )
         except ResumeIntakeStoreUnavailable as error:
             raise ResumeIntakeUnavailableError() from error
-        winner = self._winner_after_commit(owner, request_id, digest, commit_result)
+        receipt_request_id = request_id
+        if commit_result and commit_result.get("replayed"):
+            returned = commit_result.get("result")
+            if (not isinstance(returned, dict)
+                    or (returned.get("submission") or {}).get("submission_key") != override_key):
+                raise ResumeIntakeUnavailableError()
+            receipt_request_id = commit_result.get("receipt_request_id") or request_id
+        winner = self._winner_after_commit(owner, receipt_request_id, digest, commit_result)
         if winner is not None:
             return winner
         receipt["persisted"] = True
@@ -1451,6 +1475,7 @@ class ResumeIntakeService:
                 ):
                     candidate["state"] = "invalidated"
                     candidate.pop("values", None)
+                    candidate.pop("canonical_values", None)
                     candidate.pop("consumed_request_id", None)
                 return candidate
         return None
@@ -1491,6 +1516,14 @@ class ResumeIntakeService:
             values[name] = value
         if not values:
             raise ResumeIntakeValidationError("Invalid keep-separate command.")
+        if "canonical_values" in keep:
+            try:
+                normalized = normalize_editor_values(record_type, values)
+            except LivingResumeEditorValidationError as error:
+                raise ResumeIntakeValidationError(str(error)) from error
+            if keep["canonical_values"] != normalized:
+                raise ResumeIntakeUnavailableError()
+            values = normalized
         return record_type, values
 
     def _normalize_draft(self, payload):
@@ -2661,6 +2694,7 @@ def _partial_values(plan):
 _RECEIPT_WORD_FIELDS = frozenset({
     "quote", "proposed_values", "confirmed_values", "values", "transcript",
     "extracted_fields",
+    "canonical_values",
 })
 
 _EXTRACTED_CANDIDATES_FIELD = "_extracted_candidates"
@@ -2691,6 +2725,17 @@ def _bind_extracted_candidates(source, duplicates, submission_key, client_key):
             "state": "pending",
             "values": copy.deepcopy(duplicate.get("extracted_fields") or {}),
         }
+        # Mutable source evidence holds the existing editor's deterministic
+        # normalized copy. SQL compares staged values to it without inventing
+        # a second set of normalization/default rules or accepting client values.
+        raw = candidate["values"]
+        if record_type in EDITOR_FIELDS and not (set(raw) & FORBIDDEN_CLIENT_FIELDS):
+            filtered = {name: value for name, value in raw.items()
+                        if name in EDITOR_FIELDS[record_type] and value is not None}
+            try:
+                candidate["canonical_values"] = normalize_editor_values(record_type, filtered)
+            except LivingResumeEditorValidationError:
+                pass  # Incomplete candidates retain the existing validation path.
         candidates.append(candidate)
         actions.append({
             "override_key": override_key,

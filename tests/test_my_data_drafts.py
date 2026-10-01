@@ -50,6 +50,12 @@ def draft_body(**kwargs):
     return body
 
 
+
+class UnavailableDatabase:
+    def first_result(self, *args, **kwargs):
+        from services.database_service import DatabaseServiceError
+        raise DatabaseServiceError("isolated unavailable fixture")
+
 class InterleavingResumeIntakeRepository(InMemoryResumeIntakeRepository):
     """Run one deterministic draft write after a command loaded its snapshot."""
 
@@ -483,17 +489,17 @@ class DraftExpiryTests(unittest.TestCase):
 
 class DraftStoreSupportTests(unittest.TestCase):
     def test_sql_store_reports_drafts_truthfully_unavailable(self):
-        service = build_service(repository=SqlResumeIntakeRepository(database=None))
+        service = build_service(repository=SqlResumeIntakeRepository(database=UnavailableDatabase()))
         with self.assertRaises(ResumeIntakeUnavailableError) as raised:
             service.get_draft("member-a")
-        self.assertIn("stay in this browser", str(raised.exception))
+        self.assertIn("composer is unavailable", str(raised.exception))
         with self.assertRaises(ResumeIntakeUnavailableError):
             service.save_draft("member-a", draft_body(text="Words"))
         with self.assertRaises(ResumeIntakeUnavailableError):
             service.discard_draft("member-a", {})
 
-    def test_sql_store_fails_closed_without_atomic_source_candidate_transaction(self):
-        service = build_service(repository=SqlResumeIntakeRepository(database=None))
+    def test_sql_store_fails_closed_when_atomic_source_schema_is_unavailable(self):
+        service = build_service(repository=SqlResumeIntakeRepository(database=UnavailableDatabase()))
         with self.assertRaises(ResumeIntakeUnavailableError) as raised:
             service.submit(
                 "member-a",
@@ -503,7 +509,7 @@ class DraftStoreSupportTests(unittest.TestCase):
                     "override_key": str(uuid4()),
                 },
             )
-        self.assertIn("share one transaction", str(raised.exception))
+        self.assertIn("composer is unavailable", str(raised.exception))
 
 
 if __name__ == "__main__":

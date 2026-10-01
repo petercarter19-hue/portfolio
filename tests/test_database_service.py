@@ -493,6 +493,9 @@ class DatabaseServiceTests(unittest.TestCase):
         # source-sweep procedures stay off this exact set.
         resume_intake = {
             "usp_GetResumeIntakeWorkspaceForOwner",
+            "usp_GetResumeIntakeDurableWorkspaceForOwner",
+            "usp_ReplaceResumeIntakeDraftsForOwner",
+            "usp_CommitResumeIntakeExtractedSourceForOwner",
             "usp_CommitResumeIntakeSubmissionForOwner",
             "usp_ClaimResumeIntakeRecordingForOwner",
             "usp_CommitResumeIntakeRecordingForOwner",
@@ -575,7 +578,7 @@ class DatabaseServiceTests(unittest.TestCase):
             visitor_ai,
         )
         self.assertEqual(sum(len(group) for group in groups), len(expected))
-        self.assertEqual(len(expected), 177)
+        self.assertEqual(len(expected), 180)
         self.assertEqual(set(ALLOWED_PROCEDURES), expected)
 
     def test_visitor_ai_internal_helper_is_not_browser_executable(self):

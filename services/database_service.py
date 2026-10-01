@@ -244,6 +244,9 @@ ALLOWED_PROCEDURES = frozenset(
         # unapplied and the onboarding policy is unselected; allowlisting does
         # not apply SQL or start onboarding.
         "usp_GetResumeIntakeWorkspaceForOwner",
+        "usp_GetResumeIntakeDurableWorkspaceForOwner",
+        "usp_ReplaceResumeIntakeDraftsForOwner",
+        "usp_CommitResumeIntakeExtractedSourceForOwner",
         "usp_CommitResumeIntakeSubmissionForOwner",
         "usp_CommitResumeIntakeRecordingForOwner",
         "usp_ClaimResumeIntakeRecordingForOwner",

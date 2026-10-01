@@ -13,8 +13,8 @@ The point of this file is *independent* agreement evidence:
   lists, result shapes) and never applies canonical writes through Python.
 
 Nothing here is SQL Server engine, driver, concurrency or rollback proof. That
-requires a separately authorized disposable-database run and the registry gate
-stays null.
+requires a separately authorized disposable-database run; an unrun registry
+gate remains null, while a recorded gate must match its executable bytes.
 """
 
 from __future__ import annotations
@@ -251,7 +251,7 @@ class DeclaredIntakeSimulator:
     # -- declared read ---------------------------------------------------
 
     def first_result(self, procedure_name, parameters=None):
-        if procedure_name != "usp_GetResumeIntakeWorkspaceForOwner":
+        if procedure_name != "usp_GetResumeIntakeDurableWorkspaceForOwner":
             raise DatabaseServiceError("unexpected read")
         owner = dict(parameters)["@UserKey"]
         self.calls.append((procedure_name, dict(parameters)))
@@ -262,6 +262,8 @@ class DeclaredIntakeSimulator:
             owner,
             {
                 "lifecycle_epoch": 0,
+                "draft_revision": 0,
+                "drafts": {},
                 "policy_version": 0,
                 "guide": None,
                 "last_receipt_json": None,
@@ -543,11 +545,14 @@ class ResumeIntakeSqlTests(unittest.TestCase):
 
     # -- static declarations ----------------------------------------------
 
-    def test_registry_entry_is_proposed_with_null_gate(self):
+    def test_registry_entry_requires_honest_null_or_matching_gate(self):
         entry = next(
             item for item in self.registry["migrations"] if item["id"] == "PS-RESUME-INTAKE-001"
         )
-        self.assertIsNone(entry["gate"])
+        if entry["gate"] is not None:
+            from scripts.migration_registry import load_registry, gate_status
+            migration = load_registry(REGISTRY, ROOT).get(entry["id"])
+            self.assertTrue(gate_status(migration, ROOT)[0])
         self.assertEqual(entry["requires"], ["PS-RESUME-DRAFT-001"])
         self.assertEqual(
             entry["forward"],
@@ -768,7 +773,7 @@ class ResumeIntakeSqlTests(unittest.TestCase):
     def test_every_declared_command_key_appears_in_the_sql(self):
         for command_type, keys in COMMAND_KEY_SETS.items():
             for key in sorted(keys):
-                self.assertIn(f"$.{key}", self.forward, f"{command_type} key {key} missing from SQL")
+                self.assertIn(f"$.{key}", self.forward + (ROOT / "SQL FIles/Migrations/PS-RESUME-INTAKE-002_durable_composer.sql").read_text(), f"{command_type} key {key} missing from SQL")
 
     def test_decision_retains_confirmed_wording_only_in_the_purgeable_proposal(self):
         decision = procedure_body(self.forward, "usp_CommitResumeIntakeProposalDecisionForOwner")
@@ -821,14 +826,14 @@ class ResumeIntakeSqlTests(unittest.TestCase):
 
     def test_browser_procedures_are_allowlisted_and_workers_are_not(self):
         for name in RESUME_INTAKE_BROWSER_PROCEDURES:
-            self.assertIn(name, self.forward)
+            self.assertIn(name, self.forward + (ROOT / "SQL FIles/Migrations/PS-RESUME-INTAKE-002_durable_composer.sql").read_text())
             self.assertIn(name, ALLOWED_PROCEDURES)
         self.assertTrue(RESUME_INTAKE_WORKER_PROCEDURES)
         self.assertTrue(
             RESUME_INTAKE_WORKER_PROCEDURES.isdisjoint(RESUME_INTAKE_BROWSER_PROCEDURES)
         )
         for name in RESUME_INTAKE_WORKER_PROCEDURES:
-            self.assertIn(name, self.forward)
+            self.assertIn(name, self.forward + (ROOT / "SQL FIles/Migrations/PS-RESUME-INTAKE-002_durable_composer.sql").read_text())
             self.assertNotIn(name, ALLOWED_PROCEDURES)
 
     def test_rollback_and_verify_are_structural_only(self):
@@ -1371,7 +1376,7 @@ class ResumeIntakeSqlTests(unittest.TestCase):
 
         writes = {}
         for procedure, bound in simulator.calls:
-            if procedure == "usp_GetResumeIntakeWorkspaceForOwner":
+            if procedure == "usp_GetResumeIntakeDurableWorkspaceForOwner":
                 continue
             payload = json.loads(bound["@CommandJson"])
             declared = set(COMMAND_KEY_SETS[payload["type"]])

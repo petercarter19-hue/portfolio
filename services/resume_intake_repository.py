@@ -37,6 +37,9 @@ from services.database_service import DatabaseServiceError, database_service
 RESUME_INTAKE_BROWSER_PROCEDURES = frozenset(
     {
         "usp_GetResumeIntakeWorkspaceForOwner",
+        "usp_GetResumeIntakeDurableWorkspaceForOwner",
+        "usp_ReplaceResumeIntakeDraftsForOwner",
+        "usp_CommitResumeIntakeExtractedSourceForOwner",
         "usp_CommitResumeIntakeSubmissionForOwner",
         "usp_CommitResumeIntakeRecordingForOwner",
         "usp_ClaimResumeIntakeRecordingForOwner",
@@ -61,7 +64,11 @@ COMMAND_PROCEDURES = {
     "decide_proposal": "usp_CommitResumeIntakeProposalDecisionForOwner",
     "set_guide_status": "usp_SetResumeGuideStatusForOwner",
     "purge_source": "usp_PurgeResumeIntakeSourceForOwner",
+    "keep_extracted_separate": "usp_CommitResumeIntakeExtractedSourceForOwner",
 }
+
+DRAFT_COMMAND_KEYS = frozenset({"expected_revision", "expected_lifecycle_epoch", "drafts"})
+EXTRACTED_SOURCE_COMMAND_KEYS = frozenset({"type", "source_binding", "submission"})
 
 # The exact keys each declared command JSON must carry. The agreement tests
 # assert the service emits precisely these, and the SQL reads precisely these.
@@ -163,6 +170,7 @@ COMMAND_KEY_SETS = {
     "decide_proposal": DECISION_COMMAND_KEYS,
     "purge_source": PURGE_COMMAND_KEYS,
     "set_guide_status": GUIDE_COMMAND_KEYS,
+    "keep_extracted_separate": EXTRACTED_SOURCE_COMMAND_KEYS,
 }
 
 # The two canonical boundaries an intake intent may be staged against, with the
@@ -275,6 +283,18 @@ def _json_or_none(value: object):
         raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.") from error
 
 
+def _declared_uuid(value: object, *, nullable: bool = False) -> str | None:
+    """Normalize SQL UUID representations without accepting an invalid identity."""
+    if value is None and nullable:
+        return None
+    if not isinstance(value, (str, UUID)):
+        raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
+    try:
+        return str(UUID(str(value)))
+    except (ValueError, TypeError, AttributeError) as error:
+        raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.") from error
+
+
 def map_declared_workspace(payload: object) -> dict[str, Any]:
     """Map the declared read rows onto the internal owner snapshot.
 
@@ -306,25 +326,25 @@ def map_declared_workspace(payload: object) -> dict[str, Any]:
     for row in _rows(payload.get("submissions")):
         if not isinstance(row, dict) or not row.get("submission_key"):
             raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
-        key = str(row["submission_key"])
+        key = _declared_uuid(row["submission_key"])
         snapshot["submissions"][key] = {
             "submission_key": key,
             "version": int(row.get("version") or 1),
             "state": row.get("state") or "active",
             "entrance": row.get("entrance"),
             "policy_version": int(row.get("policy_version") or 0),
-            "request_id": str(row.get("request_id") or ""),
+            "request_id": _declared_uuid(row.get("request_id"), nullable=True) or "",
             "request_digest": row.get("request_digest"),
             "created_at": row.get("created_at_utc"),
-            "source_keys": list(row.get("source_keys") or []),
-            "proposal_keys": list(row.get("proposal_keys") or []),
+            "source_keys": [_declared_uuid(value) for value in _rows(row.get("source_keys"))],
+            "proposal_keys": [_declared_uuid(value) for value in _rows(row.get("proposal_keys"))],
             "item_count": int(row.get("item_count") or 0),
         }
 
     for row in _rows(payload.get("sources")):
         if not isinstance(row, dict) or not row.get("source_key"):
             raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
-        key = str(row["source_key"])
+        key = _declared_uuid(row["source_key"])
         snapshot["sources"][key] = {
             "source_key": key,
             "kind": row.get("kind"),
@@ -339,18 +359,18 @@ def map_declared_workspace(payload: object) -> dict[str, Any]:
             "content_type": row.get("content_type"),
             "byte_length": row.get("byte_length"),
             "sha256": row.get("sha256"),
-            "submission_key": row.get("submission_key"),
+            "submission_key": _declared_uuid(row.get("submission_key"), nullable=True),
             "created_at": row.get("created_at_utc"),
         }
 
     for row in _rows(payload.get("jobs")):
         if not isinstance(row, dict) or not row.get("job_key"):
             raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
-        key = str(row["job_key"])
+        key = _declared_uuid(row["job_key"])
         fence = {
-            "source_key": row.get("source_key"),
+            "source_key": _declared_uuid(row.get("source_key"), nullable=True),
             "source_version": int(row.get("source_version") or 0),
-            "submission_key": row.get("submission_key"),
+            "submission_key": _declared_uuid(row.get("submission_key"), nullable=True),
             "submission_version": int(row.get("submission_version") or 0),
             "policy_version": int(row.get("policy_version") or 0),
             "lifecycle_epoch": int(row.get("lifecycle_epoch") or 0),
@@ -371,14 +391,14 @@ def map_declared_workspace(payload: object) -> dict[str, Any]:
     for row in _rows(payload.get("proposals")):
         if not isinstance(row, dict) or not row.get("proposal_key"):
             raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
-        key = str(row["proposal_key"])
+        key = _declared_uuid(row["proposal_key"])
         proposed = _json_or_none(row.get("proposed_values_json")) or {}
         provided = _json_or_none(row.get("provided_fields_json"))
         clears = _json_or_none(row.get("explicit_clears_json"))
         binding = {
-            "source_key": row.get("source_key"),
+            "source_key": _declared_uuid(row.get("source_key"), nullable=True),
             "source_version": int(row.get("source_version") or 0),
-            "submission_key": row.get("submission_key"),
+            "submission_key": _declared_uuid(row.get("submission_key"), nullable=True),
             "submission_version": int(row.get("submission_version") or 0),
             "lifecycle_epoch": int(row.get("lifecycle_epoch") or 0),
             "policy_version": int(row.get("policy_version") or 0),
@@ -388,7 +408,7 @@ def map_declared_workspace(payload: object) -> dict[str, Any]:
             "state": row.get("state") or "pending",
             "kind": row.get("kind"),
             "record_type": row.get("record_type"),
-            "target_key": row.get("target_key"),
+            "target_key": _declared_uuid(row.get("target_key"), nullable=True),
             "target_content_token": row.get("target_content_token"),
             "target_access_revision": row.get("target_access_revision"),
             "quote": row.get("quote"),
@@ -418,17 +438,23 @@ def map_declared_workspace(payload: object) -> dict[str, Any]:
     for row in _rows(payload.get("receipts")):
         if not isinstance(row, dict) or not row.get("request_id"):
             raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
-        key = str(row["request_id"])
+        key = _declared_uuid(row["request_id"])
         result = _json_or_none(row.get("result_json"))
         if not isinstance(result, dict):
             raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
+        result = copy.deepcopy(result)
+        result["request_id"] = _declared_uuid(result.get("request_id"))
+        if result["request_id"] != key:
+            raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
+        if isinstance(result.get("submission"), dict) and "submission_key" in result["submission"]:
+            result["submission"]["submission_key"] = _declared_uuid(result["submission"]["submission_key"])
         # The row digest is the database's own command hash. The service's own
         # payload digest travels inside the stored structural result and is
         # what replay/conflict compares, so prefer it when present.
         digest = result.get("request_digest") or row.get("request_digest")
         receipts[key] = {
             "request_digest": digest,
-            "submission_key": row.get("submission_key"),
+            "submission_key": _declared_uuid(row.get("submission_key"), nullable=True),
             "result": result,
         }
     snapshot["receipts"] = receipts
@@ -705,28 +731,20 @@ class InMemoryIntakeUnitOfWork:
 
 
 class SqlResumeIntakeRepository:
-    """Procedure adapter for the proposed PS-RESUME-INTAKE-001 schema."""
+    """Owner procedures including the separately governed Intake002 boundary."""
 
     persistence_label = "sql_proposed_unapplied"
     is_live_database = True
-    # The declared procedures persist no draft rows yet, so the service
-    # reports drafts truthfully unavailable on this store instead of
-    # pretending a SQL round trip kept them. Draft procedure and table work
-    # stays a separately authorized schema package.
-    supports_drafts = False
-    # The proposed procedures predate source-bound extracted candidates and do
-    # not validate/consume one inside the same database transaction as the
-    # canonical intent. Fail closed until a separately authorized schema
-    # package supplies that transaction; a process lock is not cross-worker
-    # authority.
-    supports_atomic_source_actions = False
+    # Capabilities describe the closed adapter contract, not an applied schema.
+    # Missing procedures or malformed results still fail closed on every call.
+    supports_drafts = True
+    supports_atomic_source_actions = True
 
     def __init__(self, database=None) -> None:
         self.database = database or database_service
-        # The proposed SQL store is not activated. This lock still prevents a
-        # same-process purge/override split while the closed SQL command keeps
-        # its own database transaction boundary. Cross-process activation
-        # remains unavailable until its separately reviewed schema exists.
+        # This process lock avoids redundant local work. SQL owner/source locks
+        # and revision/lifecycle CAS enforce correctness across workers; the
+        # adapter still fails closed until the separately governed schema exists.
         self._owner_mutation_lock = threading.RLock()
 
     def owner_guard(self, owner_user_key):
@@ -735,7 +753,7 @@ class SqlResumeIntakeRepository:
     def load_owner(self, owner_user_key: str) -> dict[str, Any]:
         try:
             rows = self.database.first_result(
-                "usp_GetResumeIntakeWorkspaceForOwner",
+                "usp_GetResumeIntakeDurableWorkspaceForOwner",
                 [("@UserKey", owner_user_key)],
             )
         except (DatabaseServiceError, ValueError) as error:
@@ -756,7 +774,41 @@ class SqlResumeIntakeRepository:
             raise ResumeIntakeStoreUnavailable(
                 "Resume intake storage is unavailable."
             ) from error
-        return map_declared_workspace(parsed)
+        if (not isinstance(parsed, dict) or type(parsed.get("draft_revision")) is not int
+                or parsed["draft_revision"] < 0 or not isinstance(parsed.get("drafts"), dict)):
+            raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
+        drafts = parsed["drafts"]
+        if set(drafts) - {"composer"}:
+            raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
+        if drafts:
+            row = drafts["composer"]
+            if (not isinstance(row, dict) or row.get("draft_key") != "composer"
+                    or set(row) != {"draft_key", "version", "state", "text", "items", "attachments",
+                                    "created_at", "updated_at", "expires_at", "last_request_id"}
+                    or type(row.get("version")) is not int
+                    or not 1 <= row["version"] <= parsed["draft_revision"]
+                    or row.get("state") != "active"
+                    or (row.get("text") is not None and not isinstance(row.get("text"), str))
+                    or not isinstance(row.get("items"), list)
+                    or not isinstance(row.get("attachments"), list)
+                    or not isinstance(row.get("last_request_id"), str)):
+                raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
+        if drafts:
+            try:
+                UUID(row["last_request_id"])
+                for key in ("created_at", "updated_at", "expires_at"):
+                    if row[key] is not None:
+                        timestamp = datetime.fromisoformat(row[key].replace("Z", "+00:00"))
+                        if timestamp.tzinfo is None:
+                            raise ValueError("missing timezone")
+                    elif key != "expires_at":
+                        raise ValueError("missing timestamp")
+            except (ValueError, TypeError, AttributeError) as error:
+                raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.") from error
+        snapshot = map_declared_workspace(parsed)
+        snapshot["drafts"] = copy.deepcopy(drafts)
+        snapshot["draft_revision"] = parsed["draft_revision"]
+        return snapshot
 
     def save_owner(self, owner_user_key, snapshot, command=None):
         if not isinstance(command, dict):
@@ -773,9 +825,45 @@ class SqlResumeIntakeRepository:
         return self.commit_command(owner_user_key, procedure, request_id, payload)
 
     def with_drafts(self, owner_user_key: str, mutator, *, create: bool = False):
-        raise ResumeIntakeStoreUnavailable(
-            "Draft rows are not in the declared SQL procedures."
-        )
+        # Only an explicit CAS conflict is retried. A failed/lost reply is
+        # uncertain and returns unavailable; the member's request-id retry
+        # recovers the stored draft without blindly repeating a side effect.
+        for _attempt in range(2):
+            snapshot = self.load_owner(owner_user_key)
+            before = copy.deepcopy(snapshot)
+            result = mutator(snapshot)
+            if {k: v for k, v in snapshot.items() if k != "drafts"} != {
+                    k: v for k, v in before.items() if k != "drafts"}:
+                raise ResumeIntakeStoreUnavailable("A draft command may change only drafts.")
+            if snapshot["drafts"] == before["drafts"]:
+                return result
+            request_id = str(uuid4())
+            payload = {"expected_revision": before["draft_revision"],
+                       "expected_lifecycle_epoch": before["lifecycle_epoch"],
+                       "drafts": snapshot["drafts"]}
+            try:
+                sets = self.database.execute_procedure(
+                    "usp_ReplaceResumeIntakeDraftsForOwner",
+                    [("@UserKey", owner_user_key), ("@RequestId", request_id),
+                     ("@CommandJson", json.dumps(payload, ensure_ascii=False, separators=(",", ":")))],
+                )
+            except (DatabaseServiceError, ValueError) as error:
+                raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.") from error
+            non_empty = [rows for rows in sets if rows] if isinstance(sets, list) else []
+            if (not non_empty or not isinstance(non_empty[-1], list) or len(non_empty[-1]) != 1
+                    or not isinstance(non_empty[-1][0], dict)):
+                raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
+            row = non_empty[-1][0]
+            # SQL uniqueidentifier text casing is not an identity change.
+            # Normalize the response UUID while retaining the exact request fence.
+            returned_request_id = _declared_uuid(row.get("request_id"))
+            if returned_request_id != request_id or row.get("outcome") not in {"applied", "conflict"}:
+                raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
+            if row["outcome"] == "applied":
+                if type(row.get("revision")) is not int or row["revision"] != before["draft_revision"] + 1:
+                    raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
+                return result
+        raise ResumeIntakeStoreUnavailable("The draft changed while saving. Your input is retained.")
 
     def claim_recording(self, owner_user_key, request_id, payload, *, now=None):
         command_json = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
@@ -872,11 +960,25 @@ class SqlResumeIntakeRepository:
         if replayed not in (False, True, 0, 1) or not isinstance(digest, str) or len(digest) != 64:
             raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
         result = None
+        receipt_request_id = _declared_uuid(request_id)
         if bool(replayed):
             result = _json_or_none(row.get("result_json"))
+            if isinstance(result, dict):
+                result = copy.deepcopy(result)
+            if procedure == COMMAND_PROCEDURES["keep_extracted_separate"]:
+                receipt_request_id = _declared_uuid(row.get("receipt_request_id"))
+                body = json.loads(payload) if isinstance(payload, str) else payload
+                override_key = _declared_uuid((body.get("source_binding") or {}).get("override_key"))
+                if not isinstance(result, dict) or not isinstance(result.get("submission"), dict):
+                    raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
+                result["submission"]["submission_key"] = _declared_uuid(result["submission"].get("submission_key"))
+                if result["submission"]["submission_key"] != override_key:
+                    raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
+            if isinstance(result, dict):
+                result["request_id"] = _declared_uuid(result.get("request_id"))
             if (
                 not isinstance(result, dict)
-                or result.get("request_id") != str(request_id)
+                or result.get("request_id") != receipt_request_id
                 or result.get("request_digest") != digest
             ):
                 raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
@@ -885,6 +987,7 @@ class SqlResumeIntakeRepository:
             "replayed": bool(replayed),
             "request_digest": digest,
             "result": result,
+            "receipt_request_id": receipt_request_id,
         }
 
     def unit_of_work(self, draft_service=None):
@@ -947,6 +1050,10 @@ class SqlIntakeUnitOfWork:
             COMMAND_PROCEDURES["decide_proposal"],
         }:
             body["canonical_intents"] = list(self.intents)
+        elif procedure == COMMAND_PROCEDURES["keep_extracted_separate"]:
+            submission = dict(body.get("submission") or {})
+            submission["canonical_intents"] = list(self.intents)
+            body["submission"] = submission
         return self.repository.commit_command(owner, procedure, request_id, body)
 
     def rollback(self) -> None:

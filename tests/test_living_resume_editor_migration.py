@@ -112,7 +112,10 @@ class LivingResumeEditorMigrationTests(unittest.TestCase):
         registry = json.loads(REGISTRY.read_text(encoding="utf-8"))["migrations"]
         entry = next(item for item in registry if item["id"] == "PS-RESUME-EDIT-001")
         self.assertEqual(entry["requires"], ["PS-PLAT-007"])
-        self.assertIsNone(entry["gate"])
+        if entry["gate"] is not None:
+            from scripts.migration_registry import load_registry, gate_status
+            migration = load_registry(REGISTRY, ROOT).get(entry["id"])
+            self.assertTrue(gate_status(migration, ROOT)[0])
         self.assertIn("Repository candidate only", entry["summary"])
 
     def test_migration_and_command_are_transactional(self):
