@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-DURABLE-INTAKE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Complete the remaining MVP1 durable intake prerequisite inside the accepted architecture: owner-scoped unfinished composer draft reload and CAS, atomic source-bound extracted keep-separate actions, one additive governed migration, focused isolation/version/replay/rollback evidence and a separately admitted bounded disposable SQL proof driver, independent exact-SHA review, accepted source merge and normal close. Preserve accepted MVP1 engine/persona/progress results. No factory/provider wiring, original-byte retention choice, schema application, deployment, feature enablement or production/data mutation.",
   "assignment": "implementation",
   "writer_ref": "session:01a0f435-a3f3-7772-b22b-49050330b295",
@@ -47,6 +47,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "168acd1db698d4dfc492b87f013dace9ed1de416",
+  "closed_at": "2026-10-01T02:06:33Z"
 }
