@@ -73,7 +73,7 @@ class GitleaksConfigurationTests(unittest.TestCase):
         # suite reused the qualification suite's call idiom with its own
         # actor literals, which the deliberately narrow member-[ab] class
         # does not cover. Same shape, own file, own actor class.
-        self.assertEqual(12, len(allowlists))
+        self.assertEqual(13, len(allowlists))
         self.assertEqual(
             {
                 'description': (
@@ -198,6 +198,10 @@ class GitleaksConfigurationTests(unittest.TestCase):
         audit_scan_line = '^\\n?- \\[OK\\] Pattern scan of the extracted origin/main tree \\(excluding `tests/`, `docs/`\\) for `Account[K]ey=`, `SharedAccessSignature`, `sk-ant-api`, AWS `AKIA…`, private-[k]ey blocks, `Instrumentation[K]ey=`, `Pwd=`/`Password=`, `DefaultEndpointsProtocol=`, `Server=tcp:`, hardcoded `SECRET_KEY` literals: \\*\\*no suspicious hits\\*\\*\\. The only `\\.database\\.windows\\.net` matches are hostname-suffix normalization constants in `db\\.py:26-27` and `scripts/apply_sql_migrations\\.py:142-143` — config parsing, not credentials\\.\\r?$'
 
         expected = {
+            r'^tests/test_resume_intake_runtime\.py$': [
+                "^\\n?PRIVATE_[K]EY\\ =\\ '07078187\\-e956\\-43e3\\-9d3e\\-a22b260788d1'\\r?$",
+                "^\\n?CAPTURED_CURRENT_ROLE_FIXTURE\\ =\\ \\{'proposal':\\ \\{'resume_text':\\ 'PRIVATE\\ R\\\\xc9SUM\\\\xc9\\ PROPOSAL\\\\n\\\\nINDEPENDENT\\ PROJECTS\\ OR\\ CONTRIBUTIONS\\\\nETL\\ pilot\\\\nBuilt\\ an\\ experimental\\ ETL\\ pilot\\ using\\ Python\\ and\\ SQL\\ for\\ a\\ fictional\\ community\\ dataset\\.\\ No\\ production\\ rollout,\\ revenue\\ or\\ performance\\ improvement\\ is\\ established\\.\\\\n\\\\nPROFESSIONAL\\ EXPERIENCE\\\\nTechnical\\ Lead\\\\nFictional\\ Example\\ Harbor\\ Systems\\\\n2023\\\\u2013Present\\\\nCoordinated\\ a\\ three\\-person\\ documentation\\ review\\.\\ No\\ measured\\ efficiency\\ result\\ is\\ established\\.\\\\n\\\\nREVIEW\\ REQUIRED\\\\nThis\\ is\\ a\\ private\\ proposal\\ only\\.\\ Nothing\\ has\\ been\\ saved,\\ accepted,\\ sent\\ or\\ published\\.\\ Review\\ and\\ explicitly\\ save\\ selected\\ wording\\.',\\ 'claims':\\ \\[\\{'text':\\ 'ETL\\ pilot',\\ 'source_id':\\ '540dfb6a\\-d53b\\-471d\\-94b1\\-bea2b171ec7e',\\ 'quote':\\ 'ETL\\ pilot'\\},\\ \\{'text':\\ 'Built\\ an\\ experimental\\ ETL\\ pilot\\ using\\ Python\\ and\\ SQL\\ for\\ a\\ fictional\\ community\\ dataset\\.\\ No\\ production\\ rollout,\\ revenue\\ or\\ performance\\ improvement\\ is\\ established\\.',\\ 'source_id':\\ '540dfb6a\\-d53b\\-471d\\-94b1\\-bea2b171ec7e',\\ 'quote':\\ 'Built\\ an\\ experimental\\ ETL\\ pilot\\ using\\ Python\\ and\\ SQL\\ for\\ a\\ fictional\\ community\\ dataset\\.\\ No\\ production\\ rollout,\\ revenue\\ or\\ performance\\ improvement\\ is\\ established\\.'\\},\\ \\{'text':\\ 'Technical\\ Lead',\\ 'source_id':\\ '830cef7c\\-c3e4\\-4d01\\-b472\\-86bd67607666',\\ 'quote':\\ 'Technical\\ Lead'\\},\\ \\{'text':\\ 'Fictional\\ Example\\ Harbor\\ Systems',\\ 'source_id':\\ '830cef7c\\-c3e4\\-4d01\\-b472\\-86bd67607666',\\ 'quote':\\ 'Fictional\\ Example\\ Harbor\\ Systems'\\},\\ \\{'text':\\ '2023',\\ 'source_id':\\ '830cef7c\\-c3e4\\-4d01\\-b472\\-86bd67607666',\\ 'quote':\\ '2023\\-01\\-01'\\},\\ \\{'text':\\ 'Present',\\ 'source_id':\\ '830cef7c\\-c3e4\\-4d01\\-b472\\-86bd67607666',\\ 'quote':\\ 'true'\\},\\ \\{'text':\\ 'Coordinated\\ a\\ three\\-person\\ documentation\\ review\\.\\ No\\ measured\\ efficiency\\ result\\ is\\ established\\.',\\ 'source_id':\\ '830cef7c\\-c3e4\\-4d01\\-b472\\-86bd67607666',\\ 'quote':\\ 'Coordinated\\ a\\ three\\-person\\ documentation\\ review\\.\\ No\\ measured\\ efficiency\\ result\\ is\\ established\\.'\\}\\],\\ 'uncertainties':\\ \\['No\\ production\\ rollout,\\ revenue\\ or\\ performance\\ improvement\\ is\\ established\\.',\\ 'No\\ measured\\ efficiency\\ result\\ is\\ established\\.'\\],\\ 'confirmation_required':\\ True\\},\\ 'catalog':\\ \\[\\{'record_[k]ey':\\ '830cef7c\\-c3e4\\-4d01\\-b472\\-86bd67607666',\\ 'record_type':\\ 'role',\\ 'content_token':\\ '0000000000000001',\\ 'access_revision':\\ 1,\\ 'content_version':\\ 1,\\ 'editable':\\ True,\\ 'values':\\ \\{'current_role':\\ True,\\ 'date_precision':\\ 'year',\\ 'employer_name':\\ 'Fictional\\ Example\\ Harbor\\ Systems',\\ 'employment_type':\\ None,\\ 'end_date':\\ None,\\ 'location_text':\\ None,\\ 'role_title':\\ 'Technical\\ Lead',\\ 'start_date':\\ '2023\\-01\\-01',\\ 'summary':\\ 'Coordinated\\ a\\ three\\-person\\ documentation\\ review\\.\\ No\\ measured\\ efficiency\\ result\\ is\\ established\\.'\\}\\},\\ \\{'record_[k]ey':\\ '540dfb6a\\-d53b\\-471d\\-94b1\\-bea2b171ec7e',\\ 'record_type':\\ 'knowledge',\\ 'content_token':\\ '0000000000000001',\\ 'access_revision':\\ 1,\\ 'content_version':\\ 1,\\ 'editable':\\ True,\\ 'values':\\ \\{'classification':\\ 'personal',\\ 'title':\\ 'ETL\\ pilot',\\ 'wording':\\ 'Built\\ an\\ experimental\\ ETL\\ pilot\\ using\\ Python\\ and\\ SQL\\ for\\ a\\ fictional\\ community\\ dataset\\.\\ No\\ production\\ rollout,\\ revenue\\ or\\ performance\\ improvement\\ is\\ established\\.'\\}\\}\\]\\}\\r?$",
+            ],
             r'^tests/test_resume_hosted_sql_engine\.py$': [
                 r'^\n? {12}migration, result, [s]ecrets=[s]ecrets, evidence_missing=not output\.is_file\(\)\)\r?$'
             ],
@@ -331,6 +335,42 @@ class GitleaksConfigurationTests(unittest.TestCase):
         for changed in changed_lines:
             with self.subTest(changed=changed):
                 self.assertFalse(allows(path, changed))
+
+
+    def test_private_resume_uuid_allowlist_rejects_expression_path_and_credential_drift(self):
+        with open(os.path.join(ROOT, '.gitleaks.toml'), 'rb') as config_file:
+            entries = tomllib.load(config_file)['allowlists']
+        entry = next(item for item in entries
+                     if item.get('paths') == [r'^tests/test_resume_intake_runtime\.py$'])
+        self.assertEqual('line', entry['regexTarget'])
+        path = 'tests/test_resume_intake_runtime.py'
+        def allows(candidate_path, line):
+            return (any(re.search(pattern, candidate_path) for pattern in entry['paths'])
+                    and any(re.search(pattern, line) for pattern in entry['regexes']))
+        # Reverse separately pinned escaped full literals; no generic UUID,
+        # wildcard, commit pin or line-number exemption is admitted.
+        lines = [re.sub(r'\\(.)', r'\1', pattern[4:-4]
+                         .replace('[K]', 'K').replace('[k]', 'k'))
+                 for pattern in entry['regexes']]
+        self.assertEqual(2, len(lines))
+        self.assertTrue(lines[0].startswith('PRIVATE_' + 'KEY = '))
+        self.assertTrue(lines[1].startswith('CAPTURED_CURRENT_ROLE_FIXTURE = '))
+        credential = ''.join(('Q7z4aL9w', 'T2vN6rB8', 'dH1sM5eX', '0pC3kF9u'))
+        assignment = 'api_' + "key = '" + credential + "'"
+        for line in lines:
+            for exact in (line, '\n' + line, line + '\r', '\n' + line + '\r'):
+                self.assertTrue(allows(path, exact))
+            for other in ('tests/other.py', path.upper(), 'prefix/' + path, path + '.bak'):
+                self.assertFalse(allows(other, line))
+            for changed in (' ' + line, line + ' ', '\n\n' + line,
+                            line.replace("'", '"'), line + ' # trailing text',
+                            line.replace('e956', 'e957').replace('c3e4', 'c3e5').replace('d53b', 'd53c'),
+                            line + '; ' + assignment, assignment,
+                            line + '\n' + assignment, assignment + '\n' + line):
+                self.assertFalse(allows(path, changed))
+        self.assertFalse(allows(path, "{'record_" + "key': '" + '830cef7c-c3e4-4d01-b472-86bd67607666' + "'}"))
+        # Full-line suppression admits only the two pinned complete lines;
+        # appended or adjacent credentials remain outside those literals.
 
 
 class OperationalHealthRouteTests(unittest.TestCase):
