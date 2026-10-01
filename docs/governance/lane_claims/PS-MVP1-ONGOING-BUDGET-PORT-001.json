@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-ONGOING-BUDGET-PORT-001",
+  "state": "active",
+  "outcome": "Enable repeated private local testing through a server-injected ongoing budget port on existing extraction/private wrappers and actual private factory. Permit exact100 lifetime operations/profile only after immutable allocation validation; retain per-profile money caps, configured models/efforts/tiers, wire/token envelopes and strict completed-StructuredResult settlement. Preserve all default six-call SQL qualification behavior and uncertain-active fences. Installer owns durable ledger/native metadata/public/Speech ports. No SQL, Foundation, route, preview, production, provider or identity mutation.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0f446-0db5-7723-acd3-33019a1766d8",
+  "branch": "codex/2026-10-01-mvp1-ongoing-budget-port-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "6500d787356edef0454a894416682c99cca20797",
+  "owner_outcome_ref": "session:01a0f424-566c-70c2-bf77-55043f130ff5/owner-selection:2026-10-01/connected-private-testing-sustained-budget-port",
+  "surfaces": [
+    "services/resume_intake_runtime.py",
+    "tests/test_resume_intake_runtime.py",
+    "docs/governance/lane_claims/PS-MVP1-ONGOING-BUDGET-PORT-001.json",
+    "docs/governance/lane_claims/receipts/PS-MVP1-ONGOING-BUDGET-PORT-001.json",
+    "docs/governance/lane_claims/evidence/PS-MVP1-ONGOING-BUDGET-PORT-001.md"
+  ],
+  "domains": [
+    "runtime:resume-ongoing-budget-port"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MVP1-ONGOING-BUDGET-PORT-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
