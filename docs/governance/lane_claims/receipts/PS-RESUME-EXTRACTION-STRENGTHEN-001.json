@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-RESUME-EXTRACTION-STRENGTHEN-001",
+  "candidate_sha": "1cec18853468f90f87b538ef59493ebfe3cfdb0b",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a0f424-566c-70c2-bf77-55043f130ff5",
+  "result": "pass",
+  "reviewed_at": "2026-09-30T23:34:17Z",
+  "findings": [],
+  "evidence_ref": "X:/PeerSlate/evidence/PS-RESUME-EXTRACTION-STRENGTHEN-001/source-writer/SOURCE_INDEPENDENT_REVIEW_1cec1885.json; sha256:489ec741742b4f3b1a9d67cf867336a4604e56875b96567dc0ea87200706e3e6"
+}

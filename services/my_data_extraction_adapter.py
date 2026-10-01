@@ -1,7 +1,8 @@
-"""Luna Extra High structured extraction and semantic comparison.
+"""Private structured extraction and semantic shortlist comparison.
 
 My Data intake defaults to GPT 5.6 Luna processing with reasoning effort
-``xhigh`` and a strict typed JSON schema, with an explicit ``medium`` comparison.
+``xhigh`` and a strict typed JSON schema. Explicit Luna medium/high and
+Sol low/medium/high comparisons remain confined to owner intake extraction.
 The scoped extraction allowance is128000; unrelated provider defaults remain.
 It validates every candidate
 before it can become a proposal. This adapter does not prove that a live Luna
@@ -26,6 +27,8 @@ from uuid import uuid4
 from services.ai_foundation.contracts import (
     ALLOWED_REASONING_EFFORTS,
     REASONING_EFFORT_XHIGH,
+    SOL_EXTRACTION_REASONING_EFFORTS,
+    STRUCTURED_MODEL_SOL,
     Audience,
     ExtractionPurpose,
     StructuredRequest,
@@ -170,13 +173,25 @@ EXTRACTION_INSTRUCTIONS = (
     "volunteer work or other wording use unspecified.text, never new types. "
     "Group each position or education record with its own stated duties/results "
     "in one concise summary; do not split it into invented parent/child records "
-    "or attach a result to a different employer. Keep standalone skills separate. "
+    "or attach a result to a different employer. Emit one proposal per factual meaning: "
+    "include a position's duty or achievement once in that role summary, never again "
+    "as a standalone accomplishment. An accomplishment must be an independently "
+    "stated result not already represented by another proposal. Repeated wording "
+    "does not create another fact. Keep distinct positions at the same employer "
+    "separate, with their own title, dates and duties. Keep standalone skills separate. "
     "A course completion certificate is education, not a professional license. "
     "Preserve limitations such as classroom prototype, internal pilot, not deployed, "
     "not company-wide, or not independently verified. Keep source numbers and units. "
     "Every candidate must quote one exact contiguous unique slice of member material "
-    "supporting all its values. Include more source context to disambiguate repeated "
-    "words. Do not count character offsets; code derives them. No paraphrased quotes. "
+    "supporting all its values. Prefer the complete supporting sentence or contiguous "
+    "position passage, including every asserted employer, title, date, duty, result "
+    "and limitation. Check the quote occurs exactly once in the whole member material. "
+    "For a repeated word such as mentoring, quote the entire strengths sentence "
+    "rather than that word. If a whole sentence or passage repeats, expand the exact "
+    "quote with adjacent context until it is unique; do not choose an arbitrary "
+    "occurrence or rewrite the input. If no unique supporting slice exists, omit "
+    "that proposal rather than emitting an ambiguous quote. Do not count character "
+    "offsets; code derives them. No paraphrased quotes. "
     "Use null for unknown or irrelevant fields; do not fill them to satisfy a schema. "
     "Dates use ISO YYYY-MM-DD only for supplied precision: year uses YYYY-01-01 with "
     "date_precision year, month uses YYYY-MM-01 with date_precision month, explicit "
@@ -185,11 +200,18 @@ EXTRACTION_INSTRUCTIONS = (
     "or explicitly ended employment, otherwise null; never infer currentness from "
     "summary ordering or today's date. Do not turn an unknown course date into an "
     "issued license date. Compare against the supplied member shortlist only: return "
-    "equivalent when the material restates a listed fact with no new meaning, "
-    "additional_detail when it adds detail to a listed fact, contradiction "
-    "when it conflicts with a listed fact, new when it matches nothing "
-    "listed, and uncertain when the material is ambiguous. match_reference is null "
-    "unless it names the exact listed record. confidence is certain only for explicit "
+    "equivalent when the material is an equivalent restatement of the same listed "
+    "fact with no new meaning; additional_detail only when it adds newly stated "
+    "supported detail to that same fact without an explicit conflict; contradiction "
+    "only for an explicit conflict with that same fact; new when it matches nothing "
+    "listed; and uncertain when identity, meaning or conflict is ambiguous. The "
+    "same employer alone never identifies a position: compare its title, dates and "
+    "context and keep distinct jobs separate. Use only an exact eligible listed "
+    "record_key of the same record_type as match_reference. Never copy a listed "
+    "value into the proposal unless the new member material itself supports it. "
+    "Propose only; the member decides whether to change canonical information. "
+    "match_reference is null unless it names that exact listed record. "
+    "confidence is certain only for explicit "
     "source wording, otherwise uncertain. Never invent a person, "
     "employer, role, date, technology, duty, metric, or result."
 )
@@ -245,7 +267,7 @@ def _validate_candidate(
         expected_type = bool if name == "current_role" else str
         if not isinstance(value, expected_type):
             raise ExtractionError("malformed_values")
-    if outcome not in EXTRACTION_OUTCOMES:
+    if not isinstance(outcome, str) or outcome not in EXTRACTION_OUTCOMES:
         raise ExtractionError("unknown_outcome")
     if "span_start" not in raw and "span_end" not in raw:
         if not isinstance(quote, str) or not quote:
@@ -268,6 +290,10 @@ def _validate_candidate(
         raise ExtractionError("invalid_span")
     if not isinstance(quote, str) or not quote or quote != text[span_start:span_end]:
         raise ExtractionError("span_quote_mismatch")
+    # Explicit offsets cannot bypass the same unique-quote rule.
+    first_occurrence = text.find(quote)
+    if text.find(quote, first_occurrence + 1) >= 0:
+        raise ExtractionError("ambiguous_quote")
     match_reference = raw.get("match_reference")
     if outcome == "equivalent":
         if not isinstance(match_reference, str) or match_reference not in shortlist:
@@ -279,6 +305,8 @@ def _validate_candidate(
         not isinstance(match_reference, str) or match_reference not in shortlist
     ):
         raise ExtractionError("unknown_match_reference")
+    if match_reference is not None and shortlist[match_reference].get("record_type") != record_type:
+        raise ExtractionError("matched_record_type_mismatch")
     provided = raw.get("provided_fields")
     if provided is None:
         provided = tuple(values.keys())
@@ -288,8 +316,10 @@ def _validate_candidate(
         provided = tuple(name for name in provided if name in fields)
     if not provided:
         provided = tuple(values.keys())
-    confidence = raw.get("confidence") or "uncertain"
-    if confidence not in {"certain", "uncertain"}:
+    confidence = raw.get("confidence")
+    if confidence is None:
+        confidence = "uncertain"
+    if not isinstance(confidence, str) or confidence not in {"certain", "uncertain"}:
         raise ExtractionError("unknown_confidence")
     return ExtractionCandidate(
         record_type=record_type,
@@ -319,16 +349,28 @@ def validate_extraction_payload(
     if not isinstance(raw_candidates, list):
         raise ExtractionError("malformed_candidates")
     index = _shortlist_index(shortlist)
-    return [
+    # Validate the complete raw batch before any duplicate reduction. An invalid
+    # duplicate still rejects every candidate; no quote is repaired or weakened.
+    validated = [
         _validate_candidate(
             raw, text=text, allowed_fields=allowed_fields, shortlist=index
         )
         for raw in raw_candidates
     ]
+    unique = []
+    seen = set()
+    for candidate in validated:
+        meaning = (candidate.record_type, tuple(sorted(candidate.values.items())),
+                   candidate.outcome, candidate.match_reference, candidate.confidence,
+                   tuple(sorted(candidate.provided_fields)))
+        if meaning not in seen:
+            seen.add(meaning)
+            unique.append(candidate)
+    return unique
 
 
 class MyDataExtractionAdapter:
-    """Configured to request Luna extraction behind an injected provider."""
+    """Request default Luna or explicitly selected Sol through an injected provider."""
 
     def __init__(
         self,
@@ -339,9 +381,11 @@ class MyDataExtractionAdapter:
         schema_name: str = EXTRACTION_SCHEMA_NAME,
         maximum_output_tokens: int = EXTRACTION_MAXIMUM_OUTPUT_TOKENS,
     ) -> None:
-        if model != EXTRACTION_MODEL:
+        if model not in (EXTRACTION_MODEL, STRUCTURED_MODEL_SOL):
             raise ExtractionError("unsupported_model")
-        if not isinstance(reasoning_effort, str) or reasoning_effort not in ALLOWED_REASONING_EFFORTS:
+        efforts = (SOL_EXTRACTION_REASONING_EFFORTS
+                   if model == STRUCTURED_MODEL_SOL else ALLOWED_REASONING_EFFORTS)
+        if not isinstance(reasoning_effort, str) or reasoning_effort not in efforts:
             raise ExtractionError("unsupported_effort")
         if (isinstance(maximum_output_tokens, bool)
                 or not isinstance(maximum_output_tokens, int)
@@ -406,6 +450,7 @@ class MyDataExtractionAdapter:
             ),
             schema_name=self._schema_name,
             reasoning_effort=self._reasoning_effort,
+            model_name=self._model,
         )
 
     def extract(
@@ -436,7 +481,8 @@ class MyDataExtractionAdapter:
         if isinstance(result, StructuredResult):
             if result.schema_name != self._schema_name:
                 raise ExtractionError("schema_mismatch")
-            if result.model_name not in (None, self._model):
+            if (result.model_name not in (None, self._model)
+                    or (self._model == STRUCTURED_MODEL_SOL and result.model_name is None)):
                 raise ExtractionError("model_mismatch")
         return validate_extraction_payload(
             payload, text=(text or "").strip(), allowed_fields=allowed_fields,

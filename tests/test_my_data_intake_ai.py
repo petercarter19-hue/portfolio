@@ -1380,5 +1380,143 @@ class MatchedTargetBindingTests(unittest.TestCase):
         self.assertEqual(self.role_count(catalog), 1)
 
 
+
+class StrengthenedExtractionTests(unittest.TestCase):
+    FIELDS = {kind: frozenset(fields) for kind, fields in EXTRACTION_VALUE_FIELDS.items()}
+
+    def candidate(self, *, values=None, quote="I use mentoring and planning.", **changes):
+        candidate = {"record_type": "skill", "values": values or {"name": "mentoring"},
+                     "quote": quote, "outcome": "new", "match_reference": None}
+        candidate.update(changes)
+        return candidate
+
+    def validate(self, candidates, *, text="I use mentoring and planning.", shortlist=None):
+        return validate_extraction_payload({"candidates": candidates}, text=text,
+                                          allowed_fields=self.FIELDS, shortlist=shortlist)
+
+    def test_repeated_word_and_whole_passage_need_unique_contiguous_context(self):
+        text = "At Juniper I did mentoring. My strengths are mentoring and planning."
+        with self.assertRaises(ExtractionError) as error:
+            self.validate([self.candidate(quote="mentoring")], text=text)
+        self.assertEqual(error.exception.code, "ambiguous_quote")
+        start = text.find("mentoring")
+        with self.assertRaises(ExtractionError) as error:
+            self.validate([self.candidate(quote="mentoring", span_start=start,
+                                          span_end=start + len("mentoring"))], text=text)
+        self.assertEqual(error.exception.code, "ambiguous_quote")
+        quote = "My strengths are mentoring and planning."
+        result = self.validate([self.candidate(quote=quote)], text=text)
+        self.assertEqual(text[result[0].span_start:result[0].span_end], quote)
+        text = "Earlier: I use mentoring and planning. Later: I use mentoring and planning."
+        with self.assertRaises(ExtractionError):
+            self.validate([self.candidate()], text=text)
+        expanded = "Later: I use mentoring and planning."
+        self.assertEqual(self.validate([self.candidate(quote=expanded)], text=text)[0].quote, expanded)
+
+    def test_exact_duplicate_normalizes_null_and_order_and_preserves_first_anchor(self):
+        text = "I use mentoring and planning. These strengths include mentoring."
+        first = self.candidate(values={"name": "mentoring", "summary": None})
+        second = self.candidate(values={"name": "mentoring"},
+                                quote="These strengths include mentoring.")
+        result = self.validate([first, second], text=text)
+        self.assertEqual(len(result), 1)
+        self.assertEqual((result[0].span_start, result[0].quote), (0, first["quote"]))
+        self.assertEqual(result[0].values, {"name": "mentoring"})
+        role_quote = "I was an Analyst at Cedar."
+        roles = [self.candidate(record_type="role", quote=role_quote,
+                                values={"role_title": "Analyst", "employer_name": "Cedar"}),
+                 self.candidate(record_type="role", quote=role_quote,
+                                values={"employer_name": "Cedar", "role_title": "Analyst"})]
+        self.assertEqual(len(self.validate(roles, text=role_quote)), 1)
+
+    def test_invalid_duplicate_still_rejects_entire_raw_batch(self):
+        first = self.candidate()
+        for changes in ({"quote": "mentoring"}, {"quote": "not present"},
+                        {"outcome": "invented"}, {"outcome": []}, {"match_reference": "not-listed"},
+                        {"confidence": "invented"}, {"confidence": ["certain"]}, {"confidence": []},
+                        {"confidence": False}, {"values": {"name": 3}}):
+            with self.subTest(changes=changes), self.assertRaises(ExtractionError):
+                self.validate([first, self.candidate(**changes)],
+                              text="I use mentoring and planning. More mentoring.")
+
+    def test_reduction_never_fuzzily_merges_meaning_types_outcomes_or_targets(self):
+        shortlist = [{"record_key": key, "record_type": "skill", "values": {"name": "mentoring"}}
+                     for key in ("skill-a", "skill-b")]
+        candidates = [self.candidate(), self.candidate(values={"name": "Mentoring"}),
+                      self.candidate(values={"name": "mentoring", "summary": "Supports peers"}),
+                      self.candidate(outcome="uncertain"),
+                      self.candidate(outcome="equivalent", match_reference="skill-a"),
+                      self.candidate(outcome="equivalent", match_reference="skill-b"),
+                      self.candidate(record_type="unspecified", values={"text": "mentoring"})]
+        text = "I use mentoring and planning. I support peers."
+        candidates = [{**candidate, "quote": text} for candidate in candidates]
+        self.assertEqual(len(self.validate(candidates, shortlist=shortlist, text=text)), len(candidates))
+
+    def test_distinct_jobs_at_same_employer_stay_separate(self):
+        text = "At Cedar I was Analyst from2017 to2020. At Cedar I was Manager from2020 to2022."
+        candidates = [self.candidate(record_type="role", quote=sentence,
+            values={"employer_name": "Cedar", "role_title": title, "start_date": start})
+            for sentence, title, start in (("At Cedar I was Analyst from2017 to2020.", "Analyst", "2017-01-01"),
+                                          ("At Cedar I was Manager from2020 to2022.", "Manager", "2020-01-01"))]
+        self.assertEqual([row.values["role_title"] for row in self.validate(candidates, text=text)], ["Analyst", "Manager"])
+
+    def test_reduction_preserves_certainty_and_member_update_field_metadata(self):
+        candidates = [self.candidate(confidence="certain"), self.candidate(confidence="uncertain"),
+                      self.candidate(confidence="certain", provided_fields=["name", "summary"])]
+        self.assertEqual(len(self.validate(candidates)), 3)
+
+    def test_all_matched_outcomes_require_same_record_type(self):
+        shortlist = [{"record_key": "role-a", "record_type": "role", "values": {}}]
+        for outcome in ("equivalent", "additional_detail", "contradiction", "uncertain", "new"):
+            with self.subTest(outcome=outcome), self.assertRaises(ExtractionError) as error:
+                self.validate([self.candidate(outcome=outcome, match_reference="role-a")], shortlist=shortlist)
+            self.assertEqual(error.exception.code, "matched_record_type_mismatch")
+
+    def test_exact_reference_and_five_outcomes_preserve_only_input_values(self):
+        shortlist = [{"record_key": "skill-a", "record_type": "skill", "values":
+                      {"name": "mentoring", "summary": "Shortlist-only confidential wording"}}]
+        candidates = [self.candidate(outcome=outcome,
+                      match_reference=None if outcome == "new" else "skill-a")
+                      for outcome in ("new", "equivalent", "additional_detail", "contradiction", "uncertain")]
+        result = self.validate(candidates, shortlist=shortlist)
+        self.assertEqual(len(result), 5)
+        self.assertTrue(all(row.values == {"name": "mentoring"} for row in result))
+
+    def test_duplicate_new_proposals_remain_member_controlled(self):
+        entry = self.candidate()
+        fake = DeterministicFakeExtractionAdapter([entry, dict(entry)])
+        service, catalog = build_wired_service(extraction_adapter=fake, exclusions=lambda owner: set())
+        owner = "synthetic-strengthening-owner"
+        receipt = service.submit(owner, add_request(text=entry["quote"]))
+        self.assertEqual(len(receipt["proposals"]), 1)
+        self.assertEqual(receipt["outcome"], "unresolved")
+        self.assertEqual(len(fake.calls), 1)
+        self.assertEqual(catalog.list_items(owner), [])
+
+    def test_model_specific_efforts_keep_luna_default_and_matching_scope(self):
+        for model, efforts in (("gpt-5.6-luna", ("medium", "high", "xhigh")),
+                              ("gpt-6-sol", ("low", "medium", "high"))):
+            for effort in efforts:
+                request = MyDataExtractionAdapter(model=model, reasoning_effort=effort).build_request("Material")
+                self.assertEqual((request.model_name, request.reasoning_effort), (model, effort))
+        self.assertEqual(MyDataExtractionAdapter().model, "gpt-5.6-luna")
+        self.assertEqual(MyDataExtractionAdapter().reasoning_effort, "xhigh")
+        with self.assertRaises(ExtractionError):
+            MyDataExtractionAdapter(model="gpt-6-sol")
+        with self.assertRaises(ValueError):
+            MyDataExtractionAdapter(model="gpt-6-sol", reasoning_effort="low").build_request(
+                "Material", purpose=ExtractionPurpose.MY_DATA_INTAKE_MATCHING)
+
+    def test_sol_adapter_rejects_wrong_result_model(self):
+        from services.ai_foundation.contracts import StructuredResult
+        for model in ("eval0930-gpt-6-sol", None, "gpt-5.6-luna"):
+            def wrong(request, **kwargs):
+                return StructuredResult(request.request_id, request.schema_name,
+                                        model, {"candidates": []}, 10, 5)
+            adapter = MyDataExtractionAdapter(wrong, model="gpt-6-sol", reasoning_effort="low")
+            with self.subTest(model=model), self.assertRaises(ExtractionError) as error:
+                adapter.extract("Material", allowed_fields=self.FIELDS)
+            self.assertEqual(error.exception.code, "model_mismatch")
+
 if __name__ == "__main__":
     unittest.main()

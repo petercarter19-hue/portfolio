@@ -24,6 +24,8 @@ from .contracts import (
     Audience,
     ExtractionPurpose,
     REASONING_EFFORT_XHIGH,
+    SOL_EXTRACTION_REASONING_EFFORTS,
+    STRUCTURED_MODEL_SOL,
     StructuredRequest,
     StructuredResult,
 )
@@ -31,6 +33,11 @@ from .errors import ExecutionLimitError, ProviderUnavailableError
 
 FOUNDRY_TOKEN_SCOPE = "https://cognitiveservices.azure.com/.default"
 DEFAULT_DEPLOYMENT = "gpt-5.6-luna"
+LUNA_EXTRACTION_MODEL_VERSION = "2026-07-09"
+SOL_EXTRACTION_DEPLOYMENT = "eval0930-gpt-6-sol"
+SOL_EXTRACTION_MODEL_VERSION = "2026-09-22"
+RESPONSE_IDENTITY_REPORTED_MODEL = "reported_model"
+RESPONSE_IDENTITY_CONFIGURED_DEPLOYMENT = "configured_deployment"
 MAX_RESPONSE_BYTES = 1_000_000
 _dumps_json = json.dumps
 
@@ -163,6 +170,29 @@ class LunaPriceSchedule:
 
 
 @dataclass(frozen=True)
+class SolExtractionPriceSchedule(LunaPriceSchedule):
+    """Explicit conservative reservation, never a retail or invoice estimate.
+
+    USD5 input covers observed short/long ordinary/cache-write rates; USD15
+    output covers observed short/long output including reasoning. Cache reads
+    receive no reservation discount. Source: official Azure September22 launch
+    pricing, verified September30. Retail category projections remain separate.
+    """
+    input_micro_usd_per_million: int = 5_000_000
+    output_micro_usd_per_million: int = 15_000_000
+    schedule_ref: str = "sol-extraction-conservative-reservation-2026-09-30"
+
+    def __post_init__(self) -> None:
+        if any(isinstance(rate, bool) or not isinstance(rate, int) for rate in
+               (self.input_micro_usd_per_million, self.output_micro_usd_per_million)):
+            raise ValueError("Sol reservation prices must be integer micro-USD")
+        super().__post_init__()
+        if (self.input_micro_usd_per_million < 5_000_000
+                or self.output_micro_usd_per_million < 15_000_000):
+            raise ValueError("Sol extraction reservation must bound input/cache-write and output")
+
+
+@dataclass(frozen=True)
 class FoundryUsage:
     """Existing content-free answer accounting and serialized field contract."""
     deployment: str
@@ -192,6 +222,11 @@ class StructuredFoundryUsage(FoundryUsage):
     elapsed_seconds: float | None = None
     response_status: str | None = None
     http_status: int | None = None
+    configured_model_name: str | None = None
+    configured_model_version: str | None = None
+    response_model_name: str | None = None
+    response_model_version: str | None = None
+    response_identity_source: str | None = None
 
 
 class SpendLedger:
@@ -264,6 +299,9 @@ class AzureFoundryResponsesProvider:
         endpoint: str,
         token_provider: TokenProvider,
         deployment: str = DEFAULT_DEPLOYMENT,
+        model_name: str | None = None,
+        model_version: str | None = None,
+        response_identity_mode: str = RESPONSE_IDENTITY_REPORTED_MODEL,
         transport: HTTPTransport | None = None,
         price_schedule: LunaPriceSchedule | None = None,
         spend_ledger: SpendLedger,
@@ -302,6 +340,30 @@ class AzureFoundryResponsesProvider:
         self._url = f"{normalized}/openai/v1/responses"
         self._token_provider = token_provider
         self._deployment = deployment
+        sol_configuration = (deployment in (SOL_EXTRACTION_DEPLOYMENT, STRUCTURED_MODEL_SOL)
+                             or model_name == STRUCTURED_MODEL_SOL)
+        if sol_configuration:
+            if (deployment != SOL_EXTRACTION_DEPLOYMENT
+                    or model_name != STRUCTURED_MODEL_SOL
+                    or model_version != SOL_EXTRACTION_MODEL_VERSION):
+                raise ValueError("Sol extraction requires its exact deployment/model/version binding")
+            if not isinstance(price_schedule, SolExtractionPriceSchedule):
+                raise ValueError("Sol extraction requires an explicit conservative price schedule")
+        elif model_name is not None or model_version is not None:
+            if (deployment != DEFAULT_DEPLOYMENT or model_name != DEFAULT_DEPLOYMENT
+                    or model_version != LUNA_EXTRACTION_MODEL_VERSION):
+                raise ValueError("unsupported explicit structured model binding")
+        self._structured_model = STRUCTURED_MODEL_SOL if sol_configuration else DEFAULT_DEPLOYMENT
+        self._configured_model_version = model_version
+        if response_identity_mode not in (
+                RESPONSE_IDENTITY_REPORTED_MODEL, RESPONSE_IDENTITY_CONFIGURED_DEPLOYMENT):
+            raise ValueError("unsupported response identity mode")
+        # Internal opt-in only after the caller independently binds the Azure
+        # deployment to this explicit product model/version. Never a wire option
+        # or an inference of the underlying identity from the returned alias.
+        if response_identity_mode == RESPONSE_IDENTITY_CONFIGURED_DEPLOYMENT and not sol_configuration:
+            raise ValueError("deployment response identity requires explicitly bound Sol extraction")
+        self._response_identity_mode = response_identity_mode
         self._transport = transport or UrllibTransport()
         self._price = price_schedule or LunaPriceSchedule()
         self._ledger = spend_ledger
@@ -401,6 +463,8 @@ class AzureFoundryResponsesProvider:
         request: AIRequest,
         sources: tuple[SourceVersion, ...],
     ) -> Mapping[str, Any]:
+        if self._structured_model == STRUCTURED_MODEL_SOL:
+            raise ValueError("Sol configuration is limited to owner My Data extraction")
         instructions = self._instructions()
         input_text = self._input(request, sources)
         # The byte ceiling prevents unbounded request bodies before the call.
@@ -558,21 +622,32 @@ class AzureFoundryResponsesProvider:
         """Run one strict call with explicit extraction calibration options.
 
         Medium, high, raised allowance and nondefault receive timeout are limited to
-        owner My Data extraction on Luna. Other defaults remain unchanged.
+        owner My Data extraction on Luna or the explicitly bound Sol deployment.
+        Other defaults remain unchanged.
         ``receive_timeout_seconds`` is the second tuple quantity; default
         UrllibTransport sums it with connection5 (read1190 means socket1195),
         not an absolute case deadline. There is no retry or fallback.
         """
 
-        if not isinstance(request.reasoning_effort, str) or request.reasoning_effort not in ALLOWED_REASONING_EFFORTS:
+        if (not isinstance(request.purpose, ExtractionPurpose)
+                or not isinstance(request.audience, Audience)):
+            raise ValueError("structured purpose and audience must use the closed contract types")
+        efforts = (SOL_EXTRACTION_REASONING_EFFORTS
+                   if self._structured_model == STRUCTURED_MODEL_SOL else ALLOWED_REASONING_EFFORTS)
+        if not isinstance(request.reasoning_effort, str) or request.reasoning_effort not in efforts:
             raise ValueError("reasoning effort is not the accepted contract value")
+        if self._deployment not in (DEFAULT_DEPLOYMENT, SOL_EXTRACTION_DEPLOYMENT):
+            raise ValueError("unsupported structured model deployment")
+        if request.model_name != self._structured_model:
+            raise ValueError("request model differs from the configured structured model")
         extraction_scope = (
             request.product == "my_data_intake"
             and request.purpose == ExtractionPurpose.MY_DATA_INTAKE_EXTRACTION
             and request.audience == Audience.OWNER
-            and self._deployment == DEFAULT_DEPLOYMENT
+            and self._deployment in (DEFAULT_DEPLOYMENT, SOL_EXTRACTION_DEPLOYMENT)
         )
-        if request.reasoning_effort != REASONING_EFFORT_XHIGH and not extraction_scope:
+        if (self._structured_model == STRUCTURED_MODEL_SOL
+                or request.reasoning_effort != REASONING_EFFORT_XHIGH) and not extraction_scope:
             raise ValueError(f"{request.reasoning_effort} requires owner My Data Luna extraction")
         text_format = self._strict_text_format(request.schema_name, response_schema)
         output_tokens = self._maximum_output_tokens if maximum_output_tokens is None else maximum_output_tokens
@@ -605,6 +680,8 @@ class AzureFoundryResponsesProvider:
         input_tokens = output_tokens_used = actual = None
         cached_input_tokens = cache_write_input_tokens = reasoning_output_tokens = None
         elapsed_seconds = response_status = http_status = None
+        response_model_name = None
+        response_model_version = response_identity_source = None
 
         def report_usage() -> None:
             nonlocal reported
@@ -627,6 +704,11 @@ class AzureFoundryResponsesProvider:
                         urllib_socket_timeout_seconds=5.0 + receive_timeout_seconds,
                         elapsed_seconds=elapsed_seconds, response_status=response_status,
                         http_status=http_status,
+                        configured_model_name=self._structured_model,
+                        configured_model_version=self._configured_model_version,
+                        response_model_name=response_model_name,
+                        response_model_version=response_model_version,
+                        response_identity_source=response_identity_source,
                     ))
                 except Exception:  # noqa: BLE001,S110
                     # Diagnostic failures cannot change or replay a provider call.
@@ -678,6 +760,25 @@ class AzureFoundryResponsesProvider:
             payload = response.json()
             if not isinstance(payload, Mapping):
                 raise ProviderUnavailableError("Foundry response is not an object")
+            observed_model = payload.get("model")
+            observed_version = payload.get("model_version")
+            accepted_response_models = {self._structured_model}
+            if self._configured_model_version is not None:
+                accepted_response_models.add(f"{self._structured_model}-{self._configured_model_version}")
+            deployment_identity = self._response_identity_mode == RESPONSE_IDENTITY_CONFIGURED_DEPLOYMENT
+            if deployment_identity:
+                accepted_response_models = {self._deployment}
+            # Retain only an accepted bounded model identity, never arbitrary text.
+            if isinstance(observed_model, str) and observed_model in accepted_response_models:
+                response_model_name = observed_model
+                response_identity_source = self._response_identity_mode
+            if self._configured_model_version is not None and observed_version == self._configured_model_version:
+                response_model_version = observed_version
+            invalid_model = (observed_model is not None and response_model_name is None)
+            if self._structured_model == STRUCTURED_MODEL_SOL and response_model_name is None:
+                invalid_model = True
+            if deployment_identity and observed_version is not None and response_model_version is None:
+                invalid_model = True
             status = payload.get("status")
             response_status = status if isinstance(status, str) and status in {
                 "completed", "incomplete", "failed", "cancelled", "queued", "in_progress"
@@ -720,7 +821,12 @@ class AzureFoundryResponsesProvider:
                     cache_write_input_tokens = value
                 else:
                     reasoning_output_tokens = value
+            if (cached_input_tokens is not None and cache_write_input_tokens is not None
+                    and cached_input_tokens + cache_write_input_tokens > input_tokens):
+                invalid_details = True
             report_usage()
+            if invalid_model:
+                raise ProviderUnavailableError("Foundry structured response model identity mismatch")
             if invalid_details:
                 raise ProviderUnavailableError("Foundry token details are malformed")
             if input_tokens > self._maximum_input_tokens or output_tokens_used > output_tokens:
@@ -734,7 +840,12 @@ class AzureFoundryResponsesProvider:
             return StructuredResult(
                 request_id=request.request_id,
                 schema_name=request.schema_name,
-                model_name=self._deployment,
+                model_name=self._structured_model,
+                deployment_name=self._deployment,
+                configured_model_version=self._configured_model_version,
+                response_model_name=response_model_name,
+                response_model_version=response_model_version,
+                response_identity_source=response_identity_source,
                 payload=decoded,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens_used,

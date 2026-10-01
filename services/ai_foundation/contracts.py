@@ -72,6 +72,10 @@ class ExtractionPurpose(str, Enum):
 
 
 #: Medium and high are explicit My Data extraction comparisons; matching keeps xhigh.
+STRUCTURED_MODEL_LUNA = "gpt-5.6-luna"
+STRUCTURED_MODEL_SOL = "gpt-6-sol"
+# Sol is opt-in only for owner intake extraction; the global Luna set stays closed.
+SOL_EXTRACTION_REASONING_EFFORTS = frozenset({"low", "medium", "high"})
 REASONING_EFFORT_XHIGH = "xhigh"
 REASONING_EFFORT_MEDIUM = "medium"
 REASONING_EFFORT_HIGH = "high"
@@ -244,6 +248,7 @@ class StructuredRequest:
     schema the provider must satisfy, and ``reasoning_effort`` must be the
     default ``xhigh`` value. Explicit ``medium`` or ``high`` is limited to owner My Data
     extraction; matching and other products do not inherit that selection.
+    Explicit Sol low/medium/high is limited to that same extraction scope.
     """
 
     request_id: str
@@ -255,6 +260,7 @@ class StructuredRequest:
     input_text: str = field(repr=False)
     schema_name: str
     reasoning_effort: str = REASONING_EFFORT_XHIGH
+    model_name: str = STRUCTURED_MODEL_LUNA
 
     def __post_init__(self) -> None:
         _bounded_identifier("request_id", self.request_id)
@@ -267,9 +273,14 @@ class StructuredRequest:
             raise ValueError("purpose must be an ExtractionPurpose")
         if not isinstance(self.audience, Audience):
             raise ValueError("audience must be an Audience")
-        if not isinstance(self.reasoning_effort, str) or self.reasoning_effort not in ALLOWED_REASONING_EFFORTS:
+        if self.model_name not in (STRUCTURED_MODEL_LUNA, STRUCTURED_MODEL_SOL):
+            raise ValueError("structured model is not the accepted contract value")
+        efforts = (SOL_EXTRACTION_REASONING_EFFORTS
+                   if self.model_name == STRUCTURED_MODEL_SOL else ALLOWED_REASONING_EFFORTS)
+        if not isinstance(self.reasoning_effort, str) or self.reasoning_effort not in efforts:
             raise ValueError("reasoning effort is not the accepted contract value")
-        if self.reasoning_effort != REASONING_EFFORT_XHIGH and (
+        if (self.model_name == STRUCTURED_MODEL_SOL
+                or self.reasoning_effort != REASONING_EFFORT_XHIGH) and (
             self.product != "my_data_intake"
             or self.purpose != ExtractionPurpose.MY_DATA_INTAKE_EXTRACTION
             or self.audience != Audience.OWNER
@@ -279,7 +290,12 @@ class StructuredRequest:
 
 @dataclass(frozen=True)
 class StructuredResult:
-    """A validated structured provider payload with its usage record."""
+    """Validated payload and usage, with configured and reported identity separate.
+
+    ``model_name`` identifies the configured product model. A returned deployment
+    alias is retained in ``response_model_name`` and labeled by its identity
+    source; ``response_model_version`` stays unknown unless separately reported.
+    """
 
     request_id: str
     schema_name: str
@@ -287,6 +303,11 @@ class StructuredResult:
     payload: object
     input_tokens: int
     output_tokens: int
+    deployment_name: str | None = None
+    configured_model_version: str | None = None
+    response_model_name: str | None = None
+    response_model_version: str | None = None
+    response_identity_source: str | None = None
 
     def __post_init__(self) -> None:
         _bounded_identifier("request_id", self.request_id)

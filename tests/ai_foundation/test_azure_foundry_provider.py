@@ -960,5 +960,272 @@ class StructuredCalibrationTests(unittest.TestCase):
             self.assertEqual(usages[0].urllib_socket_timeout_seconds,expected)
 
 
+
+class SolExtractionRoutingTests(unittest.TestCase):
+    payload = StructuredCalibrationTests.payload
+    provider = StructuredCalibrationTests.provider
+    request = StructuredCalibrationTests.request
+
+    def configured(self, payload=None, **changes):
+        from services.ai_foundation.azure_foundry import SolExtractionPriceSchedule
+        options = {"deployment": "eval0930-gpt-6-sol", "model_name": "gpt-6-sol",
+                   "model_version": "2026-09-22", "price_schedule": SolExtractionPriceSchedule(),
+                   "maximum_input_bytes": 65536}
+        options.update(changes)
+        return self.provider(self.payload(model="gpt-6-sol") if payload is None else payload, **options)
+
+    def test_six_configurations_same_schema_input_and_cap_on_exact_wire(self):
+        wires = []
+        for model, efforts in (("gpt-5.6-luna", ("medium", "high", "xhigh")),
+                              ("gpt-6-sol", ("low", "medium", "high"))):
+            for effort in efforts:
+                provider, transport, usages, ledger, credentials = (
+                    self.configured() if model == "gpt-6-sol"
+                    else self.provider(maximum_input_bytes=65536))
+                adapter = MyDataExtractionAdapter(partial(provider.respond, receive_timeout_seconds=1190),
+                                                 model=model, reasoning_effort=effort)
+                self.assertEqual(adapter.extract("Synthetic member material.", allowed_fields={}), [])
+                wire = transport.calls[0][1]["json"]
+                self.assertEqual(wire["model"], "eval0930-gpt-6-sol" if model == "gpt-6-sol" else model)
+                self.assertEqual(wire["reasoning"], {"effort": effort})
+                self.assertEqual(wire["max_output_tokens"], 128000)
+                self.assertFalse(wire["store"])
+                self.assertEqual(len(credentials), 1)
+                self.assertEqual(ledger.snapshot()["reserved_micro_usd"], 0)
+                self.assertEqual(usages[0].configured_model_name, model)
+                wires.append(wire)
+        for wire in wires[1:]:
+            self.assertEqual((wire["instructions"], wire["input"], wire["text"]),
+                             (wires[0]["instructions"], wires[0]["input"], wires[0]["text"]))
+
+    def test_sol_binding_requires_exact_model_version_deployment_and_schedule(self):
+        for changes in ({"deployment": "gpt-6-sol"}, {"deployment": "gpt-5.6-luna"},
+                        {"model_name": None}, {"model_name": "gpt-6-luna"},
+                        {"model_version": None}, {"model_version": "2026-07-09"},
+                        {"price_schedule": None}, {"price_schedule": LunaPriceSchedule()}):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                self.configured(**changes)
+        with self.assertRaises(ValueError):
+            self.provider(deployment="eval0930-gpt-6-sol")
+        with self.assertRaises(ValueError):
+            self.provider(deployment="gpt-6-sol")
+
+    def test_optional_exact_luna_binding_keeps_legacy_missing_identity_contract(self):
+        provider, _, usages, _, _ = self.provider(model_name="gpt-5.6-luna", model_version="2026-07-09")
+        result = provider.respond(self.request(), response_schema=EXTRACTION_RESPONSE_SCHEMA)
+        self.assertEqual(result.model_name, "gpt-5.6-luna")
+        self.assertEqual(result.configured_model_version, "2026-07-09")
+        self.assertIsNone(result.response_model_name)
+        self.assertEqual(usages[0].configured_model_version, "2026-07-09")
+        for options in ({"model_name": "gpt-5.6-luna", "model_version": "2026-09-22"},
+                        {"model_name": None, "model_version": "2026-07-09"},
+                        {"deployment": "gpt-6-luna", "model_name": "gpt-5.6-luna", "model_version": "2026-07-09"}):
+            with self.assertRaises(ValueError):
+                self.provider(**options)
+
+    def test_sol_scope_model_and_effort_guards_run_before_reserve_or_credentials(self):
+        provider, transport, usages, ledger, credentials = self.configured()
+        baseline = self.request(model_name="gpt-6-sol", reasoning_effort="low")
+        for field, value in (("product", "ask_pete"), ("purpose", ExtractionPurpose.MY_DATA_INTAKE_MATCHING),
+                             ("audience", Audience.PUBLIC), ("model_name", "gpt-5.6-luna"),
+                             ("purpose", "my_data_intake_extraction"), ("audience", "owner"),
+                             ("reasoning_effort", "xhigh")):
+            changed = mock.Mock(wraps=baseline)
+            for name in baseline.__dataclass_fields__:
+                setattr(changed, name, getattr(baseline, name))
+            setattr(changed, field, value)
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                provider.respond(changed, response_schema=EXTRACTION_RESPONSE_SCHEMA)
+        request, sources = request_and_sources()
+        with self.assertRaises(ValueError):
+            provider.answer(request, sources)
+        self.assertEqual((transport.calls, usages, credentials, ledger.snapshot()["calls"]), ([], [], [], 0))
+
+    def test_contract_refuses_sol_context_and_luna_low_without_global_widening(self):
+        from services.ai_foundation.contracts import ALLOWED_REASONING_EFFORTS
+        self.assertNotIn("low", ALLOWED_REASONING_EFFORTS)
+        for changes in ({"product": "ask_pete"}, {"audience": Audience.PUBLIC},
+                        {"purpose": ExtractionPurpose.MY_DATA_INTAKE_MATCHING},
+                        {"reasoning_effort": "xhigh"}):
+            options = {"model_name": "gpt-6-sol", "reasoning_effort": "low", **changes}
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                self.request(**options)
+        with self.assertRaises(ValueError):
+            self.request(reasoning_effort="low")
+
+    def test_wrong_structured_deployment_fails_even_at_legacy_default_allowance(self):
+        provider, transport, usages, ledger, credentials = self.provider(deployment="gpt-6-luna")
+        with self.assertRaises(ValueError):
+            provider.respond(self.request(), response_schema=EXTRACTION_RESPONSE_SCHEMA)
+        self.assertEqual((transport.calls, usages, credentials, ledger.snapshot()["calls"]), ([], [], [], 0))
+
+    def test_sol_observed_identity_is_model_not_deployment_and_version_is_configured(self):
+        for identity in ("gpt-6-sol", "gpt-6-sol-2026-09-22"):
+            provider, _, usages, _, _ = self.configured(self.payload(model=identity))
+            result = provider.respond(self.request(model_name="gpt-6-sol", reasoning_effort="medium"),
+                                      response_schema=EXTRACTION_RESPONSE_SCHEMA)
+            self.assertEqual(result.model_name, "gpt-6-sol")
+            self.assertEqual(result.deployment_name, "eval0930-gpt-6-sol")
+            self.assertEqual(result.configured_model_version, "2026-09-22")
+            self.assertEqual(result.response_model_name, identity)
+            self.assertEqual(usages[0].response_model_name, identity)
+
+    def test_sol_missing_wrong_alias_or_other_version_identity_fails_once_with_usage(self):
+        for identity in (None, "eval0930-gpt-6-sol", "gpt-5.6-luna", "gpt-6-sol-2026-07-09", []):
+            provider, transport, usages, ledger, _ = self.configured(self.payload(model=identity))
+            with self.subTest(identity=identity), self.assertRaisesRegex(ProviderUnavailableError, "model identity"):
+                provider.respond(self.request(model_name="gpt-6-sol", reasoning_effort="high"),
+                                 response_schema=EXTRACTION_RESPONSE_SCHEMA)
+            self.assertEqual((len(transport.calls), len(usages), ledger.snapshot()["calls"]), (1, 1, 1))
+            self.assertEqual(ledger.snapshot()["spent_micro_usd"], 125)
+            self.assertIsNone(usages[0].response_model_name)
+
+    def test_sol_cache_write_raw_usage_and_failure_cost_preserve_subsets(self):
+        usage = {"input_tokens": 100, "output_tokens": 50,
+                 "input_tokens_details": {"cached_tokens": 20, "cache_write_tokens": 70},
+                 "output_tokens_details": {"reasoning_tokens": 40}}
+        provider, transport, usages, ledger, _ = self.configured(self.payload(status="incomplete", usage=usage,
+                                                                            model="gpt-6-sol"))
+        with self.assertRaises(ProviderUnavailableError):
+            provider.respond(self.request(model_name="gpt-6-sol", reasoning_effort="low"),
+                             response_schema=EXTRACTION_RESPONSE_SCHEMA)
+        row = usages[0]
+        self.assertEqual((row.input_tokens, row.cached_input_tokens, row.cache_write_input_tokens,
+                          row.output_tokens, row.reasoning_output_tokens), (100, 20, 70, 50, 40))
+        self.assertEqual(ledger.snapshot()["spent_micro_usd"], 1250)
+        self.assertEqual(len(transport.calls), 1)
+        provider, _, usages, _, _ = self.configured()
+        provider.respond(self.request(model_name="gpt-6-sol", reasoning_effort="low"),
+                         response_schema=EXTRACTION_RESPONSE_SCHEMA)
+        self.assertIsNone(usages[0].cache_write_input_tokens)
+
+    def test_sol_reservation_requires_safe_explicit_rates(self):
+        from services.ai_foundation.azure_foundry import SolExtractionPriceSchedule
+        for values in ({"input_micro_usd_per_million": 1_000_000},
+                       {"output_micro_usd_per_million": 6_000_000},
+                       {"input_micro_usd_per_million": float("nan")},
+                       {"output_micro_usd_per_million": True}):
+            with self.assertRaises(ValueError):
+                SolExtractionPriceSchedule(**values)
+        schedule = SolExtractionPriceSchedule()
+        self.assertEqual(schedule.estimate_micro_usd(input_tokens=100, output_tokens=50), 1250)
+        self.assertEqual(LunaPriceSchedule().estimate_micro_usd(input_tokens=100, output_tokens=50), 400)
+
+    def test_cache_read_and_write_aggregate_bound_rejects_once_and_preserves_unknowns(self):
+        for model in ("gpt-5.6-luna", "gpt-6-sol"):
+            for details, malformed in (({"cached_tokens": 80, "cache_write_tokens": 80}, True),
+                                       ({"cached_tokens": 80, "cache_write_tokens": 20}, False),
+                                       ({"cached_tokens": 80}, False),
+                                       ({"cache_write_tokens": 80}, False)):
+                with self.subTest(model=model, details=details):
+                    usage = {"input_tokens": 100, "output_tokens": 50,
+                             "input_tokens_details": details,
+                             "output_tokens_details": {"reasoning_tokens": 40}}
+                    payload = self.payload(model=model, usage=usage)
+                    provider, transport, usages, ledger, credentials = (
+                        self.configured(payload) if model == "gpt-6-sol" else self.provider(payload))
+                    request = self.request(model_name=model, reasoning_effort="high")
+                    if malformed:
+                        with self.assertRaisesRegex(ProviderUnavailableError, "token details"):
+                            provider.respond(request, response_schema=EXTRACTION_RESPONSE_SCHEMA)
+                    else:
+                        provider.respond(request, response_schema=EXTRACTION_RESPONSE_SCHEMA)
+                    self.assertEqual((len(transport.calls), len(usages), len(credentials),
+                                      ledger.snapshot()["calls"]), (1, 1, 1, 1))
+                    self.assertEqual(ledger.snapshot()["reserved_micro_usd"], 0)
+                    self.assertEqual(ledger.snapshot()["spent_micro_usd"],
+                                     1250 if model == "gpt-6-sol" else 400)
+                    self.assertEqual(usages[0].cached_input_tokens, details.get("cached_tokens"))
+                    self.assertEqual(usages[0].cache_write_input_tokens, details.get("cache_write_tokens"))
+                    self.assertEqual(usages[0].reasoning_output_tokens, 40)
+
+    def test_sol_timeout_has_no_retry_and_unknown_usage_is_conservative(self):
+        provider, transport, usages, ledger, _ = self.configured()
+        def timeout_once(url, **kwargs):
+            transport.calls.append((url, kwargs))
+            raise TimeoutError("offline")
+        transport.post = timeout_once
+        with self.assertRaises(ProviderUnavailableError):
+            provider.respond(self.request(model_name="gpt-6-sol", reasoning_effort="low"),
+                             response_schema=EXTRACTION_RESPONSE_SCHEMA, maximum_output_tokens=128000)
+        self.assertEqual((len(transport.calls), len(usages), ledger.snapshot()["calls"]), (1, 1, 1))
+        self.assertIsNone(usages[0].cache_write_input_tokens)
+        self.assertIsNone(usages[0].response_model_name)
+        self.assertEqual(ledger.snapshot()["spent_micro_usd"], 1927500)
+
+    def test_internal_deployment_identity_keeps_reported_alias_and_unknown_version(self):
+        for version in (None, "2026-09-22"):
+            payload = self.payload(model="eval0930-gpt-6-sol")
+            if version is not None:
+                payload["model_version"] = version
+            provider, transport, usages, ledger, _ = self.configured(
+                payload,
+                response_identity_mode="configured_deployment")
+            result = provider.respond(self.request(model_name="gpt-6-sol", reasoning_effort="low"),
+                                      response_schema=EXTRACTION_RESPONSE_SCHEMA)
+            self.assertEqual(result.model_name, "gpt-6-sol")
+            self.assertEqual(result.configured_model_version, "2026-09-22")
+            self.assertEqual(result.response_model_name, "eval0930-gpt-6-sol")
+            self.assertEqual(result.response_model_version, version)
+            self.assertEqual(result.response_identity_source, "configured_deployment")
+            self.assertEqual(usages[0].response_model_name, result.response_model_name)
+            self.assertEqual(usages[0].response_model_version, version)
+            self.assertEqual(usages[0].response_identity_source, "configured_deployment")
+            self.assertEqual((len(transport.calls), len(usages), ledger.snapshot()["calls"]), (1, 1, 1))
+
+    def test_deployment_identity_default_and_unknown_alias_version_rejections_stay_closed(self):
+        cases = [("reported_model", "eval0930-gpt-6-sol", None),
+                 ("configured_deployment", None, None),
+                 ("configured_deployment", "other-deployment", None),
+                 ("configured_deployment", "gpt-6-sol", None),
+                 ("configured_deployment", "eval0930-gpt-6-sol", "2026-07-09"),
+                 ("configured_deployment", "eval0930-gpt-6-sol", [])]
+        for mode, model, version in cases:
+            with self.subTest(mode=mode, model=model, version=version):
+                provider, transport, usages, ledger, _ = self.configured(
+                    self.payload(model=model, model_version=version), response_identity_mode=mode)
+                with self.assertRaisesRegex(ProviderUnavailableError, "model identity"):
+                    provider.respond(self.request(model_name="gpt-6-sol", reasoning_effort="medium"),
+                                     response_schema=EXTRACTION_RESPONSE_SCHEMA)
+                self.assertEqual((len(transport.calls), len(usages), ledger.snapshot()["calls"]), (1, 1, 1))
+                self.assertEqual(ledger.snapshot()["reserved_micro_usd"], 0)
+                self.assertEqual(ledger.snapshot()["spent_micro_usd"], 125)
+
+    def test_deployment_identity_opt_in_requires_bound_sol_and_owner_extraction_before_acquisition(self):
+        for changes in ({"model_version": None}, {"model_name": None},
+                        {"deployment": "other-deployment"}, {"response_identity_mode": "arbitrary"}):
+            with self.assertRaises(ValueError):
+                self.configured(**{"response_identity_mode": "configured_deployment", **changes})
+        with self.assertRaises(ValueError):
+            self.provider(response_identity_mode="configured_deployment")
+        provider, transport, usages, ledger, credentials = self.configured(
+            response_identity_mode="configured_deployment")
+        baseline = self.request(model_name="gpt-6-sol", reasoning_effort="low")
+        for field, value in (("product", "ask_pete"), ("purpose", ExtractionPurpose.MY_DATA_INTAKE_MATCHING),
+                             ("audience", Audience.PUBLIC), ("model_name", "gpt-5.6-luna")):
+            changed = mock.Mock(wraps=baseline)
+            for name in baseline.__dataclass_fields__:
+                setattr(changed, name, getattr(baseline, name))
+            setattr(changed, field, value)
+            with self.assertRaises(ValueError):
+                provider.respond(changed, response_schema=EXTRACTION_RESPONSE_SCHEMA)
+        request, sources = request_and_sources()
+        with self.assertRaises(ValueError):
+            provider.answer(request, sources)
+        self.assertEqual((transport.calls, usages, credentials, ledger.snapshot()["calls"]), ([], [], [], 0))
+
+    def test_response_identity_mode_preserves_exact_sol_request_wires(self):
+        for effort in ("low", "medium", "high"):
+            wires = []
+            for mode, identity in (("reported_model", "gpt-6-sol"),
+                                   ("configured_deployment", "eval0930-gpt-6-sol")):
+                provider, transport, _, _, _ = self.configured(
+                    self.payload(model=identity), response_identity_mode=mode)
+                adapter = MyDataExtractionAdapter(partial(provider.respond, receive_timeout_seconds=1190),
+                                                 model="gpt-6-sol", reasoning_effort=effort)
+                adapter.extract("Synthetic member material.", allowed_fields={})
+                wires.append(json.dumps(transport.calls[0][1]["json"], separators=(",", ":")))
+            self.assertEqual(wires[0], wires[1])
+
 if __name__ == "__main__":
     unittest.main()
