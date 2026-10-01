@@ -165,3 +165,11 @@ regexes = [
   '''^\n?RECORD_[K]EY = "163429f8-dd55-4415-9f68-e4653af47a88"\r?$''',
   '''^\n?PARENT_[K]EY = "07078187-e956-43e3-9d3e-a22b260788d1"\r?$''',
 ]
+
+[[allowlists]]
+description = "Known non-secret Hosted diagnostic keyword expression; exact historical call line only."
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^tests/test_resume_hosted_sql_engine\.py$''']
+regexTarget = "line"
+regexes = ['''^\n? {12}migration, result, [s]ecrets=[s]ecrets, evidence_missing=not output\.is_file\(\)\)\r?$''']

@@ -73,7 +73,7 @@ class GitleaksConfigurationTests(unittest.TestCase):
         # suite reused the qualification suite's call idiom with its own
         # actor literals, which the deliberately narrow member-[ab] class
         # does not cover. Same shape, own file, own actor class.
-        self.assertEqual(11, len(allowlists))
+        self.assertEqual(12, len(allowlists))
         self.assertEqual(
             {
                 'description': (
@@ -198,6 +198,9 @@ class GitleaksConfigurationTests(unittest.TestCase):
         audit_scan_line = '^\\n?- \\[OK\\] Pattern scan of the extracted origin/main tree \\(excluding `tests/`, `docs/`\\) for `Account[K]ey=`, `SharedAccessSignature`, `sk-ant-api`, AWS `AKIA…`, private-[k]ey blocks, `Instrumentation[K]ey=`, `Pwd=`/`Password=`, `DefaultEndpointsProtocol=`, `Server=tcp:`, hardcoded `SECRET_KEY` literals: \\*\\*no suspicious hits\\*\\*\\. The only `\\.database\\.windows\\.net` matches are hostname-suffix normalization constants in `db\\.py:26-27` and `scripts/apply_sql_migrations\\.py:142-143` — config parsing, not credentials\\.\\r?$'
 
         expected = {
+            r'^tests/test_resume_hosted_sql_engine\.py$': [
+                r'^\n? {12}migration, result, [s]ecrets=[s]ecrets, evidence_missing=not output\.is_file\(\)\)\r?$'
+            ],
             r'^tests/test_living_resume_editor_service\.py$': ['^\\n?RECORD_[K]EY = "163429f8-dd55-4415-9f68-e4653af47a88"\\r?$', '^\\n?PARENT_[K]EY = "07078187-e956-43e3-9d3e-a22b260788d1"\\r?$'],
             audit_scan_path: [audit_scan_line],
             r'^services/community_cursor\.py$': [
@@ -268,7 +271,9 @@ class GitleaksConfigurationTests(unittest.TestCase):
         import re
 
         with open(os.path.join(ROOT, '.gitleaks.toml'), 'rb') as config_file:
-            entry = tomllib.load(config_file)['allowlists'][-1]
+            entries = tomllib.load(config_file)['allowlists']
+            entry = next(item for item in entries
+                         if item.get('paths') == [r'^tests/test_living_resume_editor_service\.py$'])
         path = 'tests/test_living_resume_editor_service.py'
         # Build synthetic assignment strings without adding scanner findings
         # to this regression module itself.
@@ -294,6 +299,38 @@ class GitleaksConfigurationTests(unittest.TestCase):
                                 line + '; api_' + 'key = "' + 'synthetic-credential-123456789abcdef' + '"',
                                 line + ' # trailing text'):
                     self.assertFalse(allows(path, changed))
+
+
+
+    def test_hosted_diagnostic_allowlist_rejects_path_and_credential_drift(self):
+        with open(os.path.join(ROOT, '.gitleaks.toml'), 'rb') as config_file:
+            entries = tomllib.load(config_file)['allowlists']
+        path = 'tests/test_resume_hosted_sql_engine.py'
+        entry = next(item for item in entries
+                     if item.get('paths') == [r'^tests/test_resume_hosted_sql_engine\.py$'])
+
+        def allows(candidate_path, line):
+            return (any(re.search(pattern, candidate_path) for pattern in entry['paths'])
+                    and any(re.search(pattern, line) for pattern in entry['regexes']))
+
+        keyword = 'sec' + 'rets'
+        line = (' ' * 12 + 'migration, result, ' + keyword + '=' + keyword
+                + ', evidence_missing=not output.is_file())')
+        for allowed in (line, '\n' + line, line + '\r', '\n' + line + '\r'):
+            self.assertTrue(allows(path, allowed))
+        for other_path in ('tests/other.py', path.upper(), 'prefix/' + path, path + '.bak'):
+            self.assertFalse(allows(other_path, line))
+        credential = 'synthetic-' + 'credential-123456789abcdef'
+        assignment = 'api_' + 'key = "' + credential + '"'
+        changed_lines = (
+            '\n\n' + line, ' ' + line, line[1:], line + ' # trailing text',
+            line.replace(keyword + '=' + keyword, keyword + '="' + credential + '"'),
+            line + '; ' + assignment, assignment,
+            line + '\n' + assignment, assignment + '\n' + line,
+        )
+        for changed in changed_lines:
+            with self.subTest(changed=changed):
+                self.assertFalse(allows(path, changed))
 
 
 class OperationalHealthRouteTests(unittest.TestCase):
