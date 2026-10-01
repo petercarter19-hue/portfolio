@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-RESUME-EXTRACTION-STRENGTHEN-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Strengthen unique exact contiguous source anchors, one proposal per factual meaning, and eligible member shortlist comparison semantics. Validate every raw candidate before conservative exactly equal proposal reduction preserving first anchor, certainty and update fields; preserve distinct same-employer jobs and the whole-batch citation guard. Support only explicitly configured owner MyData extraction for Luna medium/high/xhigh and exact Sol low/medium/high with model/deployment/version identity, conservative reservation and truthful usage. Focused offline regressions, self-review, Protected independent exact-candidate review, required CI, accepted merge and normal close. No writer paid calls or deployment, flags, factory, default winner, privacy/retention/storage/schema/identity/voice expansion.",
   "assignment": "implementation",
   "writer_ref": "session:01a0f429-f930-7450-a665-7f05c6382881",
@@ -31,6 +31,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "0265413c844c714c4798a9e97771cd474e2784c1",
+  "closed_at": "2026-10-01T00:05:12Z"
 }
