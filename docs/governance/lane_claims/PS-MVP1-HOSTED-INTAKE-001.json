@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-HOSTED-INTAKE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Implement owner-selected Resume50,000,000-byte selectable-text documents, actual decoded300-second WebM/Opus or PCM recordings,30-day unfinished drafts and privately retained originals with member-controlled deletion. Add owner/source/version/digest SQL metadata and dedicated private Blob adapter with authorized bounded download/delete and explicit-intent-only server recovery. Use failclosed durable SQL intake, accepted strict Luna/provider/private matching and immutable six-dispatch/USD6 qualification reservation. Produce Protected source review,13 bounded Hosted SQL oracles and7 genuine generic gates; import only actual root-owned proof, required CI, accepted runtime merge and normal claim close. Root owns engine execution/schema/permissions/Blob/RBAC/config/deploy/provider/live qualification; writer performs none.",
   "assignment": "implementation",
   "writer_ref": "session:01a0f446-0db5-7723-acd3-33019a1766d8",
@@ -80,6 +80,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "c70c174ab1944e443fb164c0568dc0fc38d96f0d",
+  "closed_at": "2026-10-01T22:48:35Z"
 }
