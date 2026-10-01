@@ -48,7 +48,9 @@
     "tests/test_resume_identity_sql.py",
     "tests/test_resume_media_sql.py",
     "tests/test_resume_publication_sql.py",
-    "tests/test_database_service.py"
+    "tests/test_database_service.py",
+    "SQL FIles/Verification/PS-VISITOR-AI-001_readers_verify.sql",
+    "SQL FIles/Verification/PS-RESUME-IDENTITY-001_publication_identity_verify.sql"
   ],
   "domains": [
     "runtime:resume-intake-hosted",
