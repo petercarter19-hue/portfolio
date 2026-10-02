@@ -20,7 +20,8 @@
     "docs/initiatives/PS-ONBOARDING-OVERHAUL-001/README.md",
     "docs/governance/lane_claims/PS-ONBOARDING-OVERHAUL-001.json",
     "docs/governance/lane_claims/receipts/PS-ONBOARDING-OVERHAUL-001.json",
-    "docs/governance/lane_claims/evidence/PS-ONBOARDING-OVERHAUL-001.md"
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-OVERHAUL-001.md",
+    "tests/test_resume_intake_routes.py"
   ],
   "domains": [
     "runtime:resume:onboarding"
