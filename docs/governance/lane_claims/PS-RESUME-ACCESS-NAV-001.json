@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-RESUME-ACCESS-NAV-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Restore immediate access to Pete's existing approved public resume from the signed-out site and signed-in workspace. Public primary navigation, phone menu, room switcher, no-script links and public search offer only My Resume and Interview AI; Interview AI opens its existing AI mode directly. Preserve generic member identity, private drafts, existing public content, all access checks, configuration, schema and held MVP1/local-installer work. Complete focused semantic navigation verification, self-review, current-target CI, accepted merge and the separately authorized bounded public-site release.",
   "assignment": "implementation",
   "writer_ref": "session:01a0fa90-0a39-7c90-a19d-9c3bb4060535",
@@ -31,6 +31,6 @@
   "review_requirement": "self",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "ab2fd6c2014c3e932569a10744536145feb7ae35",
+  "closed_at": "2026-10-02T10:54:23Z"
 }
