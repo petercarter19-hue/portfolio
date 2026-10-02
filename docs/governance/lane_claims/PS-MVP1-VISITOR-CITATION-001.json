@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-VISITOR-CITATION-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Correct the proven MVP1 visitor citation offset failure using only the visitor answer adapter: preserve already valid exact spans, otherwise derive positions solely from an exact nonempty uniquely occurring excerpt in its identified authorized source version. Reject absent/ambiguous/altered excerpts and preserve closed answer parsing, generic grounding, single factual field restrictions, semantic support, currentness and final citation authorization. Actual third public completed-response diagnosis is X:/PeerSlate/evidence/PS-LOCAL-REVIEWER-INSTALLATION-001/THIRD_PUBLIC_OFFLINE_DIAGNOSIS.json. Complete focused offline verification, independent Protected review, required CI, accepted merge and normal close. Preserve installer ownership/ledger/processes, existing budgets and owner5127 data. No paid calls, SQL, Foundation, production, identity or budget changes.",
   "assignment": "implementation",
   "writer_ref": "session:01a0faa6-40f5-72b3-b764-e9328073f3ac",
@@ -32,6 +32,6 @@
     "relinquished": true
   },
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "4fee9d61037573ea6b1e8a512d385e34f2b4a6e1",
+  "closed_at": "2026-10-02T07:03:19Z"
 }
