@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-RESUME-ACCESS-NAV-001",
+  "state": "active",
+  "outcome": "Restore immediate access to Pete's existing approved public resume from the signed-out site and signed-in workspace. Public primary navigation, phone menu, room switcher, no-script links and public search offer only My Resume and Interview AI; Interview AI opens its existing AI mode directly. Preserve generic member identity, private drafts, existing public content, all access checks, configuration, schema and held MVP1/local-installer work. Complete focused semantic navigation verification, self-review, current-target CI, accepted merge and the separately authorized bounded public-site release.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0fa90-0a39-7c90-a19d-9c3bb4060535",
+  "branch": "codex/2026-10-01-resume-access-nav-001",
+  "delivery_path": "Bounded",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "238932841cca122bf6ca6562fb37c69ffef04900",
+  "owner_outcome_ref": "session:01a0fa90-0a39-7c90-a19d-9c3bb4060535/event:evt-5c6ebd60-8149-4ec1-b30f-821d5b46318b+evt-66bfeadd-3d45-46e1-8fab-16ffb79654be",
+  "surfaces": [
+    "app.py",
+    "safe_return.py",
+    "tests/test_navigation.py",
+    "tests/test_public_nav_route_truth.py",
+    "tests/test_shared_shell_convergence.py",
+    "tests/test_resume_access_nav.py",
+    "docs/governance/lane_claims/PS-RESUME-ACCESS-NAV-001.json",
+    "docs/governance/lane_claims/receipts/PS-RESUME-ACCESS-NAV-001.json",
+    "docs/governance/lane_claims/evidence/PS-RESUME-ACCESS-NAV-001.md"
+  ],
+  "domains": ["runtime:public-resume-access-navigation"],
+  "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-RESUME-ACCESS-NAV-001.md"],
+  "review_requirement": "self",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
