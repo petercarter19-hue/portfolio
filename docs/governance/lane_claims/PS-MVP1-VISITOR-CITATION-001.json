@@ -4,7 +4,7 @@
   "state": "active",
   "outcome": "Correct the proven MVP1 visitor citation offset failure using only the visitor answer adapter: preserve already valid exact spans, otherwise derive positions solely from an exact nonempty uniquely occurring excerpt in its identified authorized source version. Reject absent/ambiguous/altered excerpts and preserve closed answer parsing, generic grounding, single factual field restrictions, semantic support, currentness and final citation authorization. Actual third public completed-response diagnosis is X:/PeerSlate/evidence/PS-LOCAL-REVIEWER-INSTALLATION-001/THIRD_PUBLIC_OFFLINE_DIAGNOSIS.json. Complete focused offline verification, independent Protected review, required CI, accepted merge and normal close. Preserve installer ownership/ledger/processes, existing budgets and owner5127 data. No paid calls, SQL, Foundation, production, identity or budget changes.",
   "assignment": "implementation",
-  "writer_ref": "session:01a0f446-0db5-7723-acd3-33019a1766d8",
+  "writer_ref": "session:01a0faa6-40f5-72b3-b764-e9328073f3ac",
   "branch": "codex/2026-10-01-mvp1-visitor-citation-001",
   "delivery_path": "Protected",
   "repository_authority": "through_merge",
@@ -18,10 +18,19 @@
     "docs/governance/lane_claims/receipts/PS-MVP1-VISITOR-CITATION-001.json",
     "docs/governance/lane_claims/evidence/PS-MVP1-VISITOR-CITATION-001.md"
   ],
-  "domains": ["runtime:mvp1-visitor-citation-reliability"],
-  "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-MVP1-VISITOR-CITATION-001.md"],
+  "domains": [
+    "runtime:mvp1-visitor-citation-reliability"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MVP1-VISITOR-CITATION-001.md"
+  ],
   "review_requirement": "independent",
-  "handoff": null,
+  "handoff": {
+    "from_ref": "session:01a0f446-0db5-7723-acd3-33019a1766d8",
+    "to_ref": "session:01a0faa6-40f5-72b3-b764-e9328073f3ac",
+    "checkpoint_sha": "4c3cd704f7ee7e03e1103498909443b311350ec9",
+    "relinquished": true
+  },
   "checkpoint_sha": null,
   "merged_sha": null,
   "closed_at": null
