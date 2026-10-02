@@ -20,7 +20,10 @@
     "tests/test_resume_access_nav.py",
     "docs/governance/lane_claims/PS-RESUME-ACCESS-NAV-001.json",
     "docs/governance/lane_claims/receipts/PS-RESUME-ACCESS-NAV-001.json",
-    "docs/governance/lane_claims/evidence/PS-RESUME-ACCESS-NAV-001.md"
+    "docs/governance/lane_claims/evidence/PS-RESUME-ACCESS-NAV-001.md",
+    "tests/test_auth.py",
+    "tests/test_owner_home.py",
+    "tests/test_owner_home_accessibility.py"
   ],
   "domains": ["runtime:public-resume-access-navigation"],
   "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-RESUME-ACCESS-NAV-001.md"],
