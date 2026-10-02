@@ -84,6 +84,41 @@ class ProviderCompositionTests(unittest.TestCase):
         for profile in self.config["profiles"].values():
             self.assertEqual(self.budget.snapshot(profile["scope"])["budget"]["dispatched_calls"], 0)
 
+    def test_two_saved_state_contexts_share_exact_owner_ledger_counts_and_caps(self):
+        self.transport.post = Mock(side_effect=AssertionError("Zero-provider context proof cannot dispatch"))
+        from tools.local_reviewer.providers import configure_private_providers
+        from tools.local_reviewer.persistence import SnapshotStore
+        identity = self.identity.fictional_origin("https://test.example.ts.net:8444")
+        personal = self.root / "data/state.json"
+        SnapshotStore(personal, self.state).save()
+        original = personal.read_bytes()
+        from tools.local_reviewer.runtime import build_fixture
+        fixture, app, _, state = build_fixture(SOURCE, self.stack)
+        with patch.object(ProviderBudget, "initialize", side_effect=AssertionError("no second ledger")):
+            fiction_budget = configure_private_providers(fixture, app, self.root, identity, self.config,
+                                                         token_provider=self.tokens, transport=self.transport)
+        self.assertEqual(fiction_budget.path, self.budget.path)
+        self.assertEqual(fiction_budget.profiles, self.budget.profiles)
+        for name, profile in self.config["profiles"].items():
+            request = str(uuid4())
+            values = {"@UserKey": self.identity.owner, "@Scope": profile["scope"], "@RequestId": request,
+                      "@ReservationMicroUsd": profile["reservation_micro_usd"], "@MaximumCalls": profile["maximum_calls"],
+                      "@HardCapMicroUsd": profile["hard_cap_micro_usd"], "@ConcurrentRequests": 1}
+            self.assertTrue(self.budget.reserve(values))
+            self.assertFalse(fiction_budget.reserve({**values, "@RequestId": str(uuid4())}))
+            event = {"phase": 1, "identity_sha256": sha256(request.encode()).hexdigest()}
+            event.update({"seconds": 1} if "duration_tariff" in profile else {"input_tokens": 1, "output_tokens": 0})
+            self.budget.settle(self.identity.owner, profile["scope"], request, [event])
+            self.assertEqual(fiction_budget.snapshot(profile["scope"])["budget"]["dispatched_calls"], 1)
+        before = {name: fiction_budget.snapshot(profile["scope"]) for name, profile in self.config["profiles"].items()}
+        fiction = SnapshotStore(self.root / "data/fictional-workspaces/onboarding/state.json", state, namespace="a" * 64)
+        fiction.save(); fiction.load(); fiction.save()
+        self.assertEqual({name: fiction_budget.snapshot(profile["scope"]) for name, profile in self.config["profiles"].items()}, before)
+        self.assertEqual(personal.read_bytes(), original)
+        self.tokens.assert_not_called()
+        self.transport.post.assert_not_called()
+        self.assertEqual(self.transport.calls, [])
+
     def test_private_providers_use_distinct_durable_scopes_and_content_free_logs(self):
         from services.resume_intake_runtime import SYNTHESIS_SCHEMA
         providers = self.app.config["RESUME_PRIVATE_ASSISTANCE_SERVICE"].providers

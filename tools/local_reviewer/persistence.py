@@ -163,12 +163,23 @@ class State:
 
 
 class SnapshotStore:
-    def __init__(self, path: Path, state: State):
-        self.path, self.state, self.generation = path, state, 0
+    def __init__(self, path: Path, state: State, *, namespace=None):
+        if namespace is not None and (not isinstance(namespace, str) or len(namespace) != 64
+                                      or any(c not in "0123456789abcdef" for c in namespace)):
+            raise SnapshotError("Invalid fictional snapshot namespace")
+        self.path, self.state, self.generation, self.namespace = path, state, 0, namespace
+
+    def ordinary_path(self):
+        if self.namespace is not None and any(
+                p.is_symlink() or getattr(p, "is_junction", lambda: False)()
+                for p in (self.path, *self.path.parents)):
+            raise SnapshotError("Fictional snapshot path contains a link")
 
     def pack(self, encoded, generation=None):
         body = {"schema": SCHEMA, "contract": self.state.contract,
                 "generation": self.generation if generation is None else generation, "state": encoded}
+        if self.namespace is not None:
+            body["namespace"] = self.namespace
         return canonical({"body": body, "sha256": hashlib.sha256(canonical(body)).hexdigest()})
 
     def unpack(self, data):
@@ -180,7 +191,9 @@ class SnapshotStore:
         body = document["body"]
         if hashlib.sha256(canonical(body)).hexdigest() != document["sha256"]:
             raise SnapshotError("Snapshot checksum does not match")
-        if set(body) != {"schema", "contract", "generation", "state"} or body["schema"] != SCHEMA or body["contract"] != self.state.contract:
+        fields = {"schema", "contract", "generation", "state"} | ({"namespace"} if self.namespace else set())
+        if (set(body) != fields or body["schema"] != SCHEMA or body["contract"] != self.state.contract
+                or body.get("namespace") != self.namespace):
             raise SnapshotError("Snapshot is incompatible; preserve it and restore its matching release")
         if type(body["generation"]) is not int or body["generation"] < 0:
             raise SnapshotError("Invalid snapshot generation")
@@ -188,6 +201,7 @@ class SnapshotStore:
         return body
 
     def save(self, encoded=None):
+        self.ordinary_path()
         encoded = self.state.capture() if encoded is None else encoded
         self.state.validate(encoded)
         data = self.pack(encoded, self.generation + 1)
@@ -197,6 +211,7 @@ class SnapshotStore:
         self.generation += 1
 
     def load(self):
+        self.ordinary_path()
         body = self.unpack(self.path.read_bytes())
         self.state.restore(body["state"])
         self.generation = body["generation"]

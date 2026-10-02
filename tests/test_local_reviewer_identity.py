@@ -43,6 +43,31 @@ class PrivateIdentityTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             PrivateIdentity.from_config({"origin": self.identity.origin, "login": self.identity.login})
 
+    def test_fictional_origin_retains_owner_and_refuses_inactive_tabs(self):
+        fictional = self.identity.fictional_origin("https://test-node.example-tail.ts.net:8444")
+        self.assertEqual((fictional.owner, fictional.login, fictional.display_name),
+                         (self.identity.owner, self.identity.login, self.identity.display_name))
+        request = {**self.request, "HTTP_HOST": "test-node.example-tail.ts.net:8444",
+                   "HTTP_X_FORWARDED_HOST": "test-node.example-tail.ts.net:8444",
+                   "HTTP_COOKIE": "reviewer-fictional-owner=other; mvp1-synthetic-owner=other",
+                   "HTTP_X_MS_CLIENT_PRINCIPAL_ID": "other", "REQUEST_METHOD": "POST",
+                   "HTTP_ORIGIN": fictional.origin}
+        self.assertEqual(fictional.authorize(request), self.identity.owner)
+        for access, stale in ((fictional, self.request), (self.identity, request)):
+            for method in ("GET", "POST"):
+                with self.subTest(method=method, origin=access.origin), self.assertRaises(PrivateAccessDenied):
+                    access.authorize({**stale, "REQUEST_METHOD": method})
+        for change in ({"HTTP_TAILSCALE_USER_LOGIN": "other@example.test"},
+                       {"HTTP_ORIGIN": self.identity.origin}, {"HTTP_X_FORWARDED_HOST": "127.0.0.1:53720"}):
+            with self.assertRaises(PrivateAccessDenied):
+                fictional.authorize({**request, **change})
+
+    def test_operator_origin_cannot_change_the_private_host_or_reuse_personal_origin(self):
+        for origin in (self.identity.origin, "https://other.example-tail.ts.net:8444",
+                       "https://test-node.example-tail.ts.net:443", "http://test-node.example-tail.ts.net:8444"):
+            with self.subTest(origin=origin), self.assertRaises(ValueError):
+                self.identity.fictional_origin(origin)
+
 
 if __name__ == "__main__":
     unittest.main()

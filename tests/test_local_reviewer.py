@@ -33,6 +33,28 @@ class Record:
 
 
 class SnapshotTests(unittest.TestCase):
+    def test_fictional_snapshot_rejects_legacy_and_other_namespaces_without_rewriting_personal(self):
+        with tempfile.TemporaryDirectory() as directory:
+            obj = SimpleNamespace(values={"personal": "preserved"})
+            state = State({"values": (obj, "values")}, Codec())
+            personal = SnapshotStore(Path(directory) / "state.json", state)
+            personal.save()
+            original = personal.path.read_bytes()
+            fiction = SnapshotStore(Path(directory) / "fiction.json", state, namespace="a" * 64)
+            obj.values = {"fiction": "separate"}
+            fiction.save()
+            other = SnapshotStore(Path(directory) / "other.json", state, namespace="b" * 64)
+            for reader, raw in ((fiction, original), (personal, fiction.path.read_bytes()),
+                                (other, fiction.path.read_bytes())):
+                with self.assertRaises(SnapshotError):
+                    reader.unpack(raw)
+            self.assertEqual(personal.path.read_bytes(), original)
+            with patch("tools.local_reviewer.persistence.os.replace", side_effect=OSError("interrupted save")):
+                with self.assertRaises(OSError):
+                    fiction.save()
+            fiction.load()
+            self.assertEqual(obj.values, {"fiction": "separate"})
+
     def test_safe_roundtrip_preserves_typed_keys_binary_records_and_enums(self):
         codec = Codec((Record, Choice))
         value = {(1, "owner"): (b"\x00\xff", Record("fiction", datetime.now(timezone.utc)), Choice.ONE), "set": frozenset((1, 2))}
@@ -463,6 +485,158 @@ class FactoryPairTests(unittest.TestCase):
         self.assertEqual((self.root / "data/provider-budget-v1.sqlite3").read_bytes(), ledger)
 
 
+class WorkspaceOperatorTests(unittest.TestCase):
+    setUpPair = FactoryPairTests.setUp
+    probe_pair = FactoryPairTests.probe_pair
+
+    def setUp(self):
+        self.setUpPair()
+        from tools.local_reviewer.private_identity import PrivateIdentity
+        self.identity = PrivateIdentity.from_config({"origin": "https://test.example.ts.net:8443",
+            "login": "owner@example.test", "owner": self.identity.owner, "display_name": "Private Test Profile"})
+        self.manager.write(self.root / "private-access.json", {
+            "origin": self.identity.origin, "login": self.identity.login,
+            "owner": self.identity.owner, "display_name": self.identity.display_name})
+        self.stack.enter_context(patch("tools.local_reviewer.runtime.private_access", return_value=self.identity))
+        self.stack.enter_context(patch("tools.local_reviewer.runtime.build_fixture", side_effect=self.fresh))
+        state = self.fresh()[3]
+        state.bindings["values"][0].values = {"personal-secret": "never copied"}
+        store = SnapshotStore(self.root / "data/state.json", state)
+        store.save()
+        self.personal = store.path.read_bytes()
+
+    def fresh(self, *args, **kwargs):
+        obj = SimpleNamespace(values={"fresh-fixture": True})
+        return None, None, set(), State({"values": (obj, "values")}, Codec())
+
+    def snapshots(self):
+        return {name: self.budget.snapshot(profile["scope"]) for name, profile in self.config["profiles"].items()}
+
+    def test_create_select_restore_and_return_keep_personal_and_root_accounting(self):
+        from tools.local_reviewer.runtime import selected_context
+        before = self.snapshots()
+        ledger = (self.root / "data/provider-budget-v1.sqlite3").read_bytes()
+        self.manager.create_workspace(self.root)
+        self.manager.select_workspace(self.root, "onboarding")
+        context = selected_context(self.root)
+        store = context.store(self.fresh()[3]); store.load()
+        self.assertNotIn("personal-secret", store.state.capture().__str__())
+        checkpoint = self.manager.offline_checkpoint(self.root)
+        store.state.bindings["values"][0].values = {"fictional-edit": "corrected"}
+        store.save()
+        self.manager.restore_private(self.root, checkpoint)
+        restored = context.store(self.fresh()[3]); restored.load()
+        self.assertEqual(restored.state.bindings["values"][0].values, {"fresh-fixture": True})
+        # Even if a personal checkpoint is copied into the fictional directory,
+        # the typed namespace contract must refuse it before any state write.
+        (context.checkpoints / "foreign.json").write_bytes(self.personal)
+        current = context.state_path.read_bytes()
+        with self.assertRaises(SnapshotError): self.manager.restore_private(self.root, "foreign.json")
+        self.assertEqual(context.state_path.read_bytes(), current)
+        self.manager.select_workspace(self.root, "personal")
+        self.assertEqual(selected_context(self.root).identity, self.identity)
+        self.assertEqual((self.root / "data/state.json").read_bytes(), self.personal)
+        self.assertEqual(self.snapshots(), before)
+        self.assertEqual((self.root / "data/provider-budget-v1.sqlite3").read_bytes(), ledger)
+
+    def test_active_reservation_in_each_profile_blocks_create_select_and_restore(self):
+        self.manager.create_workspace(self.root)
+        checkpoint = self.manager.offline_checkpoint(self.root)
+        for name, profile in self.config["profiles"].items():
+            request = str(uuid4())
+            self.assertTrue(self.budget.reserve({"@UserKey": self.identity.owner, "@Scope": profile["scope"],
+                "@RequestId": request, "@ReservationMicroUsd": profile["reservation_micro_usd"],
+                "@MaximumCalls": profile["maximum_calls"], "@HardCapMicroUsd": profile["hard_cap_micro_usd"],
+                "@ConcurrentRequests": 1}))
+            for action in (lambda: self.manager.create_workspace(self.root),
+                           lambda: self.manager.select_workspace(self.root, "onboarding"),
+                           lambda: self.manager.restore_private(self.root, checkpoint)):
+                with self.subTest(profile=name), self.assertRaisesRegex(ValueError, "active reservations"):
+                    action()
+            event = {"phase": 1, "identity_sha256": __import__("hashlib").sha256(request.encode()).hexdigest()}
+            event.update({"seconds": 1} if "duration_tariff" in profile else {"input_tokens": 1, "output_tokens": 0})
+            self.budget.settle(self.identity.owner, profile["scope"], request, [event])
+        self.manager.select_workspace(self.root, "onboarding")
+
+    def test_live_or_undrained_server_blocks_selection_and_creation(self):
+        self.status.return_value = {"running": True}
+        with self.assertRaisesRegex(ValueError, "Stop the private site"):
+            self.manager.create_workspace(self.root)
+        self.status.return_value = {"running": False}
+        self.manager.create_workspace(self.root)
+        with self.manager.exclusive(self.root, "server.lock"):
+            with self.assertRaises(OSError): self.manager.select_workspace(self.root, "onboarding")
+
+    def test_interrupted_selection_keeps_last_valid_pointer_and_both_saved_states(self):
+        self.manager.create_workspace(self.root)
+        original = (self.root / "installation.json").read_bytes()
+        fiction = self.root / "data/fictional-workspaces/onboarding/state.json"
+        saved = fiction.read_bytes()
+        with patch.object(self.manager, "write", side_effect=OSError("interrupted pointer")):
+            with self.assertRaises(OSError): self.manager.select_workspace(self.root, "onboarding")
+        self.assertEqual((self.root / "installation.json").read_bytes(), original)
+        self.assertEqual(fiction.read_bytes(), saved)
+        self.assertEqual((self.root / "data/state.json").read_bytes(), self.personal)
+
+    def test_metadata_tampering_and_missing_selection_fail_closed(self):
+        from tools.local_reviewer.runtime import selected_context
+        self.manager.create_workspace(self.root)
+        manifest = self.manager.read(self.root / "installation.json")
+        descriptor = self.root / "data/fictional-workspaces/onboarding/descriptor.json"
+        original = descriptor.read_bytes()
+        descriptor.write_bytes(original + b" ")
+        with self.assertRaisesRegex(ValueError, "descriptor changed"): selected_context(self.root)
+        descriptor.write_bytes(original)
+        self.manager.write(self.root / "installation.json", {k: v for k, v in manifest.items() if k != "workspace"})
+        with self.assertRaisesRegex(ValueError, "personal fallback refused"): selected_context(self.root)
+        for key, value in (("owner", str(uuid4())), ("origin", "https://other.example.ts.net:8444"),
+                           ("installation", "another-installation")):
+            changed = {**json.loads(original), key: value}; raw = canonical(changed); descriptor.write_bytes(raw)
+            self.manager.write(self.root / "installation.json", {**manifest, "workspace": {
+                **manifest["workspace"], "descriptor_sha256": __import__("hashlib").sha256(raw).hexdigest()}})
+            with self.subTest(key=key), self.assertRaises(ValueError): selected_context(self.root)
+
+    def test_recovery_digest_binds_fictional_context_and_old_rollback_is_refused(self):
+        original = self.manager.operator_configuration_digest(self.root, self.manager.read(self.root / "installation.json"))
+        self.manager.create_workspace(self.root)
+        manifest = self.manager.read(self.root / "installation.json")
+        self.assertEqual(self.manager.operator_configuration_digest(self.root, manifest), original)
+        self.manager.select_workspace(self.root, "onboarding")
+        current = self.manager.read(self.root / "installation.json")
+        self.assertNotEqual(self.manager.operator_configuration_digest(self.root, current), original)
+        self.manager.write(self.root / "previous.json", {"manifest": self.old, "checkpoint": None})
+        with patch.object(self.manager, "stop") as stop:
+            with self.assertRaisesRegex(ValueError, "older controllers"):
+                self.manager.rollback(self.root)
+            stop.assert_not_called()
+
+    def test_controller_update_preserves_selected_context_and_saved_content(self):
+        from tools.local_reviewer.runtime import selected_context
+        self.manager.create_workspace(self.root)
+        self.manager.select_workspace(self.root, "onboarding")
+        before = self.manager.read(self.root / "installation.json")
+        context = selected_context(self.root)
+        saved = context.state_path.read_bytes()
+        self.probe.side_effect = None; self.probe.return_value = SimpleNamespace(returncode=0)
+        self.prepare.return_value = ("old", {"candidate_state": "accepted-main"}, {})
+        self.args.factory = None
+        self.manager.install_artifact(self.root, self.args)
+        current = self.manager.read(self.root / "installation.json")
+        self.assertEqual(current["workspace"], before["workspace"])
+        self.assertEqual(selected_context(self.root).binding, context.binding)
+        self.assertEqual(context.state_path.read_bytes(), saved)
+        self.assertEqual((self.root / "data/state.json").read_bytes(), self.personal)
+
+    def test_workspace_directory_links_are_refused_before_loading_state(self):
+        from tools.local_reviewer.runtime import selected_context
+        self.manager.create_workspace(self.root)
+        target = self.root / "data/fictional-workspaces/onboarding"
+        original = Path.is_symlink
+        with patch.object(Path, "is_symlink", lambda p: p == target or original(p)):
+            with self.assertRaisesRegex(ValueError, "ordinary files"):
+                selected_context(self.root)
+
+
 class FixtureTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -626,6 +800,73 @@ class FixtureTests(unittest.TestCase):
         self.assertEqual(page.status_code, 200)
         self.assertIn(b"PRIVATE TEST SITE", page.data)
         self.assertEqual(page.headers["Cache-Control"], "private, no-store")
+
+    def test_fictional_owner_application_edits_restart_and_stale_tabs_leave_personal_unchanged(self):
+        from tools.local_reviewer.private_identity import PrivateIdentity
+        from tools.local_reviewer.runtime import selected_context
+        from tools.local_reviewer import manager
+        from werkzeug.test import Client
+        from werkzeug.wrappers import Response
+        config = {"origin": "https://reviewer.example.ts.net:8443", "login": "owner@example.test",
+                  "owner": str(uuid4()), "display_name": "Private Test Profile"}
+        manager.write(self.install / "private-access.json", config)
+        identity = PrivateIdentity.from_config(config)
+        stack = ExitStack(); self.addCleanup(stack.close); identity.bind_principal(stack)
+        manifest = {"installation": "fictional-test", "private_profile": True}
+        manager.write(self.install / "installation.json", manifest)
+        def client_for(store):
+            boundary = Boundary(self.fixture, self.app, self.endpoints, store, self.install,
+                {"port": 53720, "source_sha": "a" * 40, "candidate_state": "reviewed-preview"},
+                "test-control-token", threading.Event())
+            return Client(boundary, Response)
+        def remote(client, origin, path, method="GET", **kwargs):
+            return client.open(path, method=method, base_url=origin, environ_base={"REMOTE_ADDR": "127.0.0.1"},
+                headers={"X-Forwarded-Host": origin.removeprefix("https://"), "X-Forwarded-Proto": "https",
+                         "Tailscale-User-Login": identity.login, "Origin": origin,
+                         "X-PeerSlate-Request": "same-origin"}, **kwargs)
+        personal_client = client_for(self.store)
+        response = remote(personal_client, identity.origin, "/api/resume-intake/me/draft", "PUT",
+                          json={"request_id": str(uuid4()), "text": "Personal fixture content that must stay private"})
+        self.assertEqual(response.status_code, 200)
+        original = self.store.path.read_bytes()
+        descriptor = {"schema": 1, "workspace": "onboarding", "installation": manifest["installation"],
+                      "owner": identity.owner, "personal_origin": identity.origin,
+                      "origin": "https://reviewer.example.ts.net:8444",
+                      "private_access_sha256": manager.digest(self.install / "private-access.json")}
+        raw = canonical(descriptor); namespace = __import__("hashlib").sha256(raw).hexdigest()
+        directory = self.install / "data/fictional-workspaces/onboarding"
+        manager.atomic_write(directory / "descriptor.json", raw)
+        manifest["workspace"] = {"protocol": 1, "descriptor_sha256": namespace, "selected": "onboarding"}
+        manager.write(self.install / "installation.json", manifest)
+        self.state.restore(self.initial)
+        context = selected_context(self.install); store = context.store(self.state); store.save()
+        fictional_client = client_for(store)
+        for version, text in enumerate(("Fictional first draft", "Fictional revised draft", "Fictional corrected draft")):
+            response = remote(fictional_client, context.identity.origin, "/api/resume-intake/me/draft", "PUT",
+                              json={"request_id": str(uuid4()), "text": text,
+                                    **({"expected_version": version} if version else {})})
+            self.assertEqual(response.status_code, 200, response.data)
+        page = remote(fictional_client, context.identity.origin, "/app/resume")
+        self.assertEqual(page.status_code, 200); self.assertIn(b"FICTIONAL ONBOARDING WORKSPACE", page.data)
+        self.assertNotIn(b"Personal fixture content", page.data)
+        for method in ("GET", "PUT"):
+            self.assertEqual(remote(fictional_client, identity.origin, "/api/resume-intake/me/draft", method,
+                                   json={} if method == "PUT" else None).status_code, 403)
+        self.state.restore(self.initial)
+        restarted = context.store(self.state); restarted.load()
+        restarted_client = client_for(restarted)
+        result = remote(restarted_client, context.identity.origin, "/api/resume-intake/me/draft")
+        self.assertIn(b"Fictional corrected draft", result.data)
+        self.assertNotIn(b"Personal fixture content", result.data)
+        saved = context.state_path.read_bytes()
+        self.assertEqual(self.store.path.read_bytes(), original)
+        manager.write(self.install / "installation.json", {**manifest, "workspace": {**manifest["workspace"], "selected": "personal"}})
+        self.state.restore(self.initial); self.store.load()
+        returned = client_for(self.store)
+        self.assertIn(b"Personal fixture content", remote(returned, identity.origin, "/api/resume-intake/me/draft").data)
+        self.assertEqual(remote(returned, context.identity.origin, "/api/resume-intake/me/draft", "PUT", json={}).status_code, 403)
+        self.assertEqual(context.state_path.read_bytes(), saved)
+        self.assertEqual(self.store.path.read_bytes(), original)
 
     def test_status_remains_token_authenticated_during_long_request(self):
         acquired, release = threading.Event(), threading.Event()

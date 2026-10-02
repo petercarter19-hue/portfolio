@@ -62,6 +62,15 @@ class PrivateIdentity:
             raise PrivateAccessDenied("Same-origin private request required")
         return self.owner
 
+    def fictional_origin(self, origin):
+        """Derive an operator-owned origin; the authenticated account never changes."""
+        selected = self.from_config({"origin": origin, "login": self.login,
+                                     "owner": self.owner, "display_name": self.display_name})
+        if (urlsplit(origin).hostname != urlsplit(self.origin).hostname
+                or urlsplit(origin).port != 8444 or origin == self.origin):
+            raise ValueError("Fictional workspace requires the same private host on distinct port8444")
+        return selected
+
     def bind_principal(self, stack):
         """Compose the local member key after edge authentication, without SQL."""
         from flask import request

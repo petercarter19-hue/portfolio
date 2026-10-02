@@ -163,3 +163,50 @@ actual provider composition with fake transports, non-content logging and
 configuration failures. Independent review and bounded real-provider/device
 acceptance are required before calling installation complete. A PC HTTPS check
 does not establish physical Mac/iPad microphone or browser acceptance.
+# Fictional onboarding workspace
+
+The private reviewer supports one separate fictional saved-state workspace on
+`https://<your existing Tailscale host>:8444`. It uses your existing authenticated
+development account and owner UUID. This is private testing, not product signup.
+Personal content remains in `data/state.json`; fictional content stays in
+`data/fictional-workspaces/onboarding/state.json`, with its own checkpoints.
+The page displays **FICTIONAL ONBOARDING WORKSPACE** while it is selected.
+
+Only one workspace runs at a time. The inactive origin is refused, including old
+tabs and their writes. Keep the existing private8443 and dashboard443 Serve
+mappings. Add only the private8444 mapping to the same loopback backend; do not
+reset Serve or enable Funnel.
+
+Use the installed `reviewer.py` commands with the installation's Python runtime:
+
+1. `stop`, then confirm stopped and fully drained with `status`.
+2. `create-fictional-workspace` once. It creates fresh fixture content and leaves
+   personal selected. It never copies personal content or recreates an existing
+   fictional workspace.
+3. `select-workspace onboarding`, then `start` and `open` in your normal browser.
+4. Make fictional edits, save, reload, and restart to check persistence.
+5. `stop`, confirm drained, then `select-workspace personal`, `start`, and `open`.
+
+Creation, selection and private `restore <checkpoint>` require the stopped server
+lifetime lock and zero active reservations across all five provider profiles.
+Private restore now runs as an explicit stopped operator command. It validates
+the selected namespace before replacing content; foreign and legacy personal
+checkpoints cannot restore into the fictional workspace. A failed request blocks
+these actions until its supported recovery under the original context completes.
+
+Both contexts retain the same root provider ledger, allocation, operation counts,
+spending caps, signing key, and immutable application/factory binding. Switching
+does not replenish AI or diagnostics. Initial fictional acceptance uses zero
+provider calls. Never reset the ledger to unblock a test.
+
+Workspace metadata is server owned. Missing or changed selection, descriptor,
+owner binding, links, or saved state stops startup rather than loading personal
+content. An interrupted selection retains the last complete pointer and snapshots.
+Incomplete creation is preserved and refused rather than silently reset. Updates
+probe and retain the selected context. Rollback requires a compatible controller
+and the exact same selection; it validates current content and does not rewind it.
+Use explicit restore for a deliberate content rewind. Older controllers are refused
+once the workspace contract exists, including after return to personal.
+
+Mac/iPad hardware, microphone use, and actual product signup remain separate
+acceptance items. This capability does not enable or publish the public MVP.

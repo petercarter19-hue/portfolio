@@ -27,6 +27,8 @@ from .private_identity import PrivateIdentity, PrivateAccessDenied
 
 MEMBERS = ("g-member-a", "g-member-b", "g-member-c")
 WORKER_THREADS = 4
+WORKSPACE_PROTOCOL = 1
+WORKSPACE_ID = "onboarding"
 OFFLINE_CSP = ("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
                "img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self' blob:; "
                "worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'")
@@ -41,6 +43,74 @@ def private_access(install):
         raise ValueError("Private access configuration must be an ordinary file")
     config = json.loads(path.read_text(encoding="utf-8"))
     return PrivateIdentity.from_config(config)
+
+
+def ordinary_path(path):
+    if any(p.is_symlink() or getattr(p, "is_junction", lambda: False)()
+           for p in (path, *path.parents)):
+        raise ValueError("Workspace path must contain only ordinary files and directories")
+    return path
+
+
+@dataclasses.dataclass(frozen=True)
+class WorkspaceContext:
+    identity: object
+    key: str
+    namespace: str | None
+    state_path: Path
+    checkpoints: Path
+
+    @property
+    def binding(self):
+        return {"key": self.key, "namespace": self.namespace,
+                "origin": getattr(self.identity, "origin", None)}
+
+    def store(self, state):
+        return SnapshotStore(self.state_path, state, namespace=self.namespace)
+
+
+def selected_context(install, manifest=None):
+    """One server-owned selection. Never infer a workspace from request data."""
+    identity = private_access(install)
+    if manifest is None:
+        path = ordinary_path(install / "installation.json")
+        manifest = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    directory = ordinary_path(install / "data" / "fictional-workspaces" / WORKSPACE_ID)
+    selection = manifest.get("workspace")
+    if selection is None:
+        if directory.exists():
+            raise ValueError("Workspace selection is missing; personal fallback refused")
+        return WorkspaceContext(identity, "personal", None,
+                                install / "data" / "state.json", install / "checkpoints")
+    if (not manifest.get("private_profile") or identity is None
+            or type(selection) is not dict
+            or set(selection) != {"protocol", "descriptor_sha256", "selected"}
+            or type(selection["protocol"]) is not int or selection["protocol"] != WORKSPACE_PROTOCOL
+            or selection["selected"] not in {"personal", WORKSPACE_ID}
+            or not isinstance(selection["descriptor_sha256"], str)
+            or not re.fullmatch("[0-9a-f]{64}", selection["descriptor_sha256"])):
+        raise ValueError("Invalid workspace selection")
+    path = ordinary_path(directory / "descriptor.json")
+    raw = path.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != selection["descriptor_sha256"]:
+        raise ValueError("Workspace descriptor changed")
+    descriptor = json.loads(raw)
+    expected = {"schema", "workspace", "installation", "owner", "personal_origin", "origin", "private_access_sha256"}
+    if (type(descriptor) is not dict or set(descriptor) != expected
+            or type(descriptor["schema"]) is not int or descriptor["schema"] != WORKSPACE_PROTOCOL
+            or descriptor["workspace"] != WORKSPACE_ID
+            or descriptor["installation"] != manifest["installation"]
+            or descriptor["owner"] != identity.owner
+            or descriptor["personal_origin"] != identity.origin
+            or descriptor["private_access_sha256"] != hashlib.sha256(
+                ordinary_path(install / "private-access.json").read_bytes()).hexdigest()):
+        raise ValueError("Workspace owner or installation binding changed")
+    fictional_identity = identity.fictional_origin(descriptor["origin"])
+    if selection["selected"] == "personal":
+        return WorkspaceContext(identity, "personal", None,
+                                install / "data" / "state.json", install / "checkpoints")
+    return WorkspaceContext(fictional_identity, WORKSPACE_ID, selection["descriptor_sha256"],
+                            ordinary_path(directory / "state.json"), ordinary_path(directory / "checkpoints"))
 
 
 def offline_html(body):
@@ -251,7 +321,10 @@ class Boundary:
         # Leave a worker available for Stop/Status even when app requests wait.
         self.application_slots = threading.BoundedSemaphore(WORKER_THREADS - 1)
         self.host = "127.0.0.1:" + str(metadata["port"])
-        self.private_access = private_access(install)
+        self.context = selected_context(install)
+        self.private_access = self.context.identity
+        if self.context.namespace and (store.path != self.context.state_path or store.namespace != self.context.namespace):
+            raise ValueError("Fictional boundary and saved state binding differ")
         self.app.config["TRUSTED_HOSTS"] = ["127.0.0.1"] + ([urlsplit(self.private_access.origin).hostname] if self.private_access else [])
         self.app.config["SESSION_COOKIE_SECURE"] = bool(self.private_access)
 
@@ -278,7 +351,7 @@ class Boundary:
         from datetime import datetime, timezone
         from uuid import uuid4
         name = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:8] + ".json"
-        atomic_write(self.install / "checkpoints" / name, self.store.pack(self.store.state.capture()))
+        atomic_write(ordinary_path(self.context.checkpoints / name), self.store.pack(self.store.state.capture()))
         return name
 
     def control(self, environ):
@@ -305,10 +378,12 @@ class Boundary:
             reset_member(self.store.state, owner)
             return self.response({"reset": owner, "checkpoint": checkpoint})
         if action == "restore":
+            if self.private_access:
+                return self.response({"error": "Stop and drain the private site; use the explicit operator restore"}, 400)
             name = request.get("checkpoint", "")
             if not isinstance(name, str) or Path(name).name != name or not name.endswith(".json"):
                 return self.response({"error": "Invalid checkpoint name"}, 400)
-            path = self.install / "checkpoints" / name
+            path = ordinary_path(self.context.checkpoints / name)
             if path.is_symlink() or not path.is_file():
                 return self.response({"error": "Checkpoint not found"}, 404)
             body = self.store.unpack(path.read_bytes())
@@ -404,6 +479,8 @@ class Boundary:
                 banner = '<aside role="note" style="padding:10px;background:#fff0bd;color:#231c00"><strong>LOCAL REVIEWER · FICTIONAL ACCOUNTS.</strong> Saved on this PC. Synthetic visitor answers; AI assistance and speech unavailable. <a href="/__mvp1_fixture__/">Choose member</a></aside>'
                 if access:
                     banner = '<aside role="note" style="padding:10px;background:#e8f1fb;color:#17324d"><strong>PRIVATE TEST SITE.</strong> Saved on your PC. Live AI is connected; selected content is sent to Azure AI when you use it. Test publishing stays inside this private site.</aside>'
+                    if self.context.namespace:
+                        banner = '<aside role="note" style="padding:10px;background:#e8f1fb;color:#17324d"><strong>FICTIONAL ONBOARDING WORKSPACE.</strong> Separate fictional content saved on your PC. Authenticated with your existing development account. Live AI retains the same limits; content is sent to Azure AI only when you use it. Test publishing stays inside this private site.</aside>'
                 response.set_data(body[:position] + banner.encode() + body[position:])
         return response
 
@@ -493,7 +570,8 @@ class Boundary:
 def serve(install: Path, release: Path, metadata, token):
     from waitress import create_server
     with ExitStack() as stack:
-        identity = private_access(install)
+        context = selected_context(install)
+        identity = context.identity
         fixture, app, endpoints, state = build_fixture(release / "source", stack, live_ai=bool(identity))
         if identity:
             from .providers import load_configuration, configure_private_providers
@@ -501,7 +579,10 @@ def serve(install: Path, release: Path, metadata, token):
             identity.bind_principal(stack)
             configure_private_providers(fixture, app, install, identity, configuration)
             metadata = {**metadata, "provider": "live_azure_ai", "url": identity.origin}
-        store = SnapshotStore(install / "data" / "state.json", state)
+        metadata = {**metadata, "workspace": context.binding}
+        store = context.store(state)
+        if context.namespace and not store.path.is_file():
+            raise ValueError("Fictional saved state missing; automatic recreation refused")
         if store.path.exists():
             store.load()  # Corruption/incompatibility stops startup, never reset.
         else:

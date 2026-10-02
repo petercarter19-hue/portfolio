@@ -110,6 +110,8 @@ def verify_release(root, manifest):
         actual_controller = {p.relative_to(directory).as_posix(): digest(p) for p in directory.rglob("*") if p.is_file()}
         if actual_controller != manifest["controller_files"] or hashlib.sha256(canonical(actual_controller)).hexdigest() != manifest["controller"]:
             raise ValueError("Installed controller changed")
+        if "workspace" in manifest and b"WORKSPACE_PROTOCOL = 1" not in (directory / "tools/local_reviewer/runtime.py").read_bytes():
+            raise ValueError("Controller cannot preserve the workspace contract")
     return release
 
 
@@ -129,6 +131,11 @@ def owned_status(root, manifest=None):
         return {"running": False, "reason": "owned listener unavailable", "last_instance": state["instance"]}
     if observed.get("instance") != state["instance"] or observed.get("installation") != manifest["installation"] or observed.get("release") != manifest["release"]:
         raise ValueError("Port is occupied by another instance; leave it alone")
+    if "workspace" in manifest or "workspace" in state:
+        from .runtime import selected_context
+        binding = selected_context(root, manifest).binding
+        if state.get("workspace") != binding or observed.get("workspace") != binding:
+            raise ValueError("Owned process workspace binding changed")
     return observed
 
 
@@ -186,7 +193,9 @@ def start(root):
         if os.name == "nt":
             check.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
         check.bind(("127.0.0.1", PORT))
-    state = {"instance": secrets.token_hex(24), "token": secrets.token_hex(32), "installation": manifest["installation"], "release": manifest["release"]}
+    from .runtime import selected_context
+    state = {"instance": secrets.token_hex(24), "token": secrets.token_hex(32), "installation": manifest["installation"], "release": manifest["release"],
+             "workspace": selected_context(root, manifest).binding}
     write(root / "process.json", state)
     log_dir = root / "logs"
     log_dir.mkdir(exist_ok=True)
@@ -326,6 +335,8 @@ def install_artifact(root, args, *, configuration_id=None):
         manifest["private_profile"] = True
         if "provider_configuration" in old:
             manifest["provider_configuration"] = old["provider_configuration"]
+        if "workspace" in old:
+            manifest["workspace"] = old["workspace"]
     if configuration_id is not None:
         manifest["provider_configuration"] = configuration_id
     verify_release(root, manifest)
@@ -378,6 +389,9 @@ actual = {p.relative_to(directory).as_posix(): hashlib.sha256(p.read_bytes()).he
 encoded = json.dumps(actual, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
 if actual != manifest["controller_files"] or hashlib.sha256(encoded).hexdigest() != controller:
     raise SystemExit("Installed controller changed; no code was imported")
+if (root / "data/fictional-workspaces/onboarding").exists() or "workspace" in manifest:
+    if "workspace" not in manifest or b"WORKSPACE_PROTOCOL = 1" not in (directory / "tools/local_reviewer/runtime.py").read_bytes():
+        raise SystemExit("Workspace contract requires a compatible controller; no personal fallback")
 raise SystemExit(subprocess.call([str(root / "runtime" / "Scripts" / "python.exe"), "-I", "-B", str(directory / "scripts" / "local_reviewer.py"), "--root", str(root), *sys.argv[1:]]))
 '''
     atomic_write(root / "reviewer.py", launcher.encode())
@@ -412,18 +426,29 @@ raise SystemExit(subprocess.call([str(root / "runtime" / "Scripts" / "python.exe
 
 
 def offline_checkpoint(root):
-    path = root / "data" / "state.json"
+    from .runtime import selected_context, ordinary_path
+    context = selected_context(root)
+    path = ordinary_path(context.state_path)
     if not path.exists():
         return None
     from uuid import uuid4
     name = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime()) + "-" + uuid4().hex[:8] + ".json"
-    atomic_write(root / "checkpoints" / name, path.read_bytes())
+    raw = path.read_bytes()
+    if context.namespace:
+        body = read(path)["body"]
+        if body.get("namespace") != context.namespace:
+            raise ValueError("Checkpoint namespace differs from selected workspace")
+    atomic_write(ordinary_path(context.checkpoints / name), raw)
     return name
 
 
 def rollback(root):
     previous = read(root / "previous.json")
     old = previous["manifest"]
+    current = read(root / "installation.json")
+    if "workspace" in current or (root / "data/fictional-workspaces/onboarding").exists():
+        if old.get("workspace") != current.get("workspace") or "workspace" not in old:
+            raise ValueError("Rollback must retain the exact workspace; older controllers cannot reinterpret it")
     if read(root / "installation.json").get("private_profile") and not old.get("private_profile"):
         raise ValueError("Cannot roll private personal data back to an offline shared-profile controller")
     verify_release(root, old)
@@ -432,6 +457,7 @@ def rollback(root):
     if current.get("private_profile") and (
         current["release"] != old["release"]
         or current.get("provider_configuration") != old.get("provider_configuration")
+        or "workspace" in current
     ):
         with private_operator(root) as (_, _, configuration, budget):
             scopes = [profile["scope"] for profile in configuration["profiles"].values()]
@@ -442,9 +468,28 @@ def rollback(root):
 
 
 def rollback_stopped(root, previous, old):
+    from .runtime import selected_context, ordinary_path
+    context = selected_context(root)
     checkpoint = offline_checkpoint(root)
-    if previous["checkpoint"]:
-        atomic_write(root / "data" / "state.json", (root / "checkpoints" / previous["checkpoint"]).read_bytes())
+    if "workspace" in old:
+        # The context pointer and its durable content are separate authorities.
+        # Validate compatibility, then roll back only the controller/app pointer.
+        # Explicit operator restore is the sole saved-state rewind operation.
+        with ExitStack() as stack:
+            from .runtime import build_fixture
+            _, _, _, state = build_fixture(verify_release(root, old) / "source", stack)
+            context.store(state).load()
+    elif previous["checkpoint"]:
+        name = previous["checkpoint"]
+        if not isinstance(name, str) or Path(name).name != name or not name.endswith(".json"):
+            raise ValueError("Invalid rollback checkpoint name")
+        raw = ordinary_path(context.checkpoints / name).read_bytes()
+        if context.namespace:
+            with ExitStack() as stack:
+                from .runtime import build_fixture
+                _, _, _, state = build_fixture(verify_release(root, old) / "source", stack)
+                context.store(state).unpack(raw)
+        atomic_write(ordinary_path(context.state_path), raw)
     write(root / "rollback-receipt.json", {"from": read(root / "installation.json")["release"], "to": old["release"], "displaced_checkpoint": checkpoint})
     write(root / "installation.json", old)
     return {"rolled_back": old["release"], "displaced_checkpoint": checkpoint}
@@ -523,6 +568,10 @@ def require_private_files(root):
         path = root / name
         if not path.is_file() or any(p.is_symlink() or p.is_junction() for p in (path, *path.parents)):
             raise ValueError("Private installation file unavailable; automatic reset refused")
+    from .runtime import selected_context, ordinary_path
+    context = selected_context(root)
+    if context.namespace and not ordinary_path(context.state_path).is_file():
+        raise ValueError("Fictional saved state missing; automatic recreation refused")
     private_permissions(root)
 
 
@@ -585,6 +634,10 @@ def operator_configuration_digest(root, manifest):
         from .providers import selected_configuration
         selected_configuration(root, manifest["provider_configuration"])
         binding["provider_configuration"] = manifest["provider_configuration"]
+    from .runtime import selected_context
+    context = selected_context(root, manifest)
+    if context.namespace:
+        binding["workspace"] = context.binding
     return hashlib.sha256(canonical(binding)).hexdigest()
 
 
@@ -601,15 +654,83 @@ def private_operator(root):
     if owned_status(root, manifest)["running"]:
         raise ValueError("Stop the private site and confirm worker teardown first")
     with exclusive(root, "server.lock"), ExitStack() as stack:
-        from .runtime import build_fixture, private_access
+        from .runtime import build_fixture, selected_context
         build_fixture(release / "source", stack)
         from .providers import load_configuration
         from .provider_budget import ProviderBudget
-        identity = private_access(root)
+        identity = selected_context(root, manifest).identity
         configuration = load_configuration(root, identity, release / "source")
         budget = ProviderBudget(root / "data/provider-budget-v1.sqlite3", owner=identity.owner,
             allocation_sha256=configuration["allocation_sha256"], profiles=configuration["profiles"])
         yield manifest, identity, configuration, budget
+
+
+def require_inactive(configuration, budget):
+    scopes = [profile["scope"] for profile in configuration["profiles"].values()]
+    if budget.has_active(scopes):
+        raise ValueError("Resolve all active reservations under their original context before changing saved-state context")
+
+
+def create_workspace(root):
+    """Create one fresh fixture, never a copy of the owner's personal snapshot."""
+    from .runtime import WORKSPACE_ID, build_fixture, ordinary_path
+    from urllib.parse import urlsplit
+    with private_operator(root) as (manifest, identity, configuration, budget):
+        require_inactive(configuration, budget)
+        directory = ordinary_path(root / "data/fictional-workspaces" / WORKSPACE_ID)
+        if "workspace" in manifest or directory.exists():
+            raise ValueError("Fictional workspace already exists or preparation is incomplete; preserve it")
+        origin = "https://" + urlsplit(identity.origin).hostname + ":8444"
+        identity.fictional_origin(origin)
+        descriptor = {"schema": 1, "workspace": WORKSPACE_ID, "installation": manifest["installation"],
+                      "owner": identity.owner, "personal_origin": identity.origin, "origin": origin,
+                      "private_access_sha256": digest(root / "private-access.json")}
+        data = canonical(descriptor)
+        namespace = hashlib.sha256(data).hexdigest()
+        with ExitStack() as stack:
+            _, _, _, state = build_fixture(verify_release(root, manifest) / "source", stack)
+            from .persistence import SnapshotStore
+            SnapshotStore(directory / "state.json", state, namespace=namespace).save()
+        atomic_write(directory / "descriptor.json", data)
+        write(root / "installation.json", {**manifest, "workspace": {
+            "protocol": 1, "descriptor_sha256": namespace, "selected": "personal"}})
+        return {"created": WORKSPACE_ID, "selected": "personal", "url": origin, "provider_calls": 0}
+
+
+def select_workspace(root, selection):
+    from .runtime import WORKSPACE_ID, selected_context, build_fixture
+    if selection not in {"personal", WORKSPACE_ID}:
+        raise ValueError("Choose the existing personal or onboarding workspace")
+    with private_operator(root) as (manifest, _, configuration, budget):
+        require_inactive(configuration, budget)
+        if "workspace" not in manifest:
+            raise ValueError("Explicitly create the fictional workspace first")
+        candidate = {**manifest, "workspace": {**manifest["workspace"], "selected": selection}}
+        context = selected_context(root, candidate)
+        # Fully validate the other context before its single atomic selection.
+        with ExitStack() as stack:
+            _, _, _, state = build_fixture(verify_release(root, manifest) / "source", stack)
+            context.store(state).load()
+        write(root / "installation.json", candidate)
+        return {"selected": selection, "url": context.identity.origin, "provider_calls": 0}
+
+
+def restore_private(root, name):
+    from .runtime import selected_context, build_fixture, ordinary_path
+    if not isinstance(name, str) or Path(name).name != name or not name.endswith(".json"):
+        raise ValueError("Invalid checkpoint name")
+    with private_operator(root) as (manifest, _, configuration, budget):
+        require_inactive(configuration, budget)
+        context = selected_context(root, manifest)
+        raw = ordinary_path(context.checkpoints / name).read_bytes()
+        with ExitStack() as stack:
+            _, _, _, state = build_fixture(verify_release(root, manifest) / "source", stack)
+            store = context.store(state)
+            store.load()
+            body = store.unpack(raw)
+            previous = offline_checkpoint(root)
+            store.save(body["state"])
+        return {"restored": name, "previous": previous, "workspace": context.binding, "provider_calls": 0}
 
 
 def resolve_failed_public(root, proof_path, review_path):
@@ -683,6 +804,9 @@ def main(argv=None):
             command.add_argument("--factory", type=Path)
     for action in ("start", "stop", "status", "checkpoint", "rollback", "serve", "open"):
         sub.add_parser(action)
+    sub.add_parser("create-fictional-workspace")
+    workspace = sub.add_parser("select-workspace")
+    workspace.add_argument("workspace", choices=("personal", "onboarding"))
     restore = sub.add_parser("restore")
     restore.add_argument("checkpoint")
     reset = sub.add_parser("reset")
@@ -710,6 +834,9 @@ def main(argv=None):
             require_private_files(root)
         if process["release"] != manifest["release"] or process["installation"] != manifest["installation"]:
             raise ValueError("Owned startup identity changed")
+        from .runtime import selected_context
+        if process.get("workspace") != selected_context(root, manifest).binding:
+            raise ValueError("Owned startup workspace changed")
         from .runtime import serve
         with exclusive(root, "server.lock"):
             serve(root, release, {"installation": manifest["installation"], "instance": process["instance"], "release": manifest["release"], "port": PORT,
@@ -718,20 +845,22 @@ def main(argv=None):
     if args.action == "probe":
         if not re.fullmatch(r"[0-9a-f]{40}-[0-9a-f]{12}", args.release):
             raise ValueError("Invalid release identity")
-        from .runtime import build_fixture
+        from .runtime import build_fixture, selected_context
         from .persistence import SnapshotStore
         with ExitStack() as stack:
             fixture, app, _, state = build_fixture(root / "releases" / args.release / "source", stack)
             current = read(root / "installation.json") if (root / "installation.json").exists() else {}
             if (root / "private-access.json").exists() or current.get("private_profile"):
                 require_private_files(root)
-                from .runtime import private_access
                 from .providers import load_configuration, configure_private_providers
-                identity = private_access(root)
+                identity = selected_context(root, current).identity
                 config = load_configuration(root, identity, root / "releases" / args.release / "source",
                                             configuration_id=args.provider_configuration)
                 configure_private_providers(fixture, app, root, identity, config)
-            store = SnapshotStore(root / "data" / "state.json", state)
+            context = selected_context(root, current)
+            store = context.store(state)
+            if context.namespace and not store.path.is_file():
+                raise ValueError("Fictional saved state missing; probe cannot recreate it")
             if store.path.exists():
                 store.load()
             print(json.dumps({"compatible": True, "contract": state.contract}))
@@ -748,7 +877,12 @@ def main(argv=None):
         elif args.action == "checkpoint":
             result = control(root, "checkpoint") if owned_status(root)["running"] else {"checkpoint": offline_checkpoint(root)}
         elif args.action == "restore":
-            result = control(root, "restore", {"checkpoint": args.checkpoint})
+            result = (restore_private(root, args.checkpoint) if read(root / "installation.json").get("private_profile")
+                      else control(root, "restore", {"checkpoint": args.checkpoint}))
+        elif args.action == "create-fictional-workspace":
+            result = create_workspace(root)
+        elif args.action == "select-workspace":
+            result = select_workspace(root, args.workspace)
         elif args.action == "reset":
             result = control(root, "reset", {"member": args.member})
         elif args.action == "rollback":
@@ -760,9 +894,9 @@ def main(argv=None):
         elif args.action == "arm-public-diagnostic":
             result = arm_public_diagnostic(root)
         elif args.action == "open":
-            from .runtime import private_access
+            from .runtime import selected_context
             import webbrowser
-            identity = private_access(root)
+            identity = selected_context(root).identity
             if read(root / "installation.json").get("private_profile") and identity is None:
                 raise ValueError("Private profile configuration missing")
             url = identity.origin if identity else "http://127.0.0.1:" + str(PORT)
