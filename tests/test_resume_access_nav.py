@@ -63,6 +63,35 @@ class ResumeAccessNavigationTests(unittest.TestCase):
         self.assertIn(('Public Resume', '/petec/resume#resume-start'),
                       [(item['label'], item['href']) for item in account])
 
+    def test_signed_in_public_phone_links_keep_the_public_names(self):
+        app.config.update(PEERSLATE_ALLOW_DEV_IDENTITY=True,
+                          PEERSLATE_DEV_USER_KEY='resume-access-test-member')
+        for path in ('/', '/petec/resume', '/interview-studio?mode=ai'):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(200, response.status_code)
+                html = response.get_data(as_text=True)
+                self.assertEqual(
+                    [('My Resume', '/petec/resume#resume-start'),
+                     ('Interview AI', '/interview-studio?mode=ai')],
+                    [(link['text'], link['href']) for link in
+                     _links(html, '<ul class="global-tabsource"')])
+                source = html.split('data-global-tabsource', 1)[1].split('</ul>', 1)[0]
+                self.assertIn('aria-label="Interview AI"', source)
+                self.assertNotIn('aria-label="Interview Studio"', source)
+
+    def test_private_phone_link_keeps_the_studio_name(self):
+        app.config.update(PEERSLATE_ALLOW_DEV_IDENTITY=True,
+                          PEERSLATE_DEV_USER_KEY='resume-access-test-member')
+        response = self.client.get('/app')
+        self.assertEqual(200, response.status_code)
+        html = response.get_data(as_text=True)
+        self.assertIn(('Interview', '/interview-studio'),
+                      [(link['text'], link['href']) for link in
+                       _links(html, '<ul class="global-tabsource"')])
+        source = html.split('data-global-tabsource', 1)[1].split('</ul>', 1)[0]
+        self.assertIn('aria-label="Interview Studio"', source)
+
     def test_generic_member_navigation_has_no_pete_fixture_targets(self):
         with app.test_request_context('/another-member/resume'):
             self.assertEqual('profile_resume', request.endpoint)

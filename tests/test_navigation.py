@@ -625,9 +625,9 @@ class NavigationTests(unittest.TestCase):
         self.assertNotIn('href="/the-slate"', source)
         self.assertNotIn('>Community</span>', source)
         self.assertIn('href="/interview-studio?mode=ai"', source)
-        # Short visible label, full accessible name (WCAG 2.2 SC 2.5.3).
-        self.assertIn('aria-label="Interview Studio"', source)
-        self.assertIn('>Interview</span>', source)
+        # The visible and accessible names match the public AI destination.
+        self.assertIn('aria-label="Interview AI"', source)
+        self.assertIn('>Interview AI</span>', source)
         # Two public destinations plus the More slot, which is a button rather
         # than a destination and so carries no href.
         self.assertEqual(source.count('<li>'), 2)

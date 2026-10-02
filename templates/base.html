@@ -585,7 +585,7 @@
        server-rendered sheet the header Menu opens, so there is one
        destination list, not two. #}
     <ul class="global-tabsource" data-global-tabsource hidden>{% for destination in phone_destinations %}
-        <li><a href="{{ destination.href }}"{% if destination.icon == 'interview' %} aria-label="Interview Studio"{% endif %} {% if destination.current %}aria-current="page"{% endif %}><svg class="mobile-tabbar__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ shell_bar_icons[destination.icon] }}"/></svg><span class="mobile-tabbar__label">{{ 'Interview' if destination.icon == 'interview' else destination.label }}</span></a></li>{% endfor %}
+        <li><a href="{{ destination.href }}"{% if destination.icon == 'interview' %} aria-label="{{ destination.label }}"{% endif %} {% if destination.current %}aria-current="page"{% endif %}><svg class="mobile-tabbar__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ shell_bar_icons[destination.icon] }}"/></svg><span class="mobile-tabbar__label">{{ 'Interview' if destination.icon == 'interview' and destination.label == 'Interview Studio' else destination.label }}</span></a></li>{% endfor %}
         {# Slot 4 is a button, not a destination — it opens the sheet. Rendered
            here so its mark and label come from the server like every other
            slot, rather than being built in script. #}
