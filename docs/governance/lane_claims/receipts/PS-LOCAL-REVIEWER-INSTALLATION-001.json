@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-LOCAL-REVIEWER-INSTALLATION-001",
+  "candidate_sha": "4577824a8715b00d1b1b3aeab3f66b015cb36bf5",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a0fafc-327e-7481-a330-2a29f452b6fc",
+  "result": "pass",
+  "reviewed_at": "2026-10-02T05:24:52Z",
+  "findings": [],
+  "evidence_ref": "X:\\PeerSlate\\evidence\\PS-LOCAL-REVIEWER-INSTALLATION-001\\INDEPENDENT_SUCCESSOR_PAIR_REVIEW_4577824a.json"
+}

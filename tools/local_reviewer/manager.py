@@ -1,0 +1,779 @@
+"""Explicit artifact promotion and owned local process controls. No automatic pulls."""
+from __future__ import annotations
+
+import argparse
+from contextlib import contextmanager, ExitStack
+import hashlib
+import importlib.metadata
+import json
+import os
+from pathlib import Path, PurePosixPath
+import re
+import secrets
+import shutil
+import socket
+import stat
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+import zipfile
+
+from .persistence import atomic_write, canonical
+
+DEFAULT_ROOT = Path("X:/PeerSlate/local-reviewer")
+PORT = 53720
+ID = "PS-LOCAL-REVIEWER-INSTALLATION-001"
+
+
+def digest(path):
+    with Path(path).open("rb") as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def read(path):
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def write(path, value):
+    atomic_write(Path(path), canonical(value))
+
+
+def safe_root(root):
+    root = Path(root).absolute()
+    if os.name == "nt" and root.drive.lower() != "x:":
+        raise ValueError("This installation belongs on X")
+    root.mkdir(parents=True, exist_ok=True)
+    if root.resolve() != root or any(p.is_symlink() for p in (root, *root.parents)):
+        raise ValueError("Installation root must be an ordinary directory")
+    return root
+
+
+@contextmanager
+def exclusive(root, filename="control.lock"):
+    # OS lock is automatically released after a crash; no stale lock deletion.
+    lock = (root / filename).open("a+b")
+    try:
+        if os.name == "nt":
+            import msvcrt
+            lock.seek(0)
+            if lock.read(1) == b"":
+                lock.write(b"0")
+                lock.flush()
+            lock.seek(0)
+            msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        yield
+    finally:
+        lock.close()
+
+
+def runtime_identity():
+    packages = {re.sub(r"[-_.]+", "-", d.metadata["Name"]).lower(): d.version for d in importlib.metadata.distributions()}
+    return {"python": sys.version.split()[0], "packages": packages}
+
+
+def require_private_runtime(root, expected=None):
+    if Path(sys.prefix).resolve() != (root / "runtime").resolve() or sys.version_info[:2] != (3, 12):
+        raise ValueError("Use this installation's private Python3.12 runtime")
+    actual = runtime_identity()
+    if expected is not None and actual != expected:
+        raise ValueError("Private runtime changed; prepare and explicitly validate an update")
+    return actual
+
+
+def verify_release(root, manifest):
+    name = manifest["release"]
+    if not re.fullmatch(r"[0-9a-f]{40}-[0-9a-f]{12}", name):
+        raise ValueError("Invalid release identity")
+    release = root / "releases" / name
+    record = read(release / "release.json")
+    if record != manifest["artifact"]:
+        raise ValueError("Release metadata changed")
+    if digest(release / "requirements-reviewed.txt") != record["overlay_sha256"]:
+        raise ValueError("Reviewed dependency overlay changed")
+    files = record["files"]
+    actual = {str(p.relative_to(release / "source")).replace("\\", "/"): digest(p)
+              for p in (release / "source").rglob("*") if p.is_file()}
+    if any(p.is_symlink() for p in release.rglob("*")) or actual != files:
+        raise ValueError("Immutable application files changed")
+    require_private_runtime(root, manifest["runtime"])
+    if "controller" in manifest:
+        if not re.fullmatch(r"[0-9a-f]{64}", manifest["controller"]):
+            raise ValueError("Invalid controller identity")
+        directory = root / "controllers" / manifest["controller"]
+        if any(p.is_symlink() or getattr(p, "is_junction", lambda: False)() for p in (directory, *directory.rglob("*"))):
+            raise ValueError("Installed controller contains a link")
+        actual_controller = {p.relative_to(directory).as_posix(): digest(p) for p in directory.rglob("*") if p.is_file()}
+        if actual_controller != manifest["controller_files"] or hashlib.sha256(canonical(actual_controller)).hexdigest() != manifest["controller"]:
+            raise ValueError("Installed controller changed")
+    return release
+
+
+def owned_status(root, manifest=None):
+    manifest = manifest or read(root / "installation.json")
+    state_path = root / "process.json"
+    if not state_path.exists():
+        return {"running": False, "reason": "not started"}
+    state = read(state_path)
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    try:
+        request = urllib.request.Request("http://127.0.0.1:" + str(PORT) + "/__reviewer__/status",
+                                         headers={"X-Reviewer-Token": state["token"]})
+        with opener.open(request, timeout=2) as response:
+            observed = json.load(response)
+    except (OSError, ValueError):
+        return {"running": False, "reason": "owned listener unavailable", "last_instance": state["instance"]}
+    if observed.get("instance") != state["instance"] or observed.get("installation") != manifest["installation"] or observed.get("release") != manifest["release"]:
+        raise ValueError("Port is occupied by another instance; leave it alone")
+    return observed
+
+
+def control(root, action, payload=None):
+    manifest = read(root / "installation.json")
+    if not owned_status(root, manifest)["running"]:
+        raise ValueError("Start the owned installation before using controls")
+    state = read(root / "process.json")
+    req = urllib.request.Request("http://127.0.0.1:" + str(PORT) + "/__reviewer__/control/" + action,
+                                 data=canonical(payload or {}), method="POST",
+                                 headers={"Content-Type": "application/json", "X-Reviewer-Token": state["token"]})
+    # Never automatically replay an uncertain mutation or use system proxies.
+    with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req, timeout=60) as response:
+        return json.load(response)
+
+
+def wait_stopped(root):
+    # Public AI permits two phases, each with a bounded deferred credential
+    # and response wait. New operations are fenced after Stop is accepted.
+    deadline = time.monotonic() + 660
+    while time.monotonic() < deadline:
+        if not owned_status(root)["running"]:
+            try:
+                with exclusive(root, "server.lock"):
+                    return {"running": False, "stopped": True}
+            except OSError:
+                pass  # Listener closed; the same child is finishing teardown.
+        time.sleep(0.25)
+    raise ValueError("Stop was accepted but completion is not confirmed; inspect Status before continuing")
+
+
+def stop(root, *, wait=False):
+    status = owned_status(root)
+    if not status["running"]:
+        return wait_stopped(root) if wait else status
+    result = control(root, "stop")
+    return wait_stopped(root) if wait else result
+
+
+def start(root):
+    manifest = read(root / "installation.json")
+    release = verify_release(root, manifest)
+    if (root / "private-access.json").exists() and not manifest.get("private_profile"):
+        raise ValueError("Incomplete private setup; offline fallback refused")
+    if manifest.get("private_profile"):
+        require_private_files(root)
+    status = owned_status(root, manifest)
+    if status["running"]:
+        if not status.get("stopping"):
+            return status
+        wait_stopped(root)
+    with exclusive(root, "server.lock"):
+        pass  # A previous starting/hung owned process must not be duplicated.
+    with socket.socket() as check:
+        if os.name == "nt":
+            check.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        check.bind(("127.0.0.1", PORT))
+    state = {"instance": secrets.token_hex(24), "token": secrets.token_hex(32), "installation": manifest["installation"], "release": manifest["release"]}
+    write(root / "process.json", state)
+    log_dir = root / "logs"
+    log_dir.mkdir(exist_ok=True)
+    with (log_dir / "server.log").open("ab") as log:
+        child = subprocess.Popen([sys.executable, "-I", "-B", str(root / "controllers" / manifest["controller"] / "scripts" / "local_reviewer.py"), "--root", str(root), "serve"],
+                                 cwd=root, stdout=log, stderr=log, stdin=subprocess.DEVNULL,
+                                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0), close_fds=True)
+    state["pid"] = child.pid
+    write(root / "process.json", state)
+    for _ in range(100):
+        if child.poll() is not None:
+            raise ValueError("Owned server failed startup; see logs/server.log. Data was preserved")
+        status = owned_status(root, manifest)
+        if status["running"]:
+            return status
+        time.sleep(0.1)
+    raise ValueError("Startup not confirmed; inspect status/logs before any retry")
+
+
+def extract_artifact(artifact, destination):
+    """Only regular, bounded paths; no overwrites, links, credentials or traversal."""
+    files, seen = {}, set()
+    with zipfile.ZipFile(artifact) as archive:
+        entries = archive.infolist()
+        if sum(e.file_size for e in entries) > 1_000_000_000 or len(entries) > 20000:
+            raise ValueError("Artifact exceeds installer limits")
+        for entry in entries:
+            path = PurePosixPath(entry.filename)
+            if (path.is_absolute() or "\\" in entry.filename or any(p in {"", ".", ".."} or ":" in p or p.endswith((".", " ")) for p in path.parts)
+                    or any(p.lower() in {".env", ".git"} or re.fullmatch(r"(?i)(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?", p) for p in path.parts)):
+                raise ValueError("Unsafe artifact path")
+            mode = entry.external_attr >> 16
+            if stat.S_ISLNK(mode) or (stat.S_IFMT(mode) and not (stat.S_ISREG(mode) or stat.S_ISDIR(mode))):
+                raise ValueError("Artifact contains a nonregular entry")
+            key = str(path).casefold()
+            if key in seen:
+                raise ValueError("Artifact contains colliding paths")
+            seen.add(key)
+            target = destination.joinpath(*path.parts)
+            if entry.is_dir():
+                target.mkdir(parents=True, exist_ok=True)
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with archive.open(entry) as src, target.open("xb") as dst:
+                shutil.copyfileobj(src, dst)
+            files[str(path)] = digest(target)
+    if not (destination / "app.py").is_file() or not (destination / "tests" / "mvp1_acceptance_support.py").is_file():
+        raise ValueError("Artifact does not contain the supported application factory")
+    return files
+
+
+def prepare_release(root, args):
+    if not re.fullmatch(r"[0-9a-f]{40}", args.source_sha) or not re.fullmatch(r"[0-9a-f]{64}", args.artifact_sha256) or not re.fullmatch(r"[0-9a-f]{64}", args.overlay_sha256):
+        raise ValueError("Supply exact artifact, source and overlay identities")
+    if digest(args.artifact) != args.artifact_sha256 or digest(args.overlay) != args.overlay_sha256:
+        raise ValueError("Artifact or dependency overlay hash does not match")
+    runtime = require_private_runtime(root)
+    pins = re.findall(r"(?m)^([A-Za-z0-9_.-]+)==([^\s#]+)", Path(args.overlay).read_text(encoding="utf-8"))
+    for name, version in pins:
+        if runtime["packages"].get(re.sub(r"[-_.]+", "-", name).lower()) != version:
+            raise ValueError("Private runtime does not match reviewed overlay: " + name)
+    if runtime["packages"].get("waitress") != "3.0.2":
+        raise ValueError("Install pinned waitress3.0.2 in the private runtime")
+    name = args.source_sha + "-" + args.artifact_sha256[:12]
+    release = root / "releases" / name
+    if release.exists():
+        record = read(release / "release.json")
+        if record["artifact_sha256"] != args.artifact_sha256 or record["overlay_sha256"] != args.overlay_sha256:
+            raise ValueError("Existing release has a different identity; preserve it")
+    else:
+        release.mkdir(parents=True)
+        files = extract_artifact(Path(args.artifact), release / "source")
+        shutil.copyfile(args.overlay, release / "requirements-reviewed.txt")
+        record = {"source_sha": args.source_sha, "artifact_sha256": args.artifact_sha256,
+                  "overlay_sha256": args.overlay_sha256, "candidate_state": args.candidate_state,
+                  "files": files}
+        write(release / "release.json", record)
+    return name, record, runtime
+
+
+def install(root, args):
+    if getattr(args, "factory", None) is not None:
+        if args.action != "update" or args.candidate_state != "accepted-main":
+            raise ValueError("Factory promotion requires an explicit accepted-app update")
+        # The caller also holds control.lock. No supported Start can interleave;
+        # retain the worker lifetime lock until the paired manifest is committed.
+        with private_operator(root) as (_, _, configuration, budget):
+            scopes = [profile["scope"] for profile in configuration["profiles"].values()]
+            if budget.has_active(scopes):
+                raise ValueError("Resolve active provider reservations under the original binding first")
+            configuration_id = prepare_factory_configuration(root, args.factory, configuration)
+            return install_artifact(root, args, configuration_id=configuration_id)
+    return install_artifact(root, args)
+
+
+def prepare_factory_configuration(root, factory_path, configuration):
+    from .providers import (SUCCESSOR_FACTORY_SHA256, bound_document,
+                            selected_configuration)
+    interface = bound_document(factory_path, SUCCESSOR_FACTORY_SHA256)
+    _, previous_interface = selected_configuration(root)
+    if (interface.get("ongoing_budget_port") != previous_interface.get("ongoing_budget_port")
+            or interface["profile_contract"] != configuration["factory"]["profile_contract"]
+            or interface["limits_maxima"] != configuration["factory"]["limits_maxima"]):
+        raise ValueError("Factory promotion cannot change provider contracts or caps")
+    candidate = {**configuration, "factory": {key: interface[key] for key in
+                 ("files_sha256", "profile_contract", "limits_maxima")}}
+    factory_data = Path(factory_path).read_bytes()
+    if hashlib.sha256(factory_data).hexdigest() != SUCCESSOR_FACTORY_SHA256:
+        raise ValueError("Reviewed factory changed during preparation")
+    pair = canonical({"live_ai": candidate, "factory_utf8": factory_data.decode("utf-8")})
+    configuration_id = hashlib.sha256(pair).hexdigest()
+    destination = root / "data" / "provider-configurations" / (configuration_id + ".json")
+    if any(p.is_symlink() or p.is_junction() for p in (destination, *destination.parents)):
+        raise ValueError("Private configuration snapshot contains a link")
+    if destination.exists():
+        if destination.read_bytes() != pair:
+            raise ValueError("Existing private configuration snapshot changed")
+    else:
+        atomic_write(destination, pair)
+    private_permissions(root)
+    return configuration_id
+
+
+def install_artifact(root, args, *, configuration_id=None):
+    existing = (root / "installation.json").exists()
+    if args.action == "install" and existing:
+        raise ValueError("Installation exists; use explicit update")
+    if args.action == "update" and not existing:
+        raise ValueError("Installation is absent; use install")
+    name, artifact, runtime = prepare_release(root, args)
+    if configuration_id is not None and artifact.get("candidate_state") != "accepted-main":
+        raise ValueError("Prepared app artifact is not accepted main")
+    old = read(root / "installation.json") if existing else None
+    manifest = {"installation": old["installation"] if old else secrets.token_hex(24),
+                "release": name, "artifact": artifact, "runtime": runtime, "port": PORT}
+    if old and old.get("private_profile"):
+        manifest["private_profile"] = True
+        if "provider_configuration" in old:
+            manifest["provider_configuration"] = old["provider_configuration"]
+    if configuration_id is not None:
+        manifest["provider_configuration"] = configuration_id
+    verify_release(root, manifest)
+    # Check data compatibility in a separate offline process before promotion.
+    probe_command = [sys.executable, "-I", "-B", str(Path(__file__).resolve().parents[2] / "scripts" / "local_reviewer.py"),
+                     "--root", str(root), "probe", "--release", name]
+    if configuration_id is not None:
+        probe_command.extend(["--provider-configuration", configuration_id])
+    probe = subprocess.run(probe_command, capture_output=True, text=True, timeout=60)
+    if probe.returncode:
+        raise ValueError("Candidate is incompatible; current installation/data remain unchanged: " + probe.stderr[-1000:])
+    paths = ("scripts/local_reviewer.py", "tools/local_reviewer/__init__.py", "tools/local_reviewer/persistence.py", "tools/local_reviewer/runtime.py", "tools/local_reviewer/manager.py",
+             "tools/local_reviewer/private_identity.py", "tools/local_reviewer/provider_budget.py", "tools/local_reviewer/providers.py")
+    source_root = Path(__file__).resolve().parents[2]
+    controller_files = {relative: digest(source_root / relative) for relative in paths}
+    controller_id = hashlib.sha256(canonical(controller_files)).hexdigest()
+    controller = root / "controllers" / controller_id
+    manifest["controller"], manifest["controller_files"] = controller_id, controller_files
+    # Installer-owned code only, disjoint from the immutable application.
+    for relative in paths:
+        src = Path(__file__).resolve().parents[2] / relative
+        dst = controller / relative
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if src.resolve() != dst.resolve():
+            atomic_write(dst, src.read_bytes())
+    inputs = {
+        "early-career.txt": "FICTIONAL TEST INPUT. Riley Finch was a Data Support Intern at Example Orchard Cooperative, June to August2025. Riley cleaned240 inventory rows and wrote a handoff guide. No efficiency result is established. Bachelor of Science in Information Systems at Example Lake College, May2026.",
+        "mid-career.txt": "FICTIONAL TEST INPUT. Morgan Vale is a Project Coordinator at Example Cedar Works since2021. Morgan coordinates schedules and writes meeting notes. Earlier role: Service Associate at Example Trail Supply,2017 to2021. No revenue or productivity increase is established.",
+        "extensive-history.txt": "FICTIONAL TEST INPUT. Casey Rowan was an Analyst at Example Alder Office,2008 to2012; Senior Analyst,2012 to2017; Operations Lead at Example Pine Company,2017 to2023; Program Coordinator at Example Meadow Cooperative since2023. Casey maintained planning documents. Team size and financial outcomes are unknown.",
+        "conflicting-update.txt": "FICTIONAL TEST INPUT. Riley Finch's Data Support Internship ended in September2025. This conflicts with the earlier August2025 date. A person must decide which date is correct.",
+        "empty.txt": "",
+    }
+    for name, value in inputs.items():
+        if not (root / "inputs" / name).exists():
+            atomic_write(root / "inputs" / name, (value + "\n").encode())
+    guide = source_root / "docs" / "LOCAL_REVIEWER.md"
+    if guide.is_file():
+        atomic_write(root / "README.md", guide.read_bytes())
+    launcher = '''from pathlib import Path
+import hashlib, json, subprocess, sys
+root = Path(__file__).resolve().parent
+manifest = json.loads((root / "installation.json").read_text())
+controller = manifest["controller"]
+if len(controller) != 64 or any(c not in "0123456789abcdef" for c in controller):
+    raise SystemExit("Invalid controller identity")
+directory = root / "controllers" / controller
+if any(p.is_symlink() or p.is_junction() for p in (directory, *directory.rglob("*"))):
+    raise SystemExit("Installed controller contains a link")
+actual = {p.relative_to(directory).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in directory.rglob("*") if p.is_file()}
+encoded = json.dumps(actual, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+if actual != manifest["controller_files"] or hashlib.sha256(encoded).hexdigest() != controller:
+    raise SystemExit("Installed controller changed; no code was imported")
+raise SystemExit(subprocess.call([str(root / "runtime" / "Scripts" / "python.exe"), "-I", "-B", str(directory / "scripts" / "local_reviewer.py"), "--root", str(root), *sys.argv[1:]]))
+'''
+    atomic_write(root / "reviewer.py", launcher.encode())
+    for action, command in {"Start": "start", "Stop": "stop", "Status": "status", "Checkpoint": "checkpoint"}.items():
+        content = '@echo off\r\n"' + str(root / "runtime" / "Scripts" / "python.exe") + '" -I -B "' + str(root / "reviewer.py") + '" ' + command + '\r\n'
+        if command == "start":
+            content += 'if not errorlevel 1 "' + str(root / "runtime" / "Scripts" / "python.exe") + '" -I -B "' + str(root / "reviewer.py") + '" open\r\n'
+        content += 'pause\r\n'
+        atomic_write(root / (action + ".cmd"), content.encode())
+    atomic_write(root / "Run.cmd", ('@echo off\r\n"' + str(root / "runtime" / "Scripts" / "python.exe") + '" -I -B "' + str(root / "reviewer.py") + '" %*\r\npause\r\n').encode())
+    verify_release(root, manifest)
+    # All fallible preparation is complete before stopping or advancing the
+    # authoritative pointer. A failed preparation retains the old installation.
+    with ExitStack() as promotion:
+        if existing:
+            running = owned_status(root, old)["running"] if configuration_id is None else False
+            if running:
+                checkpoint = control(root, "checkpoint")["checkpoint"]
+                stop(root, wait=True)
+            elif configuration_id is None:
+                wait_stopped(root)
+            if old.get("private_profile") and manifest["release"] != old["release"] and configuration_id is None:
+                _, _, configuration, budget = promotion.enter_context(private_operator(root))
+                scopes = [profile["scope"] for profile in configuration["profiles"].values()]
+                if budget.has_active(scopes):
+                    raise ValueError("Resolve active provider reservations before updating the app binding")
+            if not running:
+                checkpoint = offline_checkpoint(root)
+            write(root / "previous.json", {"manifest": old, "checkpoint": checkpoint, "restart": running})
+        write(root / "installation.json", manifest)
+    return {"installed": manifest["release"], "candidate_state": artifact["candidate_state"], "url": "http://127.0.0.1:" + str(PORT), "previous_preserved": existing}
+
+
+def offline_checkpoint(root):
+    path = root / "data" / "state.json"
+    if not path.exists():
+        return None
+    from uuid import uuid4
+    name = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime()) + "-" + uuid4().hex[:8] + ".json"
+    atomic_write(root / "checkpoints" / name, path.read_bytes())
+    return name
+
+
+def rollback(root):
+    previous = read(root / "previous.json")
+    old = previous["manifest"]
+    if read(root / "installation.json").get("private_profile") and not old.get("private_profile"):
+        raise ValueError("Cannot roll private personal data back to an offline shared-profile controller")
+    verify_release(root, old)
+    stop(root, wait=True)
+    current = read(root / "installation.json")
+    if current.get("private_profile") and (
+        current["release"] != old["release"]
+        or current.get("provider_configuration") != old.get("provider_configuration")
+    ):
+        with private_operator(root) as (_, _, configuration, budget):
+            scopes = [profile["scope"] for profile in configuration["profiles"].values()]
+            if budget.has_active(scopes):
+                raise ValueError("Resolve active provider reservations under the current binding before rollback")
+            return rollback_stopped(root, previous, old)
+    return rollback_stopped(root, previous, old)
+
+
+def rollback_stopped(root, previous, old):
+    checkpoint = offline_checkpoint(root)
+    if previous["checkpoint"]:
+        atomic_write(root / "data" / "state.json", (root / "checkpoints" / previous["checkpoint"]).read_bytes())
+    write(root / "rollback-receipt.json", {"from": read(root / "installation.json")["release"], "to": old["release"], "displaced_checkpoint": checkpoint})
+    write(root / "installation.json", old)
+    return {"rolled_back": old["release"], "displaced_checkpoint": checkpoint}
+
+
+def private_permissions(root, *, apply=False):
+    """Keep personal files within this Windows user, SYSTEM and Administrators."""
+    if os.name != "nt":
+        raise ValueError("Private personal-data mode requires the Windows installation")
+    # One native PowerShell process owns the complete bounded ACL operation.
+    # Paths are literal strings, never commands or cross-shell deletion targets.
+    script = r'''
+$ErrorActionPreference = 'Stop'
+$target = [IO.Path]::GetFullPath('__ROOT__')
+$apply = __APPLY__
+$sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+$allowed = @($sid, 'S-1-5-18', 'S-1-5-32-544')
+$targets = [Collections.Generic.List[string]]::new()
+$targets.Add($target)
+foreach ($name in @('data', 'checkpoints', 'logs')) {
+    $item = Join-Path $target $name
+    if (Test-Path -LiteralPath $item) {
+        $targets.Add($item)
+        Get-ChildItem -LiteralPath $item -Force -Recurse | ForEach-Object { $targets.Add($_.FullName) }
+    }
+}
+foreach ($name in @('private-access.json','live-ai.json','ai-allocation.json','ai-factory.json','process.json')) {
+    $item = Join-Path $target $name
+    if (Test-Path -LiteralPath $item) { $targets.Add($item) }
+}
+foreach ($item in $targets) {
+    $entry = Get-Item -LiteralPath $item -Force
+    if ($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Private storage contains a link' }
+    if ($apply) {
+        if ($entry.PSIsContainer) {
+            $acl = [Security.AccessControl.DirectorySecurity]::new()
+            $inherit = [Security.AccessControl.InheritanceFlags]'ContainerInherit,ObjectInherit'
+        } else {
+            $acl = [Security.AccessControl.FileSecurity]::new()
+            $inherit = [Security.AccessControl.InheritanceFlags]::None
+        }
+        $acl.SetAccessRuleProtection($true, $false)
+        foreach ($identity in $allowed) {
+            $principal = [Security.Principal.SecurityIdentifier]::new($identity)
+            $rule = [Security.AccessControl.FileSystemAccessRule]::new($principal, 'FullControl', $inherit, 'None', 'Allow')
+            $acl.AddAccessRule($rule)
+        }
+        $entry.SetAccessControl($acl)
+        $entry.Refresh()
+    }
+    $rules = $entry.GetAccessControl().GetAccessRules($true,$true,[Security.Principal.SecurityIdentifier])
+    foreach ($rule in $rules) {
+        if ($rule.AccessControlType -eq 'Allow' -and $rule.IdentityReference.Value -notin $allowed) {
+            throw 'Private storage is readable by another account'
+        }
+    }
+}
+Write-Output 'private-storage-verified'
+'''.replace('__ROOT__', str(root).replace("'", "''")).replace('__APPLY__', '$true' if apply else '$false')
+    import base64
+    result = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-EncodedCommand",
+                             base64.b64encode(script.encode("utf-16-le")).decode()],
+                            capture_output=True, text=True, timeout=60,
+                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    if result.returncode or result.stdout.strip() != "private-storage-verified":
+        raise ValueError("Windows private storage permissions are not verified")
+
+
+def require_private_files(root):
+    from .runtime import private_access
+    if not read(root / "installation.json").get("private_profile"):
+        raise ValueError("Private setup is incomplete; startup refused")
+    if private_access(root) is None:
+        raise ValueError("Private profile configuration missing; offline fallback refused")
+    for name in ("live-ai.json", "ai-allocation.json", "ai-factory.json", "data/provider-budget-v1.sqlite3", "data/state.json"):
+        path = root / name
+        if not path.is_file() or any(p.is_symlink() or p.is_junction() for p in (path, *path.parents)):
+            raise ValueError("Private installation file unavailable; automatic reset refused")
+    private_permissions(root)
+
+
+def setup_private(root, args):
+    """One installation identity and one allocation. Never reset on rerun."""
+    from uuid import uuid4
+    from .private_identity import PrivateIdentity
+    from .provider_budget import ProviderBudget
+    from .runtime import build_fixture
+    manifest = read(root / "installation.json")
+    release = verify_release(root, manifest)
+    if manifest.get("private_profile") or any((root / name).exists() for name in (
+        "private-access.json", "live-ai.json", "ai-allocation.json", "ai-factory.json", "data/provider-budget-v1.sqlite3"
+    )):
+        raise ValueError("Private setup already exists or is incomplete; preserve its identity and budget")
+    if owned_status(root, manifest)["running"]:
+        raise ValueError("Stop this installation before its one-time private setup")
+    if not (root / "data/state.json").is_file():
+        raise ValueError("Existing durable content state required before private setup")
+    identity_config = {"origin": args.origin, "login": args.login,
+                       "owner": str(uuid4()), "display_name": "Private Test Profile"}
+    identity = PrivateIdentity.from_config(identity_config)
+    with ExitStack() as stack:
+        fixture, app, _, _ = build_fixture(release / "source", stack)
+        from .providers import (ALLOCATION_SHA256, FACTORY_SHA256, bound_document,
+                                load_configuration, configure_private_providers)
+        allocation = bound_document(args.allocation, ALLOCATION_SHA256)
+        interface = bound_document(args.factory, FACTORY_SHA256)
+        if Path(allocation["ledger_path"]).resolve() != (root / "data/provider-budget-v1.sqlite3").resolve():
+            raise ValueError("This allocation belongs to another installation")
+        private_permissions(root, apply=True)
+        write(root / "private-access.json", identity_config)
+        atomic_write(root / "ai-allocation.json", args.allocation.read_bytes())
+        atomic_write(root / "ai-factory.json", args.factory.read_bytes())
+        write(root / "live-ai.json", {"owner": identity.owner, "allocation_sha256": ALLOCATION_SHA256,
+              "profiles": allocation["profiles"], "signing_key": secrets.token_hex(32),
+              "factory": {k: interface[k] for k in ("files_sha256", "profile_contract", "limits_maxima")}})
+        configuration = load_configuration(root, identity, release / "source")
+        ProviderBudget.initialize(root / "data/provider-budget-v1.sqlite3", owner=identity.owner,
+                                  allocation_sha256=ALLOCATION_SHA256, profiles=allocation["profiles"])
+        configure_private_providers(fixture, app, root, identity, configuration)
+    # Startup refuses partial setup and this durable marker prohibits downgrade.
+    manifest["private_profile"] = True
+    write(root / "installation.json", manifest)
+    require_private_files(root)
+    return {"private_profile_configured": True, "url": identity.origin, "provider_calls": 0}
+
+
+def operator_source_digest():
+    directory = Path(__file__).parent
+    return hashlib.sha256(canonical({name: digest(directory / name) for name in
+        ("manager.py", "provider_budget.py", "providers.py")})).hexdigest()
+
+
+def operator_configuration_digest(root, manifest):
+    binding = {"installation": manifest["installation"], "release": manifest["release"],
+        "files": {name: digest(root / name) for name in
+                  ("private-access.json", "live-ai.json", "ai-allocation.json", "ai-factory.json")}}
+    if "provider_configuration" in manifest:
+        from .providers import selected_configuration
+        selected_configuration(root, manifest["provider_configuration"])
+        binding["provider_configuration"] = manifest["provider_configuration"]
+    return hashlib.sha256(canonical(binding)).hexdigest()
+
+
+@contextmanager
+def private_operator(root):
+    """Caller holds control.lock; hold server lifetime lock through the mutation.
+
+    A closed listener alone is insufficient: executor teardown retains server.lock.
+    This command refuses a live process; it never stops one or dispatches a provider.
+    """
+    manifest = read(root / "installation.json")
+    release = verify_release(root, manifest)
+    require_private_files(root)
+    if owned_status(root, manifest)["running"]:
+        raise ValueError("Stop the private site and confirm worker teardown first")
+    with exclusive(root, "server.lock"), ExitStack() as stack:
+        from .runtime import build_fixture, private_access
+        build_fixture(release / "source", stack)
+        from .providers import load_configuration
+        from .provider_budget import ProviderBudget
+        identity = private_access(root)
+        configuration = load_configuration(root, identity, release / "source")
+        budget = ProviderBudget(root / "data/provider-budget-v1.sqlite3", owner=identity.owner,
+            allocation_sha256=configuration["allocation_sha256"], profiles=configuration["profiles"])
+        yield manifest, identity, configuration, budget
+
+
+def resolve_failed_public(root, proof_path, review_path):
+    from .provider_budget import request_id
+    proof, review = read(proof_path), read(review_path)
+    fields = {"schema_version", "installation", "owner", "allocation_sha256", "configuration_sha256",
+              "scope", "request_id", "amount", "transport_quiescence", "original_worker_quiescence", "evidence_files"}
+    if (type(proof) is not dict or set(proof) != fields or proof["schema_version"] != 1
+            or proof["transport_quiescence"] != "synchronous_response_connection_closed"
+            or proof["original_worker_quiescence"] != "original_server_lifetime_lock_released"
+            or type(proof["evidence_files"]) is not dict or not 3 <= len(proof["evidence_files"]) <= 20):
+        raise ValueError("Closed original-operation quiescence proof required")
+    request_id(proof["request_id"])
+    for name, expected in proof["evidence_files"].items():
+        path = Path(name)
+        if not path.is_absolute() or not path.is_file() or path.is_symlink() or digest(path) != expected:
+            raise ValueError("Original-operation evidence changed or missing")
+    proof_sha = digest(proof_path)
+    if (type(review) is not dict or set(review) != {"schema_version", "result", "proof_sha256", "recovery_source_sha256", "reviewer_ref"}
+            or review["schema_version"] != 1 or review["result"] != "pass" or review["proof_sha256"] != proof_sha
+            or review["recovery_source_sha256"] != operator_source_digest()
+            or not isinstance(review["reviewer_ref"], str) or not 1 <= len(review["reviewer_ref"]) <= 200):
+        raise ValueError("Independent exact-source and quiescence review required")
+    # Review is a local operator attestation, not an authenticated review service.
+    # OS private-directory access and the command boundary identify the operator.
+    with private_operator(root) as (manifest, identity, configuration, budget):
+        binding = operator_configuration_digest(root, manifest)
+        if (proof["installation"] != manifest["installation"] or proof["owner"] != identity.owner
+                or proof["configuration_sha256"] != binding
+                or proof["allocation_sha256"] != configuration["allocation_sha256"]):
+            raise ValueError("Original private installation/configuration required")
+        return budget.resolve_failed_public(owner=identity.owner, scope=proof["scope"],
+            request=proof["request_id"], amount=proof["amount"], evidence={"proof_sha256": proof_sha,
+                "configuration_sha256": binding, "review_sha256": digest(review_path)})
+
+
+def arm_public_diagnostic(root):
+    """Explicit fictional qualification only. No ordinary content capture."""
+    with private_operator(root) as (_, identity, configuration, budget):
+        scope = configuration["profiles"]["public"]["scope"]
+        if budget.has_active([scope]):
+            raise ValueError("Active public operation cannot be diagnosed by replay")
+        previous_calls = budget.snapshot(scope)["budget"]["dispatched_calls"]
+        parent = root / "logs" / "public-diagnostic"
+        budget._ordinary(parent)
+        parent.mkdir(exist_ok=True)
+        if (parent / "armed.json").exists() or any(parent.glob("operation-*/armed.json")):
+            raise ValueError("Existing diagnostic permit must not be duplicated")
+        directory = parent / ("operation-" + str(previous_calls + 1))
+        directory.mkdir()  # One explicit permit per operation; never overwrite/rearm it.
+        permit = {"owner": identity.owner, "allocation_sha256": configuration["allocation_sha256"],
+                  "scope": scope, "previous_calls": previous_calls}
+        with (directory / "armed.json").open("x", encoding="utf-8") as output:
+            json.dump(permit, output)
+        return {"armed": "next_public_operation_only", "content": "fictional_qualification_only"}
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="Permanent offline reviewer; all durable installation files stay on X")
+    parser.add_argument("--root", type=Path, default=DEFAULT_ROOT)
+    sub = parser.add_subparsers(dest="action", required=True)
+    for action in ("install", "update"):
+        command = sub.add_parser(action)
+        command.add_argument("--artifact", type=Path, required=True)
+        command.add_argument("--artifact-sha256", required=True)
+        command.add_argument("--source-sha", required=True)
+        command.add_argument("--overlay", type=Path, required=True)
+        command.add_argument("--overlay-sha256", required=True)
+        command.add_argument("--candidate-state", choices=("reviewed-preview", "accepted-main"), required=True)
+        if action == "update":
+            command.add_argument("--factory", type=Path)
+    for action in ("start", "stop", "status", "checkpoint", "rollback", "serve", "open"):
+        sub.add_parser(action)
+    restore = sub.add_parser("restore")
+    restore.add_argument("checkpoint")
+    reset = sub.add_parser("reset")
+    reset.add_argument("--member", choices=("g-member-a", "g-member-b", "g-member-c"), required=True)
+    probe = sub.add_parser("probe")
+    probe.add_argument("--release", required=True)
+    probe.add_argument("--provider-configuration")
+    private = sub.add_parser("setup-private")
+    private.add_argument("--origin", required=True)
+    private.add_argument("--login", required=True)
+    private.add_argument("--allocation", type=Path, required=True)
+    private.add_argument("--factory", type=Path, required=True)
+    recovery = sub.add_parser("resolve-failed-public")
+    recovery.add_argument("--proof", type=Path, required=True)
+    recovery.add_argument("--review", type=Path, required=True)
+    diagnostic = sub.add_parser("arm-public-diagnostic")
+    diagnostic.add_argument("--fictional-qualification-only", action="store_true", required=True)
+    args = parser.parse_args(argv)
+    root = safe_root(args.root)
+    require_private_runtime(root)
+    if args.action == "serve":
+        manifest, process = read(root / "installation.json"), read(root / "process.json")
+        release = verify_release(root, manifest)
+        if manifest.get("private_profile") or (root / "private-access.json").exists():
+            require_private_files(root)
+        if process["release"] != manifest["release"] or process["installation"] != manifest["installation"]:
+            raise ValueError("Owned startup identity changed")
+        from .runtime import serve
+        with exclusive(root, "server.lock"):
+            serve(root, release, {"installation": manifest["installation"], "instance": process["instance"], "release": manifest["release"], "port": PORT,
+                                  "source_sha": manifest["artifact"]["source_sha"], "candidate_state": manifest["artifact"]["candidate_state"], "provider": "offline_synthetic_or_unavailable"}, process["token"])
+        return
+    if args.action == "probe":
+        if not re.fullmatch(r"[0-9a-f]{40}-[0-9a-f]{12}", args.release):
+            raise ValueError("Invalid release identity")
+        from .runtime import build_fixture
+        from .persistence import SnapshotStore
+        with ExitStack() as stack:
+            fixture, app, _, state = build_fixture(root / "releases" / args.release / "source", stack)
+            current = read(root / "installation.json") if (root / "installation.json").exists() else {}
+            if (root / "private-access.json").exists() or current.get("private_profile"):
+                require_private_files(root)
+                from .runtime import private_access
+                from .providers import load_configuration, configure_private_providers
+                identity = private_access(root)
+                config = load_configuration(root, identity, root / "releases" / args.release / "source",
+                                            configuration_id=args.provider_configuration)
+                configure_private_providers(fixture, app, root, identity, config)
+            store = SnapshotStore(root / "data" / "state.json", state)
+            if store.path.exists():
+                store.load()
+            print(json.dumps({"compatible": True, "contract": state.contract}))
+        return
+    with exclusive(root):
+        if args.action in {"install", "update"}:
+            result = install(root, args)
+        elif args.action == "start":
+            result = start(root)
+        elif args.action == "stop":
+            result = stop(root)
+        elif args.action == "status":
+            result = owned_status(root)
+        elif args.action == "checkpoint":
+            result = control(root, "checkpoint") if owned_status(root)["running"] else {"checkpoint": offline_checkpoint(root)}
+        elif args.action == "restore":
+            result = control(root, "restore", {"checkpoint": args.checkpoint})
+        elif args.action == "reset":
+            result = control(root, "reset", {"member": args.member})
+        elif args.action == "rollback":
+            result = rollback(root)
+        elif args.action == "setup-private":
+            result = setup_private(root, args)
+        elif args.action == "resolve-failed-public":
+            result = resolve_failed_public(root, args.proof, args.review)
+        elif args.action == "arm-public-diagnostic":
+            result = arm_public_diagnostic(root)
+        elif args.action == "open":
+            from .runtime import private_access
+            import webbrowser
+            identity = private_access(root)
+            if read(root / "installation.json").get("private_profile") and identity is None:
+                raise ValueError("Private profile configuration missing")
+            url = identity.origin if identity else "http://127.0.0.1:" + str(PORT)
+            webbrowser.open(url)
+            result = {"opened": url}
+        print(json.dumps(result))
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as error:
+        print(type(error).__name__ + ": " + str(error), file=sys.stderr)
+        raise SystemExit(1)
