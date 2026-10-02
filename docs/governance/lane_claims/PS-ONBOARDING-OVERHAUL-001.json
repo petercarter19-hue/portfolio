@@ -21,7 +21,9 @@
     "docs/governance/lane_claims/PS-ONBOARDING-OVERHAUL-001.json",
     "docs/governance/lane_claims/receipts/PS-ONBOARDING-OVERHAUL-001.json",
     "docs/governance/lane_claims/evidence/PS-ONBOARDING-OVERHAUL-001.md",
-    "tests/test_resume_intake_routes.py"
+    "tests/test_resume_intake_routes.py",
+    "scripts/run_mvp1_acceptance_browser_tests.py",
+    "tests/test_mvp1_acceptance_browser.py"
   ],
   "domains": [
     "runtime:resume:onboarding"
