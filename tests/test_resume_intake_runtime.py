@@ -862,3 +862,271 @@ class TypedCurrentRoleEvidenceTests(unittest.TestCase):
         with self.assertRaises(SynthesisError):service.confirm('fiction-owner',{'proof':result['proof'],'record_key':role['record_key'],
             'field':'summary','confirm':True,'confirmed_text':'Reviewed wording'})
         self.assertEqual(ports.saved,[])
+
+
+
+# Trusted ongoing-port application seam only. This in-memory spy is NOT a
+# durable ledger/proof; the installer independently owns native staging,
+# cross-process accounting and persistence tests.
+class _OngoingPortSpy:
+    def __init__(self):
+        self.validations, self.events, self.results = [], [], []
+        self.active, self.spent, self.reserved = False, 0, 0
+        self.admitted, self.reserve_reply, self.settle_reply = True, None, None
+
+    def validate_profile(self, *, profile, settings, reservation):
+        self.validations.append((profile, copy.deepcopy(settings), reservation))
+        return self.admitted
+
+    def reserve(self, owner, request_id, settings, reservation):
+        self.events.append(('reserve', owner, request_id, copy.deepcopy(settings), reservation))
+        if self.active or self.spent + reservation > settings['hard_cap_micro_usd']:
+            raise ProviderUnavailableError('fiction refusal')
+        self.active, self.reserved = True, reservation
+        return self.reserve_reply
+
+    def settle_completed(self, owner, request_id, scope, result):
+        self.events.append(('settle', owner, request_id, scope))
+        self.results.append(result)
+        if self.settle_reply is not None:
+            return self.settle_reply
+        profile, settings, _ = self.validations[-1]
+        rates = settings['prices']
+        self.spent += (result.input_tokens * rates['input_micro_usd_per_million']
+                       + result.output_tokens * rates['output_micro_usd_per_million'] + 999999) // 1000000
+        self.active = False
+
+
+class OngoingBudgetPortTests(unittest.TestCase):
+    def setUp(self):
+        self.db, self.port = SelectedPrivateReservations(), _OngoingPortSpy()
+        self.transport, self.tokens = SelectedPrivateTransport(), []
+
+    def configured(self, profile):
+        value = _qualification_settings() if profile == 'extraction' else selected_private_settings(profile)
+        value['budget']['maximum_calls'] = 100
+        value['budget']['scope'] = 'fiction-ongoing-' + profile + '-v1'
+        return value
+
+    def provider(self, profile='extraction', *, port=None, value=None):
+        kwargs = dict(settings=value or self.configured(profile), database=self.db,
+                      token_provider=self.token, transport=self.transport,
+                      ongoing_budget_port=self.port if port is None else port)
+        return (BoundedResumeExtractionProvider(**kwargs) if profile == 'extraction'
+                else BoundedPrivateResumeProvider(profile, **kwargs))
+
+    def token(self):
+        self.assertTrue(self.port.active)
+        self.tokens.append('after-committed-reserve')
+        return 'offline-placeholder'
+
+    def call(self, provider, *, req=None, task='fiction task'):
+        if isinstance(provider, BoundedResumeExtractionProvider):
+            with provider.owner_scope('server-owner'):
+                return provider(req or request(), response_schema={'type': 'object'}, maximum_output_tokens=128000)
+        return provider(owner='server-owner', request_id=str(uuid4()), instructions='Fiction only',
+                        task=task, context={}, response_schema={'type': 'object'})
+
+    def test_default_six_only_and_exact_opt_in_ceiling(self):
+        for profile in ('extraction', 'synthesis', 'interview'):
+            value = self.configured(profile)
+            with self.subTest(profile=profile), self.assertRaises(ValueError):
+                kwargs = dict(settings=value, database=self.db)
+                (BoundedResumeExtractionProvider(**kwargs) if profile == 'extraction'
+                 else BoundedPrivateResumeProvider(profile, **kwargs))
+            for ceiling in (6, 99, 101, True):
+                changed = copy.deepcopy(value)
+                changed['budget']['maximum_calls'] = ceiling
+                with self.subTest(profile=profile, ceiling=ceiling), self.assertRaises(ValueError):
+                    self.provider(profile, value=changed)
+        self.assertEqual(self.port.validations, [])
+        self.assertEqual(self.db.events, [])
+
+    def test_constructor_closed_methods_and_explicit_true_only(self):
+        for reply in (None, False, 1, 'true'):
+            self.port.admitted = reply
+            with self.subTest(reply=reply), self.assertRaises(ValueError):
+                self.provider()
+        with self.assertRaises(ValueError):
+            self.provider(port=object())
+        self.assertEqual(self.tokens, [])
+        self.assertEqual(self.transport.calls, [])
+        self.assertEqual(self.port.events, [])
+        self.assertEqual(self.db.events, [])
+
+    def test_full_profile_validation_is_copied_and_cannot_mutate_live_settings(self):
+        value = self.configured('extraction')
+        original = copy.deepcopy(value)
+        original_validate = self.port.validate_profile
+        def mutate(**kwargs):
+            reply = original_validate(**kwargs)
+            kwargs['settings']['budget']['scope'] = 'forged'
+            kwargs['settings']['provider']['maximum_input_bytes'] = 1
+            return reply
+        self.port.validate_profile = mutate
+        provider = self.provider(value=value)
+        self.assertEqual(value, original)
+        self.assertEqual(provider.budget, original['budget'])
+        self.assertEqual(provider.bounds, original['provider'])
+        self.assertEqual(self.port.validations[0], ('extraction', original, 998400))
+        self.assertEqual(self.tokens, [])
+        self.assertEqual(self.db.events, [])
+
+    def test_seventh_small_completed_operation_and_cap_before_credentials_all_profiles(self):
+        from services.ai_foundation.contracts import StructuredResult
+        for profile in ('extraction', 'synthesis', 'interview'):
+            self.setUp()
+            provider = self.provider(profile)
+            for _ in range(7):
+                self.call(provider)
+            self.assertEqual(len(self.transport.calls), 7)
+            self.assertEqual(len(self.port.results), 7)
+            self.assertTrue(all(isinstance(result, StructuredResult) for result in self.port.results))
+            self.assertFalse(self.port.active)
+            self.assertEqual(self.db.events, [])
+            self.port.spent = provider.budget['hard_cap_micro_usd'] - provider.reservation + 1
+            with self.assertRaises(ProviderUnavailableError):
+                self.call(self.provider(profile))
+            self.assertEqual(len(self.tokens), 7)
+            self.assertEqual(len(self.transport.calls), 7)
+
+    def test_server_owner_is_not_taken_from_extraction_request_subject(self):
+        from dataclasses import replace
+        req = replace(request(), subject_key='request-selected-owner')
+        self.call(self.provider(), req=req)
+        reserve, settle = self.port.events
+        self.assertEqual(reserve[1:3], ('server-owner', req.request_id))
+        self.assertEqual(settle[1:3], ('server-owner', req.request_id))
+        self.assertEqual(reserve[3], self.configured('extraction')['budget'])
+        self.assertEqual(reserve[4], 998400)
+        self.assertEqual(self.db.events, [])
+
+    def test_noncommitted_reserve_return_blocks_token_and_transport(self):
+        for reply in (True, 0, {}, 'committed'):
+            self.setUp()
+            self.port.reserve_reply = reply
+            with self.subTest(reply=reply), self.assertRaises(ProviderUnavailableError):
+                self.call(self.provider())
+            self.assertEqual(self.tokens, [])
+            self.assertEqual(self.transport.calls, [])
+            self.assertEqual(self.port.results, [])
+            self.assertTrue(self.port.active)
+
+    def test_timeout_no_settlement_and_new_request_provider_remain_fenced(self):
+        self.transport.fail = True
+        with self.assertRaises(ProviderUnavailableError):
+            self.call(self.provider())
+        self.assertTrue(self.port.active)
+        self.assertEqual(self.port.results, [])
+        self.assertEqual(self.port.spent, 0)
+        self.assertEqual(self.port.reserved, 998400)
+        with self.assertRaises(ProviderUnavailableError):
+            self.call(self.provider())
+        self.assertEqual(len(self.tokens), 1)
+        self.assertEqual(len(self.transport.calls), 1)
+        self.assertEqual(self.db.events, [])
+
+    def test_codec_failure_after_completed_transport_does_not_settle(self):
+        from unittest.mock import patch
+        original = self.transport.post
+        def malformed(*args, **kwargs):
+            response = original(*args, **kwargs)
+            completed = response.json()
+            completed['output'][0]['content'][0]['text'] = '{invalid-json'
+            response.json = lambda: completed
+            return response
+        provider = self.provider()
+        with self.assertRaises(ProviderUnavailableError):
+            with patch.object(self.transport, 'post', side_effect=malformed):
+                self.call(provider)
+        self.assertTrue(self.port.active)
+        self.assertEqual(self.port.results, [])
+        self.assertEqual(len(self.transport.calls), 1)
+
+    def test_wrong_result_binding_and_strict_totals_never_reach_settlement(self):
+        from unittest.mock import patch
+        from services.ai_foundation.azure_foundry import AzureFoundryResponsesProvider
+        from services.ai_foundation.contracts import StructuredResult
+        fields = [('request_id', str(uuid4())), ('schema_name', 'wrong'), ('model_name', 'gpt-6-sol'),
+                  ('deployment_name', 'wrong'), ('configured_model_version', 'wrong'),
+                  ('input_tokens', True), ('input_tokens', -1), ('input_tokens', 0.5),
+                  ('input_tokens', 230401), ('output_tokens', True), ('output_tokens', 128001)]
+        for field, value in fields:
+            self.setUp()
+            provider, req = self.provider(), request()
+            result = StructuredResult(request_id=req.request_id, schema_name=req.schema_name,
+                model_name=req.model_name, payload={}, input_tokens=4, output_tokens=4,
+                deployment_name=provider.arguments['deployment'],
+                configured_model_version=provider.arguments['model_version'])
+            object.__setattr__(result, field, value)
+            with self.subTest(field=field, value=value), patch.object(
+                    AzureFoundryResponsesProvider, 'respond', return_value=result), self.assertRaises(ProviderUnavailableError):
+                self.call(provider, req=req)
+            self.assertTrue(self.port.active)
+            self.assertEqual(self.port.results, [])
+        self.setUp()
+        with patch.object(AzureFoundryResponsesProvider, 'respond', return_value={}), self.assertRaises(ProviderUnavailableError):
+            self.call(self.provider())
+        self.assertTrue(self.port.active)
+
+    def test_uncertain_settlement_return_never_falls_back_to_sql_or_redispatch(self):
+        self.port.settle_reply = True
+        with self.assertRaises(ProviderUnavailableError):
+            self.call(self.provider('interview'))
+        self.assertTrue(self.port.active)
+        self.assertEqual(len(self.port.results), 1)
+        self.assertEqual(self.port.spent, 0)
+        with self.assertRaises(ProviderUnavailableError):
+            self.call(self.provider('interview'))
+        self.assertEqual(len(self.transport.calls), 1)
+        self.assertEqual(self.db.events, [])
+
+    def test_whole_wire_overcap_precedes_reserve_token_and_transport(self):
+        for profile in ('extraction', 'interview', 'synthesis'):
+            self.setUp()
+            provider = self.provider(profile)
+            if profile == 'extraction':
+                empty = request('x')
+                from dataclasses import replace
+                make_request = lambda text: replace(empty, input_text=text)
+                req = empty
+            else:
+                selected = provider.selected
+                def make_request(text):
+                    return StructuredRequest(request_id=str(uuid4()), product='resume_private_assistance',
+                        purpose=selected['purpose'], audience=Audience.OWNER, subject_key='server-owner',
+                        instructions='Fiction only', input_text=json.dumps({'task': text, 'context': {}},
+                            ensure_ascii=False, separators=(',', ':')), schema_name='resume_'+profile+'_v1',
+                        reasoning_effort=selected['effort'], model_name=selected['model'])
+                req = make_request('')
+            def wire_size(value):
+                from services.ai_foundation.azure_foundry import AzureFoundryResponsesProvider, SpendLedger
+                foundation = AzureFoundryResponsesProvider(**provider.arguments,
+                    spend_ledger=SpendLedger(hard_cap_micro_usd=provider.reservation, max_calls=1))
+                wire = foundation.structured_payload(value, response_schema={'type': 'object'},
+                    maximum_output_tokens=provider.bounds['maximum_output_tokens'])
+                return len(json.dumps(wire, separators=(',', ':')).encode('utf-8'))
+            task = 'x' * (provider.bounds['maximum_input_bytes'] + 1 - wire_size(req)
+                          + (1 if profile == 'extraction' else 0))
+            req = make_request(task)
+            self.assertEqual(wire_size(req), provider.bounds['maximum_input_bytes'] + 1)
+            with self.subTest(profile=profile), self.assertRaises((ProviderUnavailableError, SynthesisError)):
+                self.call(provider, req=req, task=task)
+            self.assertEqual(self.port.events, [])
+            self.assertEqual(self.tokens, [])
+            self.assertEqual(self.transport.calls, [])
+
+    def test_actual_private_factory_forwards_one_server_port_to_both_profiles(self):
+        fixture = Ports()
+        service = build_private_resume_assistance(
+            {'RESUME_PRIVATE_ASSISTANCE_CONFIGURATION': {'profiles': {
+                p: self.configured(p) for p in ('synthesis', 'interview')}, 'limits': LIMITS}},
+            draft_service=fixture, catalog=fixture, policy_repository=fixture,
+            database=self.db, token_provider=self.token, transport=self.transport,
+            signer=URLSafeTimedSerializer('offline-signing-fixture'), ongoing_budget_port=self.port)
+        self.assertEqual(set(service.providers), {'synthesis', 'interview'})
+        self.assertTrue(all(p.protections is self.port for p in service.providers.values()))
+        self.assertEqual({p for p, _, _ in self.port.validations}, {'synthesis', 'interview'})
+        self.assertEqual(self.port.events, [])
+        self.assertEqual(self.tokens, [])
+        self.assertEqual(self.db.events, [])

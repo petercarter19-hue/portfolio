@@ -67,8 +67,57 @@ class SqlExtractionReservations:
             raise ProviderUnavailableError("Extraction accounting is unavailable.") from None
 
 
+def _validated_ongoing_budget_port(port, *, profile, settings, reservation):
+    # Only an explicit server-injected port can admit the separate local mode.
+    from copy import deepcopy
+    if not all(callable(getattr(port, name, None)) for name in (
+            "validate_profile", "reserve", "settle_completed")):
+        raise ValueError("A complete trusted ongoing budget port is required.")
+    try:
+        admitted = port.validate_profile(profile=profile,
+            settings=deepcopy(settings), reservation=reservation)
+    except Exception:
+        raise ValueError("Ongoing testing allocation is unavailable.") from None
+    if admitted is not True:
+        raise ValueError("Ongoing testing allocation was not explicitly admitted.")
+    return port
+
+
+def _reserve_ongoing_budget(port, owner, request_id, settings, reservation):
+    from copy import deepcopy
+    try:
+        if port.reserve(owner, request_id, deepcopy(settings), reservation) is not None:
+            raise ProviderUnavailableError("Ongoing accounting did not commit.")
+    except Exception:
+        raise ProviderUnavailableError("Ongoing accounting is unavailable.") from None
+
+
+def _settle_ongoing_result(port, owner, request, scope, result, *, bounds,
+                           deployment, model_version):
+    from services.ai_foundation.contracts import StructuredResult
+    if (not isinstance(result, StructuredResult)
+            or result.request_id != request.request_id
+            or result.schema_name != request.schema_name
+            or result.model_name != request.model_name
+            or result.deployment_name != deployment
+            or result.configured_model_version != model_version
+            or type(result.input_tokens) is not int
+            or not 0 <= result.input_tokens <= bounds["maximum_input_tokens"]
+            or type(result.output_tokens) is not int
+            or not 0 <= result.output_tokens <= bounds["maximum_output_tokens"]):
+        raise ProviderUnavailableError("Completed usage cannot be safely accounted.")
+    try:
+        # The trusted port additionally matches its uniquely staged native
+        # response identity and numerical usage. A diagnostic cannot settle.
+        if port.settle_completed(owner, request.request_id, scope, result) is not None:
+            raise ProviderUnavailableError("Ongoing settlement did not commit.")
+    except Exception:
+        raise ProviderUnavailableError("Ongoing settlement is unavailable.") from None
+
+
 class BoundedResumeExtractionProvider:
-    def __init__(self, *, settings, database, token_provider=None, transport=None):
+    def __init__(self, *, settings, database, token_provider=None, transport=None,
+                 ongoing_budget_port=None):
         if not isinstance(settings, dict) or set(settings) != {"endpoint", "deployment", "provider", "prices", "budget"}:
             raise ValueError("Complete scoped extraction configuration is required.")
         bounds, budget, prices = settings["provider"], settings["budget"], settings["prices"]
@@ -85,7 +134,9 @@ class BoundedResumeExtractionProvider:
                 or not re.fullmatch("[a-z0-9-]{1,80}", budget["scope"])
                 or any(type(budget[name]) is not int or budget[name] < 1 for name in (
                     "maximum_calls", "hard_cap_micro_usd", "concurrent_requests"))
-                or budget["maximum_calls"] > 6 or budget["hard_cap_micro_usd"] > 6000000
+                or (budget["maximum_calls"] > 6 if ongoing_budget_port is None
+                    else budget["maximum_calls"] != 100)
+                or budget["hard_cap_micro_usd"] > 6000000
                 or budget["concurrent_requests"] != 1):
             raise ValueError("Explicit durable aggregate extraction limits are required.")
         if not isinstance(prices, dict) or set(prices) != {
@@ -106,7 +157,10 @@ class BoundedResumeExtractionProvider:
         if self.reservation > budget["hard_cap_micro_usd"]:
             raise ValueError("One call cannot fit its aggregate extraction budget.")
         self.budget, self.bounds = dict(budget), dict(bounds)
-        self.protections = SqlExtractionReservations(database)
+        self.ongoing_budget_port = ongoing_budget_port
+        self.protections = (SqlExtractionReservations(database) if ongoing_budget_port is None
+            else _validated_ongoing_budget_port(ongoing_budget_port, profile="extraction",
+                settings=settings, reservation=self.reservation))
         self._credential = None
         self._token = token_provider or self._managed_identity_token
         self.arguments = dict(
@@ -152,7 +206,11 @@ class BoundedResumeExtractionProvider:
         encoded_bytes = len(json.dumps(complete_payload, separators=(",", ":")).encode("utf-8"))
         if encoded_bytes > self.bounds["maximum_input_bytes"]:
             raise ProviderUnavailableError("Extraction input exceeds its configured envelope.")
-        self.protections.reserve(owner, request.request_id, self.budget, self.reservation)
+        if self.ongoing_budget_port is None:
+            self.protections.reserve(owner, request.request_id, self.budget, self.reservation)
+        else:
+            _reserve_ongoing_budget(self.protections, owner, request.request_id,
+                self.budget, self.reservation)
         provider = AzureFoundryResponsesProvider(**self.arguments, spend_ledger=SpendLedger(
             hard_cap_micro_usd=self.reservation, max_calls=1,
         ))
@@ -165,7 +223,12 @@ class BoundedResumeExtractionProvider:
         # Foundation errors cannot distinguish remote completion from an
         # uncertain transport outcome. Preserve the charged active lease on
         # every failure/crash; no expiry or new request may free concurrency.
-        self.protections.finish(owner, request.request_id, self.budget["scope"])
+        if self.ongoing_budget_port is None:
+            self.protections.finish(owner, request.request_id, self.budget["scope"])
+        else:
+            _settle_ongoing_result(self.protections, owner, request, self.budget["scope"],
+                result, bounds=self.bounds, deployment=self.arguments["deployment"],
+                model_version=self.arguments["model_version"])
         return result
 
 
@@ -591,7 +654,8 @@ INTERVIEW_PROMPT = (
 
 class BoundedPrivateResumeProvider:
     """One selected profile, immutable durable aggregate, uncertain-active fence."""
-    def __init__(self, profile, *, settings, database, token_provider=None, transport=None):
+    def __init__(self, profile, *, settings, database, token_provider=None, transport=None,
+                 ongoing_budget_port=None):
         selected = PRIVATE_ASSISTANCE_PROFILES[profile]
         required = {'endpoint', 'deployment', 'provider', 'prices', 'budget'}
         if not isinstance(settings, dict) or set(settings) != required:
@@ -607,7 +671,9 @@ class BoundedPrivateResumeProvider:
                 or set(budget) != {'scope', 'maximum_calls', 'hard_cap_micro_usd', 'concurrent_requests'}
                 or not isinstance(budget['scope'], str)
                 or not re.fullmatch('[a-z0-9-]{1,80}', budget['scope'])
-                or type(budget['maximum_calls']) is not int or not 1 <= budget['maximum_calls'] <= 6
+                or type(budget['maximum_calls']) is not int
+                or (not 1 <= budget['maximum_calls'] <= 6 if ongoing_budget_port is None
+                    else budget['maximum_calls'] != 100)
                 or type(budget['hard_cap_micro_usd']) is not int
                 or not 1 <= budget['hard_cap_micro_usd'] <= selected['hard_cap']
                 or type(budget['concurrent_requests']) is not int or budget['concurrent_requests'] != 1):
@@ -623,7 +689,10 @@ class BoundedPrivateResumeProvider:
             raise ValueError('One private assistance call does not fit its aggregate scope.')
         self.profile, self.selected = profile, dict(selected)
         self.bounds, self.budget = dict(bounds), dict(budget)
-        self.protections = SqlExtractionReservations(database)
+        self.ongoing_budget_port = ongoing_budget_port
+        self.protections = (SqlExtractionReservations(database) if ongoing_budget_port is None
+            else _validated_ongoing_budget_port(ongoing_budget_port, profile=profile,
+                settings=settings, reservation=self.reservation))
         self._credential = None
         self.arguments = dict(endpoint=settings['endpoint'], deployment=selected['deployment'],
             model_name=selected['model'], model_version=selected['version'],
@@ -659,12 +728,21 @@ class BoundedPrivateResumeProvider:
                                            maximum_output_tokens=self.bounds['maximum_output_tokens'])
         if len(json.dumps(wire, separators=(',', ':')).encode('utf-8')) > self.bounds['maximum_input_bytes']:
             raise SynthesisError('input_too_large')
-        self.protections.reserve(owner, request_id, self.budget, self.reservation)
+        if self.ongoing_budget_port is None:
+            self.protections.reserve(owner, request_id, self.budget, self.reservation)
+        else:
+            _reserve_ongoing_budget(self.protections, owner, request_id,
+                self.budget, self.reservation)
         result = provider.respond(request, response_schema=response_schema,
             maximum_output_tokens=self.bounds['maximum_output_tokens'], receive_timeout_seconds=180.0)
         # Uncertain failure is charged and active forever. Only completed respond
         # releases this scope. There is no retry, expiry, refund, fallback or reset.
-        self.protections.finish(owner, request_id, self.budget['scope'])
+        if self.ongoing_budget_port is None:
+            self.protections.finish(owner, request_id, self.budget['scope'])
+        else:
+            _settle_ongoing_result(self.protections, owner, request, self.budget['scope'],
+                result, bounds=self.bounds, deployment=self.arguments['deployment'],
+                model_version=self.arguments['model_version'])
         return result.payload
 
 
@@ -769,7 +847,8 @@ class PrivateResumeAssistanceService:
 
 
 def build_private_resume_assistance(config, *, draft_service, catalog, policy_repository,
-                                    database, token_provider=None, transport=None, signer=None):
+                                    database, token_provider=None, transport=None, signer=None,
+                                    ongoing_budget_port=None):
     """Pure composition with injected real or explicitly isolated fixture ports."""
     settings = config.get('RESUME_PRIVATE_ASSISTANCE_CONFIGURATION')
     if isinstance(settings, str):
@@ -794,6 +873,7 @@ def build_private_resume_assistance(config, *, draft_service, catalog, policy_re
             raise ValueError('Private proposal signing requires a server-held key.')
         signer = URLSafeTimedSerializer(key, salt='resume-private-assistance-v1')
     providers = {profile: BoundedPrivateResumeProvider(profile, settings=value, database=database,
-        token_provider=token_provider, transport=transport) for profile, value in profiles.items()}
+        token_provider=token_provider, transport=transport,
+        ongoing_budget_port=ongoing_budget_port) for profile, value in profiles.items()}
     return PrivateResumeAssistanceService(draft_service=draft_service, catalog=catalog,
         policy_repository=policy_repository, providers=providers, signer=signer, limits=settings['limits'])
