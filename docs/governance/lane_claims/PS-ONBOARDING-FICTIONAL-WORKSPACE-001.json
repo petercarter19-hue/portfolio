@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "package": "PS-ONBOARDING-FICTIONAL-WORKSPACE-001",
+  "state": "active",
+  "outcome": "Provide one fresh persisted fictional onboarding workspace under the same actual authenticated Tailscale development owner with one active context, a distinct private8444 origin and fail-closed identity/origin/state/checkpoint isolation. Preserve personal8443 saved state, root provider ledger/caps/counts, signing key and existing accepted app/factory binding. Switch only stopped/drained under the lifetime lock with zero active reservations. Complete independent Protected source/privacy review, required tests and current-target accepted merge, then privately promote and prove zero-provider fictional create/edit/correct/save/reload/restart isolation; return personal8443 ready. No real-profile test mutation, native Visitor repeat, budget reset, public release or new chat.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0faaf-5e48-7060-990a-c28989a8d247",
+  "branch": "codex/2026-10-02-onboarding-fictional-workspace-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "eac46e717886e3406e0b762e11b931afa3752f5f",
+  "owner_outcome_ref": "session:01a0fac2-1122-7ea2-91c8-06033862e354/turn:01a0fb02-df98-7d61-92f5-487358ba4255/user:01a0fb02-e174-7c93-9be2-2560cbf7402d",
+  "surfaces": [
+    "tools/local_reviewer/manager.py",
+    "tools/local_reviewer/runtime.py",
+    "tools/local_reviewer/private_identity.py",
+    "tools/local_reviewer/persistence.py",
+    "tests/test_local_reviewer.py",
+    "tests/test_local_reviewer_identity.py",
+    "tests/test_local_reviewer_providers.py",
+    "docs/LOCAL_REVIEWER.md",
+    "docs/governance/lane_claims/PS-ONBOARDING-FICTIONAL-WORKSPACE-001.json",
+    "docs/governance/lane_claims/receipts/PS-ONBOARDING-FICTIONAL-WORKSPACE-001.json",
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-FICTIONAL-WORKSPACE-001.md"
+  ],
+  "domains": [
+    "tooling:local-reviewer"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-FICTIONAL-WORKSPACE-001.md"
+  ],
+  "review_requirement": "independent",
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null,
+  "handoff": null
+}
