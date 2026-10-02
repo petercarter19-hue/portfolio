@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "package": "PS-ONBOARDING-OVERHAUL-001",
+  "state": "active",
+  "outcome": "Complete the owner-directed AI-guided Resume onboarding overhaul: one adaptive foreground guide, upfront value explanation, source intake, truthful voice states, grouped review and correction, acknowledged-save-driven resume reveal, contextual optional nudges, manual skip and return, optional story/work choices and private finish. Reuse existing protected services; preserve source/canonical/proposal separation, provider caps, identity and publication boundaries. LinkedIn deferred. Complete Protected review, CI, accepted merge and coordinated private-installation release; public MVP enablement remains held.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0fac2-1122-7ea2-91c8-06033862e354",
+  "branch": "codex/2026-10-02-onboarding-overhaul-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "c141d64cac82460c13520b40e5e2aeb8546587f4",
+  "owner_outcome_ref": "session:01a0fac2-1122-7ea2-91c8-06033862e354/event:evt-602253a2-e814-4feb-8432-5efced0fa9a8",
+  "surfaces": [
+    "static/js/resume-intake.js",
+    "static/css/resume-intake.css",
+    "templates/partials/resume/_intake_composer.html",
+    "templates/resume_editor.html",
+    "tests/test_resume_intake_browser.py",
+    "docs/initiatives/PS-ONBOARDING-OVERHAUL-001/README.md",
+    "docs/governance/lane_claims/PS-ONBOARDING-OVERHAUL-001.json",
+    "docs/governance/lane_claims/receipts/PS-ONBOARDING-OVERHAUL-001.json",
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-OVERHAUL-001.md"
+  ],
+  "domains": [
+    "runtime:resume:onboarding"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-OVERHAUL-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
