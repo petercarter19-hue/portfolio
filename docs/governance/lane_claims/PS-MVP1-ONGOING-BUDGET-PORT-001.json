@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-ONGOING-BUDGET-PORT-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Enable repeated private local testing through a server-injected ongoing budget port on existing extraction/private wrappers and actual private factory. Permit exact100 lifetime operations/profile only after immutable allocation validation; retain per-profile money caps, configured models/efforts/tiers, wire/token envelopes and strict completed-StructuredResult settlement. Preserve all default six-call SQL qualification behavior and uncertain-active fences. Installer owns durable ledger/native metadata/public/Speech ports. No SQL, Foundation, route, preview, production, provider or identity mutation.",
   "assignment": "implementation",
   "writer_ref": "session:01a0f446-0db5-7723-acd3-33019a1766d8",
@@ -27,6 +27,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "1dfcd61d5f9afee21f57af2e1e161085c4199c4e",
+  "closed_at": "2026-10-02T00:20:13Z"
 }
