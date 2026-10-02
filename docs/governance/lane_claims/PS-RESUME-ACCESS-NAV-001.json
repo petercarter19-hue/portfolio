@@ -23,7 +23,8 @@
     "docs/governance/lane_claims/evidence/PS-RESUME-ACCESS-NAV-001.md",
     "tests/test_auth.py",
     "tests/test_owner_home.py",
-    "tests/test_owner_home_accessibility.py"
+    "tests/test_owner_home_accessibility.py",
+    "templates/base.html"
   ],
   "domains": ["runtime:public-resume-access-navigation"],
   "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-RESUME-ACCESS-NAV-001.md"],
