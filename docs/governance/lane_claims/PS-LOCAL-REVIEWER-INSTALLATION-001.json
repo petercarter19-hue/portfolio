@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-LOCAL-REVIEWER-INSTALLATION-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Complete Pete's persistent private test installation under X with live Azure AI throughout supported Resume/Profile extraction, synthesis, interview, visitor-answer and Speech workflows, private personal-history uploads, saved work, Start/Stop and recoverable updates. Reuse the app owner's bound provider factories and separate initial allocation7e644130; this installation owns its distinct non-resetting provider ledger. Derive private owner identity server-side and remove shared fixture account switching from personal-data access. Provide private Mac/iPad HTTPS at a nonconflicting Tailscale endpoint. Preserve owner sandboxes5127/53712, Coding Dashboard mapping, product surfaces and production. Start from exact reviewed previewaef7f5a5 plus declared PDF overlay; promote the separately supplied accepted app artifact when available. No global Python changes, new cloud deployment or external agents. Validate source identity, persistence/recovery, owner isolation, provider accounting, real supported AI responses and device access, with independent Protected review, required CI and accepted repository delivery.",
   "assignment": "implementation",
   "writer_ref": "session:01a0faaf-5e48-7060-990a-c28989a8d247",
@@ -43,6 +43,6 @@
     "relinquished": true
   },
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "d77c80b7132f4b8eabffae3ec0bce0a23d7586ff",
+  "closed_at": "2026-10-02T09:55:06Z"
 }
