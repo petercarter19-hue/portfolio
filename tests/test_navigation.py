@@ -80,7 +80,7 @@ class NavigationTests(unittest.TestCase):
                 else:
                     app.config[key] = value
 
-    def test_generic_member_home_never_claims_the_fixture_as_current_member(self):
+    def test_public_resume_link_targets_the_selected_published_resume(self):
         for path in ('/', '/petec/resume'):
             with self.subTest(path=path):
                 links = self.parse_platform_links(path)
@@ -88,8 +88,8 @@ class NavigationTests(unittest.TestCase):
 
                 self.assertNotIn('Atrium', links_by_text)
                 self.assertEqual(
-                    links_by_text["My PeerSlate"]['attributes']['href'],
-                    '/app',
+                    links_by_text["My Resume"]['attributes']['href'],
+                    '/petec/resume#resume-start',
                 )
                 self.assertNotIn('Home', links_by_text)
 
@@ -102,11 +102,11 @@ class NavigationTests(unittest.TestCase):
         }
         self.assertNotIn(
             'aria-current',
-            homepage_links["My PeerSlate"]['attributes'],
+            homepage_links["My Resume"]['attributes'],
         )
         self.assertEqual(
-            resume_links["My PeerSlate"]['attributes'].get('aria-current'),
-            None,
+            resume_links["My Resume"]['attributes'].get('aria-current'),
+            'page',
         )
         self.assertNotIn('Home', resume_links)
 
@@ -116,8 +116,8 @@ class NavigationTests(unittest.TestCase):
 
         self.assertNotIn('Overview', titles)
         self.assertNotIn('Projects', titles)
-        self.assertIn('Résumé', titles)
-        resume = next(record for record in records if record['title'] == 'Résumé')
+        self.assertIn('My Resume', titles)
+        resume = next(record for record in records if record['title'] == 'My Resume')
         self.assertEqual(resume['href'], '/petec/resume#resume-start')
         for retired in (
             'Community · My Slate',
@@ -136,11 +136,11 @@ class NavigationTests(unittest.TestCase):
             }
             records = self.search_records('/interview-studio')
         self.assertNotIn('Community', links)
-        self.assertEqual(links['Interview Studio']['attributes']['href'], '/interview-studio')
+        self.assertEqual(links['Interview AI']['attributes']['href'], '/interview-studio?mode=ai')
         self.assertNotIn('Opportunity Slate', links)
         self.assertNotIn('About PeerSlate', links)
         self.assertEqual(
-            links['Interview Studio']['attributes'].get('aria-current'),
+            links['Interview AI']['attributes'].get('aria-current'),
             'page',
         )
         self.assertNotIn('The Slate', links)
@@ -151,7 +151,7 @@ class NavigationTests(unittest.TestCase):
         self.assertNotIn('Community', records_by_title)
         self.assertNotIn('Opportunity Slate', records_by_title)
         self.assertNotIn('Community Feed', records_by_title)
-        self.assertEqual(records_by_title['Interview Studio']['href'], '/interview-studio')
+        self.assertEqual(records_by_title['Interview AI']['href'], '/interview-studio?mode=ai')
         self.assertNotIn('The Slate', records_by_title)
 
     def test_resume_subheader_ai_field_replaces_the_retired_overview_field(self):
@@ -215,7 +215,7 @@ class NavigationTests(unittest.TestCase):
         self.assertIn('data-platform-menu-toggle', html)
         self.assertIn('id="platform-mobile-menu"', html)
         menu = html.split('id="platform-mobile-menu"', 1)[1].split('</nav>', 1)[0]
-        for label in ('My PeerSlate', 'Interview Studio'):
+        for label in ('My Resume', 'Interview AI'):
             self.assertEqual(menu.count(f'>{label}</a>'), 1)
         self.assertNotIn('>Community</a>', menu)
         self.assertNotIn('>Opportunity Slate</a>', menu)
@@ -425,7 +425,7 @@ class NavigationTests(unittest.TestCase):
 
         # The pill names the room the viewer is in, and carries its mark.
         self.assertIn(
-            '<span class="platform-roomswitcher__label">Interview Studio</span>',
+            '<span class="platform-roomswitcher__label">Interview AI</span>',
             html,
         )
         self.assertEqual(
@@ -555,7 +555,7 @@ class NavigationTests(unittest.TestCase):
 
             signed_in = self.signed_in_client()
             for path, expected in zip(
-                paths, ('Interview Studio', 'Opportunity Slate', "My PeerSlate")
+                paths, ('Interview AI', 'Opportunity Slate', "My PeerSlate")
             ):
                 with self.subTest(path=path):
                     html = signed_in.get(
@@ -612,21 +612,19 @@ class NavigationTests(unittest.TestCase):
         self.assertIn('data-platform-menu-toggle', signed_in)
 
     def test_global_phone_bar_source_offers_only_real_registered_routes(self):
-        """Architecture section 5: the four-slot structure is a source list
-        for the one existing bottom bar. Slot 1 keeps assumption A1's label
-        because no per-member profile route is registered."""
+        """Public-page phone navigation reaches the two promoted routes."""
         with self.destination_flags(community=True):
             html = self.signed_in_client().get(
                 '/interview-studio', base_url='http://localhost'
             ).get_data(as_text=True)
         source = html.split('data-global-tabsource', 1)[1].split('</ul>', 1)[0]
 
-        self.assertIn('href="/app" ', source)
-        self.assertIn('>My PeerSlate</span>', source)
+        self.assertIn('href="/petec/resume#resume-start" ', source)
+        self.assertIn('>My Resume</span>', source)
         self.assertNotIn('>Profile<', source)
         self.assertNotIn('href="/the-slate"', source)
         self.assertNotIn('>Community</span>', source)
-        self.assertIn('href="/interview-studio"', source)
+        self.assertIn('href="/interview-studio?mode=ai"', source)
         # Short visible label, full accessible name (WCAG 2.2 SC 2.5.3).
         self.assertIn('aria-label="Interview Studio"', source)
         self.assertIn('>Interview</span>', source)
@@ -656,7 +654,7 @@ class NavigationTests(unittest.TestCase):
         self.assertIn('href="/app/settings"', menu)
         self.assertNotIn('>Help<', menu)
         # Every promoted destination is reachable from the sheet.
-        for label in ('My PeerSlate', 'Interview Studio'):
+        for label in ('My Resume', 'Interview AI'):
             self.assertEqual(menu.count(f'>{label}</a>'), 1)
         self.assertNotIn('>Community</a>', menu)
         self.assertNotIn('>Opportunity Slate</a>', menu)

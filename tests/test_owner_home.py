@@ -70,7 +70,9 @@ class OwnerHomeRetirementTests(unittest.TestCase):
 
     def test_capture_is_preserved_without_launchpad_promotion(self):
         body = self.client.get("/app").get_data(as_text=True)
-        self.assertEqual(body.count('class="owner-app__destination"'), 4)
+        self.assertEqual(body.count('class="owner-app__destination"'), 5)
+        self.assertIn('href="/petec/resume#resume-start"', body)
+        self.assertIn(">Public Resume<", body)
         self.assertNotIn('href="/app/capture"', body)
         self.assertNotEqual(self.client.get("/app/capture").status_code, 404)
         self.assertNotIn("owner-app__primary", body)

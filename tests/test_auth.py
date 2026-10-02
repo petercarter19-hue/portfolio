@@ -765,15 +765,15 @@ class ShellAccountControlTests(unittest.TestCase):
             header,
         )
 
-    def test_account_menu_avoids_duplicate_workspace_and_holds_settings_sign_out(self):
+    def test_public_account_menu_keeps_workspace_settings_and_sign_out(self):
         app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
         header = self.header(headers=easy_auth_header("shell-id"))
         menu = header.split('class="platform-account__menu"', 1)[1].split(
             "</form>", 1
         )[0]
 
-        self.assertRegex(header, r'<a\b[^>]*href="/app"[^>]*>\s*My PeerSlate\s*</a>')
-        self.assertNotIn("My PeerSlate", menu)
+        self.assertRegex(menu, r'<a\b[^>]*href="/app"[^>]*>\s*My PeerSlate\s*</a>')
+        self.assertEqual(menu.count("My PeerSlate"), 1)
         self.assertIn('href="/app/settings">Settings</a>', menu)
         self.assertIn(">Sign out</button>", menu)
         for absent in ("Profile", "Help", "Capture", "Notification"):

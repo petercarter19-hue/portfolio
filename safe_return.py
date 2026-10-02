@@ -218,9 +218,10 @@ DESTINATIONS = (
     ),
     Destination(
         "resume", "/petec/resume", ("profile_resume",),
-        label="Résumé", sub="Detailed career record",
+        label="Résumé", sub="Detailed career record", icon="slate",
         keys="resume résumé career experience education certifications pmp jobs roles clearance",
-        href_suffix="#resume-start", surfaces=("profile", "public_search"),
+        href_suffix="#resume-start",
+        surfaces=("profile", "public_search", "account", "launchpad", "member_search"),
     ),
     Destination(
         "contact", "/petec/contact", ("contact",),

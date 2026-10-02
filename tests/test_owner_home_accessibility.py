@@ -63,8 +63,9 @@ class OwnerLaunchpadAccessibilityTests(unittest.TestCase):
         self.assertEqual(body.count("<h1"), 1)
         self.assertIn('aria-labelledby="owner-workspace-title"', body)
         self.assertIn('aria-label="Your PeerSlate destinations"', body)
-        self.assertEqual(body.count('class="owner-app__destination"'), 4)
+        self.assertEqual(body.count('class="owner-app__destination"'), 5)
         for label in (
+            "Public Resume",
             "Opportunity Slate",
             "Interview Studio",
             "Community",

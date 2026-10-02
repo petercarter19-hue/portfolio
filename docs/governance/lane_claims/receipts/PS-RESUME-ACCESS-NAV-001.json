@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-RESUME-ACCESS-NAV-001",
+  "candidate_sha": "2e971d8217920fd9d4147891fc430fae222b3a44",
+  "review_type": "self",
+  "reviewer_ref": "session:01a0fa90-0a39-7c90-a19d-9c3bb4060535",
+  "result": "pass",
+  "reviewed_at": "2026-10-02T05:28:08Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-RESUME-ACCESS-NAV-001.md"
+}

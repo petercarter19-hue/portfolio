@@ -81,7 +81,7 @@ class PublicNavigationRouteTruthTests(unittest.TestCase):
         return response.get_data(as_text=True)
 
     def test_every_shell_representation_uses_the_same_promoted_routes(self):
-        expected = ("/app", "/interview-studio")
+        expected = ("/petec/resume#resume-start", "/interview-studio?mode=ai")
         for path in ("/", "/petec/resume", "/interview-studio"):
             with self.subTest(path=path):
                 html = self.render(path)
@@ -117,7 +117,7 @@ class PublicNavigationRouteTruthTests(unittest.TestCase):
         html = self.render("/app")
         titles = re.findall(r'owner-app__destination-title">([^<]+)', html)
         self.assertEqual(
-            ["Opportunity Slate", "Interview Studio", "Community", "Settings"],
+            ["Public Resume", "Opportunity Slate", "Interview Studio", "Community", "Settings"],
             titles,
         )
         for removed in ("My Opportunities", "Workshop", "Capture", "Profile"):
@@ -126,7 +126,8 @@ class PublicNavigationRouteTruthTests(unittest.TestCase):
         launchpad = html.split('<section class="owner-app', 1)[1].split(
             "</section>", 1
         )[0]
-        self.assertNotIn("Pete Carter", launchpad)
+        self.assertNotIn("Welcome, Pete Carter", launchpad)
+        self.assertIn("Pete Carter&#39;s published career record", launchpad)
 
     def test_public_profile_tabs_keep_story_and_resume_only(self):
         html = self.render("/petec/resume")
@@ -145,10 +146,10 @@ class PublicNavigationRouteTruthTests(unittest.TestCase):
         member_titles = {
             item["title"] for item in _search_records(self.render("/app"))
         }
-        self.assertIn("My Story", public_titles)
+        self.assertEqual({"My Resume", "Interview AI"}, public_titles)
         self.assertIn("My PeerSlate", member_titles)
         self.assertIn("Settings", member_titles)
-        self.assertIn("Interview Studio", public_titles)
+        self.assertIn("Public Resume", member_titles)
         self.assertTrue({"Community", "Opportunity Slate"}.isdisjoint(public_titles))
         self.assertTrue({"Interview Studio", "Community", "Opportunity Slate"} <= member_titles)
         for titles in (public_titles, member_titles):

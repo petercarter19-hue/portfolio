@@ -1467,23 +1467,33 @@ def shared_navigation_urls():
 
     def destination_group(surface, order=()):
         records = navigation_destinations(surface, request.path)
+        if not private_room and surface in ('shell', 'phone', 'public_search'):
+            records = [
+                record for record in navigation_destinations('profile', request.path)
+                if record['key'] == 'resume'
+            ] + [record for record in records if record['key'] == 'interview']
+            for record in records:
+                if record['key'] == 'resume':
+                    record['label'] = 'My Resume'
+                    record['sub'] = "Pete Carter's published career record"
+                else:
+                    record['label'] = 'Interview AI'
+                    record['href'] = url_for('interview_studio', mode='ai')
+                    record['sub'] = 'Explore example interview answers'
+        if surface in ('account', 'launchpad', 'member_search'):
+            for record in records:
+                if record['key'] == 'resume':
+                    record['label'] = 'Public Resume'
+                    record['sub'] = "Pete Carter's published career record"
         if generic_member_page:
             # A member's public page must not offer the example subject's
             # Story, Resume or contact as that member's navigation targets.
             records = [record for record in records if not record['href'].startswith('/petec')]
-        if surface in ('account', 'member_search'):
-            # My PeerSlate is already the generic primary destination. Keep
-            # the combined phone menu and member search free of duplicates.
+        if surface == 'member_search' or (surface == 'account' and private_room):
+            # Private rooms already offer My PeerSlate in primary navigation.
+            # Public pages need the account link back to that workspace.
+            # Member search also has its own primary workspace record.
             records = [record for record in records if record['key'] != 'workspace']
-        if not private_room and surface in ('shell', 'phone', 'public_search'):
-            records = [
-                record for record in records
-                if record['key'] not in ('community', 'opportunity')
-            ]
-        if not private_room and surface == 'public_search':
-            # Public search indexes public destinations; the protected workspace
-            # remains available through primary navigation and member search.
-            records = [record for record in records if record['key'] != 'slate']
         if order:
             positions = {key: position for position, key in enumerate(order)}
             records.sort(key=lambda item: positions.get(item['key'], len(positions)))
@@ -1493,13 +1503,13 @@ def shared_navigation_urls():
         return records
 
     shell_destinations = destination_group(
-        'shell', ('slate', 'community', 'interview', 'opportunity')
+        'shell', ('resume', 'slate', 'community', 'interview', 'opportunity')
     )
     account_destinations = destination_group(
-        'account', ('workspace', 'settings')
+        'account', ('resume', 'workspace', 'settings')
     )
     launchpad_destinations = destination_group(
-        'launchpad', ('opportunity', 'interview', 'community', 'settings')
+        'launchpad', ('resume', 'opportunity', 'interview', 'community', 'settings')
     )
 
     return {
@@ -1534,7 +1544,7 @@ def shared_navigation_urls():
         # feature availability before any destination reaches a template.
         'shell_destinations': shell_destinations,
         'phone_destinations': destination_group(
-            'phone', ('slate', 'community', 'interview')
+            'phone', ('resume', 'slate', 'community', 'interview')
         ),
         'account_destinations': account_destinations,
         'launchpad_destinations': launchpad_destinations,
