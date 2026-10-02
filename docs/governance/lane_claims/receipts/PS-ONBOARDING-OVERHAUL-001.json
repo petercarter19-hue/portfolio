@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-ONBOARDING-OVERHAUL-001",
+  "candidate_sha": "b03ce68425f07755ceece48751a64ff581f41f08",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/onboarding_independent_review",
+  "result": "pass",
+  "reviewed_at": "2026-10-02T13:10:20Z",
+  "findings": [
+    {
+      "id": "education-date-precision",
+      "status": "resolved",
+      "summary": "Supported approximate and unknown ISO education dates retained through correction."
+    },
+    {
+      "id": "impact-parent-retention",
+      "status": "resolved",
+      "summary": "Selected parent linkage retained through Back, review and asynchronous refresh."
+    },
+    {
+      "id": "required-integrated-ci-contract",
+      "status": "resolved",
+      "summary": "All25 retained integrated journeys plus33 intake methods execute under the strict58 runner; full documentation contract preserved within owned evidence without changing reserved registry."
+    },
+    {
+      "id": "ci-browser-readiness-and-receipt-selection",
+      "status": "resolved",
+      "summary": "Explicit fresh/manual guide entry and unique receipt container retain all58 journeys; delayed real-service regression red then green, strict58 pass with zero skips."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-ONBOARDING-OVERHAUL-001.md"
+}

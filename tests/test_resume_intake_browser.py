@@ -1,4 +1,4 @@
-"""Real browser -> Flask -> service journeys for the MVP1 C composer.
+"""Real browser -> Flask -> service journeys for private resume onboarding.
 
 Playwright drives a real headless Chrome against a locally served Flask app.
 The parser and transcription seams are in-process deterministic stubs that
@@ -16,8 +16,6 @@ from __future__ import annotations
 import logging
 import json
 import os
-import re
-import tempfile
 import threading
 import unittest
 from pathlib import Path
@@ -64,6 +62,8 @@ CONFIG_KEYS = (
     "RESUME_DRAFT_SERVICE",
     "RESUME_INTAKE_SERVICE",
     "RESUME_GUIDE_SERVICE",
+    "PEERSLATE_RESUME_INTERVIEW_ENABLED",
+    "RESUME_PRIVATE_ASSISTANCE_SERVICE",
 )
 
 TRANSCRIPT = "Browser journey transcript: I led a cross-team migration."
@@ -193,762 +193,737 @@ def start_browser(cls):
     cls.browser = browser
 
 
-@unittest.skipUnless(
-    sync_playwright is not None and CHROME_EXECUTABLE,
-    "Playwright and Google Chrome are required for the composer browser proof",
-)
+
+@unittest.skipUnless(sync_playwright is not None and CHROME_EXECUTABLE,
+                     "Playwright and Google Chrome are required for the browser proof")
 class ResumeIntakeBrowserTests(unittest.TestCase):
-    def test_member_dates_and_boolean_currentness_save_reload_and_editor_remain_faithful(self):
-        owner = self._use_owner("browser-career-dates")
-        page = self._new_page(viewport={"width":1440,"height":1000})
-        page.goto(f"{self.base_url}/app/resume")
-        for title, detail, start, end, current in [
-            ("Past position","year","1993","1996","false"),
-            ("Unknown position","","","",""),
-            ("Current position","month","2022-03","","true"),
-        ]:
-            page.locator("#resume-intake-type").select_option("role")
-            page.locator("#resume-intake-role-title").fill(title)
-            page.locator("#resume-intake-employer").fill("Fictional Employer")
-            page.locator("#resume-intake-role-date-precision").select_option(detail)
-            page.locator("#resume-intake-role-start").fill(start)
-            page.locator("#resume-intake-role-end").fill(end)
-            page.locator("#resume-intake-current-role").select_option(current)
-            page.locator("#resume-intake-add-fact").click()
-        page.locator("#resume-intake-add").click()
-        page.locator("#resume-intake-receipt").get_by_text("3 saved privately",exact=False).wait_for(timeout=15000)
-        page.reload()
-        cards = page.locator("#resume-editor-lists article")
-        cards.first.wait_for()
-        self.assertEqual(cards.locator("h3").all_text_contents(),["Current position","Past position","Unknown position"])
-        current = cards.filter(has=page.get_by_role("heading",name="Current position",exact=True))
-        self.assertIn("2022-03 – Present",current.inner_text())
-        self.assertNotIn("2022-03-01",current.inner_text())
-        current.locator("summary").click()
-        current.get_by_label("Date detail",exact=True).select_option("year")
-        current.get_by_role("button",name="Save draft",exact=True).click()
-        page.locator("#resume-editor-status").get_by_text("Draft saved",exact=False).wait_for()
-        page.reload()
-        workspace = self.draft_service.get_workspace(owner)
-        values = {**workspace["items"][0]["values"],**(workspace["items"][0].get("proposed_values") or {})}
-        self.assertIs(values["current_role"],True)
-        self.assertEqual((values["start_date"],values["date_precision"]),("2022-01-01","year"))
-        unknown = next(row for row in workspace["items"] if row["values"]["role_title"]=="Unknown position")
-        self.assertIsNone(unknown["values"]["start_date"])
-        self.assertEqual(unknown["values"]["date_precision"],"unknown")
-        self.assertTrue(all(not row["resume_display"] and not row["visitor_ai"] for row in workspace["items"]))
+    """Real page journeys through the adaptive guide and separate manual editor.
 
-    def test_remove_refused_file_preserves_new_text_queued_fact_and_other_attachment(self):
-        self._use_owner("browser-remove-refused")
-        page = self._new_page()
-        page.goto(f"{self.base_url}/app/resume")
-        page.locator("#resume-intake-file").set_input_files([
-            {"name":"refused.bin","mimeType":"application/octet-stream","buffer":b"refused"},
-            {"name":"empty.txt","mimeType":"text/plain","buffer":b""},
-        ])
-        page.locator("#resume-intake-add").click()
-        page.locator("#resume-intake-receipt").get_by_text("0 saved privately \u00b7 0 needs your review \u00b7 2 could not be saved.",exact=True).wait_for()
-        page.locator("#resume-intake-text").fill("Keep my newer unsent words.")
-        page.locator("#resume-intake-type").select_option("skill")
-        page.locator("#resume-intake-skill").fill("Member chosen strength")
-        page.locator("#resume-intake-add-fact").click()
-        page.get_by_role("button",name="Remove refused.bin",exact=True).click()
-        self.assertNotIn("refused.bin",page.locator("#resume-intake-attachments").inner_text())
-        self.assertIn("empty.txt",page.locator("#resume-intake-attachments").inner_text())
-        self.assertEqual(page.locator("#resume-intake-text").input_value(),"Keep my newer unsent words.")
-        self.assertIn("Member chosen strength",page.locator("#resume-intake-queued").inner_text())
-        page.get_by_role("button",name="Remove empty.txt",exact=True).click()
-        self.assertEqual(page.locator("#resume-intake-attachments li").count(),0)
-        # Navigation protection remains for the still-unsent text/fact.
-        self.assertIn("Not added yet",page.locator("#resume-intake-draft-label").inner_text())
-
+    Changed layout tests exercise the same service boundaries as the 18-test
+    pre-change baseline, with stronger recovery and confirmation assertions.
+    Providers, identity and persistence remain isolated test fixtures.
+    """
     @classmethod
     def setUpClass(cls):
         install_intake_runtime_fixtures(cls)
         start_browser(cls)
-        handle, cls.document_path = tempfile.mkstemp(suffix=".txt")
-        os.close(handle)
-        with open(cls.document_path, "w", encoding="utf-8") as stream:
-            stream.write("Systems Engineer at Northrop Grumman")
-        cls.addClassCleanup(_remove_file, cls.document_path)
 
-    def _new_page(self, **context_kwargs):
-        context = self.browser.new_context(**context_kwargs)
+    def setUp(self):
+        self.owner = 'onboarding-' + self._testMethodName
+        self.old = {key: app.config.get(key) for key in CONFIG_KEYS}
+        self.addCleanup(app.config.update, self.old)
+        app.config.update(PEERSLATE_DEV_USER_KEY=self.owner,
+                          PEERSLATE_RESUME_INTERVIEW_ENABLED=False,
+                          RESUME_PRIVATE_ASSISTANCE_SERVICE=None)
+
+    def page(self, width=1440, height=1000, expect_guide=True, **options):
+        context = self.browser.new_context(viewport={'width': width, 'height': height}, **options)
         self.addCleanup(context.close)
         page = context.new_page()
-        page.route("https://fonts.**", lambda route: route.abort())
+        page.set_default_timeout(7000)
+        page.route('https://fonts.**', lambda route: route.abort())
+        self.errors = []
+        page.on('pageerror', lambda error: self.errors.append(str(error)))
+        page.goto(self.base_url + '/app/resume')
+        if not expect_guide:
+            return page
+        page.locator('#resume-intake[open]').wait_for()
+        page.wait_for_function("() => getComputedStyle(document.querySelector('.resume-editor__panel')).filter === 'blur(8px)'")
         return page
 
-    def _use_owner(self, name):
-        app.config["PEERSLATE_DEV_USER_KEY"] = name
-        self.addCleanup(app.config.update, {"PEERSLATE_DEV_USER_KEY": "intake-browser-member"})
-        return name
+    def input(self, page):
+        if not page.locator('#resume-intake[open]').count():
+            page.locator('#resume-intake-reopen').click()
+        if page.locator('#resume-intake-welcome').is_visible():
+            page.locator('#resume-intake-start-type').click()
+        elif not page.locator('#resume-intake-input').is_visible():
+            page.locator('#resume-intake-back').click()
+            if page.locator('#resume-intake-welcome').is_visible():
+                page.locator('#resume-intake-start-type').click()
 
-    def test_mixed_add_reaches_flask_and_reports_a_truthful_receipt(self):
-        page = self._new_page(viewport={"width": 1440, "height": 1000})
-        page.goto(f"{self.base_url}/app/resume", wait_until="load")
-        self.assertTrue(page.locator("#resume-intake").is_visible())
+    def manual(self, page):
+        if page.locator('#resume-intake[open]').count():
+            page.locator('#resume-intake-skip').click()
+        details = page.locator('#resume-intake-manual-details')
+        if details.get_attribute('open') is None:
+            details.locator('summary').click()
 
-        typed = "One project I worked on involved a cross-team migration."
-        page.locator("#resume-intake-text").fill(typed)
+    def queue(self, page, record_type, **values):
+        page.locator('#resume-intake-type').select_option(record_type)
+        ids = {
+            'role_title': 'role-title', 'employer_name': 'employer', 'current_role': 'current-role',
+            'date_precision': 'role-date-precision' if record_type == 'role' else 'education-date-precision',
+            'start_date': 'role-start' if record_type == 'role' else 'education-start',
+            'end_date': 'role-end' if record_type == 'role' else 'education-end',
+            'name': 'skill' if record_type == 'skill' else 'credential', 'issuer': 'issuer',
+            'title': 'education-title', 'institution_name': 'institution', 'education_status': 'education-status',
+            'completion_status': 'credential-status', 'issue_date': 'credential-issue-date', 'wording': 'wording',
+        }
+        for key, value in values.items():
+            field = page.locator('#resume-intake-' + ids[key])
+            if field.evaluate('el => el.tagName') == 'SELECT':
+                field.select_option(value)
+            else:
+                field.fill(value)
+        page.locator('#resume-intake-add-fact').click()
 
-        # One structured fact, queued by the member and saved by explicit Add.
-        page.locator("#resume-intake-type").select_option("skill")
-        page.locator("#resume-intake-skill").fill("Requirements management")
-        page.locator("#resume-intake-add-fact").click()
-        self.assertIn("Requirements management", page.locator("#resume-intake-queued").inner_text())
+    def save_manual(self, page, count):
+        page.locator('#resume-intake-manual-save').click()
+        page.wait_for_function("n => document.querySelector('#resume-intake-receipt').textContent.includes(n + ' saved privately')", arg=count)
+        page.wait_for_function("() => !document.querySelector('#resume-intake-manual-save').disabled")
 
-        # A real synthetic document upload through the browser's own file input.
-        self.received_documents.clear()
-        page.locator("#resume-intake-file").set_input_files(self.document_path)
-        attachment_text = page.locator("#resume-intake-attachments").inner_text().lower()
-        self.assertIn(".txt", attachment_text)
-        self.assertIn("not added yet", attachment_text)
+    def submit(self, page, words):
+        self.input(page)
+        page.locator('#resume-intake-text').fill(words)
+        page.locator('#resume-intake-add').click()
+        page.locator('#resume-intake-review:visible').wait_for()
 
-        page.locator("#resume-intake-add").click()
-        page.locator("#resume-intake-receipt").get_by_text("saved privately").first.wait_for(timeout=15000)
+    def field(self, page, name):
+        return page.locator('[data-proposal-field="' + name + '"]')
 
-        receipt = page.locator("#resume-intake-receipt").inner_text()
-        self.assertIn("1 saved privately", receipt)
-        self.assertIn("2 needs your review", receipt)
+    def typed_service(self, rows, service_class=ResumeIntakeService, **kwargs):
+        service = service_class(repository=self.repository, draft_service=self.draft_service,
+            policy=selected_policy_for_tests(), interpreter=lambda text, kind: rows, **kwargs)
+        app.config['RESUME_INTAKE_SERVICE'] = service
+        return service
 
-        self.assertFalse(page.locator("#resume-intake-activity").is_visible())
+    def role_proposal(self):
+        return {'kind': 'inferred_wording', 'record_type': 'role', 'confidence': 'uncertain',
+                'values': {'role_title': 'Product designer', 'employer_name': 'Northstar Studio',
+                           'start_date': '2022-01-01', 'date_precision': 'year', 'current_role': True}}
 
-        # The server really received the uploaded bytes through the seam.
-        self.assertEqual(len(self.received_documents), 1)
-        self.assertEqual(
-            self.received_documents[0]["data"], b"Systems Engineer at Northrop Grumman"
-        )
-        self.assertEqual(self.received_documents[0]["content_type"], "text/plain")
+    def confirm(self, page):
+        page.get_by_role('button', name='Confirm details', exact=True).click()
+        page.locator('#resume-intake-status').get_by_text('Saved privately. Sharing settings are unchanged.', exact=True).wait_for()
 
-        # The explicit fact is private; the free text is only a pending proposal.
-        saved = self.catalog.list_items("intake-browser-member")
-        self.assertEqual(len(saved), 1)
-        self.assertFalse(saved[0]["resume_display"])
-        self.assertFalse(saved[0]["visitor_ai"])
-        # The unfinished follow-up is visible as a pending proposal, not saved.
-        page.locator("#resume-intake-proposals").get_by_text(
-            "cross-team migration", exact=False
-        ).first.wait_for(timeout=10000)
+    def capture(self, page, name):
+        directory = os.environ.get('PEERSLATE_ONBOARDING_CAPTURE_DIR')
+        if directory:
+            Path(directory).mkdir(parents=True, exist_ok=True)
+            # Viewport captures keep the guide readable on a phone without a
+            # long blank document/footer shrinking the image in chat.
+            page.screenshot(path=str(Path(directory) / (name + '.png')), full_page=False)
 
-        # A refresh recovers the confirmed durable state from the server. The
-        # unsent follow-up text is honestly not promised to survive, so the
-        # receipt (not the raw draft) is what returns.
-        page.reload(wait_until="load")
-        page.locator("#resume-intake-receipt").get_by_text(
-            "1 saved privately", exact=False
-        ).first.wait_for(timeout=15000)
+    def test_welcome_has_benefits_equal_actions_real_document_and_no_provider_work(self):
+        page = self.page()
+        self.assertIn('more PeerSlate knows you', page.locator('#resume-intake-title').inner_text())
+        self.assertIn('only what you choose to share', page.locator('#resume-intake-welcome').inner_text())
+        buttons = [page.locator('#resume-intake-start-' + name).bounding_box() for name in ('upload', 'voice')]
+        self.assertAlmostEqual(buttons[0]['width'], buttons[1]['width'], delta=1)
+        self.assertEqual(page.locator('.resume-editor__panel').count(), 1)
+        self.assertEqual(page.locator('.resume-editor__panel').evaluate('el => getComputedStyle(el).filter'), 'blur(8px)')
+        self.assertEqual(len(self.repository.load_owner(self.owner)['submissions']), 0)
+        self.assertEqual(len(self.catalog.list_items(self.owner)), 0)
+        self.capture(page, 'runtime-welcome-desktop')
+        self.assertEqual(self.errors, [])
 
-    def test_guide_hide_reopen_preserves_unfinished_text(self):
-        page = self._new_page(viewport={"width": 1440, "height": 1000})
-        page.goto(f"{self.base_url}/app/resume", wait_until="load")
-        unfinished = "Half-written answer I have not added yet."
-        page.locator("#resume-intake-text").fill(unfinished)
-        page.locator("#resume-intake-hide").click()
-        self.assertFalse(page.locator("#resume-intake-guide").is_visible())
-        self.assertTrue(page.locator("#resume-intake-reopen").is_visible())
-        page.locator("#resume-intake-reopen").click()
-        self.assertTrue(page.locator("#resume-intake-guide").is_visible())
-        self.assertEqual(page.locator("#resume-intake-text").input_value(), unfinished)
-        self.assertIn("Not added yet", page.locator("#resume-intake-draft-label").inner_text())
+    def test_grouped_correction_preserves_dates_and_reveals_only_after_confirmation(self):
+        self.typed_service([self.role_proposal()])
+        page = self.page()
+        self.submit(page, 'I design products at Northstar Studio, starting in 2022.')
+        self.assertEqual(len(self.catalog.list_items(self.owner)), 0)
+        self.assertIn('2022', page.locator('.resume-intake__review-facts').inner_text())
+        self.assertNotIn('2022-01-01', page.locator('.resume-intake__review-facts').inner_text())
+        self.assertEqual(page.locator('.resume-editor__panel').evaluate('el => getComputedStyle(el).filter'), 'blur(8px)')
+        page.get_by_role('button', name='Change something').click()
+        self.field(page, 'start_date').fill('2021')
+        self.capture(page, 'runtime-correction-desktop')
+        self.confirm(page)
+        values = self.catalog.list_items(self.owner)[0]['values']
+        self.assertEqual(values['start_date'], '2021-01-01')
+        self.assertEqual(values['date_precision'], 'year')
+        self.assertIs(values['current_role'], True)
+        page.wait_for_function("() => getComputedStyle(document.querySelector('.resume-editor__panel')).filter === 'blur(6px)'")
+        page.locator('#resume-editor-lists').get_by_text('Product designer', exact=True).first.wait_for(state='attached')
+        self.capture(page, 'runtime-reveal-desktop')
+        self.assertEqual(self.errors, [])
 
-    def test_in_field_microphone_inserts_without_overwriting_typing(self):
-        owner = self._use_owner("browser-progress-overlap")
-        original = app.config["RESUME_INTAKE_SERVICE"]
-        first_started, second_started, add_started = (threading.Event() for _ in range(3))
-        release_first, release_second, release_add = (threading.Event() for _ in range(3))
-        for gate in (release_first, release_second, release_add):
-            self.addCleanup(gate.set)
-        calls = {"recording": 0, "add": 0}
+    def test_manual_dates_currentness_reload_editor_and_privacy(self):
+        page = self.page(); self.manual(page)
+        for title, precision, start, end, current in [('Past position','year','1993','1996','false'),
+                ('Unknown position','','','',''), ('Current position','month','2022-03','','true')]:
+            self.queue(page, 'role', role_title=title, employer_name='Fictional Employer',
+                       date_precision=precision, start_date=start, end_date=end, current_role=current)
+        self.save_manual(page, 3)
+        page.reload()
+        self.assertFalse(page.locator('#resume-intake').is_visible())
+        cards = page.locator('#resume-editor-lists article'); cards.first.wait_for()
+        self.assertEqual(cards.locator('h3').all_text_contents(), ['Current position','Past position','Unknown position'])
+        current = cards.filter(has=page.get_by_role('heading', name='Current position', exact=True))
+        self.assertIn('2022-03 – Present', current.inner_text())
+        self.assertNotIn('2022-03-01', current.inner_text())
+        current.locator('summary').click()
+        current.get_by_label('Date detail', exact=True).select_option('year')
+        current.get_by_role('button', name='Save draft', exact=True).click()
+        page.locator('#resume-editor-status').get_by_text('Draft saved', exact=False).wait_for()
+        page.reload()
+        workspace = self.draft_service.get_workspace(self.owner)
+        values = {**workspace['items'][0]['values'], **(workspace['items'][0].get('proposed_values') or {})}
+        self.assertEqual((values['start_date'], values['date_precision'], values['current_role']), ('2022-01-01','year',True))
+        unknown = next(row for row in workspace['items'] if row['values']['role_title'] == 'Unknown position')
+        self.assertIsNone(unknown['values']['start_date'])
+        self.assertTrue(all(not row['resume_display'] and not row['visitor_ai'] for row in workspace['items']))
 
-        class DelayedService(ResumeIntakeService):
-            def transcribe_recording(self, owner_key, upload, payload, **kwargs):
-                calls["recording"] += 1
-                first = calls["recording"] == 1
-                (first_started if first else second_started).set()
-                if not (release_first if first else release_second).wait(30):
-                    raise ResumeIntakeUnavailableError()
-                return super().transcribe_recording(owner_key, upload, payload, **kwargs)
+    def test_manual_save_never_submits_guide_words_or_attachment(self):
+        page = self.page(390, 844); self.input(page)
+        words = 'These are unfinished private words.'
+        page.locator('#resume-intake-text').fill(words)
+        page.locator('#resume-intake-file').set_input_files({'name':'draft.txt','mimeType':'text/plain','buffer':b'Unsubmitted bytes'})
+        self.manual(page); self.queue(page, 'skill', name='Requirements management'); self.save_manual(page, 1)
+        self.assertEqual(len(self.catalog.list_items(self.owner)), 1)
+        self.assertEqual(len(self.repository.load_owner(self.owner)['proposals']), 0)
+        page.locator('#resume-intake-reopen').click()
+        self.assertEqual(page.locator('#resume-intake-text').input_value(), words)
+        self.assertIn('draft.txt', page.locator('#resume-intake-attachments').inner_text())
+        self.assertEqual(self.errors, [])
 
-            def submit(self, owner_key, payload, **kwargs):
-                calls["add"] += 1
-                add_started.set()
-                if not release_add.wait(30):
-                    raise ResumeIntakeUnavailableError()
-                return super().submit(owner_key, payload, **kwargs)
+    def test_phone_narrow_keyboard_and_reduced_motion(self):
+        page = self.page(390, 844, is_mobile=True, has_touch=True, reduced_motion='reduce')
+        self.capture(page, 'runtime-welcome-phone')
+        for width, height in [(390,844),(320,700),(390,480),(640,500)]:
+            page.set_viewport_size({'width':width,'height':height})
+            self.assertLessEqual(page.evaluate('document.documentElement.scrollWidth - innerWidth'), 1)
+            self.assertLessEqual(page.locator('.resume-intake__surface').evaluate('el => el.scrollWidth - el.clientWidth'), 1)
+        self.input(page)
+        page.locator('#resume-intake-text').fill('A long answer ' * 150)
+        page.set_viewport_size({'width':390,'height':480})
+        page.locator('#resume-intake-add').scroll_into_view_if_needed()
+        box = page.locator('#resume-intake-add').bounding_box()
+        self.assertLessEqual(box['y'] + box['height'], 480)
+        self.assertGreaterEqual(box['y'], 0)
+        self.assertEqual(page.locator('.resume-intake').evaluate('el => getComputedStyle(el).transitionDuration'), '0s')
+        self.capture(page, 'runtime-keyboard-phone')
+        page.keyboard.press('Escape')
+        self.assertFalse(page.locator('#resume-intake').is_visible())
+        self.assertEqual(page.evaluate('document.activeElement.id'), 'resume-intake-reopen')
+        page.locator('#resume-intake-reopen').click()
+        self.assertIn('long answer', page.locator('#resume-intake-text').input_value())
+        for _ in range(24):
+            page.keyboard.press('Tab')
+            self.assertTrue(page.evaluate("document.activeElement === document.body || document.querySelector('#resume-intake').contains(document.activeElement)"))
+        self.assertEqual(self.errors, [])
 
-        app.config["RESUME_INTAKE_SERVICE"] = DelayedService(
-            repository=self.repository, draft_service=self.draft_service,
-            transcription_adapter=ResumeTranscriptionAdapter(service=self.transcriber),
-            policy=selected_policy_for_tests(),
-        )
-        self.addCleanup(app.config.update, {"RESUME_INTAKE_SERVICE": original})
-        page = self._new_page(viewport={"width": 1440, "height": 1000})
-        page.goto(f"{self.base_url}/app/resume", wait_until="load")
-        typed = "Typed before recording."
-        page.locator("#resume-intake-text").fill(typed)
-        page.locator("#resume-intake-mic").click()
-        page.wait_for_timeout(300)
-        page.locator("#resume-intake-mic").click()
-        activity = page.locator("#resume-intake-activity")
-        activity.get_by_text("Turning your recording into text", exact=False).wait_for()
-        self.assertTrue(first_started.wait(2))
-        page.locator("#resume-intake-cancel-recording").click()
-        self.assertFalse(activity.is_visible())
-        self.assertEqual(page.locator("#resume-intake-text").input_value(), typed)
-        # Start a new recording while the cancelled request still has no response.
-        page.locator("#resume-intake-mic").click()
-        page.wait_for_timeout(300)
-        page.locator("#resume-intake-add").click()
-        page.locator("#resume-intake-text").fill(typed + " Newer words.")
-        page.locator("#resume-intake-mic").click()
-        activity.get_by_text("Preparing your information", exact=False).wait_for()
-        activity.get_by_text("Turning your recording into text", exact=False).wait_for()
-        capture_dir = os.environ.get("PEERSLATE_PROGRESS_CAPTURE_DIR")
-        if capture_dir:
-            page.screenshot(path=str(Path(capture_dir) / "desktop-overlap.png"))
-        release_first.set()
-        self.assertTrue(add_started.wait(5))
-        page.wait_for_timeout(150)
-        # The obsolete first recording cannot insert text, clear the new work,
-        # or hide the new transcription's cancel control.
-        self.assertNotIn(TRANSCRIPT, page.locator("#resume-intake-text").input_value())
-        self.assertIn("Preparing your information", activity.inner_text())
-        self.assertIn("Turning your recording into text", activity.inner_text())
-        self.assertTrue(page.locator("#resume-intake-cancel-recording").is_visible())
-        release_add.set()
-        self.assertTrue(second_started.wait(5))
-        page.wait_for_function("() => !document.getElementById('resume-intake-add').disabled")
-        self.assertTrue(activity.is_visible())
-        self.assertNotIn("Preparing your information", activity.inner_text())
-        self.assertIn("Turning your recording into text", activity.inner_text())
-        release_second.set()
-        page.wait_for_function("() => document.getElementById('resume-intake-text').value.includes('Browser journey transcript')")
-        self.assertFalse(activity.is_visible())
-        self.assertFalse(page.locator("#resume-intake-cancel-recording").is_visible())
-        self.assertEqual(page.locator("#resume-intake-composer").get_attribute("aria-busy"), "false")
-        value = page.locator("#resume-intake-text").input_value()
-        self.assertIn("Newer words", value)
-        self.assertEqual(value.count(TRANSCRIPT), 1)
-        self.assertEqual(calls, {"recording": 2, "add": 1})
-        self.assertEqual(len(self.catalog.list_items(owner)), 0)
+    def test_finish_is_explicit_private_and_manual_remains_available(self):
+        page = self.page(); self.input(page)
+        page.locator('#resume-intake-text').fill('Not submitted')
+        page.locator('#resume-intake-input-finish').click()
+        page.locator('#resume-intake-optional-next').click()
+        self.assertIn('does not publish', page.locator('#resume-intake-sharing').inner_text())
+        page.locator('#resume-intake-complete').click()
+        page.locator('#resume-intake-finish:visible').wait_for()
+        self.assertEqual(self.repository.load_owner(self.owner)['guide']['status'], 'completed')
+        self.assertEqual(len(self.catalog.list_items(self.owner)), 0)
+        self.assertEqual(page.locator('#resume-intake-text').input_value(), 'Not submitted')
+        self.assertTrue(page.locator('#resume-intake-finish-unsent').is_visible())
+        page.locator('#resume-intake-view').click()
+        self.assertFalse(page.locator('#resume-intake').is_visible())
+        page.reload(); self.assertFalse(page.locator('#resume-intake').is_visible())
 
-    def test_mobile_composition_reflows_without_horizontal_overflow(self):
-        page = self._new_page(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True)
-        page.goto(f"{self.base_url}/app/resume", wait_until="load")
-        self.assertTrue(page.locator("#resume-intake").is_visible())
-        self.assertTrue(page.locator("#resume-intake-text").is_visible())
-        self.assertTrue(page.locator("#resume-intake-add").is_visible())
-        overflow = page.evaluate(
-            "() => document.documentElement.scrollWidth - window.innerWidth"
-        )
-        self.assertLessEqual(overflow, 1, "the composer must not cause horizontal overflow at 390px")
+    def test_finish_without_unsent_input_has_no_false_reminder(self):
+        page = self.page(); self.input(page)
+        page.locator('#resume-intake-input-finish').click()
+        page.locator('#resume-intake-optional-next').click()
+        page.locator('#resume-intake-complete').click()
+        page.locator('#resume-intake-finish:visible').wait_for()
+        self.assertFalse(page.locator('#resume-intake-finish-unsent').is_visible())
+        self.assertEqual(len(self.catalog.list_items(self.owner)), 0)
 
-    def test_mixed_saved_failed_and_review_items_clear_only_acknowledged_inputs(self):
-        owner = self._use_owner("browser-mixed")
-        page = self._new_page(viewport={"width": 1440, "height": 1000})
-        page.goto(f"{self.base_url}/app/resume", wait_until="load")
-        typed = "Follow-up wording that becomes a pending proposal."
-        page.locator("#resume-intake-text").fill(typed)
-        page.locator("#resume-intake-type").select_option("skill")
-        page.locator("#resume-intake-skill").fill("Requirements management")
-        page.locator("#resume-intake-add-fact").click()
-        # A file the server refuses (unsupported declared type), added through
-        # the browser's own file input.
-        bad = os.path.join(tempfile.gettempdir(), "intake-bad.zip")
-        with open(bad, "wb") as stream:
-            stream.write(b"PK\x03\x04not-a-real-document")
-        self.addCleanup(_remove_file, bad)
-        page.locator("#resume-intake-file").set_input_files(bad)
-        page.locator("#resume-intake-add").click()
-        page.locator("#resume-intake-receipt").get_by_text("1 saved privately", exact=False).first.wait_for(
-            timeout=15000
-        )
-        receipt = page.locator("#resume-intake-receipt").inner_text()
-        self.assertIn("1 saved privately", receipt)
-        self.assertIn("1 needs your review", receipt)
-        self.assertIn("1 could not be saved", receipt)
-        # The acknowledged text was cleared; the refused file is still unsent
-        # and the saved fact is no longer queued.
-        self.assertEqual(
-            page.evaluate("() => document.getElementById('resume-intake-text').value"), ""
-        )
-        attachments = page.locator("#resume-intake-attachments").inner_text().lower()
-        self.assertIn("still unsent", attachments)
-        self.assertEqual(page.locator("#resume-intake-queued").inner_text().strip(), "")
-        saved = self.catalog.list_items(owner)
-        self.assertEqual(len(saved), 1)
-        self.assertFalse(saved[0]["resume_display"])
+    def test_proposals_preserve_approximate_and_unknown_date_precision(self):
+        self.typed_service([
+            {'kind': 'inferred_wording', 'record_type': 'education', 'confidence': 'uncertain',
+             'values': {'title': 'Design studies', 'institution_name': 'Fictional College',
+                        'education_status': 'completed', 'date_precision': 'approximate', 'end_date': '2018-06-15'}},
+            {'kind': 'inferred_wording', 'record_type': 'role', 'confidence': 'uncertain',
+             'values': {'role_title': 'Designer', 'employer_name': 'Fictional Studio',
+                        'date_precision': 'unknown', 'start_date': '2019-02-03'}}])
+        page = self.page(); self.submit(page, 'My education dates are approximate and my role date is unknown.')
+        self.assertIn('Around 2018-06-15', page.locator('.resume-intake__review-facts').inner_text())
+        page.get_by_role('button', name='Change something').click()
+        self.assertEqual(self.field(page, 'date_precision').input_value(), 'approximate')
+        self.confirm(page)
+        self.assertNotIn('2019-02-03', page.locator('.resume-intake__review-facts').inner_text())
+        self.assertIn('Date unknown', page.locator('.resume-intake__review-facts').inner_text())
+        page.get_by_role('button', name='Change something').click()
+        self.assertEqual(self.field(page, 'date_precision').locator('option[value="approximate"]').count(), 0)
+        self.confirm(page)
+        records = {row['record_type']: row['values'] for row in self.catalog.list_items(self.owner)}
+        self.assertEqual((records['education']['date_precision'], records['education']['end_date']), ('approximate', '2018-06-15'))
+        self.assertIsNone(records['education']['start_date'])
+        self.assertEqual((records['role']['date_precision'], records['role']['start_date']), ('unknown', '2019-02-03'))
+        self.assertEqual(self.errors, [])
 
-    def test_newer_typing_during_a_slow_add_is_never_discarded(self):
-        owner = self._use_owner("browser-newer-typing")
-        original = app.config["RESUME_INTAKE_SERVICE"]
-        started, release = threading.Event(), threading.Event()
-        self.addCleanup(release.set)
+    def test_impact_parent_choice_survives_back_review_and_reopen(self):
+        page = self.page(); self.manual(page)
+        self.queue(page, 'role', role_title='Designer', employer_name='Fictional Studio')
+        self.save_manual(page, 1)
+        role = self.catalog.list_items(self.owner)[0]
+        from unittest.mock import patch
+        create_patch = patch.object(self.catalog, 'create_private', wraps=self.catalog.create_private)
+        create = create_patch.start(); self.addCleanup(create_patch.stop)
+        self.typed_service([{'kind': 'inferred_wording', 'record_type': 'accomplishment', 'confidence': 'uncertain',
+                            'values': {'wording': 'Simplified onboarding'}}])
+        self.submit(page, 'I simplified onboarding.')
+        page.get_by_role('button', name='Change something').click()
+        page.locator('#resume-proposal-parent').select_option(role['record_key'])
+        self.field(page, 'wording').fill('Simplified customer onboarding')
+        page.locator('#resume-intake-back').click()
+        page.locator('#resume-intake-review-pending').click()
+        page.get_by_role('button', name='Change something').click()
+        self.assertEqual(page.locator('#resume-proposal-parent').input_value(), role['record_key'])
+        page.locator('#resume-intake-hide').click(); page.locator('#resume-intake-reopen').click()
+        self.assertEqual(page.locator('#resume-proposal-parent').input_value(), role['record_key'])
+        self.assertEqual(len(self.catalog.list_items(self.owner)), 1)
+        self.confirm(page)
+        impact = next(row for row in self.catalog.list_items(self.owner) if row['record_type'] == 'accomplishment')
+        self.assertEqual(create.call_args.args[1]['parent_key'], role['record_key'])
+        self.assertEqual(impact['values']['wording'], 'Simplified customer onboarding')
+        self.assertEqual(self.errors, [])
+
+    def test_clear_controls_never_offer_required_fields(self):
+        page = self.page(); self.manual(page)
+        page.locator('#resume-intake-type').select_option('role')
+        fields = page.locator('#resume-intake-clears input').evaluate_all('els => els.map(el => el.value)')
+        self.assertNotIn('role_title', fields); self.assertNotIn('employer_name', fields); self.assertIn('summary', fields)
+        page.locator('#resume-intake-type').select_option('skill')
+        self.assertEqual(page.locator('#resume-intake-clears input').evaluate_all('els => els.map(el => el.value)'), ['summary'])
+
+    def test_lost_add_freezes_request_bytes_and_keeps_newer_typing(self):
         calls = []
-
-        class DelayedAdd(ResumeIntakeService):
-            def submit(self, owner_key, payload, **kwargs):
-                calls.append(payload)
-                started.set()
-                if not release.wait(30):
-                    raise ResumeIntakeUnavailableError()
-                return super().submit(owner_key, payload, **kwargs)
-
-        app.config["RESUME_INTAKE_SERVICE"] = DelayedAdd(
-            repository=self.repository, draft_service=self.draft_service,
-            policy=selected_policy_for_tests(),
-        )
-        self.addCleanup(app.config.update, {"RESUME_INTAKE_SERVICE": original})
-        page = self._new_page(viewport={"width": 390, "height": 844},
-                              is_mobile=True, has_touch=True, reduced_motion="reduce")
-        page.goto(f"{self.base_url}/app/resume", wait_until="load")
-        page.locator("#resume-intake-text").fill("First version of my answer.")
-        page.locator("#resume-intake-add").click()
-        activity = page.locator("#resume-intake-activity")
-        activity.get_by_text("Preparing your information", exact=False).wait_for()
-        self.assertTrue(started.wait(2))
-        visible_box = activity.bounding_box()
-        self.assertGreaterEqual(visible_box["y"], 0)
-        self.assertLessEqual(visible_box["y"] + visible_box["height"], 845)
-        self.assertEqual(activity.get_attribute("role"), "status")
-        self.assertEqual(activity.get_attribute("aria-live"), "polite")
-        self.assertEqual(page.locator("#resume-intake-composer").get_attribute("aria-busy"), "true")
-        self.assertFalse(activity.evaluate("el => !!el.closest('[aria-busy=true]')"))
-        # Form/keyboard-style re-entry must not bypass the disabled Add button.
-        page.locator("#resume-intake-composer").evaluate(
-            "el => { el.dispatchEvent(new Event('submit', {cancelable:true})); el.dispatchEvent(new Event('submit', {cancelable:true})); }")
-        page.locator("#resume-intake-text").fill("First version of my answer. And a newer sentence.")
-        page.locator("#resume-intake-hide").click()
-        self.assertTrue(activity.is_visible())
-        self.assertTrue(page.locator("#resume-intake-reopen").is_visible())
-        self.assertEqual(activity.locator(".resume-intake__activity-mark").evaluate(
-            "el => getComputedStyle(el).animationName"), "none")
-        self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth - innerWidth"), 1)
-        box = activity.bounding_box()
-        self.assertGreaterEqual(box["x"], 0)
-        self.assertLessEqual(box["x"] + box["width"], 391)
-        # This is a genuine outstanding request, not a synthetic fake stage.
-        activity.get_by_text("This request is taking longer", exact=False).wait_for(timeout=12000)
-        self.assertNotRegex(activity.inner_text(), r"[0-9]+%|reasoning|seconds|minutes")
-        capture_dir = os.environ.get("PEERSLATE_PROGRESS_CAPTURE_DIR")
-        if capture_dir:
-            page.screenshot(path=str(Path(capture_dir) / "mobile-hidden-guide-long-wait.png"))
-        self.assertEqual(len(calls), 1)
-        page.locator("#resume-intake-reopen").click()
-        self.assertTrue(activity.is_visible())
-        self.assertEqual(page.locator("#resume-intake-text").input_value(),
-                         "First version of my answer. And a newer sentence.")
-        release.set()
-        page.locator("#resume-intake-receipt").get_by_text("needs your review", exact=False).first.wait_for(timeout=15000)
-        self.assertFalse(activity.is_visible())
-        self.assertEqual(page.locator("#resume-intake-composer").get_attribute("aria-busy"), "false")
-        self.assertIn("newer sentence", page.locator("#resume-intake-text").input_value())
-        self.assertEqual(len(calls), 1)
-        self.assertEqual(len(self.catalog.list_items(owner)), 0)
-
-    def test_lost_response_retries_the_same_request_without_duplicates(self):
-        owner = self._use_owner("browser-lost-response")
-        original = app.config["RESUME_INTAKE_SERVICE"]
-        lost = {"used": False}
-
-        class LostOnceService(ResumeIntakeService):
-            def submit(self, owner_key, payload, **kwargs):
-                result = super().submit(owner_key, payload, **kwargs)
-                if not lost["used"]:
-                    lost["used"] = True
-                    # The write committed; the response never reached the client.
-                    raise ResumeIntakeUnavailableError(proposed={"text": payload.get("text")})
+        class LostOnce(ResumeIntakeService):
+            def submit(inner, owner, payload, **kwargs):
+                calls.append(json.loads(json.dumps(payload)))
+                result = super().submit(owner, payload, **kwargs)
+                if len(calls) == 1:
+                    raise ResumeIntakeUnavailableError(proposed={'text': payload.get('text')})
                 return result
+        self.typed_service([], LostOnce)
+        page = self.page(); self.input(page)
+        page.locator('#resume-intake-text').fill('Recover this exact submission.')
+        page.locator('#resume-intake-file').set_input_files({'name':'refused.bin','mimeType':'application/octet-stream','buffer':b'Keep bytes'})
+        page.locator('#resume-intake-add').click()
+        page.locator('#resume-intake-status[data-kind=error]').wait_for()
+        self.assertTrue(page.get_by_role('button',name='Remove refused.bin',exact=True).is_disabled())
+        newer = 'Newer words typed after the uncertain response.'
+        page.locator('#resume-intake-text').fill(newer)
+        page.locator('#resume-intake-add').click()
+        page.wait_for_function("() => document.querySelector('#resume-intake-add-label').textContent === 'Continue'")
+        self.assertEqual(calls[0], calls[1])
+        self.assertEqual(len(self.repository.load_owner(self.owner)['submissions']), 1)
+        self.assertEqual(page.locator('#resume-intake-text').input_value(), newer)
+        self.assertFalse(page.get_by_role('button',name='Remove refused.bin',exact=True).is_disabled())
+        self.assertFalse(page.locator('#resume-intake-activity').is_visible())
 
-        app.config["RESUME_INTAKE_SERVICE"] = LostOnceService(
-            repository=self.repository,
-            draft_service=self.draft_service,
-            policy=selected_policy_for_tests(),
-        )
-        self.addCleanup(app.config.update, {"RESUME_INTAKE_SERVICE": original})
-
-        page = self._new_page(viewport={"width": 1440, "height": 1000})
-        request_ids = []
-
-        def capture(request):
-            if request.method == "POST" and request.url.endswith("/api/resume-intake/me/submissions"):
-                body = request.post_data or ""
-                marker = '"request_id":"'
-                if marker in body:
-                    request_ids.append(body.split(marker, 1)[1].split('"', 1)[0])
-
-        page.on("request", capture)
-        page.goto(f"{self.base_url}/app/resume", wait_until="load")
-        page.locator("#resume-intake-text").fill("Recover me after a dropped response.")
-        page.locator("#resume-intake-file").set_input_files({
-            "name":"uncertain.bin","mimeType":"application/octet-stream","buffer":b"unchanged bytes"})
-        page.locator("#resume-intake-add").click()
-        page.locator("#resume-intake-status").get_by_text("unsent", exact=False).wait_for(timeout=15000)
-        self.assertFalse(page.locator("#resume-intake-activity").is_visible())
-        self.assertEqual(page.locator("#resume-intake-composer").get_attribute("aria-busy"), "false")
-        self.assertTrue(page.get_by_role("button",name="Remove uncertain.bin",exact=True).is_disabled())
-        # The client keeps the same request and every byte for the retry.
-        page.locator("#resume-intake-add").click()
-        page.locator("#resume-intake-receipt").get_by_text("needs your review", exact=False).first.wait_for(
-            timeout=15000
-        )
-        self.assertEqual(len(request_ids), 2)
-        self.assertEqual(request_ids[0], request_ids[1])
-        self.assertEqual(len(self.repository.load_owner(owner)["submissions"]), 1)
-        self.assertFalse(page.get_by_role("button",name="Remove uncertain.bin",exact=True).is_disabled())
-        refusals = []
-
-        class RefusingAdd(ResumeIntakeService):
-            def submit(self, owner_key, payload, **kwargs):
-                refusals.append(payload["request_id"])
-                if len(refusals) == 1:
-                    raise ResumeIntakeValidationError("This Add was refused.")
-                raise ResumeIntakeConflictError("conflict", message="This Add conflicts.")
-
-        app.config["RESUME_INTAKE_SERVICE"] = RefusingAdd(
-            repository=self.repository, draft_service=self.draft_service,
-            policy=selected_policy_for_tests(),
-        )
-        text = "Keep these words through refusal and connection failure."
-        page.locator("#resume-intake-text").fill(text)
-        for message in ("This Add was refused.", "This Add conflicts."):
-            page.locator("#resume-intake-add").click()
-            page.locator("#resume-intake-status").get_by_text(message, exact=True).wait_for()
-            self.assertFalse(page.locator("#resume-intake-activity").is_visible())
-            self.assertFalse(page.locator("#resume-intake-add").is_disabled())
-            self.assertEqual(page.locator("#resume-intake-text").input_value(), text)
-        self.assertNotEqual(refusals[0], refusals[1])
+    def test_refused_add_releases_key_and_offline_keeps_input(self):
+        calls = []
+        class Refuse(ResumeIntakeService):
+            def submit(inner, owner, payload, **kwargs):
+                calls.append(payload['request_id'])
+                if len(calls) == 1: raise ResumeIntakeValidationError('Please correct this input.')
+                raise ResumeIntakeConflictError('conflict', message='This input conflicts.')
+        self.typed_service([], Refuse)
+        page = self.page(); self.input(page); page.locator('#resume-intake-text').fill('My input remains.')
+        for message in ['Please correct this input.', 'This input conflicts.']:
+            page.locator('#resume-intake-add').click()
+            page.locator('#resume-intake-status').get_by_text(message,exact=True).wait_for()
+        self.assertNotEqual(calls[0], calls[1])
         page.context.set_offline(True)
+        page.locator('#resume-intake-add').click()
+        page.locator('#resume-intake-status').get_by_text('connection dropped',exact=False).wait_for()
+        self.assertEqual(page.locator('#resume-intake-text').input_value(), 'My input remains.')
+        self.assertFalse(page.locator('#resume-intake-activity').is_visible())
+        page.context.set_offline(False)
+
+    def test_lost_decision_and_malformed_success_retry_exact_confirmation(self):
+        calls = []
+        class LostDecision(ResumeIntakeService):
+            def decide(inner, owner, payload, **kwargs):
+                calls.append(json.loads(json.dumps(payload)))
+                result = super().decide(owner, payload, **kwargs)
+                if len(calls) == 1: raise ResumeIntakeUnavailableError()
+                if len(calls) == 2: return {'success': True}  # a malformed 200 is not acknowledgement
+                return result
+        self.typed_service([self.role_proposal()], LostDecision)
+        page = self.page(); self.submit(page, 'My role source.')
+        page.get_by_role('button',name='Change something').click()
+        self.field(page,'start_date').fill('2021')
+        page.get_by_role('button',name='Confirm details',exact=True).click()
+        page.locator('#resume-intake-status[data-kind=error]').wait_for()
+        self.assertTrue(self.field(page,'start_date').is_disabled())
+        for attempt in range(2):
+            page.get_by_role('button',name='Retry confirmation',exact=True).click()
+            if attempt == 0:
+                page.locator('#resume-intake-status').get_by_text('not acknowledged',exact=False).wait_for()
+                self.assertEqual(page.locator('.resume-editor').evaluate("el => el.style.getPropertyValue('--resume-reveal-blur')"),'8px')
+        page.locator('#resume-intake-next:visible').wait_for()
+        self.assertEqual(calls[0],calls[1]); self.assertEqual(calls[1],calls[2])
+        self.assertEqual(len(self.catalog.list_items(self.owner)),1)
+        self.assertEqual(self.catalog.list_items(self.owner)[0]['values']['start_date'],'2021-01-01')
+
+    def test_many_proposals_are_reviewed_one_group_at_a_time_and_discard_is_not_save(self):
+        rows = [{'kind':'inferred_wording','record_type':'skill','confidence':'uncertain','values':{'name':'Strength ' + str(n)}} for n in range(3)]
+        self.typed_service(rows)
+        page = self.page(); self.submit(page,'Three strengths in the source.')
+        self.assertEqual(page.locator('#resume-intake-proposals > li').count(),1)
+        self.assertIn('3 groups',page.locator('#resume-intake-review-position').inner_text())
+        page.get_by_role('button',name='Leave this out',exact=True).click()
+        page.locator('#resume-intake-review-position').get_by_text('2 groups',exact=False).wait_for()
+        self.assertEqual(len(self.catalog.list_items(self.owner)),0)
+        self.confirm(page)
+        self.assertIn('One group',page.locator('#resume-intake-review-position').inner_text())
+        self.confirm(page)
+        self.assertEqual(len(self.catalog.list_items(self.owner)),2)
+
+    def test_real_file_bytes_mixed_review_failure_and_remove_preserve_other_input(self):
+        self.received_documents.clear()
+        page = self.page(); self.input(page)
+        page.locator('#resume-intake-text').fill('My source words')
+        page.locator('#resume-intake-file').set_input_files([
+            {'name':'resume.txt','mimeType':'text/plain','buffer':b'Systems engineer source'},
+            {'name':'refused.bin','mimeType':'application/octet-stream','buffer':b'Unrecognized bytes'},
+            {'name':'empty.txt','mimeType':'text/plain','buffer':b''}])
+        page.locator('#resume-intake-add').click()
+        page.locator('#resume-intake-receipt').filter(has_text='2 needs your review').wait_for()
+        self.assertEqual(page.locator('#resume-intake-text').input_value(),'')
+        self.assertEqual(len(self.catalog.list_items(self.owner)),0)
+        self.assertEqual(self.received_documents[-1]['data'], b'Systems engineer source')
+        page.locator('#resume-intake-text').fill('New unsent words')
+        page.get_by_role('button',name='Remove refused.bin',exact=True).click()
+        self.assertIn('empty.txt',page.locator('#resume-intake-attachments').inner_text())
+        self.assertEqual(page.locator('#resume-intake-text').input_value(),'New unsent words')
+        page.get_by_role('button',name='Remove empty.txt',exact=True).click()
+        page.locator('#resume-intake-review-pending').click()
+        self.assertEqual(page.locator('#resume-intake-proposals > li').count(),1)
+        self.assertEqual(self.errors,[])
+
+    def test_slow_add_busy_status_follows_manual_escape_and_preserves_new_typing(self):
+        started, release = threading.Event(), threading.Event(); self.addCleanup(release.set)
+        calls = []
+        class Slow(ResumeIntakeService):
+            def submit(inner, owner, payload, **kwargs):
+                calls.append(payload); started.set()
+                if not release.wait(20): raise ResumeIntakeUnavailableError()
+                return super().submit(owner,payload,**kwargs)
+        self.typed_service([],Slow)
+        page = self.page(390,844,reduced_motion='reduce'); self.input(page)
+        page.locator('#resume-intake-text').fill('Original words')
+        page.locator('#resume-intake-add').click(); self.assertTrue(started.wait(2))
+        page.locator('#resume-intake-composer').evaluate("el => {el.dispatchEvent(new Event('submit',{cancelable:true}));}")
+        page.locator('#resume-intake-text').fill('Original words and newer words')
+        page.locator('#resume-intake-hide').click()
+        activity = page.locator('#resume-intake-activity')
+        self.assertTrue(activity.is_visible())
+        self.assertEqual(activity.get_attribute('role'),'status')
+        self.assertFalse(activity.evaluate("el => !!el.closest('[aria-busy=true]')"))
+        self.assertEqual(activity.locator('.resume-intake__activity-mark').evaluate('el => getComputedStyle(el).animationName'),'none')
+        activity.get_by_text('taking longer',exact=False).wait_for(timeout=12000)
+        self.assertNotRegex(activity.inner_text(),r'\d+%|reasoning')
+        self.assertEqual(len(calls),1)
+        release.set(); page.wait_for_function("() => !document.querySelector('#resume-intake-add').disabled")
+        page.locator('#resume-intake-reopen').click()
+        # Returning to unfinished input is explicit even when review is ready.
+        if not page.locator('#resume-intake-input').is_visible(): self.input(page)
+        self.assertEqual(page.locator('#resume-intake-text').input_value(),'Original words and newer words')
+        self.assertEqual(len(calls),1)
+
+    def test_education_credential_statuses_are_member_choices_in_manual_and_review(self):
+        page = self.page(); self.manual(page)
+        self.queue(page,'education',title='Systems Engineering',institution_name='Example University',education_status='completed')
+        self.queue(page,'credential',name='Architecture Certificate',issuer='Example Institute',completion_status='completed',issue_date='2026-09-01')
+        self.save_manual(page,2)
+        for record_type, name, detail, status in [('education','Program','Example College','in_progress'),('credential','Safety Credential','Example Board','planned')]:
+            self.submit(page,'Source for '+record_type)
+            page.locator('[data-proposal-type]').select_option(record_type)
+            self.field(page,'title' if record_type=='education' else 'name').fill(name)
+            self.field(page,'institution_name' if record_type=='education' else 'issuer').fill(detail)
+            self.field(page,'education_status' if record_type=='education' else 'completion_status').select_option(status)
+            self.confirm(page)
+        records = self.catalog.list_items(self.owner)
+        self.assertEqual(sum(row['record_type']=='education' for row in records),2)
+        self.assertEqual(sum(row['record_type']=='credential' for row in records),2)
+        self.assertTrue(all(not row['resume_display'] and not row['visitor_ai'] for row in records))
+
+    def test_missing_or_unsupported_status_requires_choice_without_invention(self):
+        self.typed_service([{'kind':'inferred_wording','record_type':'education','confidence':'uncertain',
+                            'values':{'title':'My Program','institution_name':'Example College'}}])
+        page = self.page(); self.submit(page,'My program source.')
+        page.get_by_role('button',name='Confirm details',exact=True).click()
+        page.locator('#resume-intake-status').get_by_text('education status',exact=False).wait_for()
+        self.assertEqual(self.field(page,'education_status').input_value(),'')
+        self.assertEqual(len(self.catalog.list_items(self.owner)),0)
+        self.field(page,'education_status').select_option('planned'); self.confirm(page)
+        self.assertEqual(self.catalog.list_items(self.owner)[0]['values']['education_status'],'planned')
+
+    def test_impact_requires_owner_private_role_and_parent_refresh_after_confirmation(self):
+        self.typed_service([self.role_proposal()])
+        page = self.page(); self.submit(page,'My role.'); self.confirm(page)
+        self.manual(page)
+        self.queue(page,'accomplishment',wording='Simplified new customer onboarding')
+        self.assertIn('Choose which entry',page.locator('#resume-intake-manual-status').inner_text())
+        page.wait_for_function("() => document.querySelectorAll('#resume-intake-parent option').length > 1")
+        page.locator('#resume-intake-parent').select_option(index=1)
+        page.locator('#resume-intake-add-fact').click(); self.save_manual(page,1)
+        records = self.catalog.list_items(self.owner)
+        self.assertEqual(len(records),2)
+        self.assertEqual(sum(row['record_type']=='accomplishment' for row in records),1)
+
+    def test_lost_guide_completion_keeps_exact_choice_and_finish_is_acknowledged(self):
+        calls=[]
+        class LostGuide(ResumeGuideService):
+            def set_status(inner, owner, payload, **kwargs):
+                calls.append(dict(payload)); result=super().set_status(owner,payload,**kwargs)
+                if len(calls)==1: raise GuideUnavailableError('The guide is unavailable.')
+                return result
+        app.config['RESUME_GUIDE_SERVICE']=LostGuide(repository=self.repository)
+        page=self.page(); self.input(page)
+        page.locator('#resume-intake-input-finish').click(); page.locator('#resume-intake-optional-next').click()
+        page.locator('#resume-intake-complete').click()
+        page.locator('#resume-intake-status[data-kind=error]').wait_for()
+        self.assertFalse(page.locator('#resume-intake-finish').is_visible())
+        page.locator('#resume-intake-complete').click(); page.locator('#resume-intake-finish:visible').wait_for()
+        self.assertEqual(calls[0],calls[1]); self.assertEqual(calls[0]['status'],'completed')
+
+    def test_contextual_question_is_explicit_revision_bound_and_never_saved(self):
+        calls=[]; service=self.draft_service
+        class Interview:
+            def interview(inner,owner,payload):
+                calls.append((owner,dict(payload)))
+                if payload['expected_draft_version'] != service.get_workspace(owner)['draft_version']:
+                    raise AssertionError('Stale context')
+                return {'saved':False,'publishes':False,'next_question':'What changed for your customers?',
+                        'response':'Let’s explore the result of your work.','candidates':[], 'confirmation_required':True,
+                        'base_revision':payload['expected_draft_version']}
+        app.config.update(PEERSLATE_RESUME_INTERVIEW_ENABLED=True,RESUME_PRIVATE_ASSISTANCE_SERVICE=Interview())
+        self.typed_service([self.role_proposal()])
+        page=self.page(); self.assertEqual(calls,[])
+        self.submit(page,'My role.'); self.confirm(page); self.assertEqual(calls,[])
+        page.locator('#resume-intake-next-question').click()
+        page.locator('#resume-intake-question').get_by_text('What changed for your customers?',exact=True).wait_for()
+        self.assertEqual(len(calls),1); self.assertEqual(calls[0][0],self.owner)
+        self.assertEqual(len(self.catalog.list_items(self.owner)),1)
+        page.locator('#resume-intake-skip-question').click()
+        self.assertNotEqual(self.repository.load_owner(self.owner)['guide'].get('status'),'completed')
+
+    def test_ai_unavailable_keeps_words_and_no_fake_progress(self):
+        app.config.update(PEERSLATE_RESUME_INTERVIEW_ENABLED=True,RESUME_PRIVATE_ASSISTANCE_SERVICE=None)
+        self.typed_service([self.role_proposal()])
+        page=self.page(); self.submit(page,'My role.'); self.confirm(page)
+        page.locator('#resume-intake-next-question').click()
+        page.locator('#resume-intake-status').get_by_text('unavailable',exact=False).wait_for()
+        page.locator('#resume-intake-text').fill('My next thought.')
+        self.assertFalse(page.locator('#resume-intake-activity').is_visible())
+        self.assertEqual(len(self.catalog.list_items(self.owner)),1)
+        page.locator('#resume-intake-skip').click()
+        self.assertFalse(page.locator('#resume-intake').is_visible())
+        self.assertEqual(page.locator('#resume-intake-text').input_value(),'My next thought.')
+
+
+    def recording_service(self, cls=ResumeIntakeService):
+        service=cls(repository=self.repository,draft_service=self.draft_service,
+                    transcription_adapter=ResumeTranscriptionAdapter(service=self.transcriber),
+                    policy=selected_policy_for_tests())
+        app.config['RESUME_INTAKE_SERVICE']=service
+        return service
+
+    def record(self,page):
+        page.locator('#resume-intake-mic').click()
+        page.wait_for_function("() => document.querySelector('#resume-intake-mic').getAttribute('aria-pressed') === 'true'")
+        page.wait_for_timeout(350)  # collect a real browser fake-device audio chunk
+
+    def test_leaving_recording_stops_tracks_and_holds_audio_until_explicit_transcribe(self):
+        self.recording_service(); before=len(self.transcriber.calls)
+        page=self.page(390,844); self.input(page)
+        page.evaluate('''() => {
+            const original = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+            navigator.mediaDevices.getUserMedia = async options => {
+                const stream = await original(options); window.observedStream = stream; return stream;
+            };
+        }''')
+        self.record(page)
+        self.assertIn('after you stop',page.locator('#resume-intake-recording').inner_text())
+        self.capture(page,'runtime-recording-phone')
+        page.locator('#resume-intake-hide').click()
+        page.wait_for_function("() => document.querySelector('#resume-intake-mic').getAttribute('aria-pressed') === 'false'")
+        page.locator('#resume-intake-reopen').click()
+        page.get_by_role('button',name='Transcribe recording',exact=True).wait_for()
+        self.assertTrue(page.evaluate("window.observedStream.getTracks().every(track => track.readyState === 'ended')"))
+        self.assertEqual(len(self.transcriber.calls),before)
+        page.locator('#resume-intake-text').fill('Words typed after stopping.')
+        page.get_by_role('button',name='Transcribe recording',exact=True).click()
+        page.wait_for_function("text => document.querySelector('#resume-intake-text').value.includes(text)",arg=TRANSCRIPT)
+        self.assertEqual(len(self.transcriber.calls),before+1)
+        self.assertTrue(page.locator('#resume-intake-text').input_value().startswith('Words typed after stopping.'))
+        self.assertFalse(page.locator('#resume-intake-recording').is_visible())
+        self.assertEqual(len(self.catalog.list_items(self.owner)),0)
+        self.assertEqual(self.errors,[])
+
+    def test_cancel_fences_old_transcript_and_late_transcript_appends_new_words(self):
+        first_started,second_started=threading.Event(),threading.Event()
+        release_first,release_second=threading.Event(),threading.Event()
+        self.addCleanup(release_first.set);self.addCleanup(release_second.set)
+        calls=[]
+        class SlowRecord(ResumeIntakeService):
+            def transcribe_recording(inner,owner,upload,payload,**kwargs):
+                calls.append(dict(payload)); first=len(calls)==1
+                (first_started if first else second_started).set()
+                if not (release_first if first else release_second).wait(20): raise ResumeIntakeUnavailableError()
+                return super().transcribe_recording(owner,upload,payload,**kwargs)
+        self.recording_service(SlowRecord)
+        page=self.page();self.input(page);page.locator('#resume-intake-text').fill('Before recording.')
         try:
-            page.locator("#resume-intake-add").click()
-            page.locator("#resume-intake-status").get_by_text("connection dropped", exact=False).wait_for()
-            self.assertFalse(page.locator("#resume-intake-activity").is_visible())
-            self.assertEqual(page.locator("#resume-intake-composer").get_attribute("aria-busy"), "false")
-            self.assertEqual(page.locator("#resume-intake-text").input_value(), text)
+            self.record(page);page.locator('#resume-intake-mic').click();self.assertTrue(first_started.wait(2))
+            page.locator('#resume-intake-cancel-recording').click()
+            self.record(page);page.locator('#resume-intake-mic').click()
+            page.locator('#resume-intake-text').fill('Before recording. Newer words.')
+            release_first.set();self.assertTrue(second_started.wait(4))
+            self.assertNotIn(TRANSCRIPT,page.locator('#resume-intake-text').input_value())
+            self.assertTrue(page.locator('#resume-intake-cancel-recording').is_visible())
+            release_second.set()
+            page.wait_for_function("text => document.querySelector('#resume-intake-text').value.includes(text)",arg=TRANSCRIPT)
+            self.assertEqual(page.locator('#resume-intake-text').input_value().count(TRANSCRIPT),1)
+            self.assertTrue(page.locator('#resume-intake-text').input_value().startswith('Before recording. Newer words.'))
+            self.assertFalse(page.locator('#resume-intake-activity').is_visible())
+            self.assertEqual(page.locator('#resume-intake-composer').get_attribute('aria-busy'),'false')
+            self.assertEqual(len(self.catalog.list_items(self.owner)),0)
         finally:
-            page.context.set_offline(False)
+            release_first.set();release_second.set()
 
-    def test_mobile_sheet_dismiss_and_reopen_preserves_queued_and_attached_input(self):
-        self._use_owner("browser-sheet")
-        page = self._new_page(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True)
-        page.goto(f"{self.base_url}/app/resume", wait_until="load")
-        typed = "Unsaved mobile answer."
-        page.locator("#resume-intake-text").fill(typed)
-        page.locator("#resume-intake-type").select_option("skill")
-        page.locator("#resume-intake-skill").fill("MBSE")
-        page.locator("#resume-intake-add-fact").click()
-        page.locator("#resume-intake-file").set_input_files(self.document_path)
-        # Dismiss the sheet.
-        page.locator("#resume-intake-hide").click()
-        self.assertFalse(page.locator("#resume-intake").is_visible())
-        self.assertTrue(page.locator("#resume-intake-reopen").is_visible())
-        # Reopen using the floating chip.
-        page.locator("#resume-intake-reopen").click()
-        self.assertTrue(page.locator("#resume-intake").is_visible())
-        self.assertEqual(page.locator("#resume-intake-text").input_value(), typed)
-        self.assertIn("MBSE", page.locator("#resume-intake-queued").inner_text())
-        self.assertIn(".txt", page.locator("#resume-intake-attachments").inner_text().lower())
-
-    def test_proposal_list_renders_empty_few_and_many(self):
-        self._use_owner("browser-proposals")
-        page = self._new_page(viewport={"width": 1440, "height": 1000})
-        page.goto(f"{self.base_url}/app/resume", wait_until="load")
-        page.locator("#resume-intake-proposals").get_by_text("Nothing is waiting").wait_for(timeout=15000)
-        for index in range(3):
-            page.locator("#resume-intake-text").fill(f"Review item number {index}.")
-            page.locator("#resume-intake-add").click()
-            page.locator("#resume-intake-status").get_by_text("review", exact=False).wait_for(timeout=15000)
-        page.locator("#resume-intake-proposals").locator("li").nth(2).wait_for(timeout=15000)
-        self.assertGreaterEqual(page.locator("#resume-intake-proposals").locator("li").count(), 3)
-
-    def test_two_hundred_percent_reflow_has_no_horizontal_overflow(self):
-        self._use_owner("browser-zoom")
-        # 200% of a 1440x900 desktop viewport is ~720x450 CSS pixels.
-        page = self._new_page(viewport={"width": 720, "height": 450})
-        page.goto(f"{self.base_url}/app/resume", wait_until="load")
-        page.locator("#resume-intake-text").fill("Zoomed reflow check.")
-        overflow = page.evaluate("() => document.documentElement.scrollWidth - window.innerWidth")
-        self.assertLessEqual(overflow, 1, "200% zoom must not cause horizontal overflow")
-        self.assertTrue(page.locator("#resume-intake-add").is_visible())
-
-    def test_clear_affordance_never_offers_a_required_field(self):
-        self._use_owner("browser-clears")
-        page = self._new_page(viewport={"width": 1440, "height": 1000})
-        page.goto(f"{self.base_url}/app/resume", wait_until="load")
-        page.locator("#resume-intake-type").select_option("role")
-        clears = page.locator("#resume-intake-clears")
-        text = clears.inner_text()
-        # Required subject fields are absent; optional fields are offered.
-        self.assertNotIn("role title", text)
-        self.assertNotIn("employer", text)
-        self.assertIn("summary", text)
-        page.locator("#resume-intake-type").select_option("skill")
-        self.assertIn("summary", page.locator("#resume-intake-clears").inner_text())
-        self.assertNotIn("name", page.locator("#resume-intake-clears").inner_text().split("summary")[0])
-
-    def test_lost_recording_response_retries_with_the_same_request_and_content(self):
-        self._use_owner("browser-recording-retry")
-        original = app.config["RESUME_INTAKE_SERVICE"]
-        lost = {"used": False}
-
-        class LostOnceRecording(ResumeIntakeService):
-            def transcribe_recording(self, owner_key, upload, payload, **kwargs):
-                result = super().transcribe_recording(owner_key, upload, payload, **kwargs)
-                if not lost["used"]:
-                    lost["used"] = True
-                    raise ResumeIntakeUnavailableError(proposed={"client_key": payload.get("client_key")})
+    def test_recording_retry_keeps_original_metadata_after_second_recording(self):
+        calls=[];before=len(self.transcriber.calls)
+        class LostAudio(ResumeIntakeService):
+            def transcribe_recording(inner,owner,upload,payload,**kwargs):
+                calls.append(dict(payload));result=super().transcribe_recording(owner,upload,payload,**kwargs)
+                if len(calls)==1: raise ResumeIntakeUnavailableError()
                 return result
+        self.recording_service(LostAudio)
+        page=self.page();self.input(page);self.record(page);page.locator('#resume-intake-mic').click()
+        page.locator('#resume-intake-status[data-kind=error]').wait_for()
+        self.assertFalse(page.locator('#resume-intake-activity').is_visible())
+        self.record(page);page.locator('#resume-intake-mic').click()
+        page.wait_for_function("text => document.querySelector('#resume-intake-text').value.includes(text)",arg=TRANSCRIPT)
+        page.get_by_role('button',name='Try again',exact=True).click()
+        page.wait_for_function("text => document.querySelector('#resume-intake-text').value.split(text).length === 3",arg=TRANSCRIPT)
+        self.assertEqual(calls[0],calls[2]);self.assertNotEqual(calls[0]['request_id'],calls[1]['request_id'])
+        self.assertEqual(len(self.transcriber.calls),before+2)
+        self.assertFalse(page.locator('#resume-intake-activity').is_visible())
 
-        app.config["RESUME_INTAKE_SERVICE"] = LostOnceRecording(
-            repository=self.repository,
-            draft_service=self.draft_service,
-            transcription_adapter=ResumeTranscriptionAdapter(service=self.transcriber),
-            policy=selected_policy_for_tests(),
-        )
-        self.addCleanup(app.config.update, {"RESUME_INTAKE_SERVICE": original})
-        provider_calls = len(self.transcriber.calls)
+    def test_recording_recovery_required_is_terminal_and_retains_typing(self):
+        class Recovery(ResumeIntakeService):
+            def transcribe_recording(inner,owner,upload,payload,**kwargs):
+                return {'success':False,'outcome':'pending','recovery_required':True,'input_preserved':True,
+                        'message':'Recovery is required for this recording.'}
+        self.recording_service(Recovery)
+        page=self.page();self.input(page);page.locator('#resume-intake-text').fill('Keep my words')
+        self.record(page);page.locator('#resume-intake-mic').click()
+        page.locator('#resume-intake-status').get_by_text('Recovery is required',exact=False).wait_for()
+        self.assertFalse(page.locator('#resume-intake-activity').is_visible())
+        self.assertFalse(page.locator('#resume-intake-cancel-recording').is_visible())
+        self.assertEqual(page.get_by_role('button',name='Try again',exact=True).count(),0)
+        self.assertEqual(page.locator('#resume-intake-text').input_value(),'Keep my words')
 
-        page = self._new_page(viewport={"width": 1440, "height": 1000})
-        request_payloads = []
+    def test_microphone_permission_failure_and_pending_leave_preserve_manual_input(self):
+        # Only browser device permission is stubbed; application HTTP is real.
+        page=self.page();self.input(page)
+        page.evaluate("() => { navigator.mediaDevices.getUserMedia = () => Promise.reject(new DOMException('Denied','NotAllowedError')); }")
+        page.locator('#resume-intake-mic').click()
+        page.locator('#resume-intake-status').get_by_text('permission was not granted',exact=False).wait_for()
+        page.locator('#resume-intake-text').fill('Typing still works')
+        page.evaluate("""() => {
+            window.permissionResolve = null;
+            window.stoppedTracks = 0;
+            navigator.mediaDevices.getUserMedia = () => new Promise(resolve => window.permissionResolve = resolve);
+        }""")
+        page.locator('#resume-intake-mic').click();page.locator('#resume-intake-hide').click()
+        page.evaluate("window.permissionResolve({getTracks: () => [{stop: () => window.stoppedTracks++}]})")
+        page.wait_for_function('window.stoppedTracks === 1')
+        self.assertEqual(page.locator('#resume-intake-text').input_value(),'Typing still works')
+        self.assertEqual(len(self.catalog.list_items(self.owner)),0)
 
-        def capture(request):
-            if request.method == "POST" and request.url.endswith("/api/resume-intake/me/recordings"):
-                raw = request.post_data_buffer or b""
-                body = raw.decode("utf-8", "replace")
-                match = re.search(r"\r\n\r\n(\{[^\r\n]+\})\r\n", body)
-                if match:
-                    request_payloads.append(json.loads(match.group(1)))
+    def test_existing_entry_correction_preserves_unspecified_values_and_permissions(self):
+        page=self.page();self.manual(page)
+        self.queue(page,'role',role_title='Product designer',employer_name='Northstar Studio',date_precision='year',start_date='2021',current_role='true')
+        self.save_manual(page,1)
+        record=self.catalog.list_items(self.owner)[0]
+        self.typed_service([{'kind':'additional_detail','record_type':'role','confidence':'certain',
+                            'match_reference':record['record_key'],'values':{'summary':'I helped onboarding.'}}],
+                           matching_exclusions=lambda owner: [])
+        self.submit(page,'I helped onboarding.')
+        self.assertIn('existing entry',page.locator('.resume-intake__proposal-source').inner_text())
+        page.get_by_role('button',name='Change something').click()
+        self.field(page,'summary').fill('I simplified new customer onboarding.')
+        self.confirm(page)
+        workspace=self.draft_service.get_workspace(self.owner)
+        self.assertEqual(len(workspace['items']),1)
+        item=workspace['items'][0];values={**item['values'],**(item.get('proposed_values') or {})}
+        self.assertEqual(values['summary'],'I simplified new customer onboarding.')
+        self.assertEqual(values['start_date'],'2021-01-01');self.assertEqual(values['date_precision'],'year');self.assertIs(values['current_role'],True)
+        self.assertFalse(item['resume_display']);self.assertFalse(item['visitor_ai'])
 
-        page.on("request", capture)
-        page.goto(f"{self.base_url}/app/resume", wait_until="load")
-        page.locator("#resume-intake-mic").click()
-        page.wait_for_timeout(1500)
-        page.locator("#resume-intake-mic").click()
-        # The first response is lost; the client keeps the same request and
-        # offers to retry the SAME audio.
-        page.locator("#resume-intake-status").get_by_text("unsent", exact=False).wait_for(timeout=20000)
-        self.assertEqual(
-            page.evaluate("() => document.getElementById('resume-intake-text').value"), ""
-        )
-        self.assertFalse(page.locator("#resume-intake-activity").is_visible())
-        self.assertFalse(page.locator("#resume-intake-cancel-recording").is_visible())
-        # A normal member delay must not change duration or any other digest
-        # input before Try again retransmits the original recording request.
-        page.wait_for_timeout(2500)
-        page.locator("#resume-intake-attachments").get_by_text("Try again", exact=True).click()
-        page.wait_for_function(
-            "() => (document.getElementById('resume-intake-text').value || '').indexOf('Browser journey transcript') !== -1",
-            timeout=25000,
-        )
-        self.assertEqual(len(request_payloads), 2)
-        self.assertEqual(request_payloads[0], request_payloads[1])
-        # One provider call for the original transcription, none for the replay.
-        self.assertEqual(len(self.transcriber.calls), provider_calls + 1)
-        self.assertFalse(page.locator("#resume-intake-activity").is_visible())
-        # A terminal pending/recovery response is not evidence that a server
-        # job is still processing. It must stop busy and preserve manual input.
-        class RecoveryRecording(ResumeIntakeService):
-            def transcribe_recording(self, owner_key, upload, payload, **kwargs):
-                return {"success": False, "outcome": "pending", "recovery_required": True,
-                        "input_preserved": True, "message": "Recovery is required for this recording."}
-
-        app.config["RESUME_INTAKE_SERVICE"] = RecoveryRecording(
-            repository=self.repository, draft_service=self.draft_service,
-            policy=selected_policy_for_tests(),
-        )
-        words = page.locator("#resume-intake-text").input_value()
-        page.locator("#resume-intake-mic").click()
-        page.wait_for_timeout(300)
-        page.locator("#resume-intake-mic").click()
-        page.locator("#resume-intake-status").get_by_text("Recovery is required", exact=False).wait_for(timeout=15000)
-        self.assertFalse(page.locator("#resume-intake-activity").is_visible())
-        self.assertFalse(page.locator("#resume-intake-cancel-recording").is_visible())
-        self.assertEqual(page.locator("#resume-intake-composer").get_attribute("aria-busy"), "false")
-        self.assertEqual(page.locator("#resume-intake-text").input_value(), words)
-        self.assertEqual(page.locator("#resume-intake-attachments").get_by_text("Try again", exact=True).count(), 0)
-
-    def test_earlier_recording_retry_keeps_its_request_after_a_second_recording(self):
-        self._use_owner("browser-recording-intervening")
-        original = app.config["RESUME_INTAKE_SERVICE"]
-        lost = {"used": False}
-
-        class LostFirstRecording(ResumeIntakeService):
-            def transcribe_recording(self, owner_key, upload, payload, **kwargs):
-                result = super().transcribe_recording(owner_key, upload, payload, **kwargs)
-                if not lost["used"]:
-                    lost["used"] = True
-                    raise ResumeIntakeUnavailableError(
-                        proposed={"client_key": payload.get("client_key")}
-                    )
-                return result
-
-        app.config["RESUME_INTAKE_SERVICE"] = LostFirstRecording(
-            repository=self.repository,
-            draft_service=self.draft_service,
-            transcription_adapter=ResumeTranscriptionAdapter(service=self.transcriber),
-            policy=selected_policy_for_tests(),
-        )
-        self.addCleanup(app.config.update, {"RESUME_INTAKE_SERVICE": original})
-        provider_calls = len(self.transcriber.calls)
-        page = self._new_page(viewport={"width": 1440, "height": 1000})
-        request_payloads = []
-
-        def capture(request):
-            if request.method == "POST" and request.url.endswith("/api/resume-intake/me/recordings"):
-                body = (request.post_data_buffer or b"").decode("utf-8", "replace")
-                match = re.search(r"\r\n\r\n(\{[^\r\n]+\})\r\n", body)
-                if match:
-                    request_payloads.append(json.loads(match.group(1)))
-
-        page.on("request", capture)
-        page.goto(f"{self.base_url}/app/resume", wait_until="load")
-
-        page.locator("#resume-intake-mic").click()
-        page.wait_for_timeout(1200)
-        page.locator("#resume-intake-mic").click()
-        page.locator("#resume-intake-status").get_by_text("unsent", exact=False).wait_for(
-            timeout=20000
-        )
-
-        # A second, independent recording succeeds before the first row is retried.
-        page.locator("#resume-intake-mic").click()
-        page.wait_for_timeout(2200)
-        page.locator("#resume-intake-mic").click()
-        page.wait_for_function("() => document.querySelectorAll('#resume-intake-attachments li').length === 2")
-        page.wait_for_function(
-            "() => (document.getElementById('resume-intake-text').value.match(/Browser journey transcript/g) || []).length === 1",
-            timeout=20000,
-        )
-
-        page.locator("#resume-intake-attachments").get_by_text("Try again", exact=True).click()
-        page.wait_for_function(
-            "() => (document.getElementById('resume-intake-text').value.match(/Browser journey transcript/g) || []).length === 2",
-            timeout=20000,
-        )
-
-        self.assertEqual(len(request_payloads), 3)
-        self.assertEqual(request_payloads[0], request_payloads[2])
-        self.assertNotEqual(request_payloads[0]["request_id"], request_payloads[1]["request_id"])
-        self.assertNotEqual(request_payloads[0]["client_key"], request_payloads[1]["client_key"])
-        self.assertNotEqual(
-            request_payloads[0]["duration_seconds"], request_payloads[1]["duration_seconds"]
-        )
-        self.assertEqual(len(self.transcriber.calls), provider_calls + 2)
-
-    def test_lost_guide_response_retries_with_the_same_request(self):
-        self._use_owner("browser-guide-retry")
-        original = app.config["RESUME_GUIDE_SERVICE"]
-        lost = {"used": False}
-
-        class LostOnceGuide(ResumeGuideService):
-            def set_status(self, owner_key, payload, **kwargs):
-                result = super().set_status(owner_key, payload, **kwargs)
-                if not lost["used"]:
-                    lost["used"] = True
-                    raise GuideUnavailableError("synthetic lost response")
-                return result
-
-        app.config["RESUME_GUIDE_SERVICE"] = LostOnceGuide(repository=self.repository)
-        self.addCleanup(app.config.update, {"RESUME_GUIDE_SERVICE": original})
-        page = self._new_page(viewport={"width": 1440, "height": 1000})
-        request_payloads = []
-
-        def capture(request):
-            if request.method == "POST" and request.url.endswith("/api/resume-intake/me/guide/status"):
-                request_payloads.append(request.post_data_json)
-
-        page.on("request", capture)
-        page.goto(f"{self.base_url}/app/resume", wait_until="load")
-        page.locator("#resume-intake-complete").click()
-        page.locator("#resume-intake-status").get_by_text("unavailable", exact=False).wait_for(
-            timeout=15000
-        )
-        page.locator("#resume-intake-complete").click()
-        page.locator("#resume-intake-reopen").wait_for(state="visible", timeout=15000)
-
-        self.assertEqual(len(request_payloads), 2)
-        self.assertEqual(request_payloads[0], request_payloads[1])
-
-    def test_education_and_credential_add_and_proposal_accept_use_member_status_choices(self):
-        owner = self._use_owner("browser-status-matrix")
-        page = self._new_page(viewport={"width": 1440, "height": 1000})
-        page.goto(f"{self.base_url}/app/resume", wait_until="load")
-
-        page.locator("#resume-intake-type").select_option("education")
-        page.locator("#resume-intake-education-title").fill("Systems Engineering")
-        page.locator("#resume-intake-institution").fill("Example University")
-        page.locator("#resume-intake-education-status").select_option("completed")
-        page.locator("#resume-intake-add-fact").click()
-
-        page.locator("#resume-intake-type").select_option("credential")
-        page.locator("#resume-intake-credential").fill("Architecture Certificate")
-        page.locator("#resume-intake-issuer").fill("Example Institute")
-        page.locator("#resume-intake-credential-status").select_option("completed")
-        page.locator("#resume-intake-credential-issue-date").fill("2026-09-01")
-        page.locator("#resume-intake-add-fact").click()
-        page.locator("#resume-intake-add").click()
-        page.wait_for_function(
-            "() => (document.getElementById('resume-intake-receipt').textContent || '').indexOf('2 saved privately') !== -1",
-            timeout=15000,
-        )
-
-        def accept_typed(record_type, wording, detail_selector, detail_value, status_selector):
-            page.locator("#resume-intake-text").fill("Proposal source for " + record_type)
-            page.locator("#resume-intake-add").click()
-            proposal = page.locator("#resume-intake-proposals > li").first
-            proposal.locator("[data-proposal-type]").wait_for(timeout=15000)
-            proposal.locator("[data-proposal-type]").select_option(record_type)
-            proposal.locator("[data-proposal-wording]").fill(wording)
-            proposal.locator(detail_selector).fill(detail_value)
-            proposal.locator(status_selector).select_option("in_progress")
-            proposal.get_by_text("Save this privately", exact=True).click()
-            page.locator("#resume-intake-proposals").get_by_text(
-                "Nothing is waiting", exact=False
-            ).wait_for(timeout=15000)
-
-        accept_typed(
-            "education", "Applied Systems Program", "[data-proposal-institution]",
-            "Example College", "[data-proposal-education-status]",
-        )
-        accept_typed(
-            "credential", "Safety Credential", "[data-proposal-issuer]",
-            "Example Board", "[data-proposal-credential-status]",
-        )
-
-        records = self.catalog.list_items(owner)
-        self.assertEqual(sum(row["record_type"] == "education" for row in records), 2)
-        self.assertEqual(sum(row["record_type"] == "credential" for row in records), 2)
-
-    def test_impact_requires_an_owner_parent(self):
-        self._use_owner("browser-parent")
-        page = self._new_page(viewport={"width": 1440, "height": 1000})
-        page.goto(f"{self.base_url}/app/resume", wait_until="load")
-        # Seed one role so a parent exists.
-        page.locator("#resume-intake-type").select_option("role")
-        page.locator("#resume-intake-role-title").fill("Engineering Manager")
-        page.locator("#resume-intake-employer").fill("Northrop Grumman")
-        page.locator("#resume-intake-add-fact").click()
-        page.locator("#resume-intake-add").click()
-        page.locator("#resume-intake-receipt").get_by_text("saved privately", exact=False).first.wait_for(timeout=15000)
-
-        page.locator("#resume-intake-type").select_option("accomplishment")
-        page.locator("#resume-intake-wording").fill("Led the platform migration")
-        # Without a parent the composer refuses to queue the Impact.
-        page.locator("#resume-intake-add-fact").click()
-        self.assertIn("Choose which entry", page.locator("#resume-intake-status").inner_text())
-        self.assertEqual(page.locator("#resume-intake-queued").inner_text().strip(), "")
-        # The member's own entry is offered as the parent.
-        page.wait_for_function(
-            "() => document.querySelectorAll('#resume-intake-parent option').length > 1",
-            timeout=15000,
-        )
-        page.locator("#resume-intake-parent").select_option(index=1)
-        page.locator("#resume-intake-add-fact").click()
-        self.assertIn("Led the platform migration", page.locator("#resume-intake-queued").inner_text())
-        page.locator("#resume-intake-add").click()
-        page.locator("#resume-intake-receipt").get_by_text("saved privately", exact=False).first.wait_for(timeout=15000)
+    def test_story_destination_and_repeated_question_use_existing_controls(self):
+        page=self.page();self.input(page)
+        page.locator('#resume-intake-input-finish').click();page.locator('#resume-intake-add-story').click()
+        self.assertFalse(page.locator('#resume-intake').is_visible())
+        self.assertTrue(page.evaluate("document.querySelector('#resume-editor-story-controls').contains(document.activeElement)"))
+        self.input(page)
+        page.locator('#resume-intake-new-question').click()
+        self.assertIn('AI guidance is unavailable',page.locator('#resume-intake-context').inner_text())
+        self.assertEqual(len(self.catalog.list_items(self.owner)),0)
 
 
-if __name__ == "__main__":
+    def test_workspace_failure_is_not_treated_as_first_use(self):
+        class Unavailable(ResumeIntakeService):
+            def get_workspace(inner,owner,**kwargs): raise ResumeIntakeUnavailableError()
+        self.typed_service([],Unavailable)
+        page=self.page(expect_guide=False)
+        page.locator('#resume-intake-reopen').wait_for()
+        page.wait_for_function("() => document.querySelector('#resume-intake').getAttribute('data-screen') === 'input'")
+        self.assertFalse(page.locator('#resume-intake').is_visible())
+        page.locator('#resume-intake-reopen').click()
+        self.assertTrue(page.locator('#resume-intake-input').is_visible())
+        self.assertFalse(page.locator('#resume-intake-welcome').is_visible())
+        page.locator('#resume-intake-text').fill('Words kept during an outage.')
+        self.assertEqual(len(self.catalog.list_items(self.owner)),0)
+
+    def test_corrections_survive_back_and_reopen_without_silent_save(self):
+        self.typed_service([self.role_proposal()])
+        page=self.page();self.submit(page,'Role source.')
+        page.get_by_role('button',name='Change something').click();self.field(page,'start_date').fill('2021')
+        page.locator('#resume-intake-back').click();page.locator('#resume-intake-review-pending').click()
+        page.get_by_role('button',name='Change something').click()
+        self.assertEqual(self.field(page,'start_date').input_value(),'2021')
+        page.locator('#resume-intake-hide').click();page.locator('#resume-intake-reopen').click()
+        self.assertEqual(self.field(page,'start_date').input_value(),'2021')
+        self.assertEqual(len(self.catalog.list_items(self.owner)),0)
+        self.confirm(page)
+
+    def test_repeated_question_is_suppressed_in_active_flow(self):
+        calls=[]
+        class Interview:
+            def interview(inner,owner,payload):
+                calls.append(payload)
+                return {'saved':False,'publishes':False,'next_question':'What outcome mattered?',
+                        'response':'One useful follow-up.','base_revision':payload['expected_draft_version']}
+        app.config.update(PEERSLATE_RESUME_INTERVIEW_ENABLED=True,RESUME_PRIVATE_ASSISTANCE_SERVICE=Interview())
+        page=self.page();self.input(page)
+        page.locator('#resume-intake-new-question').click()
+        page.locator('#resume-intake-question').get_by_text('What outcome mattered?',exact=True).wait_for()
+        page.locator('#resume-intake-skip-question').click();page.locator('#resume-intake-back').click()
+        page.locator('#resume-intake-new-question').click()
+        page.locator('#resume-intake-optional:visible').wait_for()
+        self.assertIn('already covered',page.locator('#resume-intake-status').inner_text())
+        self.assertEqual(len(calls),2);self.assertEqual(len(self.catalog.list_items(self.owner)),0)
+
+
+    def test_uncertain_words_require_member_type_choice(self):
+        page=self.page();self.submit(page,'My unclassified words.')
+        self.assertEqual(page.locator('[data-proposal-type]').input_value(),'')
+        page.get_by_role('button',name='Confirm details',exact=True).click()
+        page.locator('#resume-intake-status').get_by_text('Choose where these words belong',exact=False).wait_for()
+        self.assertEqual(len(self.catalog.list_items(self.owner)),0)
+        page.locator('[data-proposal-type]').select_option('skill')
+        self.field(page,'name').fill('Systems thinking');self.confirm(page)
+        self.assertEqual(self.catalog.list_items(self.owner)[0]['values']['name'],'Systems thinking')
+
+
+
+if __name__ == '__main__':
     unittest.main()

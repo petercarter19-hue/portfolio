@@ -42,6 +42,21 @@ class Mvp1AcceptanceBrowserTests(unittest.TestCase):
         page.on("pageerror", lambda error: self.errors.append(str(error)))
         return page
 
+    def intake_input(self, page, *, reopen=False):
+        if reopen:
+            page.locator('#resume-intake-reopen').click()
+        # Fresh entry opens after workspace/guide loading; returning from manual
+        # editing is an explicit action, never inferred from a transient DOM count.
+        expect(page.locator('#resume-intake[open]')).to_be_visible()
+        if page.locator('#resume-intake-welcome').is_visible():
+            page.locator('#resume-intake-start-type').click()
+        expect(page.locator('#resume-intake-input')).to_be_visible()
+
+    def intake_manual(self, page):
+        page.locator('#resume-intake-skip').click()
+        page.locator('#resume-intake-manual-details > summary').click()
+        expect(page.locator('#resume-intake-type')).to_be_visible()
+
     def seed_role(self, owner="g-member-a"):
         key = str(uuid4())
         self.server.shared.policy.commit(owner, {"type": "create", "request_id": str(uuid4()),
@@ -170,6 +185,7 @@ class Mvp1AcceptanceBrowserTests(unittest.TestCase):
     def test_intake_role_two_strengths_private_reload_and_guide(self):
         page = self.page("g-member-a")
         page.goto(self.server.url + "/app/resume")
+        self.intake_manual(page)
         page.locator("#resume-intake-type").select_option("role")
         page.locator("#resume-intake-role-title").fill("Synthetic engineer")
         page.locator("#resume-intake-employer").fill("Example workshop")
@@ -178,9 +194,14 @@ class Mvp1AcceptanceBrowserTests(unittest.TestCase):
             page.locator("#resume-intake-type").select_option("skill")
             page.locator("#resume-intake-skill").fill(strength)
             page.locator("#resume-intake-add-fact").click()
+        page.locator("#resume-intake-manual-save").click()
+        expect(page.locator("#resume-intake-receipt")).to_contain_text("3 saved privately")
+        self.intake_input(page, reopen=True)
         page.locator("#resume-intake-text").fill("An unfinished thought about a project")
         page.locator("#resume-intake-add").click()
-        expect(page.locator("#resume-intake-receipt")).to_contain_text("3 saved privately")
+        expect(page.locator("#resume-intake-receipt")).to_contain_text("needs your review")
+        expect(page.locator('#resume-intake-proposals > li')).to_have_count(1)
+        page.locator('#resume-intake-back').click()
         rows = self.server.shared.policy.list_entries("g-member-a")["entries"]
         self.assertEqual(len(rows), 3)
         self.assertTrue(all(not row["resume_display"] and not row["visitor_ai"] for row in rows))
@@ -192,20 +213,32 @@ class Mvp1AcceptanceBrowserTests(unittest.TestCase):
         page.locator("#resume-intake-reopen").click()
         expect(page.locator("#resume-intake-text")).to_have_value(unfinished)
         page.reload()
-        expect(page.locator("#resume-intake-receipt")).to_contain_text("3 saved privately")
+        # Both submissions survive reload: the three explicit facts and the
+        # unaccepted source. A source proposal must not become a fourth fact.
+        expect(page.locator("#resume-intake-receipt")).to_contain_text("needs your review")
         self.assertEqual(len(self.server.shared.policy.list_entries("g-member-a")["entries"]), 3)
+        nav = page.locator('.resume-editor__sections')
+        panel = page.locator('.resume-editor__panel')
+        expect(nav).to_be_visible()
+        self.assertLessEqual(nav.bounding_box()['x'] + nav.bounding_box()['width'], panel.bounding_box()['x'])
+        page.locator('#resume-intake-reopen').click()
+        expect(page.locator('#resume-intake')).to_be_visible()
         self.assertEqual(self.server.shared.draft.repository.load_owner("g-member-a").get("media_placements", {}), {})
         panel = page.locator('.resume-editor__panel')
         nav = page.locator('.resume-editor__sections')
         guide = page.locator('#resume-intake')
-        self.assertLessEqual(nav.bounding_box()['x'] + nav.bounding_box()['width'], panel.bounding_box()['x'])
-        self.assertLessEqual(panel.bounding_box()['x'] + panel.bounding_box()['width'], guide.bounding_box()['x'])
-        self.assertGreater(panel.bounding_box()['width'], 500)
+        expect(nav).to_be_hidden()
+        panel_box, guide_box = panel.bounding_box(), guide.bounding_box()
+        self.assertLess(guide_box['x'], panel_box['x'] + panel_box['width'])
+        self.assertGreater(guide_box['x'] + guide_box['width'], panel_box['x'])
+        self.assertGreater(panel_box['width'], 500)
+        self.assertEqual(guide.evaluate('el => el.tagName'), 'DIALOG')
         expect(page.locator('.resume-editor__card details[open]')).to_have_count(0)
         self.capture(page, "private-intake-three-facts")
         for width in (320, 390, 768, 1024):
             page.set_viewport_size({'width': width, 'height': 900})
             self.assertLessEqual(page.evaluate('document.documentElement.scrollWidth'), width)
+        page.locator('#resume-intake-hide').click()
         page.locator('#resume-editor-review').click()
         expect(page).to_have_url(self.server.url + '/app/resume/publication')
         self.assertIsNone(self.server.shared.publication.owner_preview('g-member-a')['current'])
@@ -343,7 +376,7 @@ class Mvp1AcceptanceBrowserTests(unittest.TestCase):
         old_banner_url = banner.get_attribute("src")
         self.capture(guest, "two-photos-published")
         page.goto(self.server.url + "/app/resume")
-        page.locator("#resume-intake-hide").click()
+        expect(page.locator("#resume-intake")).to_be_hidden()
         expect(page.locator("#resume-editor-story-preview")).to_have_text("I like learning new crafts.")
         for slot in ("story_banner", "experience_support"):
             expect(page.locator("#resume-media-placement-badge-" + slot)).to_have_text("Saved in your private draft")
@@ -545,6 +578,13 @@ class Mvp1AcceptanceBrowserTests(unittest.TestCase):
     def test_document_typed_recording_proposal_review_private_save_and_source_removal(self):
         page = self.page('g-member-a')
         page.goto(self.server.url + '/app/resume')
+        self.intake_manual(page)
+        page.locator('#resume-intake-type').select_option('skill')
+        page.locator('#resume-intake-skill').fill('Planning')
+        page.locator('#resume-intake-add-fact').click()
+        page.locator('#resume-intake-manual-save').click()
+        expect(page.locator('#resume-intake-receipt')).to_contain_text('1 saved privately')
+        self.intake_input(page, reopen=True)
         page.locator('#resume-intake-text').fill('Typed contribution about making plans.')
         page.locator('#resume-intake-mic').click()
         page.wait_for_timeout(1500) # collect actual browser audio from the explicit synthetic device
@@ -552,21 +592,27 @@ class Mvp1AcceptanceBrowserTests(unittest.TestCase):
         expect(page.locator('#resume-intake-text')).to_have_value(
             __import__('re').compile('Typed contribution.*Synthetic spoken contribution', __import__('re').S), timeout=15000)
         self.assertGreater(self.server.transcriber.calls[0][0], 0)
-        page.locator('#resume-intake-type').select_option('skill')
-        page.locator('#resume-intake-skill').fill('Planning')
-        page.locator('#resume-intake-add-fact').click()
         page.locator('#resume-intake-file').set_input_files({'name': 'synthetic-resume.txt',
             'mimeType': 'text/plain', 'buffer': b'Explicit document contribution: coordinating a workshop.'})
         page.locator('#resume-intake-add').click()
-        expect(page.locator('#resume-intake-receipt')).to_contain_text('1 saved privately', timeout=15000)
+        expect(page.locator('#resume-intake-receipt')).to_contain_text('needs your review', timeout=15000)
+        # The guide presents one group at a time. Explicitly leave both the
+        # typed and recording source groups out before correcting the document.
+        expect(page.locator('#resume-intake-proposals')).to_contain_text('Typed contribution')
+        self.assertEqual(len(self.server.shared.policy.list_entries('g-member-a')['entries']), 1)
+        page.get_by_role('button', name='Leave this out', exact=True).click()
+        expect(page.locator('#resume-intake-proposals')).to_contain_text('Synthetic spoken contribution')
+        self.assertEqual(len(self.server.shared.policy.list_entries('g-member-a')['entries']), 1)
+        page.get_by_role('button', name='Leave this out', exact=True).click()
         expect(page.locator('#resume-intake-proposals')).to_contain_text('Explicit document contribution')
+        self.assertEqual(len(self.server.shared.policy.list_entries('g-member-a')['entries']), 1)
         proposal = page.locator('#resume-intake-proposals > li').filter(has_text='Explicit document contribution')
         proposal.get_by_label('Save this as', exact=True).select_option('role')
         proposal.get_by_label('Employer', exact=True).fill('Example workshop')
         proposal.get_by_label('Save this as', exact=True).select_option('skill')
-        proposal.get_by_label('Your wording', exact=True).fill('Workshop coordination')
-        proposal.get_by_label('Your wording', exact=True).press('Tab')
-        proposal.get_by_role('button', name='Save this privately', exact=True).click()
+        proposal.locator('[data-proposal-field="name"]').fill('Workshop coordination')
+        proposal.locator('[data-proposal-field="name"]').press('Tab')
+        proposal.get_by_role('button', name='Confirm details', exact=True).click()
         expect(page.locator('#resume-intake-proposals')).not_to_contain_text('Explicit document contribution')
         rows = self.server.shared.policy.list_entries('g-member-a')['entries']
         accepted_key = next(row['entry_key'] for row in rows if row['values']['skill_name'] == 'Workshop coordination')
@@ -592,11 +638,33 @@ class Mvp1AcceptanceBrowserTests(unittest.TestCase):
 
     def test_cancelled_late_transcription_preserves_newer_typed_input(self):
         import threading
+        from unittest.mock import patch
         entered, release = threading.Event(), threading.Event()
         self.addCleanup(release.set)
         self.server.transcriber.hook = lambda: (entered.set(), release.wait(15))
         page = self.page('g-member-a')
-        page.goto(self.server.url + '/app/resume')
+        loading, loaded = threading.Event(), threading.Event()
+        self.addCleanup(loaded.set)
+        original_workspace = self.server.intake.get_workspace
+        def delayed_workspace(owner):
+            loading.set()
+            if not loaded.wait(10):
+                raise RuntimeError('Synthetic initial workspace delay was not released')
+            return original_workspace(owner)
+        with patch.object(self.server.intake, 'get_workspace', side_effect=delayed_workspace):
+            page.goto(self.server.url + '/app/resume')
+            self.assertTrue(loading.wait(5))
+            self.assertEqual(page.locator('#resume-intake[open]').count(), 0)
+            self.assertTrue(page.locator('#resume-intake-reopen').is_visible())
+            # Exercise pending initialization through the actual service and HTTP UI.
+            timer = threading.Timer(0.5, loaded.set)
+            timer.start()
+            try:
+                self.intake_input(page)
+                self.assertTrue(loaded.is_set(), 'Fresh guide entry must await its initial workspace')
+            finally:
+                loaded.set()
+                timer.cancel()
         page.locator('#resume-intake-text').fill('Keep my original words.')
         page.locator('#resume-intake-mic').click()
         page.wait_for_timeout(1200) # actual audio from synthetic browser device
@@ -620,6 +688,7 @@ class Mvp1AcceptanceBrowserTests(unittest.TestCase):
         from unittest.mock import patch
         page = self.page('g-member-a')
         page.goto(self.server.url + '/app/resume')
+        self.intake_input(page)
         page.locator('#resume-intake-text').fill('Keep this recoverable thought.')
         page.locator('#resume-intake-file').set_input_files({'name': 'unsupported.exe',
             'mimeType': 'application/octet-stream', 'buffer': b'not a supported document'})

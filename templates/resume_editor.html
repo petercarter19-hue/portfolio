@@ -6,9 +6,6 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}">
-{% if config.get('PEERSLATE_RESUME_INTAKE_ENABLED', false) %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/resume-intake.css') }}">
-{% endif %}
 {% if config.get('PEERSLATE_RESUME_MEDIA_ENABLED', false) %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/resume-media.css') }}">
 {% endif %}
@@ -16,6 +13,9 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/resume-publication.css') }}">
 {% endif %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/resume-editor.css') }}">
+{% if config.get('PEERSLATE_RESUME_INTAKE_ENABLED', false) %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resume-intake.css') }}">
+{% endif %}
 <meta name="robots" content="noindex, nofollow">
 {% endblock %}
 
@@ -56,7 +56,7 @@
 
 
 
-        <section class="resume-editor__add" aria-labelledby="resume-story-title">
+        <section class="resume-editor__add" id="resume-editor-story-controls" aria-labelledby="resume-story-title">
             <h2 id="resume-story-title">Optional My Story</h2>
             <p>Choose a saved personal entry for the short introduction on your Resume. Display and visitor AI stay off until you choose them in your sharing review.</p>
             <label for="resume-story-choice">Saved personal entry</label>

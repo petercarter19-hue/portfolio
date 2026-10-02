@@ -1,15 +1,6 @@
-{# MVP1 C: private Resume composer and optional guide.
-   One composer keeps typing, the in-field microphone, document attachments and
-   explicit Add together. Nothing here saves on its own: only Add creates an
-   immutable submission, and only unambiguous facts are saved privately.
-   Rendering is entirely server-driven; when the feature flag is off the
-   caller never includes this partial. #}
-{# The scrim belongs to the centered first-use welcome state and to the mobile
-   sheet dismissal; it is hidden in the docked desktop state. #}
-<div class="resume-intake__scrim" id="resume-intake-scrim" hidden></div>
-<aside
-    class="resume-intake"
-    id="resume-intake"
+{# One owner-guided dialog. The editor behind it is the actual private document.
+   Source suggestions become facts only through explicit acknowledged decisions. #}
+<dialog class="resume-intake" id="resume-intake"
     data-intake-workspace-url="{{ url_for('resume_intake.get_intake_workspace') }}"
     data-intake-submit-url="{{ url_for('resume_intake.post_submission') }}"
     data-intake-recording-url="{{ url_for('resume_intake.post_recording') }}"
@@ -18,34 +9,131 @@
     data-intake-purge-url="{{ url_for('resume_intake.post_source_purge') }}"
     data-guide-url="{{ url_for('resume_intake.get_guide_state') }}"
     data-guide-status-url="{{ url_for('resume_intake.post_guide_status') }}"
-    aria-labelledby="resume-intake-title"
->
+    data-interview-enabled="{{ 'true' if config.get('PEERSLATE_RESUME_INTERVIEW_ENABLED', false) else 'false' }}"
+    data-interview-url="{{ url_for('resume_intake.post_private_interview') }}"
+    aria-labelledby="resume-intake-title" aria-describedby="resume-intake-description">
+  <div class="resume-intake__surface">
     <header class="resume-intake__header">
-        <p class="resume-intake__eyebrow">Build your r&eacute;sum&eacute;</p>
-        <button type="button" class="resume-intake__quiet" id="resume-intake-hide">
-            Hide guide
-        </button>
+      <button type="button" class="resume-intake__icon-button" id="resume-intake-back" aria-label="Go back" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
+      <p class="resume-intake__eyebrow" id="resume-intake-eyebrow">WELCOME TO PEERSLATE</p>
+      <button type="button" class="resume-intake__icon-button" id="resume-intake-hide" aria-label="Close guide and edit manually"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button>
     </header>
-
     <div id="resume-intake-guide">
-        <span class="resume-intake__handle" aria-hidden="true"></span>
-        <h2 id="resume-intake-title" class="resume-intake__title">Your r&eacute;sum&eacute; is taking shape.</h2>
-
-        {# The receipt is written from the real Add response. It never claims
-           more than what was confirmed saved. #}
-        <div class="resume-intake__receipt" id="resume-intake-receipt" role="status" aria-live="polite">
-            <p class="resume-intake__receipt-empty">Nothing added yet. Type, speak or attach a file, then press Add.</p>
+      <h2 id="resume-intake-title" class="resume-intake__title" tabindex="-1">The more PeerSlate knows you, the more it can do for you.</h2>
+      <p id="resume-intake-description" class="resume-intake__description" hidden></p>
+      <section id="resume-intake-welcome" aria-label="How PeerSlate helps you">
+        <div class="resume-intake__inset resume-intake__benefits">
+          <div class="resume-intake__benefit">
+            <span class="resume-intake__benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h6"/></svg></span>
+            <div><h3>A résumé that reflects you</h3><p>Bring your experience, strengths and stories together.</p></div>
+          </div>
+          <div class="resume-intake__benefit">
+            <span class="resume-intake__benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></span>
+            <div><h3>Your personal AI, better informed</h3><p>Answers for recruiters, using only what you choose to share.</p></div>
+          </div>
         </div>
-
-        <section class="resume-intake__question" aria-labelledby="resume-intake-question">
-            <h3 id="resume-intake-question" class="resume-intake__question-prompt">What would you like to add?</h3>
-            <p class="resume-intake__context" id="resume-intake-context" hidden></p>
-        </section>
-
+        <p class="resume-intake__begin">Start anywhere. Add more anytime.</p>
+        <div class="resume-intake__paired-actions">
+          <button type="button" class="resume-intake__add" id="resume-intake-start-upload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M5 15v5h14v-5"/></svg>Upload files</button>
+          <button type="button" class="resume-intake__secondary" id="resume-intake-start-voice"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a3 3 0 0 1 3 3v4a3 3 0 0 1-6 0V7a3 3 0 0 1 3-3zM6 11a6 6 0 0 0 12 0M12 17v3"/></svg>Start talking</button>
+        </div>
+        <button type="button" class="resume-intake__quiet" id="resume-intake-start-type">Or type instead</button>
+      </section>
+      <section id="resume-intake-input" aria-labelledby="resume-intake-question" hidden>
+        <h3 id="resume-intake-question" class="resume-intake__question-prompt">What would you like people to know about your work?</h3>
+        <p class="resume-intake__context" id="resume-intake-context" hidden></p>
+        <div class="resume-intake__inset resume-intake__recording" id="resume-intake-recording" hidden>
+          <p id="resume-intake-recording-label">Recording</p>
+          <div class="resume-intake__wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <p class="resume-intake__hint">Your transcript appears after you stop. You can edit it before continuing.</p>
+        </div>
+        <form class="resume-intake__composer" id="resume-intake-composer" enctype="multipart/form-data">
+            <label class="resume-intake__sr" for="resume-intake-text">Your answer</label>
+            <textarea
+                id="resume-intake-text"
+                name="text"
+                rows="5"
+                maxlength="20000"
+                placeholder="Start with a role, a project, or something you would like people to know about you."
+            ></textarea>
+            <ul class="resume-intake__attachments" id="resume-intake-attachments" aria-label="Attached files"></ul>
+            <div class="resume-intake__row">
+                <label class="resume-intake__file">
+                    <span class="resume-intake__file-label">Add files</span>
+                    <input
+                        type="file"
+                        id="resume-intake-file"
+                        multiple
+                        accept=".pdf,.docx,.txt,.webm,.wav,.mp3,.ogg,.m4a,.aac,audio/*"
+                    >
+                </label>
+                <button type="button" class="resume-intake__mic" id="resume-intake-mic" aria-pressed="false">
+                    <span class="resume-intake__sr">Start recording</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a3 3 0 0 1 3 3v4a3 3 0 0 1-6 0V7a3 3 0 0 1 3-3zM6 11a6 6 0 0 0 12 0M12 17v3"/></svg>
+                </button><button type="button" class="resume-intake__quiet" id="resume-intake-cancel-recording" hidden>Cancel recording</button>
+                <button type="submit" class="resume-intake__add" id="resume-intake-add">
+                    <span id="resume-intake-add-label">Continue</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                </button>
+            </div>
+        </form>
+        <details class="resume-intake__policy-details"><summary>Supported files and privacy</summary><p id="resume-intake-policy">Files and recordings stay private.</p></details>
+        <p class="resume-intake__draft" id="resume-intake-draft-state"><span id="resume-intake-draft-label">Your answer is not added yet.</span></p>
+        <div class="resume-intake__quiet-actions">
+          <button type="button" class="resume-intake__quiet" id="resume-intake-review-pending" hidden>Review suggested details</button>
+          <button type="button" class="resume-intake__quiet" id="resume-intake-new-question">Suggest a question</button>
+          <button type="button" class="resume-intake__quiet" id="resume-intake-skip-question">Skip this question</button>
+          <button type="button" class="resume-intake__quiet" id="resume-intake-input-finish">Finish for now</button>
+        </div>
+      </section>
+      <section id="resume-intake-review" aria-label="Review suggested details" hidden>
+        <p id="resume-intake-review-position" class="resume-intake__hint"></p>
+        <ul class="resume-intake__proposals" id="resume-intake-proposals"></ul>
+      </section>
+      <section id="resume-intake-next" hidden>
+        <div class="resume-intake__inset"><h3>One useful detail at a time.</h3><p>We can explore a contribution, what you learned, or something that makes your experience yours.</p></div>
+        <div class="resume-intake__paired-actions">
+          <button type="button" class="resume-intake__add" id="resume-intake-next-question">Keep going</button>
+          <button type="button" class="resume-intake__secondary" id="resume-intake-next-finish">Finish for now</button>
+        </div>
+      </section>
+      <section id="resume-intake-optional" hidden>
+        <p class="resume-intake__description">Your story and examples can help people understand the person behind the résumé. These are optional.</p>
+        <div class="resume-intake__option-list">
+          <button type="button" class="resume-intake__secondary" id="resume-intake-add-story">Add my story <span aria-hidden="true">↗</span></button>
+          <button type="button" class="resume-intake__secondary" id="resume-intake-add-example">Talk about a project <span aria-hidden="true">→</span></button>
+          {% if config.get('PEERSLATE_RESUME_MEDIA_ENABLED', false) %}<button type="button" class="resume-intake__secondary" id="resume-intake-add-photo">Choose a photo <span aria-hidden="true">↗</span></button>{% endif %}
+        </div>
+        <button type="button" class="resume-intake__add resume-intake__full" id="resume-intake-optional-next">Continue</button>
+      </section>
+      <section id="resume-intake-sharing" hidden>
+        <div class="resume-intake__inset"><h3>Your choices stay yours.</h3><p>New entries start private. Finishing this guide does not publish your résumé or change what visitor AI can use.</p><p>Any existing sharing settings stay as you set them.</p></div>
+        <button type="button" class="resume-intake__add resume-intake__full" id="resume-intake-complete">Finish onboarding</button>
+        {% if config.get('PEERSLATE_RESUME_PUBLICATION_ENABLED', false) %}<a class="resume-intake__quiet resume-intake__sharing-link" href="{{ url_for('resume_publication.get_resume_publication_page') }}">Review sharing choices</a>{% endif %}
+      </section>
+      <section id="resume-intake-finish" hidden>
+        <div class="resume-intake__inset"><h3>Keep making it yours.</h3><p>Any details you confirmed are saved. Come back whenever you have more to add.</p><p id="resume-intake-finish-unsent" hidden>Unsubmitted input stays on this page until you leave.</p><p>Your sharing settings are unchanged.</p></div>
+        <button type="button" class="resume-intake__add resume-intake__full" id="resume-intake-view">View my résumé</button>
+        <button type="button" class="resume-intake__quiet" id="resume-intake-keep-adding">Keep adding</button>
+      </section>
+      <div class="resume-intake__receipt" id="resume-intake-receipt" role="status" aria-live="polite" hidden></div>
+      <div id="resume-intake-activity-slot"><p class="resume-intake__activity" id="resume-intake-activity" role="status" aria-live="polite" aria-atomic="true" hidden><span class="resume-intake__activity-mark" aria-hidden="true"></span><span id="resume-intake-activity-text"></span></p></div>
+      <p class="resume-intake__status" id="resume-intake-status" role="status" aria-live="polite"></p>
+    </div>
+    <footer class="resume-intake__footer">
+      <p><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2M6 10h12v9H6z"/></svg><span id="resume-intake-privacy">New additions start private.<br>You decide what gets shared.</span></p>
+      <button type="button" class="resume-intake__quiet" id="resume-intake-skip">Skip to manual editing</button>
+      <button type="button" class="resume-intake__quiet" id="resume-intake-retry-guide" hidden>Retry guide update</button>
+    </footer>
+  </div>
+</dialog>
+<div class="resume-intake__manual" id="resume-intake-manual">
+  <details id="resume-intake-manual-details">
+    <summary>Add details yourself</summary>
         <section class="resume-intake__direct" aria-labelledby="resume-intake-direct-title">
             <h3 id="resume-intake-direct-title" class="resume-intake__direct-title">Add a fact directly</h3>
             <p class="resume-intake__hint">
-                Facts you type here are saved privately when you press Add. New entries stay hidden
+                Facts you type here are saved privately when you press Save queued details. New entries stay hidden
                 from visitors and from visitor AI until you decide otherwise.
             </p>
             <fieldset class="resume-intake__direct-fields" id="resume-intake-direct-fields">
@@ -160,7 +248,7 @@
                 </p>
                 <p>
                     <button type="button" class="resume-intake__quiet" id="resume-intake-add-fact">
-                        Queue this fact
+                        Add to my list
                     </button>
                 </p>
             </fieldset>
@@ -169,83 +257,17 @@
             <fieldset class="resume-intake__clears" id="resume-intake-clears" hidden></fieldset>
             <ul class="resume-intake__queued" id="resume-intake-queued" aria-label="Facts queued for this Add"></ul>
         </section>
-
-        <p class="resume-intake__hint" id="resume-intake-policy">Files and recordings stay private.</p>
-        <form class="resume-intake__composer" id="resume-intake-composer" enctype="multipart/form-data">
-            <label class="resume-intake__sr" for="resume-intake-text">Your answer</label>
-            <textarea
-                id="resume-intake-text"
-                name="text"
-                rows="5"
-                maxlength="20000"
-                placeholder="One project I worked on involved..."
-            ></textarea>
-            <ul class="resume-intake__attachments" id="resume-intake-attachments" aria-label="Attached files"></ul>
-            <div class="resume-intake__row">
-                <label class="resume-intake__file">
-                    <span class="resume-intake__file-label">Add files</span>
-                    <input
-                        type="file"
-                        id="resume-intake-file"
-                        multiple
-                        accept=".pdf,.docx,.txt,.webm,.wav,.mp3,.ogg,.m4a,.aac,audio/*"
-                    >
-                </label>
-                <button type="button" class="resume-intake__mic" id="resume-intake-mic" aria-pressed="false">
-                    <span class="resume-intake__sr">Start recording</span>
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a3 3 0 0 1 3 3v4a3 3 0 0 1-6 0V7a3 3 0 0 1 3-3zM6 11a6 6 0 0 0 12 0M12 17v3"/></svg>
-                </button><button type="button" class="resume-intake__quiet" id="resume-intake-cancel-recording" hidden>Cancel recording</button>
-                <button type="submit" class="resume-intake__add" id="resume-intake-add">
-                    Add
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                </button>
-            </div>
-        </form>
-        <div id="resume-intake-activity-slot">
-            <p class="resume-intake__activity" id="resume-intake-activity" role="status" aria-live="polite" aria-atomic="true" hidden>
-                <span class="resume-intake__activity-mark" aria-hidden="true"></span>
-                <span id="resume-intake-activity-text"></span>
-            </p>
-        </div>
-
-        <p class="resume-intake__lock" id="resume-intake-draft-state">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2M6 10h12v9H6z"/></svg>
-            <span id="resume-intake-draft-label">Draft answer &middot; Not added yet</span>
-        </p>
-        <p class="resume-intake__hint">
-            <strong>Why we ask.</strong> A work example can strengthen your r&eacute;sum&eacute; and help
-            your AI explain your contribution.
-        </p>
-        <p class="resume-intake__actions">
-            <button type="button" class="resume-intake__quiet" id="resume-intake-skip">Skip question</button>
-            <button type="button" class="resume-intake__quiet" id="resume-intake-complete">Mark guide complete</button>
-        </p>
-    </div>
-
+    <button type="button" class="resume-intake__add" id="resume-intake-manual-save">Save queued details privately</button>
+    <p id="resume-intake-manual-status" role="status" aria-live="polite"></p>
+  </details>
+  <details class="resume-intake__originals-details"><summary>Manage original files</summary>
     <section class="resume-intake__pending" aria-labelledby="resume-intake-originals-title">
         <h3 id="resume-intake-originals-title">Your original files</h3>
         <p class="resume-intake__hint">Download or delete a private original. Deleting it keeps the extracted text; remove that source separately to delete its text.</p>
         <ul class="resume-intake__attachments" id="resume-intake-originals"></ul>
     </section>
-
-    <section class="resume-intake__pending" aria-labelledby="resume-intake-pending-title">
-        <h3 id="resume-intake-pending-title">Waiting for your decision</h3>
-        <p class="resume-intake__hint">
-            Nothing here changes what visitors see, and nothing is saved until you decide.
-        </p>
-        <ul class="resume-intake__proposals" id="resume-intake-proposals"></ul>
-    </section>
-
-    <p class="resume-intake__footer">
-        <span aria-hidden="true">&#128274;</span> Private draft. Nothing is published.
-    </p>
-    <p class="resume-intake__status" id="resume-intake-status" role="status" aria-live="polite"></p>
-</aside>
-
+  </details>
+</div>
 <div class="resume-intake__reopen">
-    <button type="button" class="resume-intake__reopen-button" id="resume-intake-reopen" hidden>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>
-        Guide me
-        <span class="resume-intake__reopen-hint">Continue your answer.</span>
-    </button>
+  <button type="button" class="resume-intake__reopen-button" id="resume-intake-reopen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>Guide me<span class="resume-intake__reopen-hint">Continue where you left off.</span></button>
 </div>

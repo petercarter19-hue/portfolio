@@ -1099,21 +1099,25 @@ class TypedExtractionReviewBrowserTests(unittest.TestCase):
         page.on('request', lambda request: confirmations.append(request.post_data_json)
             if request.url.endswith('/api/resume-intake/me/proposals/decision') else None)
         page.goto(self.base_url + '/app/resume')
+        page.locator('#resume-intake-start-type').click()
         page.locator('#resume-intake-text').fill(text)
         page.locator('#resume-intake-add').click()
         proposals = page.locator('#resume-intake-proposals > li:not(.resume-intake__hint)')
-        proposals.nth(1).wait_for()
-        self.assertEqual(proposals.count(), 2)
+        proposals.first.wait_for()
+        self.assertEqual(proposals.count(), 1)
+        self.assertIn('2 groups', page.locator('#resume-intake-review-position').inner_text())
         self.assertEqual(self.catalog.list_items(owner), [])  # Review is not a canonical save.
         for kind in ('role', 'education'):
             proposal = proposals.first
-            self.assertTrue(proposal.get_by_role('combobox', name='Save this as', exact=True).is_disabled())
-            proposal.get_by_role('button', name='Save this privately', exact=True).click()
-            page.wait_for_function('(count) => document.querySelectorAll("#resume-intake-proposals > li:not(.resume-intake__hint)").length === count',
-                arg=1 if kind == 'role' else 0)
+            self.assertEqual(proposal.get_by_role('combobox', name='Save this as', exact=True).count(), 0)
+            proposal.get_by_role('button', name='Confirm details', exact=True).click()
+            if kind == 'role':
+                page.locator('#resume-intake-review-position').get_by_text('One group of details', exact=False).wait_for()
+            else:
+                page.locator('#resume-intake-next:visible').wait_for()
             confirmed = confirmations[-1]['confirmed_values']
             self.assertNotIn('record_type', confirmed)
-            page.get_by_role('heading', name=values[kind].get('role_title') or values[kind]['title'], exact=True).wait_for()
+            page.locator('#resume-editor-lists h3').filter(has_text=values[kind].get('role_title') or values[kind]['title']).wait_for()
             for field, value in values[kind].items():
                 self.assertEqual(confirmed[field], 'internship' if field == 'employment_type' else value)
         page.reload()
@@ -1137,6 +1141,7 @@ class TypedExtractionReviewBrowserTests(unittest.TestCase):
         page = context.new_page()
         page.route('https://fonts.**', lambda route: route.abort())
         page.goto(self.base_url + '/app/resume')
+        page.locator('#resume-intake-start-type').click()
         page.locator('#resume-intake-text').fill(text)
         page.locator('#resume-intake-add').click()
         proposal = page.locator('#resume-intake-proposals > li:not(.resume-intake__hint)').first
@@ -1149,15 +1154,16 @@ class TypedExtractionReviewBrowserTests(unittest.TestCase):
             'role_title': 'Assistant', 'employer_name': 'Example Cooperative',
             'employment_type': 'Seasonal fellowship', 'summary': 'An explicitly described seasonal fellowship.'},
             'Riley worked as an Assistant at Example Cooperative in a seasonal fellowship.')
+        proposal.get_by_role('button', name='Change something', exact=True).click()
         employment = proposal.get_by_role('combobox', name='Employment type', exact=True)
-        self.assertIn('Source value: Seasonal fellowship', employment.inner_text())
+        self.assertIn('Source: Seasonal fellowship', employment.inner_text())
         self.assertEqual(employment.input_value(), 'Seasonal fellowship')
-        proposal.get_by_role('button', name='Save this privately', exact=True).click()
-        page.wait_for_function("document.querySelector('#resume-intake-status').textContent.includes('choose a supported value')")
+        proposal.get_by_role('button', name='Confirm details', exact=True).click()
+        page.wait_for_function("document.querySelector('#resume-intake-status').textContent.includes('Choose a supported employment type')")
         self.assertEqual(self.catalog.list_items(owner), [])
         employment.select_option('other')
-        proposal.get_by_role('button', name='Save this privately', exact=True).click()
-        page.get_by_role('heading', name='Assistant', exact=True).wait_for()
+        proposal.get_by_role('button', name='Confirm details', exact=True).click()
+        page.locator('#resume-editor-lists h3').filter(has_text='Assistant').wait_for()
         row = self.draft_service.get_workspace(owner)['items'][0]
         self.assertEqual(row['values']['employment_type'], 'other')
         self.assertEqual(row['values']['summary'], 'An explicitly described seasonal fellowship.')
@@ -1170,10 +1176,11 @@ class TypedExtractionReviewBrowserTests(unittest.TestCase):
                     'name': 'Example License', 'issuer': 'Example Board', 'completion_status': 'completed',
                     'issue_date': '2024-06-01', 'expiration_date': '2027-06-01', 'identifier': 'fixture-credential'},
                     'Riley completed Example License issued by Example Board on June 1, 2024, expiring June 1, 2027.')
-                proposal.get_by_role('combobox', name='Status', exact=True).select_option(status)
-                self.assertTrue(proposal.locator('[data-proposal-issue-date]').is_hidden())
-                proposal.get_by_role('button', name='Save this privately', exact=True).click()
-                page.get_by_role('heading', name='Example License', exact=True).wait_for()
+                proposal.get_by_role('button', name='Change something', exact=True).click()
+                proposal.get_by_role('combobox', name='Credential status', exact=True).select_option(status)
+                self.assertTrue(proposal.locator('[data-proposal-field=issue_date]').is_hidden())
+                proposal.get_by_role('button', name='Confirm details', exact=True).click()
+                page.locator('#resume-editor-lists h3').filter(has_text='Example License').wait_for()
                 row = self.draft_service.get_workspace(owner)['items'][0]
                 self.assertEqual(row['values']['completion_status'], status)
                 self.assertIsNone(row['values']['issue_date'])
@@ -1187,12 +1194,14 @@ class TypedExtractionReviewBrowserTests(unittest.TestCase):
             'resume_display': False, 'visitor_ai': False})
         page, proposal = self._proposal_page(owner, 'skill', {'name': 'New strength'},
             'Riley has a new strength.')
+        page.locator('#resume-intake-hide').click()
         page.get_by_role('heading', name='Existing strength', exact=True).wait_for()
         page.get_by_text('Edit', exact=True).first.click()
         summary = page.locator('#resume-editor-lists textarea[name="summary"]')
         summary.fill('My unsaved manual wording')
-        proposal.get_by_role('button', name='Save this privately', exact=True).click()
+        page.locator('#resume-intake-reopen').click()
+        proposal.get_by_role('button', name='Confirm details', exact=True).click()
         page.wait_for_function("document.querySelector('#resume-editor-status').textContent.includes('unsaved edits are kept')")
         self.assertEqual(summary.input_value(), 'My unsaved manual wording')
         self.assertEqual(len(self.catalog.list_items(owner)), 2)
-        self.assertEqual(page.get_by_role('heading', name='New strength', exact=True).count(), 0)
+        self.assertEqual(page.locator('#resume-editor-lists h3').filter(has_text='New strength').count(), 0)
