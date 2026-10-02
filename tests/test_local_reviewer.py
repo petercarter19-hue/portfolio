@@ -228,7 +228,7 @@ class FactoryPairTests(unittest.TestCase):
         manager.write(self.root / "installation.json", self.old)
         manager.write(self.root / "private-access.json", {"fictional_owner": self.identity.owner})
         self.sources = {}
-        for version in ("old", "new"):
+        for version in ("old", "new", "onboarding"):
             source = self.root / "releases" / version / "source"
             source.mkdir(parents=True)
             (source / "service.py").write_text("FICTIONAL " + version)
@@ -239,7 +239,7 @@ class FactoryPairTests(unittest.TestCase):
         (self.root / "ai-allocation.json").write_bytes(allocation)
         config["allocation_sha256"] = allocation_sha
         self.interfaces = {}
-        for version in ("old", "new"):
+        for version in ("old", "new", "onboarding"):
             self.interfaces[version] = {**config["factory"], "ongoing_budget_port": providers.ONGOING_BINDINGS,
                 "files_sha256": {"service.py": digest(self.sources[version] / "service.py")}}
         config["factory"] = {key: self.interfaces["old"][key] for key in
@@ -249,6 +249,8 @@ class FactoryPairTests(unittest.TestCase):
         manager.write(self.root / "ai-factory.json", self.interfaces["old"])
         self.factory = self.root / "successor.json"
         manager.write(self.factory, self.interfaces["new"])
+        self.onboarding_factory = self.root / "onboarding.json"
+        manager.write(self.onboarding_factory, self.interfaces["onboarding"])
         self.args = SimpleNamespace(action="update", candidate_state="accepted-main", factory=self.factory)
         self.budget = ProviderBudget.initialize(self.root / "data/provider-budget-v1.sqlite3",
             owner=self.identity.owner, allocation_sha256=allocation_sha, profiles=config["profiles"])
@@ -257,11 +259,12 @@ class FactoryPairTests(unittest.TestCase):
             ("live-ai.json", "ai-factory.json", "ai-allocation.json", "data/state.json", "data/provider-budget-v1.sqlite3")}
         self.stack = ExitStack()
         self.addCleanup(self.stack.close)
-        # Synthetic immutable interfaces stand in for the two reviewed artifacts;
+        # Synthetic immutable interfaces stand in for the three reviewed artifacts;
         # the actual hash checking, source checking and allocation checks run.
         self.stack.enter_context(patch.object(providers, "ALLOCATION_SHA256", allocation_sha))
         self.stack.enter_context(patch.object(providers, "FACTORY_SHA256", digest(self.root / "ai-factory.json")))
         self.stack.enter_context(patch.object(providers, "SUCCESSOR_FACTORY_SHA256", digest(self.factory)))
+        self.stack.enter_context(patch.object(providers, "ONBOARDING_FACTORY_SHA256", digest(self.onboarding_factory)))
         self.stack.enter_context(patch.object(manager, "require_private_files"))
         self.stack.enter_context(patch.object(manager, "private_permissions"))
         self.stack.enter_context(patch("tools.local_reviewer.runtime.private_access", return_value=self.identity))
@@ -279,7 +282,8 @@ class FactoryPairTests(unittest.TestCase):
             with self.manager.exclusive(self.root, "server.lock"):
                 pass
         configuration_id = command[command.index("--provider-configuration") + 1]
-        self.providers.load_configuration(self.root, self.identity, self.sources["new"],
+        release = command[command.index("--release") + 1]
+        self.providers.load_configuration(self.root, self.identity, self.sources[release],
                                           configuration_id=configuration_id)
         self.assertEqual(self.manager.read(self.root / "installation.json"), self.old)
         return SimpleNamespace(returncode=0)
@@ -287,6 +291,96 @@ class FactoryPairTests(unittest.TestCase):
     def assert_preserved(self):
         for name, data in self.protected.items():
             self.assertEqual((self.root / name).read_bytes(), data, name)
+
+    def use_onboarding(self):
+        self.args.factory = self.onboarding_factory
+        self.prepare.return_value = ("onboarding", {"candidate_state": "accepted-main"}, {})
+
+    def test_onboarding_pair_promotes_from_successor_and_rolls_back_without_rewriting_content(self):
+        install(self.root, self.args)
+        self.old = self.manager.read(self.root / "installation.json")
+        self.use_onboarding()
+        install(self.root, self.args)
+        manifest = self.manager.read(self.root / "installation.json")
+        self.assertEqual(manifest["release"], "onboarding")
+        self.assertNotEqual(manifest["provider_configuration"], self.old["provider_configuration"])
+        loaded = self.providers.load_configuration(self.root, self.identity, self.sources["onboarding"])
+        self.assertEqual(loaded["factory"]["files_sha256"], self.interfaces["onboarding"]["files_sha256"])
+        self.assertEqual({k: v for k, v in loaded.items() if k != "factory"},
+                         {k: v for k, v in self.config.items() if k != "factory"})
+        self.assert_preserved()
+        with patch.object(self.manager, "stop", return_value={"stopped": True}):
+            self.assertEqual(self.manager.rollback(self.root)["rolled_back"], "new")
+        self.assertEqual(self.manager.read(self.root / "installation.json"), self.old)
+        self.providers.load_configuration(self.root, self.identity, self.sources["new"])
+        self.assert_preserved()
+
+    def test_promotion_and_snapshot_use_one_validated_factory_read(self):
+        self.use_onboarding()
+        original = self.onboarding_factory.read_bytes()
+        read_bytes = Path.read_bytes
+        reads = []
+        def changing_read(path):
+            data = read_bytes(path)
+            if path == self.onboarding_factory:
+                reads.append(data)
+                path.write_bytes(data + b" unreviewed replacement")
+            return data
+        with patch.object(Path, "read_bytes", changing_read):
+            install(self.root, self.args)
+        self.assertEqual(reads, [original])
+        manifest = self.manager.read(self.root / "installation.json")
+        pair = self.manager.read(self.root / "data/provider-configurations" /
+                                 (manifest["provider_configuration"] + ".json"))
+        self.assertEqual(pair["factory_utf8"].encode(), original)
+        self.providers.load_configuration(self.root, self.identity, self.sources["onboarding"])
+        self.assert_preserved()
+
+    def test_legacy_loading_does_not_admit_legacy_or_arbitrary_promotion(self):
+        self.assertEqual(self.providers.load_configuration(self.root, self.identity, self.sources["old"]), self.config)
+        arbitrary = self.root / "arbitrary.json"
+        self.manager.write(arbitrary, {**self.interfaces["onboarding"], "unreviewed": True})
+        for factory in (self.root / "ai-factory.json", arbitrary):
+            with self.subTest(factory=factory.name):
+                self.args.factory = factory
+                with self.assertRaisesRegex(ValueError, "factory binding changed"):
+                    install(self.root, self.args)
+                self.prepare.assert_not_called()
+                self.assertEqual(self.manager.read(self.root / "installation.json"), self.old)
+                self.assert_preserved()
+
+    def test_onboarding_source_or_contract_mismatch_keeps_original_pair(self):
+        self.use_onboarding()
+        source = self.sources["onboarding"] / "service.py"
+        original = source.read_bytes()
+        source.write_bytes(b"unreviewed app")
+        with self.assertRaisesRegex(ValueError, "Application factory changed"):
+            install(self.root, self.args)
+        source.write_bytes(original)
+        changed = {**self.interfaces["onboarding"], "limits_maxima": {"changed": 1}}
+        self.manager.write(self.onboarding_factory, changed)
+        with patch.object(self.providers, "ONBOARDING_FACTORY_SHA256", digest(self.onboarding_factory)):
+            with self.assertRaisesRegex(ValueError, "contracts or caps"):
+                install(self.root, self.args)
+        self.assertEqual(self.manager.read(self.root / "installation.json"), self.old)
+        self.providers.load_configuration(self.root, self.identity, self.sources["old"])
+        self.assert_preserved()
+
+    def test_onboarding_snapshot_or_manifest_failure_keeps_original_pair(self):
+        self.use_onboarding()
+        real_write = self.manager.atomic_write
+        for location in ("provider-configurations", "installation.json"):
+            with self.subTest(location=location):
+                def fail(path, data):
+                    if path.name == location or path.parent.name == location:
+                        raise OSError("fictional interrupted write")
+                    real_write(path, data)
+                with patch.object(self.manager, "atomic_write", side_effect=fail):
+                    with self.assertRaises(OSError):
+                        install(self.root, self.args)
+                self.assertEqual(self.manager.read(self.root / "installation.json"), self.old)
+                self.providers.load_configuration(self.root, self.identity, self.sources["old"])
+                self.assert_preserved()
 
     def test_atomic_app_and_configuration_selection_retains_ledger_content_and_identity(self):
         result = install(self.root, self.args)

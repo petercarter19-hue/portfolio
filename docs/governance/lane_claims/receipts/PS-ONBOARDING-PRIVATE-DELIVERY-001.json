@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-ONBOARDING-PRIVATE-DELIVERY-001",
+  "candidate_sha": "2dc79ab397f64aa0bb9308ab39a0d1df176cce1f",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a0fafc-327e-7481-a330-2a29f452b6fc",
+  "result": "pass",
+  "reviewed_at": "2026-10-02T20:58:43Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-001.md"
+}

@@ -108,10 +108,14 @@ runs. Previous releases and checkpoints are retained. A private installation
 cannot roll back into the former shared fictional-account controller.
 
 An accepted successor app whose reviewed factory pins changed uses the explicit
-`update ... --candidate-state accepted-main --factory <fixed V12 interface>`.
+`update ... --candidate-state accepted-main --factory <fixed reviewed interface>`.
 This requires a stopped, drained private site and no active provider reservations;
 resolve a failed reservation under its original app/configuration before updating.
-Only the reviewed V11/V12 interfaces are accepted. Owner, signing key, allocation,
+Loading retains the reviewed V11/V12 interfaces and the fixed onboarding interface
+`d5d09972f68ad646c0c059161fcedf131b2d77cfe4c5c022d294e71c28de95e6`.
+Explicit promotion accepts V12 or that onboarding interface; V11 remains loadable
+for the original installation and rollback. One validated byte snapshot supplies
+both the parsed interface and its immutable pair. Owner, signing key, allocation,
 models, prices, scopes, caps and consumed counts are preserved.
 
 The update prepares a protected, immutable pair under
@@ -128,6 +132,20 @@ and promotion, so recovery cannot be stranded on another binding.
 Preserve these private pair files with the data and ledger. Missing, altered or
 incompatible pairs refuse startup; no fallback, allowance reset or provider call
 occurs during preparation.
+
+The onboarding interface matches accepted application
+`693865dda23e7b2cd5613b1e9adb783f718ce7a0`, archive SHA256
+`7c6d971ab37ebc8da2189020d357dc6b19aa97501a43bc3fce106d8e282a0629`.
+Only three of the twenty factory file pins differ from V12; provider contracts
+and budget settings do not change. Retain the complete reviewed dependency
+overlay `b6afc252bfd9ec203602bcabafbdb6064fb86cf21726b3c2c4118fd79f2a40c9`;
+the waitress-only local requirements file is not its replacement. Install this
+pair only from accepted, independently reviewed controller source after current
+CI, using explicit stopped/drained promotion. Preserve the prior fa6/V12 pair,
+both saved workspaces and their checkpoints. A prepared archive or passing source
+test does not prove private installation or ordinary-browser acceptance; record
+the installed app/controller identities and actual selected-origin observation,
+then return personal8443 to running/ready.
 
 `setup-private --origin <exact HTTPS address> --login <exact Tailscale login>
 --allocation <bound allocation JSON> --factory <bound factory JSON>` performs

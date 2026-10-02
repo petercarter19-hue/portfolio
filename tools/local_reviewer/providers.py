@@ -544,6 +544,7 @@ def build_native_public_port(*, database, token_provider, owner, profile, transp
 ALLOCATION_SHA256 = "0fb360b1315fa7b7695f41881bdbfc4f89dfccd2b1eb2a8ae6a15eeea931965e"
 FACTORY_SHA256 = "4c4f9275478de86523004c9865f258a59c8bd0ecb386fa0229be89f3cddcb54e"
 SUCCESSOR_FACTORY_SHA256 = "5450a759955bf8be6f4766e785410fe7271ae0f110764fff29eab70a99929ae8"
+ONBOARDING_FACTORY_SHA256 = "d5d09972f68ad646c0c059161fcedf131b2d77cfe4c5c022d294e71c28de95e6"
 ONGOING_BINDINGS = {
     "allocation_sha256": ALLOCATION_SHA256,
     "contract_sha256": "8e47bfa88ce4a46f0e11d78a056b2865710957d8325b378e68dc8d892c63a8dd",
@@ -552,22 +553,28 @@ ONGOING_BINDINGS = {
 AZURE_SUBSCRIPTION = "bd0ecf48-6940-4fd3-9687-3eaf72469d67"
 
 
-def bound_document(path, expected):
-    """Read reviewed bytes, not an editable claim that their hash was checked."""
+def ordinary_configuration_bytes(path):
+    """Take one byte snapshot from an ordinary configuration path."""
     from pathlib import Path
     path = Path(path)
     if not path.is_file() or any(p.is_symlink() or p.is_junction() for p in (path, *path.parents)):
         raise ValueError("Ordinary bound configuration file required")
-    data = path.read_bytes()
+    return path.read_bytes()
+
+
+def bound_document(path, expected):
+    """Read reviewed bytes, not an editable claim that their hash was checked."""
+    data = ordinary_configuration_bytes(path)
     if hashlib.sha256(data).hexdigest() != expected:
         raise ValueError("Reviewed configuration binding changed")
     return json_codec.loads(data)
 
 
-def bound_factory(data):
-    if not isinstance(data, bytes) or hashlib.sha256(data).hexdigest() not in (
-        FACTORY_SHA256, SUCCESSOR_FACTORY_SHA256
-    ):
+def bound_factory(data, *, for_promotion=False):
+    allowed = (SUCCESSOR_FACTORY_SHA256, ONBOARDING_FACTORY_SHA256)
+    if not for_promotion:
+        allowed += (FACTORY_SHA256,)
+    if not isinstance(data, bytes) or hashlib.sha256(data).hexdigest() not in allowed:
         raise ValueError("Reviewed factory binding changed")
     return json_codec.loads(data)
 

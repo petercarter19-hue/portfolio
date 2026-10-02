@@ -292,9 +292,10 @@ def install(root, args):
 
 
 def prepare_factory_configuration(root, factory_path, configuration):
-    from .providers import (SUCCESSOR_FACTORY_SHA256, bound_document,
+    from .providers import (bound_factory, ordinary_configuration_bytes,
                             selected_configuration)
-    interface = bound_document(factory_path, SUCCESSOR_FACTORY_SHA256)
+    factory_data = ordinary_configuration_bytes(factory_path)
+    interface = bound_factory(factory_data, for_promotion=True)
     _, previous_interface = selected_configuration(root)
     if (interface.get("ongoing_budget_port") != previous_interface.get("ongoing_budget_port")
             or interface["profile_contract"] != configuration["factory"]["profile_contract"]
@@ -302,9 +303,6 @@ def prepare_factory_configuration(root, factory_path, configuration):
         raise ValueError("Factory promotion cannot change provider contracts or caps")
     candidate = {**configuration, "factory": {key: interface[key] for key in
                  ("files_sha256", "profile_contract", "limits_maxima")}}
-    factory_data = Path(factory_path).read_bytes()
-    if hashlib.sha256(factory_data).hexdigest() != SUCCESSOR_FACTORY_SHA256:
-        raise ValueError("Reviewed factory changed during preparation")
     pair = canonical({"live_ai": candidate, "factory_utf8": factory_data.decode("utf-8")})
     configuration_id = hashlib.sha256(pair).hexdigest()
     destination = root / "data" / "provider-configurations" / (configuration_id + ".json")

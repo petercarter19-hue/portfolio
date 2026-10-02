@@ -293,7 +293,10 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
                            'start_date': '2022-01-01', 'date_precision': 'year', 'current_role': True}}
 
     def confirm(self, page):
+        item = page.locator('#resume-intake-proposals > li').element_handle()
+        self.assertIsNotNone(item)
         page.get_by_role('button', name='Confirm details', exact=True).click()
+        page.wait_for_function('(item) => !item.isConnected', arg=item)
         page.locator('#resume-intake-status').get_by_text('Saved privately. Sharing settings are unchanged.', exact=True).wait_for()
 
     def capture(self, page, name):
