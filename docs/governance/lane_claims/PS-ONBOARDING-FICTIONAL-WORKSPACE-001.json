@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-ONBOARDING-FICTIONAL-WORKSPACE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Provide one fresh persisted fictional onboarding workspace under the same actual authenticated Tailscale development owner with one active context, a distinct private8444 origin and fail-closed identity/origin/state/checkpoint isolation. Preserve personal8443 saved state, root provider ledger/caps/counts, signing key and existing accepted app/factory binding. Switch only stopped/drained under the lifetime lock with zero active reservations. Complete independent Protected source/privacy review, required tests and current-target accepted merge, then privately promote and prove zero-provider fictional create/edit/correct/save/reload/restart isolation; return personal8443 ready. No real-profile test mutation, native Visitor repeat, budget reset, public release or new chat.",
   "assignment": "implementation",
   "writer_ref": "session:01a0faaf-5e48-7060-990a-c28989a8d247",
@@ -32,7 +32,7 @@
   ],
   "review_requirement": "independent",
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null,
+  "merged_sha": "e8d811585574859050f4d677941ff4bc866387f5",
+  "closed_at": "2026-10-02T16:05:55Z",
   "handoff": null
 }
