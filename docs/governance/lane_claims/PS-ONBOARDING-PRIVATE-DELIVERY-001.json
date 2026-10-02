@@ -18,7 +18,8 @@
     "docs/LOCAL_REVIEWER.md",
     "docs/governance/lane_claims/PS-ONBOARDING-PRIVATE-DELIVERY-001.json",
     "docs/governance/lane_claims/receipts/PS-ONBOARDING-PRIVATE-DELIVERY-001.json",
-    "docs/governance/lane_claims/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-001.md"
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-001.md",
+    "tests/test_resume_intake_browser.py"
   ],
   "domains": [
     "tooling:local-reviewer:onboarding-private-delivery"
