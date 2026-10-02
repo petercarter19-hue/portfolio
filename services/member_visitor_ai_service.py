@@ -7,7 +7,7 @@ span checks do not claim general semantic entailment.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
@@ -21,7 +21,7 @@ from time import monotonic
 from typing import Protocol
 from services.ai_foundation.contracts import AIRequest, AnswerState, Audience, Citation, GroundedAnswer, Purpose, SourceVersion
 from services.ai_foundation.gateway import AIFoundationGateway
-from services.ai_foundation.errors import ProviderUnavailableError
+from services.ai_foundation.errors import GroundingValidationError, ProviderUnavailableError
 from services.ai_foundation.citation_validator import validate_grounded_answer
 from services.member_visitor_ai_sources import CurrentnessPort, EligibleSources, EligibleSourcesPort, PreviewBinding
 from services.resume_publication_contracts import ReadState, TrustedUseContext, UsePurpose, decode_canonical_source
@@ -512,10 +512,35 @@ from services.ai_foundation.citation_validator import authorize_sources
 from services.ai_foundation.limits import ExecutionLimits
 
 
-from services.ai_foundation.codec import MEMBER_VISITOR_ANSWER_SCHEMA, MEMBER_VISITOR_SUPPORT_SCHEMA
+from services.ai_foundation.codec import MEMBER_VISITOR_ANSWER_SCHEMA, MEMBER_VISITOR_SUPPORT_SCHEMA, parse_grounded_answer
 
 
 class _VisitorFoundryAnswer(AzureFoundryResponsesProvider):
+    def answer(self, request, sources):
+        sources = authorize_sources(request, sources)
+        answer = parse_grounded_answer(super().answer(request, sources))
+        source_map = {source.source_version_key: source for source in sources}
+        claims = []
+        for claim in answer.claims:
+            citations = []
+            for citation in claim.citations:
+                source = source_map.get(citation.source_version_key)
+                if source is None:
+                    raise GroundingValidationError('citation names a source version not supplied to the request')
+                # Preserve a valid selected occurrence, including repeated text.
+                if (0 <= citation.start < citation.end <= len(source.content)
+                        and source.content[citation.start:citation.end] == citation.excerpt):
+                    citations.append(citation)
+                    continue
+                start = source.content.find(citation.excerpt)
+                # The excerpt stays literal; overlapping matches are ambiguous too.
+                if (not citation.excerpt or start < 0
+                        or source.content.find(citation.excerpt, start + 1) >= 0):
+                    raise GroundingValidationError('citation excerpt has no unique exact source occurrence')
+                citations.append(replace(citation, start=start, end=start + len(citation.excerpt)))
+            claims.append(replace(claim, citations=tuple(citations)))
+        return replace(answer, claims=tuple(claims))
+
     def _answer_schema(self):
         return MEMBER_VISITOR_ANSWER_SCHEMA
 
@@ -535,6 +560,9 @@ class _VisitorFoundryAnswer(AzureFoundryResponsesProvider):
             'unavailable. Each claim has claim_id, text, kind=evidence, state=supported, '
             'citations, limitation=null. Each citation has claim_id, source_version_key, '
             'start (zero-based character offset), end (exclusive), excerpt (exact text). '
+            'Copy each excerpt literally from its identified supplied source, within one '
+            'saved factual field. The server can derive mismatched offsets only when '
+            'that unchanged excerpt occurs exactly once in that same source. '
             'For unknown/ambiguous/unavailable return no claims. Summary must contain '
             'only supported claims, with their original uncertainty; do not offer private '
             'fallbacks or claim anything was saved or published.'

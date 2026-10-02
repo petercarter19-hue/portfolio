@@ -301,7 +301,12 @@ class PublicContractTests(unittest.TestCase):
         for kind, schema in [(_VisitorFoundryAnswer, MEMBER_VISITOR_ANSWER_SCHEMA),
                              (_VisitorFoundrySupport, MEMBER_VISITOR_SUPPORT_SCHEMA)]:
             from tests.test_resume_intake_runtime import SelectedPrivateTransport
-            transport = SelectedPrivateTransport()
+            payload = ({'answer_id': 'fixture', 'state': 'not_established',
+                        'summary': 'No supplied information establishes an answer.', 'claims': [],
+                        'follow_up_questions': [], 'handoff': None, 'model_name': None,
+                        'prompt_contract_version': None} if kind is _VisitorFoundryAnswer else
+                       {'verdict': 'unsupported', 'summary_supported': False, 'claims': []})
+            transport = SelectedPrivateTransport(payload=payload)
             provider = kind(endpoint='https://fixture.openai.azure.com', deployment='gpt-6-luna',
                 token_provider=lambda: 'fiction-token', transport=transport,
                 price_schedule=LunaPriceSchedule(), spend_ledger=SpendLedger(hard_cap_micro_usd=1000000, max_calls=1),
@@ -312,3 +317,176 @@ class PublicContractTests(unittest.TestCase):
             self.assertEqual(wire['reasoning'], {'effort': 'low'})
             self.assertTrue(wire['text']['format']['strict'])
             self.assertEqual(wire['text']['format']['schema'], schema)
+
+
+class VisitorExactQuoteSpanTests(unittest.TestCase):
+    """The visitor adapter fixes only positions; the shared grounding stays strict."""
+    def request(self):
+        from services.ai_foundation.contracts import AIRequest, Audience, Purpose
+        return AIRequest('fixture-span', 'member_visitor_ai', Purpose.PUBLIC_PROFILE_ANSWER,
+                         Audience.PUBLIC, 'fixture-member', 'What is established?')
+
+    def source(self, content, key='fixture-source-v1'):
+        from services.ai_foundation.contracts import SourceVersion
+        request = self.request()
+        return SourceVersion.approved(source_version_key=key, source_key=key, version=1,
+            subject_key=request.subject_key, title='Fictional approved information', content=content,
+            allowed_audiences=frozenset({request.audience}), allowed_purposes=frozenset({request.purpose}))
+
+    def payload(self, excerpt='Led four people.', start=0, end=1, key='fixture-source-v1'):
+        return {'answer_id': 'fixture-answer', 'state': 'supported', 'summary': 'Led four people.',
+            'claims': [{'claim_id': 'fixture-claim', 'text': 'Led four people.', 'kind': 'evidence',
+                        'state': 'supported', 'limitation': None, 'citations': [{
+                            'claim_id': 'fixture-claim', 'source_version_key': key,
+                            'start': start, 'end': end, 'excerpt': excerpt}]}],
+            'follow_up_questions': [], 'handoff': None, 'model_name': None,
+            'prompt_contract_version': 'fixture-contract'}
+
+    def derive(self, payload, sources, request=None):
+        from copy import deepcopy
+        from unittest.mock import patch
+        from services.ai_foundation.azure_foundry import AzureFoundryResponsesProvider
+        from services.member_visitor_ai_service import _VisitorFoundryAnswer
+        original = deepcopy(payload)
+        with patch.object(AzureFoundryResponsesProvider, 'answer', return_value=payload) as provider:
+            answer = _VisitorFoundryAnswer.__new__(_VisitorFoundryAnswer).answer(request or self.request(), sources)
+            self.assertEqual(provider.call_count, 1)
+            self.assertEqual(provider.call_args.args, (request or self.request(), tuple(sources)))
+        self.assertEqual(payload, original)
+        return answer
+
+    def test_unique_unicode_quote_changes_only_positions_and_passes_generic_grounding(self):
+        from dataclasses import replace
+        from services.ai_foundation.codec import parse_grounded_answer
+        from services.ai_foundation.citation_validator import validate_grounded_answer
+        quote = 'Café 😀 led four people.'
+        source = self.source('É\n' + quote + '\nEnd.')
+        payload = self.payload(quote, 1, 1 + len(quote))
+        original = parse_grounded_answer(payload)
+        answer = self.derive(payload, (source,))
+        citation = answer.claims[0].citations[0]
+        self.assertEqual((citation.start, citation.end), (2, 2 + len(quote)))
+        expected = replace(original, claims=(replace(original.claims[0], citations=(
+            replace(original.claims[0].citations[0], start=2, end=2 + len(quote)),)),))
+        self.assertEqual(answer, expected)
+        self.assertEqual(validate_grounded_answer(self.request(), (source,), answer), answer)
+
+    def test_valid_unique_and_selected_repeated_occurrences_remain_exactly_unchanged(self):
+        from services.ai_foundation.codec import parse_grounded_answer
+        from services.ai_foundation.citation_validator import validate_grounded_answer
+        quote = 'Led four people.'
+        for content, start in [(quote, 0), (quote + ' / ' + quote, len(quote) + 3)]:
+            with self.subTest(content=content):
+                payload = self.payload(quote, start, start + len(quote))
+                source = self.source(content)
+                answer = self.derive(payload, (source,))
+                self.assertEqual(answer, parse_grounded_answer(payload))
+                validate_grounded_answer(self.request(), (source,), answer)
+
+    def test_wrong_span_refuses_absent_ambiguous_overlapping_or_changed_literal_text(self):
+        from services.ai_foundation.errors import GroundingValidationError
+        cases = [('Led four people. / Led four people.', 'Led four people.'),
+                 ('aaaa', 'aaa'), ('Led four people.', 'led four people.'),
+                 ('Led  four people.', 'Led four people.'), ('Café', 'Cafe\u0301'),
+                 ('Other text', 'Led four people.')]
+        for content, quote in cases:
+            with self.subTest(content=content, quote=quote), self.assertRaises(GroundingValidationError):
+                self.derive(self.payload(quote), (self.source(content),))
+
+    def test_named_version_never_searches_other_supplied_source(self):
+        from services.ai_foundation.errors import GroundingValidationError
+        for key in ['absent-version', 'fixture-source-v1']:
+            with self.subTest(key=key), self.assertRaises(GroundingValidationError):
+                self.derive(self.payload(key=key), (self.source('No matching text'),
+                            self.source('Led four people.', 'other-version')))
+
+    def test_authorization_refuses_before_provider_dispatch(self):
+        from dataclasses import replace
+        from unittest.mock import patch
+        from services.ai_foundation.azure_foundry import AzureFoundryResponsesProvider
+        from services.ai_foundation.contracts import Audience, Purpose
+        from services.ai_foundation.errors import SourceAuthorizationError
+        from services.member_visitor_ai_service import _VisitorFoundryAnswer
+        source = self.source('Led four people.')
+        for sources in [(replace(source, subject_key='another-member'),),
+                        (replace(source, allowed_audiences=frozenset({Audience.OWNER})),),
+                        (replace(source, allowed_purposes=frozenset({Purpose.EVIDENCE_FINDER})),),
+                        (replace(source, content=source.content + ' Changed'),), (source, source)]:
+            with self.subTest(sources=sources), patch.object(AzureFoundryResponsesProvider, 'answer') as provider:
+                with self.assertRaises(SourceAuthorizationError):
+                    _VisitorFoundryAnswer.__new__(_VisitorFoundryAnswer).answer(self.request(), sources)
+                provider.assert_not_called()
+
+    def test_closed_codec_refuses_malformed_contract_before_derivation(self):
+        from services.ai_foundation.errors import AnswerContractError
+        mutations = [lambda p: p.update(unknown=True), lambda p: p['claims'][0].update(unknown=True),
+                     lambda p: p['claims'][0]['citations'][0].update(excerpt=''),
+                     lambda p: p['claims'][0]['citations'][0].update(start=True),
+                     lambda p: p['claims'][0]['citations'][0].update(end='16'),
+                     lambda p: p['claims'][0]['citations'][0].update(claim_id='another-claim')]
+        for mutate in mutations:
+            payload = self.payload(); mutate(payload)
+            with self.subTest(payload=payload), self.assertRaises(AnswerContractError):
+                self.derive(payload, (self.source('Led four people.'),))
+
+    def test_duplicate_citations_remain_refused_by_generic_grounding(self):
+        from copy import deepcopy
+        from services.ai_foundation.errors import GroundingValidationError
+        from services.ai_foundation.citation_validator import validate_grounded_answer
+        payload = self.payload()
+        payload['claims'][0]['citations'].append(deepcopy(payload['claims'][0]['citations'][0]))
+        source = self.source('Prefix Led four people.')
+        answer = self.derive(payload, (source,))
+        with self.assertRaises(GroundingValidationError):
+            validate_grounded_answer(self.request(), (source,), answer)
+
+    def service_provider(self, excerpt=SAVED_TEXT, summary=SAVED_TEXT):
+        outer = self
+        class Provider:
+            seen = []
+            def answer(self, request, sources):
+                self.seen.append((request, sources))
+                payload = outer.payload(excerpt, key=sources[0].source_version_key)
+                payload['summary'] = summary; payload['claims'][0]['text'] = summary
+                return outer.derive(payload, sources, request)
+        return Provider()
+
+    def test_derived_factual_excerpt_preserves_service_support_and_revoked_citation_access(self):
+        provider = self.service_provider()
+        db, repo, _, service = stack(provider, SyntheticSupportCatalogue())
+        service.citations = CitationTicketStore(capacity=2, lifetime_seconds=120)
+        result = service.ask_guest(slug='member-a', question='What happened?', request_id='fixture')
+        self.assertEqual(result.state, ResultState.SUPPORTED)
+        self.assertEqual(len(provider.seen), 1)
+        handle = result.citations[0].handle
+        self.assertEqual(service.read_citation(handle, slug='member-a').excerpt, SAVED_TEXT)
+        db.document['entries'][0]['visitor_ai'] = False
+        self.assertIsNone(service.read_citation(handle, slug='member-a'))
+        self.assertEqual(len(provider.seen), 1)
+
+    def test_derived_quotes_do_not_bypass_semantics_or_currentness(self):
+        provider = self.service_provider(summary='The pilot saved $1 million.')
+        _, _, _, service = stack(provider, SyntheticSupportCatalogue())
+        result = service.ask_guest(slug='member-a', question='Results?', request_id='fixture')
+        self.assertEqual(result.state, ResultState.UNSUPPORTED); self.assertEqual(result.citations, ())
+        provider = self.service_provider()
+        db, _, _, service = stack(provider, SyntheticSupportCatalogue())
+        service.support = SyntheticSupportCatalogue(lambda: db.document.update(sharing_enabled=False))
+        result = service.ask_guest(slug='member-a', question='Results?', request_id='fixture')
+        self.assertEqual(result.state, ResultState.RETRYABLE); self.assertEqual(result.citations, ())
+
+    def test_derived_metadata_and_cross_field_quotes_remain_unsupported(self):
+        db, repo, _, _ = stack()
+        source = repo.load_guest('member-a').sources[0]
+        metadata = '14:canonical_typeS4:role'
+        start = source.content.index(SAVED_TEXT)
+        cross_field = source.content[start - 1:start + 5]
+        class AlwaysSupported:
+            def validate(self, *args): return SupportVerdict.SUPPORTED
+        for quote in [metadata, cross_field]:
+            with self.subTest(quote=quote):
+                provider = self.service_provider(excerpt=quote)
+                _, _, _, service = stack(provider, AlwaysSupported())
+                result = service.ask_guest(slug='member-a', question='Results?', request_id='fixture')
+                self.assertEqual(result.state, ResultState.UNSUPPORTED)
+                self.assertEqual(result.citations, ())
