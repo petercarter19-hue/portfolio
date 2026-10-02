@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-ONBOARDING-OVERHAUL-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Complete the owner-directed AI-guided Resume onboarding overhaul: one adaptive foreground guide, upfront value explanation, source intake, truthful voice states, grouped review and correction, acknowledged-save-driven resume reveal, contextual optional nudges, manual skip and return, optional story/work choices and private finish. Reuse existing protected services; preserve source/canonical/proposal separation, provider caps, identity and publication boundaries. LinkedIn deferred. Complete Protected review, CI, accepted merge and coordinated private-installation release; public MVP enablement remains held.",
   "assignment": "implementation",
   "writer_ref": "session:01a0fac2-1122-7ea2-91c8-06033862e354",
@@ -34,6 +34,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "693865dda23e7b2cd5613b1e9adb783f718ce7a0",
+  "closed_at": "2026-10-02T14:23:03Z"
 }
