@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "package": "PS-ONBOARDING-CLOUD-DEMO-001",
+  "state": "active",
+  "outcome": "Deliver separately authenticated externally reachable HTTPS fictional demos for Grok and Muse cloud browsers, reusing accepted onboarding pages. Two server-owned fictional owners have independent processes, credentials, sessions and durable state. Qualify anonymous/wrong/expired identity refusal, selector/header impersonation, origin/CSRF, two-owner isolation, upload/type/edit/review/explicit save/private preview, restart and rollback, truthful AI-unavailable operation. Deploy exact accepted source only to separately named apps on verified existing non-production capacity; preserve stopped candidate and production. No new paid hosting plan, paid worker, live provider/Native calls, private PC state/config/signing/ledger copy, migration, reset or external platform launch/login/message. Return usable URLs, secure credential delivery and self-contained receiver instructions; actual vendor-browser connection remains unproven until receivers verify.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0faaf-5e48-7060-990a-c28989a8d247",
+  "branch": "codex/2026-10-03-onboarding-cloud-demo-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "c45e8e801324985108cc0837003803f4e655a020",
+  "owner_outcome_ref": "session:01a0ff26-7f5a-76a3-8f13-f051ebd04255/turn:01a103b4-8693-7d92-a6d1-bfb276396156/message:01a103b4-9144-7e52-989a-96c91d0d25ac",
+  "surfaces": [
+    "tools/cloud_demo/__init__.py",
+    "tools/cloud_demo/runtime.py",
+    "tools/cloud_demo/wsgi.py",
+    "tools/cloud_demo/requirements.txt",
+    "scripts/cloud_demo_release.py",
+    "tests/test_cloud_demo.py",
+    "docs/CLOUD_DEMO.md",
+    "docs/governance/lane_claims/PS-ONBOARDING-CLOUD-DEMO-001.json",
+    "docs/governance/lane_claims/receipts/PS-ONBOARDING-CLOUD-DEMO-001.json",
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-CLOUD-DEMO-001.md"
+  ],
+  "domains": ["tooling:cloud-demo:onboarding"],
+  "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-ONBOARDING-CLOUD-DEMO-001.md"],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
