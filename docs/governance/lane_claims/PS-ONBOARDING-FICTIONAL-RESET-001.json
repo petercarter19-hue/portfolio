@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "package": "PS-ONBOARDING-FICTIONAL-RESET-001",
+  "state": "active",
+  "outcome": "Provide an explicit local one-click fresh start of the existing fictional onboarding workspace at8444. Save a validated recoverable checkpoint, then replace only its namespace state with the accepted fresh factory snapshot: no previous member resume, submissions, proposals, profile or onboarding progress and no Riley reseeding. Use stopped/drained server lifetime lock, all five provider scopes inactive, exact namespace/owner/installation validation, and normal READY restart. Refuse personal or invalid contexts before stopping or writing. Preserve personal saved state, root identity/signing/configuration, immutable app693/provider pair58, shared provider ledger/allocation/models/rates/caps/counts, checkpoints and old app/controller rollback lineage. Add a Fresh Demo launcher for Pete's explicit self-service reset. Deliver exact Protected-reviewed source through required current-target CI and accepted merge, then supported private controller update and actual fresh-start HTTPS checks. Zero additional provider or Native Visitor calls; no public/network/authentication/automation or source-owner application change. Historical prior delivery criteria remain unchanged and incomplete.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0faaf-5e48-7060-990a-c28989a8d247",
+  "branch": "codex/2026-10-02-onboarding-fictional-reset-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "37f12262f885268821c077506bc725c506bcf606",
+  "owner_outcome_ref": "session:01a0faaf-5e48-7060-990a-c28989a8d247/user:01a0fef6-759d-7ea0-8e24-acd1f9953ad8",
+  "surfaces": [
+    "tools/local_reviewer/manager.py",
+    "tests/test_local_reviewer.py",
+    "docs/LOCAL_REVIEWER.md",
+    "docs/governance/lane_claims/PS-ONBOARDING-FICTIONAL-RESET-001.json",
+    "docs/governance/lane_claims/receipts/PS-ONBOARDING-FICTIONAL-RESET-001.json",
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-FICTIONAL-RESET-001.md"
+  ],
+  "domains": [
+    "tooling:local-reviewer:fictional-reset"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-FICTIONAL-RESET-001.md"
+  ],
+  "review_requirement": "independent",
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null,
+  "handoff": null
+}
