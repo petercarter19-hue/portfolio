@@ -127,7 +127,9 @@ This requires a stopped, drained private site and no active provider reservation
 resolve a failed reservation under its original app/configuration before updating.
 Loading retains the reviewed V11/V12 interfaces and the fixed onboarding interface
 `d5d09972f68ad646c0c059161fcedf131b2d77cfe4c5c022d294e71c28de95e6`.
-Explicit promotion accepts V12 or that onboarding interface; V11 remains loadable
+The fixed conversation interface is
+`17d249320fd0c951438cafb728c17e9672107454f539cd4d4866c77168c3512b`.
+Explicit promotion accepts V12, onboarding or conversation; V11 remains loadable
 for the original installation and rollback. One validated byte snapshot supplies
 both the parsed interface and its immutable pair. Owner, signing key, allocation,
 models, prices, scopes, caps and consumed counts are preserved.
@@ -159,7 +161,19 @@ CI, using explicit stopped/drained promotion. Preserve the prior fa6/V12 pair,
 both saved workspaces and their checkpoints. A prepared archive or passing source
 test does not prove private installation or ordinary-browser acceptance; record
 the installed app/controller identities and actual selected-origin observation,
-then return personal8443 to running/ready.
+and verify return to personal8443 through the supported stopped selection.
+
+The conversation interface binds accepted application
+`965dde2b3e9c31ab97c7bc1b02d3bba20db0d20f`, archive SHA256
+`d9d89c657116d7db4b2677a534f29800c5abe83ea3daba4e6e41fea3804f9a51`.
+Seven of the twenty onboarding pins change. Factory signature, provider contracts,
+allocation, caps and complete B6 dependency overlay remain unchanged. Before
+promotion, qualify both existing typed snapshots in an isolated offline process
+without replacing content or advancing their generations. Retain the D5 pair and
+its old app/controller for rollback. After normal Ready start, verify actual HTTPS
+and personal return, then restore the original selected workspace through supported
+stopped selection. Record ordinary-browser proof separately from HTTPS requests.
+Qualification and promotion dispatch zero provider calls and never reset the demo.
 
 `setup-private --origin <exact HTTPS address> --login <exact Tailscale login>
 --allocation <bound allocation JSON> --factory <bound factory JSON>` performs

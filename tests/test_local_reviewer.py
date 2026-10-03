@@ -228,7 +228,7 @@ class FactoryPairTests(unittest.TestCase):
         manager.write(self.root / "installation.json", self.old)
         manager.write(self.root / "private-access.json", {"fictional_owner": self.identity.owner})
         self.sources = {}
-        for version in ("old", "new", "onboarding"):
+        for version in ("old", "new", "onboarding", "conversation"):
             source = self.root / "releases" / version / "source"
             source.mkdir(parents=True)
             (source / "service.py").write_text("FICTIONAL " + version)
@@ -239,7 +239,7 @@ class FactoryPairTests(unittest.TestCase):
         (self.root / "ai-allocation.json").write_bytes(allocation)
         config["allocation_sha256"] = allocation_sha
         self.interfaces = {}
-        for version in ("old", "new", "onboarding"):
+        for version in ("old", "new", "onboarding", "conversation"):
             self.interfaces[version] = {**config["factory"], "ongoing_budget_port": providers.ONGOING_BINDINGS,
                 "files_sha256": {"service.py": digest(self.sources[version] / "service.py")}}
         config["factory"] = {key: self.interfaces["old"][key] for key in
@@ -251,6 +251,8 @@ class FactoryPairTests(unittest.TestCase):
         manager.write(self.factory, self.interfaces["new"])
         self.onboarding_factory = self.root / "onboarding.json"
         manager.write(self.onboarding_factory, self.interfaces["onboarding"])
+        self.conversation_factory = self.root / "conversation.json"
+        manager.write(self.conversation_factory, self.interfaces["conversation"])
         self.args = SimpleNamespace(action="update", candidate_state="accepted-main", factory=self.factory)
         self.budget = ProviderBudget.initialize(self.root / "data/provider-budget-v1.sqlite3",
             owner=self.identity.owner, allocation_sha256=allocation_sha, profiles=config["profiles"])
@@ -259,12 +261,13 @@ class FactoryPairTests(unittest.TestCase):
             ("live-ai.json", "ai-factory.json", "ai-allocation.json", "data/state.json", "data/provider-budget-v1.sqlite3")}
         self.stack = ExitStack()
         self.addCleanup(self.stack.close)
-        # Synthetic immutable interfaces stand in for the three reviewed artifacts;
+        # Synthetic immutable interfaces stand in for the four reviewed artifacts;
         # the actual hash checking, source checking and allocation checks run.
         self.stack.enter_context(patch.object(providers, "ALLOCATION_SHA256", allocation_sha))
         self.stack.enter_context(patch.object(providers, "FACTORY_SHA256", digest(self.root / "ai-factory.json")))
         self.stack.enter_context(patch.object(providers, "SUCCESSOR_FACTORY_SHA256", digest(self.factory)))
         self.stack.enter_context(patch.object(providers, "ONBOARDING_FACTORY_SHA256", digest(self.onboarding_factory)))
+        self.stack.enter_context(patch.object(providers, "CONVERSATION_FACTORY_SHA256", digest(self.conversation_factory)))
         self.stack.enter_context(patch.object(manager, "require_private_files"))
         self.stack.enter_context(patch.object(manager, "private_permissions"))
         self.stack.enter_context(patch("tools.local_reviewer.runtime.private_access", return_value=self.identity))
@@ -295,6 +298,30 @@ class FactoryPairTests(unittest.TestCase):
     def use_onboarding(self):
         self.args.factory = self.onboarding_factory
         self.prepare.return_value = ("onboarding", {"candidate_state": "accepted-main"}, {})
+
+    def use_conversation(self):
+        self.args.factory = self.conversation_factory
+        self.prepare.return_value = ("conversation", {"candidate_state": "accepted-main"}, {})
+
+    def test_conversation_pair_promotes_from_onboarding_and_rolls_back_with_original_binding(self):
+        self.use_onboarding()
+        install(self.root, self.args)
+        self.old = self.manager.read(self.root / "installation.json")
+        self.use_conversation()
+        install(self.root, self.args)
+        manifest = self.manager.read(self.root / "installation.json")
+        self.assertEqual(manifest["release"], "conversation")
+        self.assertNotEqual(manifest["provider_configuration"], self.old["provider_configuration"])
+        loaded = self.providers.load_configuration(self.root, self.identity, self.sources["conversation"])
+        self.assertEqual(loaded["factory"]["files_sha256"], self.interfaces["conversation"]["files_sha256"])
+        self.assertEqual({k:v for k,v in loaded.items() if k != "factory"},
+                         {k:v for k,v in self.config.items() if k != "factory"})
+        self.assert_preserved()
+        with patch.object(self.manager, "stop", return_value={"stopped":True}):
+            self.assertEqual(self.manager.rollback(self.root)["rolled_back"], "onboarding")
+        self.assertEqual(self.manager.read(self.root / "installation.json"), self.old)
+        self.providers.load_configuration(self.root, self.identity, self.sources["onboarding"])
+        self.assert_preserved()
 
     def test_onboarding_pair_promotes_from_successor_and_rolls_back_without_rewriting_content(self):
         install(self.root, self.args)
@@ -418,6 +445,37 @@ class FactoryPairTests(unittest.TestCase):
         self.assertEqual(self.budget.snapshot(profile["scope"]), before)
         self.assertEqual(self.manager.read(self.root / "installation.json"), self.old)
         self.prepare.assert_not_called()
+
+    def test_each_provider_profile_blocks_factory_promotion_without_accounting_changes(self):
+        self.use_onboarding()
+        install(self.root, self.args)
+        self.old = self.manager.read(self.root / "installation.json")
+        self.prepare.reset_mock()
+        self.probe.reset_mock()
+        self.use_conversation()
+        for name, profile in self.config["profiles"].items():
+            request = str(uuid4())
+            self.assertTrue(self.budget.reserve({"@UserKey": self.identity.owner,
+                "@Scope": profile["scope"], "@RequestId": request,
+                "@ReservationMicroUsd": profile["reservation_micro_usd"],
+                "@MaximumCalls": profile["maximum_calls"],
+                "@HardCapMicroUsd": profile["hard_cap_micro_usd"], "@ConcurrentRequests": 1}))
+            before = {key: self.budget.snapshot(value["scope"])
+                      for key, value in self.config["profiles"].items()}
+            with self.subTest(profile=name), self.assertRaisesRegex(ValueError, "active provider reservations"):
+                install(self.root, self.args)
+            self.assertEqual({key: self.budget.snapshot(value["scope"])
+                              for key, value in self.config["profiles"].items()}, before)
+            self.assertEqual(self.manager.read(self.root / "installation.json"), self.old)
+            self.prepare.assert_not_called()
+            self.probe.assert_not_called()
+            for key, raw in self.protected.items():
+                if key != "data/provider-budget-v1.sqlite3":
+                    self.assertEqual((self.root / key).read_bytes(), raw, key)
+            event = {"phase": 1, "identity_sha256": __import__("hashlib").sha256(request.encode()).hexdigest()}
+            event.update({"seconds": 1} if "duration_tariff" in profile
+                         else {"input_tokens": 1, "output_tokens": 0})
+            self.budget.settle(self.identity.owner, profile["scope"], request, [event])
         self.probe.assert_not_called()
 
     def test_factory_tampering_and_preview_promotion_refuse_before_pointer_change(self):
@@ -605,6 +663,40 @@ class WorkspaceOperatorTests(unittest.TestCase):
 
     def snapshots(self):
         return {name: self.budget.snapshot(profile["scope"]) for name, profile in self.config["profiles"].items()}
+
+    def test_conversation_promotion_and_rollback_preserve_latest_fictional_namespace(self):
+        from tools.local_reviewer.runtime import selected_context
+        self.manager.create_workspace(self.root)
+        self.manager.select_workspace(self.root, "onboarding")
+        self.old = self.manager.read(self.root / "installation.json")
+        context = selected_context(self.root)
+        saved_before = context.state_path.read_bytes()
+        accounting = self.snapshots()
+        ledger = (self.root / "data/provider-budget-v1.sqlite3").read_bytes()
+        FactoryPairTests.use_onboarding(self)
+        install(self.root, self.args)
+        self.old = self.manager.read(self.root / "installation.json")
+        FactoryPairTests.use_conversation(self)
+        install(self.root, self.args)
+        current = self.manager.read(self.root / "installation.json")
+        self.assertEqual(current["release"], "conversation")
+        self.assertEqual(current["workspace"], self.old["workspace"])
+        self.assertNotEqual(current["provider_configuration"], self.old["provider_configuration"])
+        self.assertEqual(context.state_path.read_bytes(), saved_before)
+        store = context.store(self.fresh()[3]); store.load()
+        store.state.bindings["values"][0].values = {"latest-fictional-words":"retain after rollback"}
+        store.save()
+        latest = context.state_path.read_bytes()
+        with patch.object(self.manager, "stop", return_value={"stopped":True}):
+            self.assertEqual(self.manager.rollback(self.root)["rolled_back"], "onboarding")
+        self.assertEqual(self.manager.read(self.root / "installation.json"), self.old)
+        self.providers.load_configuration(self.root, context.identity, self.sources["onboarding"])
+        self.assertEqual(context.state_path.read_bytes(), latest)
+        self.assertEqual((self.root / "data/state.json").read_bytes(), self.personal)
+        self.assertEqual(self.snapshots(), accounting)
+        self.assertEqual((self.root / "data/provider-budget-v1.sqlite3").read_bytes(), ledger)
+        for name in ("live-ai.json", "ai-factory.json", "ai-allocation.json"):
+            self.assertEqual((self.root / name).read_bytes(), self.protected[name])
 
     def test_create_select_restore_and_return_keep_personal_and_root_accounting(self):
         from tools.local_reviewer.runtime import selected_context

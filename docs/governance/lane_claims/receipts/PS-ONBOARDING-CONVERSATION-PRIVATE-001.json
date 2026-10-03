@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-ONBOARDING-CONVERSATION-PRIVATE-001",
+  "candidate_sha": "f8b982121552026cf55c0eaf7d9b74c8f5c48bc6",
+  "reviewer_ref": "session:01a0fafc-327e-7481-a330-2a29f452b6fc",
+  "result": "pass",
+  "reviewed_at": "2026-10-03T15:30:42Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-ONBOARDING-CONVERSATION-PRIVATE-001.md",
+  "review_type": "independent"
+}
