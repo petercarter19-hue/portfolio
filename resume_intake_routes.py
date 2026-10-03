@@ -525,7 +525,21 @@ def _private_assistance(kind, method):
                 result[key] = value
             return result
         payload = json.loads(raw, object_pairs_hook=closed_pairs)
-        result = getattr(service, method)(identity.user_key, payload)
+        if method == 'interview' and isinstance(payload, dict) and 'proposal_key' in payload:
+            proposal_key = payload.pop('proposal_key')
+            workspace = _service().get_workspace(identity.user_key)
+            proposal = next((row for row in workspace.get('pending_proposals', [])
+                             if row.get('proposal_key') == proposal_key and row.get('state') == 'pending'), None)
+            if proposal is None:
+                raise SynthesisError('not_found')
+            result = service.interview(identity.user_key, payload, review_proposal=proposal)
+            fresh = _service().get_workspace(identity.user_key)
+            current = next((row for row in fresh.get('pending_proposals', [])
+                            if row.get('proposal_key') == proposal_key), None)
+            if current != proposal:
+                raise SynthesisError('changed')
+        else:
+            result = getattr(service, method)(identity.user_key, payload)
     except ResumeDraftConflictError as error:
         return jsonify({'success': False, 'code': 'changed', 'message': str(error),
                         'proposed_values': error.proposed}), 409
@@ -534,7 +548,8 @@ def _private_assistance(kind, method):
         status = 404 if code == 'not_found' else 409 if code == 'changed' else 503 if code == 'unavailable' else 400
         return jsonify({'success': False, 'code': code,
             'message': 'Private assistance could not complete. Your words and manual editor remain available.'}), status
-    except (ProviderUnavailableError, ExecutionLimitError, ResumeDraftUnavailableError):
+    except (ProviderUnavailableError, ExecutionLimitError, ResumeDraftUnavailableError,
+            ResumeIntakeUnavailableError):
         return jsonify({'success': False, 'code': 'unavailable',
             'message': 'Private assistance is unavailable. Your manual editor remains available.'}), 503
     except (ValueError, TypeError, KeyError, ResumeDraftValidationError, ExtractionError):

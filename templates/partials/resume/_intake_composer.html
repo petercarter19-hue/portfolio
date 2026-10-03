@@ -81,9 +81,9 @@
         <p class="resume-intake__draft" id="resume-intake-draft-state"><span id="resume-intake-draft-label">Your answer is not added yet.</span></p>
         <div class="resume-intake__quiet-actions">
           <button type="button" class="resume-intake__quiet" id="resume-intake-review-pending" hidden>Review suggested details</button>
-          <button type="button" class="resume-intake__quiet" id="resume-intake-new-question">Suggest a question</button>
+          <button type="button" class="resume-intake__quiet" id="resume-intake-new-question">Ask another question</button>
           <button type="button" class="resume-intake__quiet" id="resume-intake-skip-question">Skip this question</button>
-          <button type="button" class="resume-intake__quiet" id="resume-intake-input-finish">Finish for now</button>
+          <button type="button" class="resume-intake__quiet" id="resume-intake-input-finish">Finish this section</button>
         </div>
       </section>
       <section id="resume-intake-review" aria-label="Review suggested details" hidden>
@@ -93,7 +93,7 @@
       <section id="resume-intake-next" hidden>
         <div class="resume-intake__inset"><h3>One useful detail at a time.</h3><p>We can explore a contribution, what you learned, or something that makes your experience yours.</p></div>
         <div class="resume-intake__paired-actions">
-          <button type="button" class="resume-intake__add" id="resume-intake-next-question">Keep going</button>
+          <button type="button" class="resume-intake__add" id="resume-intake-next-question">Ask another question</button>
           <button type="button" class="resume-intake__secondary" id="resume-intake-next-finish">Finish for now</button>
         </div>
       </section>
@@ -236,7 +236,13 @@
                 </p>
                 <p data-credential-field data-credential-completed-field hidden>
                     <label for="resume-intake-credential-issue-date">Issue date</label>
-                    <input id="resume-intake-credential-issue-date" name="issue_date" type="date">
+                    <input id="resume-intake-credential-issue-date" name="issue_date" type="text" maxlength="10" placeholder="YYYY, YYYY-MM or YYYY-MM-DD">
+                    <label for="resume-intake-credential-issue-precision">Issue date detail</label>
+                    <select id="resume-intake-credential-issue-precision"><option value="">From the date supplied</option><option value="year">Year</option><option value="month">Month</option><option value="day">Exact day</option></select>
+                    <label for="resume-intake-credential-expiration-date">Expiration date (optional)</label>
+                    <input id="resume-intake-credential-expiration-date" type="text" maxlength="10" placeholder="YYYY, YYYY-MM or YYYY-MM-DD">
+                    <label for="resume-intake-credential-expiration-precision">Expiration date detail</label>
+                    <select id="resume-intake-credential-expiration-precision"><option value="">From the date supplied</option><option value="year">Year</option><option value="month">Month</option><option value="day">Exact day</option></select>
                 </p>
                 <p data-accomplishment-field hidden>
                     <label for="resume-intake-wording">What you did</label>

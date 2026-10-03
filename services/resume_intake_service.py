@@ -54,6 +54,7 @@ from services.resume_draft_service import (
     ResumeDraftUnavailableError,
     ResumeDraftValidationError,
     resume_draft_service,
+    _normalize_draft_values,
 )
 from services.resume_intake_document_adapter import (
     DocumentIntakeError,
@@ -91,6 +92,7 @@ from services.resume_intake_proposals import (
 from services.resume_intake_repository import (
     COMMAND_PROCEDURES,
     InMemoryResumeIntakeRepository,
+    SqlIntakeUnitOfWork,
     ResumeIntakeStoreUnavailable,
     empty_intake_snapshot,
     validate_snapshot,
@@ -168,6 +170,8 @@ EDITOR_FIELDS = {
             "identifier",
             "issue_date",
             "expiration_date",
+            "issue_date_precision",
+            "expiration_date_precision",
             "verification_url",
             "completion_status",
         }
@@ -2183,13 +2187,29 @@ class ResumeIntakeService:
                 if target is None:
                     kind = "inferred_wording"
                     draft = {**draft, "kind": kind, "confidence": "uncertain"}
+                elif kind == "additional_detail":
+                    # Present the combined amendment for member review. A
+                    # confirmed append must not silently replace prior meaning.
+                    values = dict(draft.get('values') or {})
+                    for name in ('summary', 'wording'):
+                        existing_values = (target.get('proposed_values') if target.get('has_draft')
+                                           else target.get('values')) or {}
+                        existing = existing_values.get(name)
+                        addition = values.get(name)
+                        if existing and addition and addition not in existing:
+                            values[name] = existing.rstrip() + '\n' + addition
+                    draft = {**draft, 'values': values}
             proposal = self._make_proposal(
                 snapshot, plan, source, submission_key, submission_version, policy, command,
                 kind=kind,
                 target=target,
                 confidence=draft.get("confidence") or "uncertain",
                 record_type=draft.get("record_type") or "unspecified",
-                proposed_values=draft.get("values"),
+                proposed_values={**(draft.get("values") or {}),
+                    **({"suggested_category": draft["suggested_category"]}
+                       if draft.get("suggested_category") else {}),
+                    **({"suggested_parent_key": draft["parent_reference"]}
+                       if draft.get("parent_reference") else {})},
                 provided_fields=draft.get("provided_fields"),
                 quote=draft.get("quote"),
                 span_start=draft.get("span_start"),
@@ -2404,6 +2424,8 @@ class ResumeIntakeService:
                 "quote": candidate.quote,
                 "span_start": candidate.span_start,
                 "span_end": candidate.span_end,
+                "suggested_category": candidate.suggested_category,
+                "parent_reference": candidate.parent_reference,
             })
         return drafts, None
 
@@ -2489,9 +2511,18 @@ class ResumeIntakeService:
     def _save_new_fact(self, owner, snapshot, unit, plan, submission_key):
         record_key = _stable_key(submission_key, f"fact:{plan.client_key}")
         try:
-            normalized = normalize_editor_values(plan.record_type, plan.provided_values)
+            normalized = (_normalize_draft_values("knowledge", plan.provided_values)
+                          if plan.record_type == "knowledge"
+                          else normalize_editor_values(plan.record_type, plan.provided_values))
         except LivingResumeEditorValidationError as error:
             raise ResumeIntakeValidationError(str(error)) from error
+        if plan.record_type == 'knowledge' and isinstance(unit, SqlIntakeUnitOfWork):
+            raise ResumeIntakeValidationError('Guided personal stories are not supported by this storage yet. '
+                'Your input is kept. Use the existing personal-entry editor or the private local workspace.')
+        if (plan.record_type == 'credential' and isinstance(unit, SqlIntakeUnitOfWork)
+                and {'issue_date_precision', 'expiration_date_precision'} & set(normalized)):
+            from services.living_resume_editor_service import CREDENTIAL_PRECISION_UNAVAILABLE
+            raise ResumeIntakeValidationError(CREDENTIAL_PRECISION_UNAVAILABLE)
         item_request_id = _stable_key(submission_key, f"request:{plan.client_key}")
         payload = {
             "request_id": item_request_id,
@@ -2514,6 +2545,11 @@ class ResumeIntakeService:
             "expected_version": None,
             "values": normalized,
         }
+        boundary = "living_resume"
+        if plan.record_type == "knowledge":
+            boundary = "resume_draft"
+            callee_command = {k: v for k, v in payload.items() if k != "request_id"}
+            callee_command["request_digest"] = self.draft_service.command_digest(payload)
         projected = {
             "record_key": record_key,
             "record_type": plan.record_type,
@@ -2528,7 +2564,7 @@ class ResumeIntakeService:
         try:
             applied = unit.apply_canonical_command(
                 owner, payload, projected,
-                boundary="living_resume", request_id=item_request_id,
+                boundary=boundary, request_id=item_request_id,
                 callee_command=callee_command,
             )
         except ResumeDraftConflictError as error:
@@ -2559,7 +2595,9 @@ class ResumeIntakeService:
         values = dict((confirmed if confirmed is not None else proposal.get("confirmed_values")) or {})
         if record_type in {None, "unspecified"}:
             record_type = values.pop("record_type", None)
-        if record_type not in STRUCTURED_RECORD_TYPES:
+        if record_type not in STRUCTURED_RECORD_TYPES and not (
+                record_type == "knowledge" and proposal.get("record_type") == "unspecified"
+                and not target_key):
             raise ResumeIntakeConflictError(
                 "reconciliation_required",
                 [{"proposal_key": proposal["proposal_key"], "reason": "record_type_required"}],
@@ -2570,7 +2608,9 @@ class ResumeIntakeService:
         # only meaningful when creating a child; an overlay change keeps the
         # existing parent.
         supplied_parent = values.pop("parent_key", None)
-        unknown = set(values) - EDITOR_FIELDS[record_type]
+        fields = (frozenset({"title", "wording", "classification"})
+                  if record_type == "knowledge" else EDITOR_FIELDS[record_type])
+        unknown = set(values) - fields
         if unknown or (set(values) & FORBIDDEN_CLIENT_FIELDS):
             raise ResumeIntakeValidationError("Unknown value fields are not allowed.")
         if not target_key:
@@ -2609,9 +2649,13 @@ class ResumeIntakeService:
             normalized = normalize_editor_values(record_type, merged)
         except LivingResumeEditorValidationError as error:
             raise ResumeIntakeValidationError(str(error)) from error
-        partial = {name: normalized[name] for name in values}
+        partial = {name: normalized.get(name) for name in values}
         for name in clears:
             partial[name] = _empty_value(name)
+        if (record_type == 'credential' and isinstance(unit, SqlIntakeUnitOfWork)
+                and {'issue_date_precision', 'expiration_date_precision'} & set(partial)):
+            from services.living_resume_editor_service import CREDENTIAL_PRECISION_UNAVAILABLE
+            raise ResumeIntakeValidationError(CREDENTIAL_PRECISION_UNAVAILABLE)
         overlay_request_id = _stable_key(proposal["proposal_key"], "overlay")
         payload = {
             "request_id": overlay_request_id,

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "package": "PS-ONBOARDING-CONVERSATION-001",
+  "candidate_sha": "dfd939fc9e43e81b046df2d0fd15a3a6352677aa",
+  "reviewer_ref": "session:01a0ff30-3a6f-7b80-b1b0-ac455e3faf28",
+  "result": "pass",
+  "reviewed_at": "2026-10-03T13:54:47Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "id": "correction-recovery",
+      "description": "Matching failed correction cleared on acknowledged decision; newer words retained; three recovery browser journeys pass."
+    },
+    {
+      "status": "resolved",
+      "id": "sql-precision-clear",
+      "description": "Explicit clears checked before SQL staging; both precision keys refuse with retained workspace and zero intents/calls."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-ONBOARDING-CONVERSATION-001.md",
+  "review_type": "independent"
+}

@@ -134,6 +134,28 @@ class PurgeWinsResumeIntakeRepository(InMemoryResumeIntakeRepository):
             yield
 
 
+class ConversationSpanTests(unittest.TestCase):
+    def extract(self, text, quote):
+        return validate_extraction_payload({'candidates': [{
+            'record_type': 'role', 'values': {'role_title': 'Systems Engineer'},
+            'outcome': 'new', 'quote': quote}]}, text=text,
+            allowed_fields={'role': frozenset({'role_title'})})
+
+    def test_pdf_line_breaks_map_to_exact_original_unique_span(self):
+        text = 'Career\nSystems\u00a0 Engineer\nHarbor Labs, 2021–2024\nEducation'
+        row = self.extract(text, 'Systems Engineer Harbor Labs, 2021–2024')[0]
+        self.assertEqual(row.quote, 'Systems\u00a0 Engineer\nHarbor Labs, 2021–2024')
+        self.assertEqual(text[row.span_start:row.span_end], row.quote)
+
+    def test_substantive_mismatch_and_two_layout_matches_still_refuse(self):
+        for text, quote, code in [
+                ('Systems Engineer', 'Systems Enginer', 'span_quote_mismatch'),
+                ('Systems\nEngineer; Systems\tEngineer', 'Systems Engineer', 'ambiguous_quote')]:
+            with self.subTest(code=code), self.assertRaises(ExtractionError) as error:
+                self.extract(text, quote)
+            self.assertEqual(error.exception.code, code)
+
+
 class AdapterContractTests(unittest.TestCase):
     def test_outcome_vocabulary_is_closed(self):
         self.assertEqual(
@@ -1139,6 +1161,24 @@ class MatchedTargetBindingTests(unittest.TestCase):
             "Huntsville, Alabama",
         )
         self.assertEqual(self.role_count(catalog), 1)
+
+    def test_project_amendment_keeps_existing_meaning_and_requires_confirmation(self):
+        text='I also led the Beacon pilot at Northrop Grumman.'
+        fake=DeterministicFakeExtractionAdapter()
+        service,catalog=build_wired_service(extraction_adapter=fake,exclusions=lambda owner:set())
+        key=self.seed_role(service)
+        existing=catalog.get_item(self.owner,key)['values']['summary']
+        fake.scripted.append({'record_type':'role','values':{'summary':'Led the Beacon pilot.'},
+            'outcome':'additional_detail','quote':text,'match_reference':key,'confidence':'certain'})
+        receipt=service.submit(self.owner,add_request(text=text));proposal=receipt['proposals'][0]
+        self.assertEqual(proposal['target_key'],key)
+        self.assertEqual(proposal['proposed_values']['summary'],existing+'\nLed the Beacon pilot.')
+        self.assertEqual(catalog.get_item(self.owner,key)['values']['summary'],existing)
+        service.decide(self.owner,{'request_id':str(uuid4()),'proposal_key':proposal['proposal_key'],
+            'decision':'accept','confirmed_values':{'summary':proposal['proposed_values']['summary']}})
+        self.assertEqual(self.role_count(catalog),1)
+        self.assertEqual(service.draft_service.get_workspace(self.owner)['items'][0]['proposed_values']['summary'],
+            existing+'\nLed the Beacon pilot.')
 
     def test_contradiction_creates_a_targeted_proposal(self):
         text = "Systems Engineer at Example Corp"

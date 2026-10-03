@@ -21,6 +21,7 @@ compares against that shortlist only and returns one outcome per candidate:
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Any, Mapping, Sequence
 from uuid import uuid4
 
@@ -78,6 +79,8 @@ class ExtractionCandidate:
     match_reference: str | None = None
     provided_fields: tuple = ()
     confidence: str = "uncertain"
+    suggested_category: str | None = None
+    parent_reference: str | None = None
 
 
 def _nullable_string() -> dict:
@@ -112,6 +115,8 @@ EXTRACTED_VALUE_PROPERTIES: dict = {
     "identifier": _nullable_string(),
     "issue_date": _nullable_string(),
     "expiration_date": _nullable_string(),
+    "issue_date_precision": _nullable_string(),
+    "expiration_date_precision": _nullable_string(),
     "verification_url": _nullable_string(),
     "completion_status": _nullable_string(),
     "wording": _nullable_string(),
@@ -136,7 +141,7 @@ EXTRACTION_VALUE_FIELDS = {
                   "education_status", "grade_text", "location_text", "summary",
                   "start_date", "end_date", "date_precision"),
     "credential": ("name", "issuer", "identifier", "issue_date", "expiration_date",
-                   "verification_url", "completion_status"),
+                   "issue_date_precision", "expiration_date_precision", "verification_url", "completion_status"),
     "skill": ("name", "summary"),
     "accomplishment": ("wording", "metric_value", "metric_label"),
     "unspecified": ("text",),
@@ -151,6 +156,8 @@ def _typed_candidate_schema(record_type: str, fields: tuple) -> dict:
         "outcome": {"type": "string", "enum": sorted(EXTRACTION_OUTCOMES)},
         "match_reference": _nullable_string(),
         "confidence": {"type": ["string", "null"], "enum": ["certain", "uncertain", None]},
+        "suggested_category": {"type": ["string", "null"], "enum": ["story", "project", None]},
+        "parent_reference": _nullable_string(),
     })
 
 
@@ -170,10 +177,16 @@ EXTRACTION_INSTRUCTIONS = (
     "title/institution_name/degree_name/field_of_study/education_status/grade_text/"
     "location_text/summary/start_date/end_date/date_precision; credential for an "
     "explicit professional license or certification and its name/issuer/identifier/"
-    "issue_date/expiration_date/verification_url/completion_status; skill for a "
+    "issue_date/expiration_date/issue_date_precision/expiration_date_precision/verification_url/completion_status; skill for a "
     "stated capability with name/summary; accomplishment for an independently "
     "stated result with wording/metric_value/metric_label. Unsupported projects, "
     "volunteer work or other wording use unspecified.text, never new types. "
+    "Use suggested_category story for optional personal narrative and project for "
+    "a project/example. This is a routing suggestion, never canonical classification. "
+    "A project explicitly attributed to a listed role may propose accomplishment "
+    "wording with its stated result and metric; do not infer an unstated parent. "
+    "For an explicitly attributed accomplishment, parent_reference may name the exact "
+    "listed role record_key. Otherwise leave it null and ask for attribution. "
     "Group each position or education record with its own stated duties/results "
     "in one concise summary; do not split it into invented parent/child records "
     "or attach a result to a different employer. Emit one proposal per factual meaning: "
@@ -199,6 +212,9 @@ EXTRACTION_INSTRUCTIONS = (
     "Dates use ISO YYYY-MM-DD only for supplied precision: year uses YYYY-01-01 with "
     "date_precision year, month uses YYYY-MM-01 with date_precision month, explicit "
     "day uses day. These are codec placeholders, never invented exact-day claims. "
+    "Credential issue_date_precision and expiration_date_precision describe each date "
+    "independently as year, month or day using those same anchors. Never invent an "
+    "issue or expiration day from a supplied month/year. "
     "Missing dates remain null. current_role is boolean only for explicitly current "
     "or explicitly ended employment, otherwise null; never infer currentness from "
     "summary ordering or today's date. Do not turn an unknown course date into an "
@@ -277,7 +293,19 @@ def _validate_candidate(
             raise ExtractionError("span_quote_mismatch")
         span_start = text.find(quote)
         if span_start < 0:
-            raise ExtractionError("span_quote_mismatch")
+            # PDF layout can split one quoted passage across lines. Match only
+            # whitespace differences, then retain the ORIGINAL contiguous span.
+            # Never repair spelling, punctuation, missing words or attribution.
+            parts = re.split(r"(\s+)", quote)
+            pattern = "".join(r"\s+" if part.isspace() else re.escape(part)
+                              for part in parts if part)
+            matches = list(re.finditer(pattern, text))
+            if not matches:
+                raise ExtractionError("span_quote_mismatch")
+            if len(matches) != 1:
+                raise ExtractionError("ambiguous_quote")
+            span_start, span_end = matches[0].span()
+            quote = text[span_start:span_end]
         if text.find(quote, span_start + 1) >= 0:
             raise ExtractionError("ambiguous_quote")
         span_end = span_start + len(quote)
@@ -324,6 +352,13 @@ def _validate_candidate(
         confidence = "uncertain"
     if not isinstance(confidence, str) or confidence not in {"certain", "uncertain"}:
         raise ExtractionError("unknown_confidence")
+    category = raw.get("suggested_category")
+    if category is not None and (not isinstance(category, str) or category not in {"story", "project"}):
+        raise ExtractionError("unknown_category")
+    parent = raw.get("parent_reference")
+    if parent is not None and (not isinstance(parent, str) or record_type != 'accomplishment' or parent not in shortlist
+                              or shortlist[parent].get('record_type') != 'role'):
+        raise ExtractionError('unknown_parent_reference')
     return ExtractionCandidate(
         record_type=record_type,
         values=dict(values),
@@ -334,6 +369,8 @@ def _validate_candidate(
         match_reference=match_reference if isinstance(match_reference, str) else None,
         provided_fields=provided,
         confidence=confidence,
+        suggested_category=category,
+        parent_reference=parent,
     )
 
 
@@ -353,7 +390,8 @@ def validate_extraction_payload(
         raise ExtractionError("malformed_candidates")
     index = _shortlist_index(shortlist)
     # Validate the complete raw batch before any duplicate reduction. An invalid
-    # duplicate still rejects every candidate; no quote is repaired or weakened.
+    # duplicate still rejects every candidate; only whitespace layout can map
+    # a quote back to its exact original contiguous source span.
     validated = [
         _validate_candidate(
             raw, text=text, allowed_fields=allowed_fields, shortlist=index

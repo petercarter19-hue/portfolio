@@ -28,6 +28,15 @@ EDU_KEY = str(UUID(int=12, version=4))
 
 
 class SqlStoryIdentityTests(unittest.TestCase):
+    def test_sql_draft_refuses_credential_precision_before_read_or_write(self):
+        database=Mock()
+        service=ResumeDraftService(repository=SqlResumeDraftRepository(database),catalog=Mock())
+        with self.assertRaisesRegex(ResumeDraftValidationError,'input is kept'):
+            service.commit(OWNER_A,{'type':'save_item','request_id':str(uuid4()),'record_key':ROLE_KEY,
+                'record_type':'credential','expected_content_token':'1','expected_access_revision':1,
+                'values':{'issue_date':'2022-06-01','issue_date_precision':'month'}})
+        database.execute_procedure.assert_not_called()
+
     def test_same_story_uuid_has_one_canonical_key_across_driver_representations(self):
         key = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
         for supplied in (key, key.upper(), UUID(key), None):

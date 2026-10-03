@@ -69,6 +69,29 @@ def _create_role(policy, owner, summary="Led team 0.", display=True, visitor_ai=
 
 @unittest.skipUnless(sync_playwright and CHROME_EXECUTABLE, "pinned Chromium is unavailable")
 class ResumePublicationBrowserTests(unittest.TestCase):
+    def test_direct_private_preview_includes_private_facts_without_permission_or_provider_mutation(self):
+        import copy
+        original_flag=self.app.config.get('PEERSLATE_MEMBER_VISITOR_AI_ENABLED')
+        self.app.config['PEERSLATE_MEMBER_VISITOR_AI_ENABLED']=True
+        self.addCleanup(self.app.config.__setitem__,'PEERSLATE_MEMBER_VISITOR_AI_ENABLED',original_flag)
+        key=_create_role(self.policy,self.owner,summary='Direct private draft.',display=False,visitor_ai=False)
+        before=(copy.deepcopy(self.policy.repository.load_owner(self.owner)),
+                copy.deepcopy(self.service.repository.load_owner(self.owner)))
+        page=self._owner_page();self.addCleanup(page.close)
+        provider_requests=[]
+        page.on('request',lambda request: provider_requests.append(request.url)
+            if '/visitor-ai/' in request.url or '/resume-synthesis/' in request.url else None)
+        page.goto(f'{self._origin()}/app/resume/publication?preview=private')
+        page.locator('#resume-private-preview:not([hidden]) .resume-publication__guest').wait_for()
+        self.assertIn('Direct private draft.',page.locator('#resume-private-preview-content').inner_text())
+        self.assertTrue(page.locator(f'[data-entry-key="{key}"] [data-permission="resume_display"]').is_checked())
+        self.assertFalse(page.locator('#resume-publication-publish-button').is_visible())
+        self.assertFalse(page.locator('#visitor-ai-panel').is_visible())
+        self.assertEqual(page.locator('#visitor-ai-panel,#visitor-ai-open').count(),0)
+        self.assertFalse(page.locator(f'[data-entry-key="{key}"] [data-permission="visitor_ai"]').is_visible())
+        self.assertEqual(provider_requests,[])
+        self.assertEqual(before,(self.policy.repository.load_owner(self.owner),self.service.repository.load_owner(self.owner)))
+
     def test_private_composition_preview_uses_temporary_choices_and_returns_keyboard_focus(self):
         import copy
         key = _create_role(self.policy,self.owner,summary="Private preview-only wording.",display=False,visitor_ai=False)
@@ -104,7 +127,11 @@ class ResumePublicationBrowserTests(unittest.TestCase):
         self.assertFalse(page.locator("#resume-private-preview").is_visible())
         self.assertEqual(page.evaluate("document.activeElement.id"),"resume-publication-preview-button")
         page.locator(f'[data-entry-key="{key}"] [data-permission="resume_display"]').uncheck()
-        self.assertTrue(page.locator("#resume-publication-preview-button").is_disabled())
+        self.assertFalse(page.locator("#resume-publication-preview-button").is_disabled())
+        page.locator("#resume-publication-preview-button").click()
+        page.locator("#resume-private-preview:not([hidden])").wait_for()
+        self.assertNotIn("Private preview-only wording.",page.locator("#resume-private-preview-content").inner_text())
+        self.assertEqual(before,(self.policy.repository.load_owner(self.owner),self.service.repository.load_owner(self.owner)))
 
     @classmethod
     def setUpClass(cls):

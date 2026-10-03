@@ -88,9 +88,10 @@
                     'education_status', 'grade_text', 'location_text', 'summary',
                     'start_date', 'end_date', 'date_precision'],
         credential: ['name', 'issuer', 'identifier', 'issue_date', 'expiration_date',
-                     'verification_url', 'completion_status'],
+                     'issue_date_precision', 'expiration_date_precision', 'verification_url', 'completion_status'],
         skill: ['name', 'summary'],
-        accomplishment: ['wording', 'metric_value', 'metric_label']
+        accomplishment: ['wording', 'metric_value', 'metric_label'],
+        knowledge: ['title', 'wording', 'classification']
     };
     var FIELD_INPUTS = {
         role: {role_title: 'resume-intake-role-title', employer_name: 'resume-intake-employer',
@@ -103,7 +104,8 @@
                     start_date: 'resume-intake-education-start', end_date: 'resume-intake-education-end'},
         credential: {name: 'resume-intake-credential', issuer: 'resume-intake-issuer',
                      completion_status: 'resume-intake-credential-status',
-                     issue_date: 'resume-intake-credential-issue-date'},
+                     issue_date: 'resume-intake-credential-issue-date', expiration_date: 'resume-intake-credential-expiration-date',
+                     issue_date_precision: 'resume-intake-credential-issue-precision', expiration_date_precision: 'resume-intake-credential-expiration-precision'},
         accomplishment: {wording: 'resume-intake-wording'}
     };
     var REQUIRED_HINT = {
@@ -118,7 +120,7 @@
         skill: ['name'],
         education: ['title', 'institution_name', 'education_status'],
         credential: ['name', 'issuer', 'completion_status'],
-        accomplishment: ['wording']
+        accomplishment: ['wording'], knowledge: ['title', 'wording', 'classification']
     };
 
     var queuedFacts = [];
@@ -134,6 +136,16 @@
     var microphonePending = false;
     var heldRecording = null;
     var proposals = [];
+    var selectedProposalKey = null;
+    var newestProposalKeys = [];
+    var ownerCatalog = [];
+    var correctionTarget = null;
+    var correctionInputs = {};
+    var correctionDraft = null;
+    var pendingCorrection = null;
+    var conversationIntent = null;
+    var lastAcknowledgement = '';
+    var lastConfirmedKey = null;
     var proposalDrafts = {};
     var screen = 'welcome';
     var initialized = false;
@@ -175,6 +187,7 @@
             })
             .then(function (payload) {
                 if (!Array.isArray(payload.items)) throw new Error('Workspace unavailable');
+                ownerCatalog = payload.items.slice();
                 if (!catalogLoaded) {
                     acknowledgedFacts = payload.items.length;
                     catalogLoaded = true;
@@ -189,7 +202,7 @@
                 });
                 return parentCandidates;
             })
-            .catch(function () { return []; });
+            .catch(function () { ownerCatalog = []; parentCandidates = []; return []; });
     }
 
     function fillParentSelect(select) {
@@ -221,7 +234,8 @@
             queuedFacts.length ||
             attachments.some(function (row) { return row.status !== 'cancelled'; }) ||
             microphonePending || (recorder && recorder.state === 'recording') ||
-            heldRecording || pendingAdd || pendingDecision || Object.keys(proposalDrafts).length
+            heldRecording || pendingAdd || pendingDecision || pendingCorrection ||
+            Object.values(correctionInputs).some(function (value) { return Boolean(value.trim()); }) || Object.keys(proposalDrafts).length
         );
     }
 
@@ -231,7 +245,7 @@
         }
         draftLabel.textContent = hasUnsavedInput()
             ? 'Draft answer \u00b7 Not added yet'
-            : 'Nothing waiting \u00b7 Nothing added yet';
+            : (proposals.length + ' suggestions to review · ' + acknowledgedFacts + ' saved privately');
     }
 
     function protectNavigation() {
@@ -339,7 +353,7 @@
     function labelFor(type) {
         return {
             role: 'Role', skill: 'Strength', education: 'Education',
-            credential: 'Credential', accomplishment: 'Impact'
+            credential: 'Credential', accomplishment: 'Impact', knowledge: 'Personal story', unspecified: 'Unsorted words'
         }[type] || type;
     }
 
@@ -370,7 +384,22 @@
             if (precision === 'year') values[name] += '-01-01';
             if (precision === 'month') values[name] += '-01';
         });
+        if (type === 'credential') encodeCredentialDates(values);
         return values;
+    }
+
+    function encodeCredentialDates(values) {
+        ['issue_date', 'expiration_date'].forEach(function (name) {
+            if (!values[name]) { if (Object.prototype.hasOwnProperty.call(values, name + '_precision')) values[name + '_precision'] = null; return; }
+            var raw = String(values[name]), precision = values[name + '_precision'] || ({4: 'year', 7: 'month', 10: 'day'})[raw.length];
+            var length = {year: 4, month: 7, day: 10}[precision];
+            if (!length || raw.length !== length || !({4: /^\d{4}$/, 7: /^\d{4}-\d{2}$/, 10: /^\d{4}-\d{2}-\d{2}$/}[length]).test(raw))
+                throw new Error('Use the credential date detail you know: YYYY, YYYY-MM or YYYY-MM-DD.');
+            values[name] = raw + (length === 4 ? '-01-01' : length === 7 ? '-01' : '');
+            // Legacy exact-day commands keep their existing contract.
+            if (precision === 'day') delete values[name + '_precision'];
+            else values[name + '_precision'] = precision;
+        });
     }
 
     function fieldsForType(type) {
@@ -601,6 +630,7 @@
         field_of_study: 'Field of study', education_status: 'Education status', grade_text: 'Grade',
         name: 'Name', issuer: 'Issuer', identifier: 'Identifier', issue_date: 'Issue date',
         expiration_date: 'Expiration date', verification_url: 'Verification link',
+        issue_date_precision: 'Issue date detail', expiration_date_precision: 'Expiration date detail',
         completion_status: 'Credential status', wording: 'Contribution', metric_value: 'Result', metric_label: 'Result measure'
     };
     var CHOICES = {
@@ -610,6 +640,7 @@
         education_status: ['in_progress', 'completed', 'planned', 'admitted', 'paused', 'withdrawn'],
         completion_status: ['in_progress', 'planned', 'completed']
     };
+    CHOICES.issue_date_precision = CHOICES.expiration_date_precision = [['year', 'Year'], ['month', 'Month'], ['day', 'Exact day']];
     function node(tag, text, className) {
         var el = document.createElement(tag);
         if (text !== undefined) el.textContent = text;
@@ -628,6 +659,7 @@
         loadParentCandidates().then(function () { fillParentSelect(parentSelect); });
     }
     function showScreen(next, focus) {
+        if (next !== screen) setStatus('', 'ok');
         if (screen === 'input' && next !== 'input' && microphonePending) {
             recordingGeneration += 1; microphonePending = false; syncRecordingCancel();
         }
@@ -669,6 +701,11 @@
             if (values.date_precision === 'year') return String(value).slice(0, 4);
             if (values.date_precision === 'month') return String(value).slice(0, 7);
         }
+        if (name === 'issue_date' || name === 'expiration_date') {
+            var precision = values[name + '_precision'];
+            if (precision === 'year') return String(value).slice(0, 4);
+            if (precision === 'month') return String(value).slice(0, 7);
+        }
         return typeof value === 'string' && CHOICES[name] ? value.replace(/_/g, ' ') : String(value);
     }
     function renderProposals(rows, preserveScreen) {
@@ -681,12 +718,20 @@
         document.getElementById('resume-intake-review-pending').hidden = !proposals.length;
         if (preserveScreen) return;
         proposalList.replaceChildren();
+        var oldSuggestionOverview = document.getElementById('resume-intake-suggestion-overview');
+        if (oldSuggestionOverview) oldSuggestionOverview.remove();
         if (!proposals.length) return;
-        var proposal = pendingDecision ? pendingDecision.proposal : proposals[0];
-        var proposed = proposal.proposed_values || {};
+        var proposal = pendingDecision ? pendingDecision.proposal :
+            proposals.find(function (row) { return row.proposal_key === selectedProposalKey; }) ||
+            proposals.find(function (row) { return newestProposalKeys.indexOf(row.proposal_key) !== -1; }) || proposals[0];
+        selectedProposalKey = proposal.proposal_key;
+        var proposed = Object.assign({}, proposal.proposed_values || {});
+        var known = ownerCatalog.find(function (row) { return row.record_key === proposal.target_key; });
+        if (known) proposed = Object.assign({}, known.has_draft ? known.proposed_values : known.values, proposed);
         var fixedType = FIELDS[proposal.record_type] ? proposal.record_type : null;
         var draft = proposalDrafts[proposal.proposal_key];
-        var type = fixedType || (draft && draft.type) || '';
+        var type = fixedType || (draft && draft.type) ||
+            (proposed.suggested_category === 'story' ? 'knowledge' : '');
         var item = node('li');
         var group = node('div', undefined, 'resume-intake__inset');
         var facts = node('dl', undefined, 'resume-intake__review-facts');
@@ -695,7 +740,7 @@
         var initial = {};
         var typeField = null;
         var parentField = null;
-        var correcting = !fixedType;
+        var correcting = !fixedType || Boolean(draft);
         var dirty = {};
         function field(name, choices) {
             var wrap = node('p');
@@ -705,8 +750,12 @@
             input.setAttribute('data-proposal-field', name);
             label.htmlFor = input.id;
             var value = proposed[name];
-            if (!fixedType && name === ({role: 'role_title', education: 'title', skill: 'name', credential: 'name', accomplishment: 'wording'}[type])) {
-                value = proposed.text || proposal.quote || '';
+            if (!fixedType && name === 'wording') {
+                value = proposed[name] || proposed.text || proposal.quote || '';
+            }
+            if (!fixedType && type === 'knowledge') {
+                if (name === 'title') value = proposed.title || 'My story';
+                if (name === 'classification') value = 'personal';
             }
             if (choices) {
                 input.appendChild(new Option('Not supplied', ''));
@@ -723,7 +772,7 @@
                 input.value = value == null ? '' : displayValue(name, value, proposed);
                 if (input.tagName === 'INPUT') input.type = 'text';
                 if (name === 'start_date' || name === 'end_date') input.placeholder = 'YYYY, YYYY-MM or YYYY-MM-DD';
-                if (name === 'issue_date' || name === 'expiration_date') input.placeholder = 'YYYY-MM-DD';
+                if (name === 'issue_date' || name === 'expiration_date') input.placeholder = 'YYYY, YYYY-MM or YYYY-MM-DD';
             }
             initial[name] = input.value;
             if (draft && draft[type] && Object.prototype.hasOwnProperty.call(draft[type], name)) input.value = draft[type][name];
@@ -767,6 +816,8 @@
                     var completed = inputs.completion_status.value === 'completed';
                     inputs.issue_date.parentNode.hidden = !completed;
                     inputs.expiration_date.parentNode.hidden = !completed;
+                    inputs.issue_date_precision.parentNode.hidden = !completed;
+                    inputs.expiration_date_precision.parentNode.hidden = !completed;
                     dateNote.hidden = completed;
                 }
                 inputs.completion_status.addEventListener('change', syncCredentialDates);
@@ -777,7 +828,17 @@
                 parentField.id = 'resume-proposal-parent'; label.htmlFor = parentField.id;
                 var relationship = parentField;
                 function rememberedParent() {
-                    return draft && Object.prototype.hasOwnProperty.call(draft, 'parent_key') ? draft.parent_key : (proposal.parent_key || '');
+                    if (draft && Object.prototype.hasOwnProperty.call(draft, 'parent_key')) return draft.parent_key;
+                    if (proposed.suggested_parent_key || proposal.parent_key) return proposed.suggested_parent_key || proposal.parent_key;
+                    // Suggest only a uniquely named eligible role from this
+                    // source passage. The member still confirms attribution.
+                    var named = ownerCatalog.filter(function (row) {
+                        var values = row.has_draft ? row.proposed_values : row.values;
+                        var employer = values && values.employer_name;
+                        return parentCandidates.some(function (parent) { return parent.record_key === row.record_key; }) &&
+                            employer && (proposal.quote || '').toLowerCase().indexOf(employer.toLowerCase()) !== -1;
+                    });
+                    return named.length === 1 ? named[0].record_key : '';
                 }
                 fillParentSelect(relationship); relationship.value = rememberedParent();
                 relationship.addEventListener('change', function () {
@@ -815,11 +876,33 @@
         group.append(facts, correction); item.appendChild(group);
         item.appendChild(node('p', proposal.target_key ? 'Suggested change to an existing entry' : fixedType ? 'Suggested ' + labelFor(type).toLowerCase() + ' · not saved yet' : 'Your words · choose where they belong', 'resume-intake__proposal-source'));
         if (proposal.quote) item.appendChild(node('p', '“' + proposal.quote + '”', 'resume-intake__proposal-quote'));
+        if (proposed.suggested_category === 'project' || (draft && draft.destination === 'project')) {
+            var projectHint = node('p', 'For a contribution to a role, choose Impact and confirm its role. For a standalone project, add it privately in My Data. Your original words stay here for review.', 'resume-intake__hint');
+            var projectLink = node('a', 'Add a private project in My Data'); projectLink.href = '/app/my-data';
+            projectHint.appendChild(projectLink); item.appendChild(projectHint);
+        }
         var actions = node('div', undefined, 'resume-intake__proposal-actions');
         var accept = node('button', 'Confirm details', 'resume-intake__add'); accept.type = 'button';
         var edit = node('button', 'Change something', 'resume-intake__secondary'); edit.type = 'button';
+        var manualEdit = node('button', 'Edit fields manually', 'resume-intake__quiet'); manualEdit.type = 'button';
         var reject = node('button', 'Leave this out', 'resume-intake__quiet'); reject.type = 'button';
-        actions.append(accept, edit); item.append(actions, reject); proposalList.appendChild(item);
+        actions.append(accept, edit); item.append(actions, manualEdit, reject); proposalList.appendChild(item);
+        var overview = node('div', undefined, 'resume-intake__quiet-actions');
+        if (lastAcknowledgement) overview.appendChild(node('p', lastAcknowledgement, 'resume-intake__hint'));
+        overview.setAttribute('aria-label', 'Choose a suggestion');
+        proposals.forEach(function (row) {
+            var values = row.proposed_values || {};
+            var choice = node('button', (newestProposalKeys.indexOf(row.proposal_key) !== -1 ? 'New: ' : '') +
+                (values.role_title || values.title || values.name || values.wording || values.suggested_category || 'Your words').slice(0, 80), 'resume-intake__quiet');
+            choice.type = 'button'; choice.disabled = Boolean(pendingDecision);
+            choice.setAttribute('aria-pressed', String(row.proposal_key === proposal.proposal_key));
+            choice.addEventListener('click', function () { selectedProposalKey = row.proposal_key; renderProposals(proposals); });
+            overview.appendChild(choice);
+        });
+        proposalList.before(overview);
+        var oldOverview = document.getElementById('resume-intake-suggestion-overview');
+        if (oldOverview) oldOverview.remove();
+        overview.id = 'resume-intake-suggestion-overview';
         document.getElementById('resume-intake-review-position').textContent = proposals.length === 1 ? 'One group of details to review' : proposals.length + ' groups to review · one at a time';
         function syncCorrection() {
             correction.hidden = !correcting; facts.hidden = correcting;
@@ -829,7 +912,20 @@
             reject.disabled = Boolean(pendingDecision);
             showScreen(correcting ? 'correction' : 'review', false);
         }
-        edit.addEventListener('click', function () { correcting = true; syncCorrection(); correction.querySelector('input,textarea,select').focus(); });
+        manualEdit.addEventListener('click', function () { correcting = true; syncCorrection(); correction.querySelector('input,textarea,select').focus(); });
+        edit.addEventListener('click', function () {
+            if (pendingDecision || (pendingCorrection && pendingCorrection.proposal_key !== proposal.proposal_key)) {
+                setStatus('Recover the earlier correction before starting another. Your words are kept; manual fields remain available.', 'error'); return;
+            }
+            if ((textarea.value || '').trim()) {
+                setStatus('Your unfinished answer is kept. Finish it first, or edit these fields manually.', 'ok'); return;
+            }
+            correctionTarget = proposal; correctionDraft = textarea.value; textarea.value = correctionInputs[proposal.proposal_key] || '';
+            showScreen('input');
+            questionPrompt.textContent = 'What should I change about this suggestion?';
+            questionContext.textContent = 'Say or type a correction. We will show the changes before you confirm. You can also edit the fields manually.';
+            questionContext.hidden = false; textarea.focus(); refreshDraftLabel();
+        });
         function confirmedValues() {
             if (!FIELDS[type]) throw new Error('Choose where these words belong before confirming.');
             var values = {};
@@ -858,9 +954,11 @@
             });
             if (type === 'role' && values.current_role === true && values.end_date) throw new Error('A current role has no end date. Clear it or choose Past role.');
             if (type === 'credential') {
+                encodeCredentialDates(values);
                 if (values.completion_status === 'completed' && !values.issue_date) throw new Error('Add the issue date for a completed credential.');
                 if (values.completion_status && values.completion_status !== 'completed') {
                     values.issue_date = null; values.expiration_date = null;
+                    delete values.issue_date_precision; delete values.expiration_date_precision;
                 }
             }
             if (!fixedType) values.record_type = type;
@@ -892,11 +990,22 @@
                     throw new Error('Confirmation is not acknowledged. Retry the same decision.');
                 }
                 pendingDecision = null;
+                if (pendingCorrection && pendingCorrection.proposal_key === proposal.proposal_key) {
+                    var retainedCorrection = correctionInputs[proposal.proposal_key] || '';
+                    if (retainedCorrection && retainedCorrection !== pendingCorrection.statement &&
+                        textarea.value.indexOf(retainedCorrection) === -1)
+                        textarea.value += (textarea.value ? '\n\n' : '') + retainedCorrection;
+                    pendingCorrection = null;
+                }
                 delete proposalDrafts[proposal.proposal_key];
+                delete correctionInputs[proposal.proposal_key];
+                if (payload.outcome === 'saved') lastConfirmedKey = (payload.item || {}).record_key || proposal.target_key || null;
                 if (payload.outcome === 'saved') factSaved();
                 proposals = proposals.filter(function (p) { return p.proposal_key !== proposal.proposal_key; });
                 if (proposals.length) { renderProposals(proposals); showScreen(screen); }
                 else { proposalList.replaceChildren(); showScreen(payload.outcome === 'saved' ? 'next' : 'input'); }
+                refreshDraftLabel();
+                if (!proposals.length) { var overview = document.getElementById('resume-intake-suggestion-overview'); if (overview) overview.remove(); }
                 setStatus(payload.outcome === 'saved' ? 'Saved privately. Sharing settings are unchanged.' : 'Left out. Nothing was saved.', 'ok');
             }).catch(function (error) {
                 setStatus(error.message || 'The response was lost. Retry the same confirmation; it will not create a duplicate.', 'error');
@@ -1046,8 +1155,62 @@
             })
         };
     }
+    function submitCorrection() {
+        if (interviewBusy || pendingAdd || decisionBusy) return;
+        if (microphonePending || (recorder && recorder.state === 'recording') || heldRecording ||
+            attachments.some(function (row) { return row.kind === 'recording' && row.status !== 'cancelled' && !row.source_key; })) {
+            setStatus('Stop recording and review the transcript before continuing. Your words and audio are kept.', 'error'); return;
+        }
+        if (!(textarea.value || '').trim()) { setStatus('Say or type what should change.', 'ok'); return; }
+        if (root.getAttribute('data-interview-enabled') !== 'true') {
+            setStatus('Conversational correction is unavailable. Your words are kept; use Edit fields manually.', 'error'); return;
+        }
+        var target = correctionTarget;
+        var statement = textarea.value;
+        interviewBusy = true; addButton.disabled = true;
+        var prepare = pendingCorrection ? Promise.resolve(pendingCorrection) : send(editorLists.getAttribute('data-workspace-url')).then(function (result) {
+            if (!result.response.ok || !Number.isInteger(result.payload.draft_version)) throw new Error('Your private context is unavailable. Your correction is kept.');
+            pendingCorrection = {request_id: requestId(), expected_draft_version: result.payload.draft_version,
+                proposal_key: target.proposal_key, statement: statement};
+            return pendingCorrection;
+        });
+        prepare.then(function (attempt) { return postJson(urls.interview, attempt); }).then(function (result) {
+            if (!result.response.ok) {
+                if ([400, 404, 409].indexOf(result.response.status) !== -1) pendingCorrection = null;
+                throw new Error(result.payload.message || 'Your correction could not be organized. Your words are kept.');
+            }
+            var data = result.payload, attempt = pendingCorrection;
+            if (data.success !== true || data.saved !== false || data.publishes !== false ||
+                data.base_revision !== attempt.expected_draft_version || !Array.isArray(data.candidates)) throw new Error('No valid correction arrived. Your words are kept.');
+            var candidates = data.candidates.filter(function (candidate) { return FIELDS[candidate.record_type] &&
+                (target.record_type === 'unspecified' || candidate.record_type === target.record_type); });
+            pendingCorrection = null;
+            if (candidates.length !== 1) {
+                questionPrompt.textContent = data.next_question || 'Which detail should I change?';
+                setStatus(data.response || 'I need one clearer detail before proposing a change.', 'ok'); return;
+            }
+            var candidate = candidates[0], draft = proposalDrafts[target.proposal_key] || {type: candidate.record_type};
+            draft.type = candidate.record_type;
+            draft[candidate.record_type] = Object.assign({}, draft[candidate.record_type] || {});
+            Object.keys(candidate.values).forEach(function (name) {
+                if (FIELDS[candidate.record_type].indexOf(name) !== -1 && candidate.values[name] !== null)
+                    draft[candidate.record_type][name] = CHOICES[name] ? String(candidate.values[name]) : displayValue(name, candidate.values[name], Object.assign({}, target.proposed_values, candidate.values));
+            });
+            proposalDrafts[target.proposal_key] = draft;
+            selectedProposalKey = target.proposal_key;
+            correctionTarget = null;
+            if (textarea.value === attempt.statement) textarea.value = correctionDraft || '';
+            else correctionInputs[target.proposal_key] = textarea.value;
+            if (textarea.value === (correctionDraft || '')) delete correctionInputs[target.proposal_key];
+            correctionDraft = null;
+            renderProposals(proposals);
+            setStatus((data.response || 'I updated the suggestion.') + ' Review the fields and confirm when they are right. Nothing is saved yet.', 'ok');
+        }).catch(function (error) { setStatus(error.message, 'error'); })
+        .finally(function () { interviewBusy = false; addButton.disabled = false; refreshDraftLabel(); });
+    }
     function submit(event, mode) {
         if (event) event.preventDefault();
+        if (mode === 'guide' && correctionTarget) { submitCorrection(); return; }
         mode = mode || 'guide';
         if (addOperation) return;
         if (pendingAdd && pendingAdd.mode !== mode) {
@@ -1084,6 +1247,24 @@
                 throw new Error('No valid receipt arrived. Retry to recover the same request.');
             }
             pendingAdd = null;
+            newestProposalKeys = (receipt.proposals || []).map(function (row) { return row.proposal_key; });
+            if (!newestProposalKeys.length) receipt.results.forEach(function (row) {
+                newestProposalKeys = newestProposalKeys.concat(row.proposal_keys || []);
+            });
+            selectedProposalKey = newestProposalKeys[0] || selectedProposalKey;
+            var groups = {};
+            (receipt.proposals || []).forEach(function (row) {
+                if (row.record_type === 'unspecified' && conversationIntent === 'story' &&
+                    !(row.proposed_values || {}).suggested_category)
+                    proposalDrafts[row.proposal_key] = proposalDrafts[row.proposal_key] || {type: 'knowledge'};
+                if (row.record_type === 'unspecified' && conversationIntent === 'project')
+                    proposalDrafts[row.proposal_key] = proposalDrafts[row.proposal_key] || {destination: 'project'};
+                var label = (row.proposed_values || {}).suggested_category || labelFor(row.record_type);
+                groups[label] = (groups[label] || 0) + 1;
+            });
+            lastAcknowledgement = 'I received your answer. ' + (Object.keys(groups).length
+                ? 'I organized ' + Object.keys(groups).map(function (label) { return groups[label] + ' ' + label.toLowerCase(); }).join(', ') + '.'
+                : newestProposalKeys.length + ' suggestions are ready.') + ' Review before saving.';
             renderReceipt(receipt);
             var failure = receipt.results.filter(function (row) { return row.outcome === 'failed' || row.outcome === 'pending'; });
             var acknowledged = receipt.results.filter(function (row) {
@@ -1100,8 +1281,8 @@
             var savedCount = receipt.results.filter(function (row) { return row.outcome === 'saved'; }).length;
             if (savedCount) factSaved(savedCount);
             renderQueued(); renderAttachments(); refreshDraftLabel();
-            setStatus(failure.length ? (receipt.message || 'Some input still needs attention.') : (attempt.mode === 'guide' ? 'Ready for your review.' : (receipt.message || 'Saved privately.')), failure.length ? 'error' : 'ok');
-            return load().then(function () {
+            setStatus(failure.length ? (receipt.message || 'Some input still needs attention.') : (attempt.mode === 'guide' ? 'I received your answer. ' + newestProposalKeys.length + ' new suggestions are ready for your review; nothing is saved yet.' : (receipt.message || 'Saved privately.')), failure.length ? 'error' : 'ok');
+            return loadParentCandidates().then(load).then(function () {
                 if (attempt.mode === 'guide' && !guideHidden) {
                     if (failure.length || (textarea.value || '').trim()) showScreen('input');
                     else if (proposals.length) { renderProposals(proposals); showScreen(screen); }
@@ -1365,6 +1546,7 @@
     }
     function nextQuestion() {
         if (interviewBusy) return;
+        if (correctionTarget) { setStatus('Review this correction or return to the suggestion before asking another question. Your words are kept.', 'ok'); return; }
         showScreen('input');
         if (root.getAttribute('data-interview-enabled') !== 'true') {
             questionPrompt.textContent = 'What contribution are you proud of, and what changed because of it?';
@@ -1380,7 +1562,9 @@
             // This is a guidance request, not an invented member statement.
             // Full source words are submitted separately through explicit Continue.
             pendingInterview = {request_id: requestId(), expected_draft_version: result.payload.draft_version,
-                statement: 'Help me continue my résumé interview using my saved experience. Ask one short, useful follow-up question. I can skip any question.'};
+                statement: 'Help me continue my résumé interview using my saved experience. ' +
+                    (lastConfirmedKey ? 'Focus on the most recently confirmed entry ' + lastConfirmedKey + '. ' : '') +
+                    'Ask one short question about a genuine gap or a useful new example. Do not ask again for known employers, dates or relationships. I can ask another question or finish this section.'};
             return pendingInterview;
         });
         prepare.then(function (attempt) { return postJson(urls.interview, attempt); }).then(function (result) {
@@ -1408,7 +1592,7 @@
         }).finally(function () {
             interviewBusy = false; document.getElementById('resume-intake-next-question').disabled = false;
             document.getElementById('resume-intake-new-question').disabled = false;
-            document.getElementById('resume-intake-new-question').textContent = pendingInterview ? 'Try guidance again' : 'Suggest a question';
+            document.getElementById('resume-intake-new-question').textContent = pendingInterview ? 'Try guidance again' : 'Ask another question';
         });
     }
     function on(id, action) {
@@ -1454,7 +1638,7 @@
             return;
         }
         if (type === 'credential' && values.completion_status !== 'completed') {
-            delete values.issue_date;
+            ['issue_date', 'expiration_date', 'issue_date_precision', 'expiration_date_precision'].forEach(function (name) { delete values[name]; });
         }
         var parentKey = null;
         if (type === 'accomplishment') {
@@ -1549,19 +1733,25 @@
     on('start-type', function () { showScreen('input'); textarea.focus(); });
     on('start-upload', function () { showScreen('input'); fileInput.click(); });
     on('start-voice', function () { showScreen('input'); startRecording(); });
-    on('back', function () { showScreen(screen === 'input' ? 'welcome' : screen === 'sharing' ? 'optional' : 'input'); });
+    function leaveCorrection() {
+        if (!correctionTarget || interviewBusy) return false;
+        correctionInputs[correctionTarget.proposal_key] = textarea.value;
+        textarea.value = correctionDraft || ''; correctionDraft = null; correctionTarget = null;
+        refreshDraftLabel(); return true;
+    }
+    on('back', function () { if (leaveCorrection()) renderProposals(proposals); else showScreen(screen === 'input' ? 'welcome' : screen === 'sharing' ? 'optional' : 'input'); });
     on('next-question', nextQuestion);
     on('new-question', nextQuestion);
     on('retry-guide', function () { if (pendingGuide) setGuideStatus(pendingGuide.status); });
-    on('review-pending', function () { renderProposals(proposals); });
-    on('skip-question', function () { seenQuestions.push(questionPrompt.textContent); showScreen('optional'); });
-    on('input-finish', function () { showScreen('optional'); });
+    on('review-pending', function () { if (interviewBusy) return; leaveCorrection(); renderProposals(proposals); });
+    on('skip-question', function () { seenQuestions.push(questionPrompt.textContent); nextQuestion(); });
+    on('input-finish', function () { if (interviewBusy) return; leaveCorrection(); showScreen('optional'); });
     on('next-finish', function () { showScreen('optional'); });
     on('optional-next', function () { showScreen('sharing'); });
-    on('view', hideGuide);
+    on('view', function () { hideGuide(); var preview = document.getElementById('resume-editor-review'); if (preview) preview.click(); });
     on('keep-adding', function () { showScreen('input'); textarea.focus(); });
-    on('add-example', function () { showScreen('input'); questionPrompt.textContent = 'Tell us about a project: what did you do, and what changed?'; questionContext.hidden = true; textarea.focus(); });
-    on('add-story', function () { hideGuide(); var target = document.getElementById('resume-editor-story-controls'); if (target) { target.scrollIntoView({block: 'center'}); var field = target.querySelector('input,textarea,button,a'); if (field) field.focus(); } });
+    on('add-example', function () { conversationIntent = 'project'; correctionTarget = null; showScreen('input'); questionPrompt.textContent = 'Tell us about a project: what did you do, and what changed?'; questionContext.hidden = true; textarea.focus(); });
+    on('add-story', function () { conversationIntent = 'story'; correctionTarget = null; showScreen('input'); questionPrompt.textContent = 'What outside work helps people understand you?'; questionContext.textContent = 'A hobby, a turning point, or something you care about. This is optional and stays private.'; questionContext.hidden = false; textarea.focus(); });
     on('add-photo', function () {
         hideGuide();
         var target = document.getElementById('resume-media');

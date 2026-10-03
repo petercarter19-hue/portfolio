@@ -45,6 +45,36 @@ def role_payload(**overrides):
     return payload
 
 
+class CredentialPrecisionTests(unittest.TestCase):
+    def values(self, **changes):
+        return {'name':'Service Design Practitioner','issuer':'Example Institute','completion_status':'completed',
+            'issue_date':'2022-06-01','issue_date_precision':'month',
+            'expiration_date':'2027-06-01','expiration_date_precision':'month',**changes}
+
+    def test_independent_precision_and_coarse_order_do_not_invent_exact_days(self):
+        from services.living_resume_editor_service import normalize_editor_values
+        for values in (self.values(),self.values(issue_date='2022-01-01',issue_date_precision='year',
+                expiration_date='2027-06-15',expiration_date_precision='day'),
+                self.values(issue_date='2022-06-15',issue_date_precision='day',
+                    expiration_date='2022-06-01',expiration_date_precision='month')):
+            normalized=normalize_editor_values('credential',values)
+            self.assertEqual(normalized['issue_date'],values['issue_date'])
+            self.assertEqual(normalized['expiration_date'],values['expiration_date'])
+            for name in ('issue_date','expiration_date'):
+                if values[name+'_precision']!='day': self.assertEqual(normalized[name+'_precision'],values[name+'_precision'])
+        with self.assertRaises(LivingResumeEditorValidationError):
+            normalize_editor_values('credential',self.values(expiration_date='2021-12-01'))
+        with self.assertRaises(LivingResumeEditorValidationError):
+            normalize_editor_values('credential',self.values(issue_date='2022-06-15'))
+
+    def test_sql_editor_refuses_coarse_precision_before_procedure_execution(self):
+        database=MagicMock()
+        with self.assertRaisesRegex(LivingResumeEditorValidationError,'input is kept'):
+            LivingResumeEditorService(database).commit('synthetic-owner',role_payload(
+                type='create_credential',values=self.values()))
+        database.execute_procedure.assert_not_called()
+
+
 def editor_sets(*, role=True):
     return [
         [{"profile_key": PARENT_KEY, "profile_slug": "pete", "display_name": "Pete"}],

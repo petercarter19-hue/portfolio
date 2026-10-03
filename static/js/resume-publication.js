@@ -22,6 +22,21 @@
     let reviewedCandidate = null;
     let pendingPublish = null;
     let inFlight = false;
+    const privateMode = new URLSearchParams(window.location.search).get('preview') === 'private';
+    if (privateMode) {
+        document.getElementById('resume-publication-title').textContent = 'Preview my Resume privately';
+        document.getElementById('resume-publication-review-title').textContent = 'Your private draft';
+        slugInput.closest('p').hidden = true;
+        publishButton.hidden = true;
+        sharingOffButton.hidden = true;
+        const privateNotice = document.createElement('p');
+        privateNotice.textContent = 'These selections are for this private preview. Your saved sharing choices stay unchanged.';
+        root.prepend(privateNotice);
+        const sharingLink = document.createElement('a');
+        sharingLink.href = window.location.pathname;
+        sharingLink.textContent = 'Review sharing choices';
+        root.appendChild(sharingLink);
+    }
 
     function hidePreview(returnFocus) {
         previewRegion.hidden = true;
@@ -54,6 +69,10 @@
             if (!value || !precision || precision === "unknown") return null;
             return String(value).slice(0, precision === "year" ? 4 : precision === "month" ? 7 : 10);
         }
+        if (["issue_date", "expiration_date"].includes(field) && value) {
+            const precision = values[field + '_precision'] || 'day';
+            return String(value).slice(0, precision === 'year' ? 4 : precision === 'month' ? 7 : 10);
+        }
         if (field === "date_precision") return {unknown:"Not supplied",year:"Year",month:"Month",day:"Exact day",approximate:"Approximate"}[value] || value;
         if (field === "current_role" && typeof value === "boolean") return value ? "Current role" : "Past role";
         return value;
@@ -78,7 +97,7 @@
             });
             if (entry.changes && entry.changes.length) {
                 const changes = document.createElement("details");
-                textElement("summary", "Wording changes to save when you publish", changes);
+                textElement("summary", privateMode ? "Draft wording in this preview" : "Wording changes to save when you publish", changes);
                 entry.changes.forEach(function (change) {
                     const line = document.createElement("p");
                     textElement("strong", change.field.replaceAll("_", " ") + ": ", line);
@@ -90,24 +109,25 @@
                 section.appendChild(changes);
             }
             const fieldset = document.createElement("fieldset");
-            textElement("legend", "Choose each use independently", fieldset);
+            textElement("legend", privateMode ? "Include in this private preview" : "Choose each use independently", fieldset);
             [["resume_display", "Show on my Resume"], ["visitor_ai", "Allow visitor AI to use this"]].forEach(function (item) {
                 const label = document.createElement("label");
                 const input = document.createElement("input");
                 input.type = "checkbox";
                 input.dataset.permission = item[0];
                 input.checked = entry[item[0]] === true;
+                if (privateMode && item[0] === 'visitor_ai') { input.checked = false; label.hidden = true; }
                 input.addEventListener("change", function () {
                     reviewedDigest = null;
                     reviewedCandidate = null;
                     publishButton.disabled = true;
-                    previewButton.disabled = true;
+                    previewButton.disabled = false;
                     hidePreview(false);
                     digestNode.hidden = true;
-                    setStatus("Review your updated sharing choices before publishing.");
+                    setStatus(privateMode ? "Preview again to see your updated selection. Your saved choices stay unchanged." : "Review your updated sharing choices before publishing.");
                 });
                 label.appendChild(input);
-                label.appendChild(document.createTextNode(" " + item[1]));
+                label.appendChild(document.createTextNode(" " + (privateMode && item[0] === 'resume_display' ? 'Include in this preview' : item[1])));
                 fieldset.appendChild(label);
             });
             section.appendChild(fieldset);
@@ -150,7 +170,7 @@
         return { ok: response.ok, status: response.status, payload: payload };
     }
 
-    reviewButton.addEventListener("click", async function () {
+    async function reviewCurrent(previewAfterReview) {
         if (inFlight || pendingPublish) {
             return;
         }
@@ -162,7 +182,13 @@
         setStatus("Reviewing current facts. This does not publish.", "ok");
         try {
             const selected = choices();
-            const result = await send(reviewUrl, selected.length ? {entries: selected} : {});
+            let result = await send(reviewUrl, selected.length ? {entries: selected} : {});
+            if (privateMode && !selected.length && result.ok && Array.isArray(result.payload.entries)) {
+                renderEntries(result.payload.entries.map(function (entry) {
+                    return Object.assign({}, entry, {resume_display: true, visitor_ai: false});
+                }));
+                result = await send(reviewUrl, {entries: choices()});
+            }
             if (!result.ok || !result.payload.digest) {
                 reviewedDigest = null;
                 digestNode.hidden = true;
@@ -176,12 +202,13 @@
             digestNode.hidden = false;
             digestNode.textContent =
                 (result.payload.identity_display_name ? "Name: " + result.payload.identity_display_name + ". " : "No public name selected. ") +
+                (privateMode ? String(result.payload.display_count || 0) + " entries in this private preview. Nothing is published." :
                 String(result.payload.display_count || 0) + " entries shown on your Resume. " +
-                String(result.payload.visitor_ai_count || 0) + " entries available to visitor AI.";
+                String(result.payload.visitor_ai_count || 0) + " entries available to visitor AI.");
             publishButton.disabled = false;
             previewButton.disabled = false;
             setStatus(
-                "Your information and sharing choices are ready to review. Publish when you are ready to share them.",
+                privateMode ? 'Your private preview choices are ready.' : "Your information and sharing choices are ready to review. Publish when you are ready to share them.",
                 "ok"
             );
         } catch (error) {
@@ -190,11 +217,15 @@
         } finally {
             inFlight = false;
             lockChoices(false);
+            previewButton.disabled = false;
         }
-    });
+        if (previewAfterReview === true && reviewedDigest) await previewCurrent();
+    }
+    reviewButton.addEventListener('click', function () { reviewCurrent(false); });
 
-    previewButton.addEventListener("click", async function () {
-        if (inFlight || pendingPublish || !reviewedDigest || !reviewedCandidate) return;
+    async function previewCurrent() {
+        if (inFlight || pendingPublish) return;
+        if (!reviewedDigest || !reviewedCandidate) { await reviewCurrent(true); return; }
         inFlight = true;
         previewButton.disabled = true;
         publishButton.disabled = true;
@@ -218,6 +249,10 @@
             const documentPreview = new DOMParser().parseFromString(result.payload.html, "text/html");
             const composition = documentPreview.querySelector(".resume-publication--public");
             if (!composition) throw new Error("Preview composition unavailable");
+            if (privateMode) {
+                composition.querySelectorAll('#visitor-ai-panel, #visitor-ai-open').forEach(function (element) { element.remove(); });
+                composition.classList.remove('resume-publication--with-ai');
+            }
             previewContent.replaceChildren(document.importNode(composition, true));
             previewRegion.hidden = false;
             const heading = previewContent.querySelector("#resume-preview-title");
@@ -229,10 +264,12 @@
         } finally {
             inFlight = false;
             lockChoices(false);
-            previewButton.disabled = !reviewedDigest;
+            previewButton.disabled = false;
             publishButton.disabled = !reviewedDigest;
         }
-    });
+    }
+    previewButton.addEventListener('click', previewCurrent);
+    if (privateMode) previewCurrent();
 
     publishButton.addEventListener("click", async function () {
         if (inFlight || !reviewedDigest) {
@@ -310,6 +347,12 @@
 
 (function () {
     const panel = document.getElementById("visitor-ai-panel");
+    if (new URLSearchParams(window.location.search).get('preview') === 'private') {
+        if (panel) panel.hidden = true;
+        const visitorOpener = document.getElementById('visitor-ai-open');
+        if (visitorOpener) visitorOpener.hidden = true;
+        return;
+    }
     if (!panel) return;
     const opener = document.getElementById("visitor-ai-open");
     const closer = document.getElementById("visitor-ai-close");

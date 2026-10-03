@@ -240,7 +240,7 @@ class Mvp1AcceptanceBrowserTests(unittest.TestCase):
             self.assertLessEqual(page.evaluate('document.documentElement.scrollWidth'), width)
         page.locator('#resume-intake-hide').click()
         page.locator('#resume-editor-review').click()
-        expect(page).to_have_url(self.server.url + '/app/resume/publication')
+        expect(page).to_have_url(self.server.url + '/app/resume/publication?preview=private')
         self.assertIsNone(self.server.shared.publication.owner_preview('g-member-a')['current'])
         self.assertEqual(self.errors, [])
 

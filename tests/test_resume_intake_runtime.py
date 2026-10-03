@@ -730,6 +730,35 @@ class SelectedPrivateTests(unittest.TestCase):
         self.assertEqual(ports.saved, [])
         self.assertFalse(result['saved'])
 
+    def test_correction_uses_server_suggestion_source_and_new_words_without_saving(self):
+        ports=Ports()
+        suggestion={'proposal_key':str(uuid4()),'record_type':'role','target_key':PRIVATE_KEY,
+            'proposed_values':{'role_title':'Designer','employer_name':'Fictional Studio'},
+            'quote':'I was a Designer at Fictional Studio in 2022.'}
+        statement='The start year was 2021.'
+        def provider(**kwargs):
+            self.assertEqual(kwargs['context']['review_suggestion'],suggestion)
+            self.assertEqual(kwargs['context']['review_material'],suggestion['quote']+'\n\n'+statement)
+            self.assertIn('Return only changed fields',kwargs['instructions'])
+            return {'response':'I proposed the start year.','next_question':'','candidates':[{
+                'record_type':'role','outcome':'new','match_reference':None,'confidence':'certain',
+                'values':{'start_date':'2021-01-01','date_precision':'year'},'quote':statement}]}
+        result=self.service(ports,provider).interview('fiction-owner',{
+            'request_id':str(uuid4()),'expected_draft_version':7,'statement':statement},review_proposal=suggestion)
+        self.assertEqual(result['candidates'][0]['values']['date_precision'],'year')
+        self.assertEqual(ports.saved,[]);self.assertFalse(result['saved']);self.assertFalse(result['publishes'])
+
+    def test_correction_refuses_context_change_during_provider_response(self):
+        ports=Ports()
+        def provider(**kwargs):
+            ports.catalog[0]['values']['summary']='Concurrent member edit'
+            return {'response':'A proposal','next_question':'','candidates':[]}
+        with self.assertRaises(SynthesisError) as caught:
+            self.service(ports,provider).interview('fiction-owner',{'request_id':str(uuid4()),
+                'expected_draft_version':7,'statement':'Change the wording.'},review_proposal={
+                'proposal_key':str(uuid4()),'record_type':'role','quote':'Original source.'})
+        self.assertEqual(caught.exception.code,'changed');self.assertEqual(ports.saved,[])
+
     def test_factory_distinct_immutable_scopes_and_no_io(self):
         ports, db = Ports(), SelectedPrivateReservations()
         config = {'RESUME_PRIVATE_ASSISTANCE_CONFIGURATION': {

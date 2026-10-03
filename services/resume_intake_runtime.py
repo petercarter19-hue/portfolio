@@ -814,7 +814,7 @@ class PrivateResumeAssistanceService:
             maximum_field_bytes=self.limits['maximum_field_bytes'])
         return self.draft_service.commit(owner, command)
 
-    def interview(self, owner, payload):
+    def interview(self, owner, payload, *, review_proposal=None):
         provider = self.providers.get('interview')
         if provider is None:
             raise SynthesisError('unavailable')
@@ -827,17 +827,35 @@ class PrivateResumeAssistanceService:
         context = self._context(owner, [], allow_empty=True)
         if payload['expected_draft_version'] != context['draft_version']:
             raise SynthesisError('changed')
-        result = provider(owner=owner, request_id=request_id, instructions=INTERVIEW_PROMPT,
+        base_context_digest = digest(context)
+        validation_text = statement
+        instructions = INTERVIEW_PROMPT
+        if review_proposal is not None:
+            context['review_suggestion'] = {key: copy.deepcopy(review_proposal.get(key)) for key in
+                ('proposal_key', 'record_type', 'proposed_values', 'quote', 'target_key')}
+            original = ((review_proposal.get('proposed_values') or {}).get('text')
+                        or review_proposal.get('quote') or '')
+            validation_text = original + '\n\n' + statement
+            context['review_material'] = validation_text
+            if len(json.dumps(context, ensure_ascii=False).encode('utf-8')) > self.limits['maximum_input_bytes']:
+                raise SynthesisError('input_too_large')
+            instructions = (EXTRACTION_INSTRUCTIONS + '\nThe member is correcting the selected suggestion. '
+                'Use only review_material and the supplied suggestion. Return only changed fields and '
+                'any missing fields explicitly supported by the original source. Quote exact unique '
+                'contiguous source passages from review_material. Never rewrite unrelated fields. '
+                'If unclear, ask one precise gap question and return no candidate. Use outcome new '
+                'and match_reference null. Acknowledge what changed; nothing is saved or published.')
+        result = provider(owner=owner, request_id=request_id, instructions=instructions,
             task=statement, context=context, response_schema=INTERVIEW_SCHEMA)
         if not isinstance(result, dict) or set(result) != {'response', 'next_question', 'candidates'}:
             raise SynthesisError('invalid_output')
         response = _text(result['response'], 8000)
         question = _text(result['next_question'], 2000, blank=True)
-        candidates = validate_extraction_payload({'candidates': result['candidates']}, text=statement,
+        candidates = validate_extraction_payload({'candidates': result['candidates']}, text=validation_text,
                                                  allowed_fields=EDITOR_FIELDS)
         # The existing composer receives member-selected original statements
         # through its explicit Add action; this response performs no save/keep.
-        if digest(self._context(owner, [], allow_empty=True)) != digest(context):
+        if digest(self._context(owner, [], allow_empty=True)) != base_context_digest:
             raise SynthesisError('changed')
         return {'state': 'proposal', 'response': response, 'next_question': question,
             'candidates': [{'record_type': c.record_type, 'values': c.values, 'quote': c.quote,

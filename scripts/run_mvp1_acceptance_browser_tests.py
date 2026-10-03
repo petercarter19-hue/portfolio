@@ -73,6 +73,17 @@ INTAKE_METHODS = (
     'test_uncertain_words_require_member_type_choice',
     'test_welcome_has_benefits_equal_actions_real_document_and_no_provider_work',
     'test_workspace_failure_is_not_treated_as_first_use',
+    'test_back_from_correction_restores_its_words_when_resumed',
+    'test_conversational_correction_proposes_partial_changes_before_confirmation',
+    'test_correction_failure_retains_words_and_retry_identity_with_newer_input',
+    'test_dictated_correction_uses_the_same_review_and_confirmation_boundary',
+    'test_failed_correction_then_manual_confirmation_preserves_newer_words_and_allows_next_correction',
+    'test_guided_personal_story_stays_private_and_keeps_canonical_type_unspecified_until_confirmed',
+    'test_latest_answer_is_acknowledged_and_old_suggestions_remain_selectable',
+    'test_new_optional_screen_clears_old_validation_and_distinguishes_next_question_from_finish',
+    'test_private_local_credential_months_survive_confirmation_editor_and_direct_preview',
+    'test_source_named_project_suggests_the_only_eligible_role_for_explicit_confirmation',
+    'test_unsorted_words_do_not_become_a_skill_summary_without_member_wording',
 )
 
 

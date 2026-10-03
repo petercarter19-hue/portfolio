@@ -30,6 +30,22 @@ class Clock:
 
 
 class EntryPolicyServiceTests(unittest.TestCase):
+    def test_local_credential_precision_is_preserved_and_sql_port_refuses_it(self):
+        values={'credential_name':'Service Design Practitioner','issuer_name':'Example Institute',
+            'issue_date':'2022-06-01','issue_date_precision':'month',
+            'expiration_date':'2027-06-01','expiration_date_precision':'month','completion_status':'completed'}
+        command={'type':'create','request_id':str(uuid4()),'entry_key':str(uuid4()),'canonical_type':'credential','values':values}
+        self.service.commit(self.owner_a,command)
+        saved=self.service.list_entries(self.owner_a)['entries'][0]
+        self.assertEqual(saved['values'],values)
+        self.assertFalse(saved['resume_display']);self.assertFalse(saved['visitor_ai'])
+        from unittest.mock import Mock
+        repository=Mock()
+        sql=EntryPolicyService(repository=repository)
+        with self.assertRaisesRegex(EntryPolicyValidationError,'input is kept'):
+            sql.commit(self.owner_a,command)
+        repository.commit_command.assert_not_called();repository.load_owner.assert_not_called()
+
     def test_intake_stable_identifiers_keep_exact_identity_and_owner_fences(self):
         from services.resume_intake_service import _stable_key
         for number in range(16):

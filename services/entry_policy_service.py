@@ -122,6 +122,9 @@ _FIELD_SETS = {
             "credential_identifier",
             "issue_date",
             "expiration_date",
+            "issue_date_precision",
+            "expiration_date_precision",
+            "completion_status",
             "verification_url",
         }
     ),
@@ -248,9 +251,27 @@ def _normalize_values(canonical_type: str, values: object, *, required: bool) ->
         raw = values[name]
         if name in {"current_role"}:
             normalized[name] = _require_bool(raw, field=name)
+        elif name in {'issue_date_precision', 'expiration_date_precision'}:
+            if raw is not None and (not isinstance(raw, str) or raw not in {'year', 'month', 'day'}):
+                raise EntryPolicyValidationError('Invalid credential date detail.')
+            if raw in {'year', 'month'}: normalized[name] = raw
+        elif canonical_type == 'credential' and name == 'completion_status':
+            if raw is not None and (not isinstance(raw, str) or raw not in {'planned', 'in_progress', 'completed'}):
+                raise EntryPolicyValidationError('Invalid credential status.')
+            if raw is not None: normalized[name] = raw
         else:
             need = required and name in _REQUIRED_CREATE[canonical_type]
             normalized[name] = _clean_text(raw, field=name, required=need)
+    if canonical_type == 'credential':
+        from services.living_resume_editor_service import credential_date_text, LivingResumeEditorValidationError
+        try:
+            for name in ('issue_date', 'expiration_date'):
+                precision = normalized.get(name + '_precision')
+                if precision and not normalized.get(name):
+                    raise EntryPolicyValidationError('Credential date detail needs its date.')
+                if precision: credential_date_text(normalized.get(name), precision)
+        except LivingResumeEditorValidationError as error:
+            raise EntryPolicyValidationError(str(error)) from error
     if required:
         for name in _REQUIRED_CREATE[canonical_type]:
             if not normalized.get(name):
@@ -402,6 +423,9 @@ class EntryPolicyService:
         command = self._normalize_command(payload)
         now = self._now()
         if self._sql_command_port():
+            if {'issue_date_precision', 'expiration_date_precision', 'completion_status'} & set(command.get('values') or {}):
+                from services.living_resume_editor_service import CREDENTIAL_PRECISION_UNAVAILABLE
+                raise EntryPolicyValidationError(CREDENTIAL_PRECISION_UNAVAILABLE)
             return self._commit_sql(owner, command, now)
         snapshot = self._load(owner)
         self._expire_snapshot(snapshot, now)

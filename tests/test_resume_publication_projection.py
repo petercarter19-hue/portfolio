@@ -15,6 +15,27 @@ from services.resume_publication_projection import (
 
 
 class ResumePublicationProjectionTests(unittest.TestCase):
+    def test_credential_projection_commits_independent_precision_without_changing_legacy_codec(self):
+        dates={'issue_date':'2022-06-01','expiration_date':'2027-06-01'}
+        for issue_precision,expiry_precision,issue,expiry in (
+                ('month','month','2022-06','2027-06'),('year','day','2022','2027-06-01'),
+                ('day','month','2022-06-01','2027-06')):
+            values={**dates,'issue_date_precision':issue_precision,'expiration_date_precision':expiry_precision}
+            if issue_precision=='year': values['issue_date']='2022-01-01'
+            before=copy.deepcopy(values)
+            decoded=decode_canonical_source(committed_source_bytes('credential',values))
+            self.assertEqual((decoded['issue_date'],decoded['expiration_date']),(issue,expiry))
+            self.assertEqual(values,before)
+        self.assertEqual(committed_source_bytes('credential',dates),committed_source_bytes('credential',{
+            **dates,'issue_date_precision':'day','expiration_date_precision':'day'}))
+        self.assertNotEqual(committed_source_bytes('credential',dates),committed_source_bytes('credential',{
+            **dates,'issue_date_precision':'month','expiration_date_precision':'month'}))
+        with self.assertRaises(ValueError):
+            committed_source_bytes('credential',{'issue_date':'2022-06-19','issue_date_precision':'month'})
+        display={'old':{'canonical_type':'credential','wording':{'issue_date':'2020'}},
+                 'recent':{'canonical_type':'credential','wording':{'issue_date':'2022-06'}}}
+        self.assertEqual(list(ordered_resume_display(display)),['recent','old'])
+
     def test_order_uses_typed_dates_without_changing_values_or_inventing_unknowns(self):
         def role(**values): return {"canonical_type": "role", "wording": values}
         display = {

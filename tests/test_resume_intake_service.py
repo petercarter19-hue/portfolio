@@ -106,6 +106,94 @@ def build_service(*, policy=None, document_pipeline=None, transcriber=None, inte
     return service, catalog, draft_service
 
 
+class ConversationStoryTests(unittest.TestCase):
+    def test_unqualified_sql_story_path_keeps_input_and_uses_no_canonical_intent(self):
+        from unittest.mock import Mock
+        from services.resume_intake_repository import SqlIntakeUnitOfWork
+        service,catalog,draft=build_service()
+        receipt=service.submit('synthetic-owner',{'type':'add_submission','request_id':str(uuid4()),'text':'I repair radios outside work.'})
+        unit=SqlIntakeUnitOfWork(Mock());service.repository.unit_of_work=lambda draft_service:unit
+        with self.assertRaisesRegex(ResumeIntakeValidationError,'input is kept'):
+            service.decide('synthetic-owner',{'request_id':str(uuid4()),'proposal_key':receipt['proposals'][0]['proposal_key'],
+                'decision':'accept','confirmed_values':{'record_type':'knowledge','title':'Radio repair','wording':'I repair radios outside work.','classification':'personal'}})
+        self.assertEqual(unit.intents,[]);self.assertEqual(unit.repository.mock_calls,[])
+        self.assertEqual(len(service.get_workspace('synthetic-owner')['pending_proposals']),1)
+        self.assertEqual(catalog.list_items('synthetic-owner'),[])
+    def test_sql_intake_precision_refusal_keeps_pending_source_and_stages_no_write(self):
+        from unittest.mock import Mock
+        from services.resume_intake_repository import SqlIntakeUnitOfWork
+        service,catalog,draft=build_service()
+        receipt=service.submit('synthetic-owner',{'type':'add_submission','request_id':str(uuid4()),
+            'text':'My certificate was issued June 2022 and expires June 2027.'})
+        proposal=receipt['proposals'][0]
+        unit=SqlIntakeUnitOfWork(Mock())
+        service.repository.unit_of_work=lambda draft_service: unit
+        with self.assertRaisesRegex(ResumeIntakeValidationError,'input is kept'):
+            service.decide('synthetic-owner',{'request_id':str(uuid4()),'proposal_key':proposal['proposal_key'],
+                'decision':'accept','confirmed_values':{'record_type':'credential','name':'Design Practitioner',
+                'issuer':'Example Institute','completion_status':'completed','issue_date':'2022-06-01',
+                'issue_date_precision':'month','expiration_date':'2027-06-01','expiration_date_precision':'month'}})
+        self.assertEqual(unit.intents,[]);self.assertEqual(unit.repository.mock_calls,[])
+        self.assertEqual(service.get_workspace('synthetic-owner')['pending_proposals'][0]['proposal_key'],proposal['proposal_key'])
+        self.assertEqual(catalog.list_items('synthetic-owner'),[])
+
+    def test_untyped_story_confirmation_is_private_atomic_and_idempotent(self):
+        service, catalog, draft = build_service()
+        source = 'Outside work I restore radios at a community repair cafe.'
+        receipt = service.submit('fiction-story', {'request_id': str(uuid4()), 'text': source})
+        proposal = receipt['proposals'][0]
+        self.assertEqual(proposal['record_type'], 'unspecified')
+        self.assertEqual(catalog.list_items('fiction-story'), [])
+        command = {'request_id': str(uuid4()), 'proposal_key': proposal['proposal_key'],
+            'decision': 'accept', 'confirmed_values': {'record_type': 'knowledge',
+                'title': 'Repair cafe', 'wording': source, 'classification': 'personal'}}
+        result = service.decide('fiction-story', command)
+        self.assertEqual(result['outcome'], 'saved')
+        replay = service.decide('fiction-story', command)
+        self.assertTrue(replay['replayed'])
+        items = catalog.list_items('fiction-story')
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]['record_type'], 'knowledge')
+        self.assertFalse(items[0]['resume_display'])
+        self.assertFalse(items[0]['visitor_ai'])
+        self.assertIsNone(draft.get_workspace('fiction-story').get('story_entry_key'))
+        self.assertEqual(result['proposal']['state'], 'accepted')
+
+    def test_sql_overlay_precision_clear_refuses_before_staging_and_keeps_source_and_proposal(self):
+        from unittest.mock import Mock
+        from services.resume_intake_repository import SqlIntakeUnitOfWork
+        for field in ('issue_date_precision','expiration_date_precision'):
+            with self.subTest(field=field):
+                service,catalog,draft=build_service();owner='synthetic-precision-clear'
+                service.submit(owner,{'type':'add_submission','request_id':str(uuid4()),'items':[{
+                    'client_key':'credential','record_type':'credential','values':{'name':'Design Practitioner',
+                    'issuer':'Original Institute','completion_status':'completed','issue_date':'2022-06-15',
+                    'expiration_date':'2027-06-15'}}]})
+                changed={'name':'Design Practitioner','issuer':'Corrected Institute'}
+                receipt=service.submit(owner,{'type':'add_submission','request_id':str(uuid4()),'items':[{
+                    'client_key':'correction','record_type':'credential','values':changed,'explicit_clears':[field]}]})
+                proposal=receipt['proposals'][0]
+                before=service.get_workspace(owner);canonical=catalog.list_items(owner)
+                unit=SqlIntakeUnitOfWork(Mock());service.repository.unit_of_work=lambda draft_service:unit
+                with self.assertRaisesRegex(ResumeIntakeValidationError,'input is kept'):
+                    service.decide(owner,{'request_id':str(uuid4()),'proposal_key':proposal['proposal_key'],
+                        'decision':'accept','confirmed_values':changed})
+                self.assertEqual(unit.intents,[]);self.assertEqual(unit.repository.mock_calls,[])
+                self.assertEqual(service.get_workspace(owner),before)
+                self.assertEqual(catalog.list_items(owner),canonical)
+
+    def test_nonpersonal_story_refuses_without_losing_proposal_or_creating_fact(self):
+        service, catalog, draft = build_service()
+        receipt = service.submit('fiction-story', {'request_id': str(uuid4()), 'text': 'I repair radios.'})
+        with self.assertRaises(ResumeIntakeValidationError):
+            service.decide('fiction-story', {'request_id': str(uuid4()),
+                'proposal_key': receipt['proposals'][0]['proposal_key'], 'decision': 'accept',
+                'confirmed_values': {'record_type': 'knowledge', 'title': 'Radios',
+                                     'wording': 'I repair radios.', 'classification': 'professional'}})
+        self.assertEqual(catalog.list_items('fiction-story'), [])
+        self.assertEqual(len(service.get_workspace('fiction-story')['pending_proposals']), 1)
+
+
 class ExplicitAddTests(unittest.TestCase):
     def setUp(self):
         self.service, self.catalog, self.draft_service = build_service()

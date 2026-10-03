@@ -7,6 +7,7 @@ conformance and reader validation only.
 from __future__ import annotations
 
 from datetime import date
+from services.living_resume_editor_service import credential_date_text, LivingResumeEditorValidationError
 
 from services.resume_publication_contracts import (
     CANONICAL_SOURCE_FIELDS,
@@ -80,11 +81,12 @@ def resume_presentation_key(record_type: str, values: dict) -> tuple:
     precision = values.get("date_precision")
     raw = values.get("end_date") or values.get("start_date")
     if record_type == "credential":
-        raw, precision = values.get("issue_date"), "day"
+        raw = values.get('issue_date')
+        precision = values.get('issue_date_precision') or ({4: 'year', 7: 'month', 10: 'day'}.get(len(raw)) if isinstance(raw, str) else None)
     ordinal = 0
     if precision in {"year", "month", "day"} and isinstance(raw, str):
         try:
-            known = date.fromisoformat(raw)
+            known = date.fromisoformat(raw + ('-01-01' if len(raw) == 4 else '-01' if len(raw) == 7 else ''))
             if precision == "year": known = known.replace(month=1, day=1)
             elif precision == "month": known = known.replace(day=1)
             ordinal = known.toordinal()
@@ -104,6 +106,14 @@ def canonical_fields_from_values(canonical_type: str, values: dict[str, object])
     if type(values) is not dict:
         raise ContractError("typed canonical values required")
     mapped = dict(values)
+    if canonical_type == 'credential':
+        # Local partial-date evidence uses the existing date string slots.
+        # The fixed durable v1 codec and legacy full-ISO bytes stay unchanged.
+        for name in ('issue_date', 'expiration_date'):
+            try:
+                mapped[name] = credential_date_text(mapped.get(name), mapped.get(name + '_precision'))
+            except LivingResumeEditorValidationError as error:
+                raise ContractError(str(error)) from error
     if canonical_type == "skill" and "summary" in mapped and "skill_summary" not in mapped:
         mapped["skill_summary"] = mapped.pop("summary")
     fields = {name: None for name in CANONICAL_SOURCE_FIELDS}

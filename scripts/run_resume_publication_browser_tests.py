@@ -19,6 +19,7 @@ MODULE_FILE = ROOT / "tests" / "test_resume_publication_browser.py"
 MODULE_NAME = "required_resume_publication_browser"
 CLASS_NAME = "ResumePublicationBrowserTests"
 EXPECTED_METHODS = (
+    "test_direct_private_preview_includes_private_facts_without_permission_or_provider_mutation",
     "test_keyboard_review_control_is_operable",
     "test_owner_guest_contexts_permission_combinations_draft_isolation_and_corrections",
     "test_owner_review_publish_guest_sees_result_and_sharing_off_denies",

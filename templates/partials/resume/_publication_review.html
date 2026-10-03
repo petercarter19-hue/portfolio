@@ -7,10 +7,13 @@
     data-commands-url="{{ commands_url }}"
     data-preview-url="{{ preview_url }}"
 >
-    <h2 id="resume-publication-review-title">Review before publishing</h2>
+    <h2 id="resume-publication-review-title">{{ 'Your private draft' if direct_private_mode else 'Review before publishing' }}</h2>
     <p>
+        {% if direct_private_mode %}Choose what to include in this private preview. Your saved sharing choices stay unchanged.
+        {% else %}
         Check your current wording and choices for what visitors can see and what
         your AI can use. Reviewing does not publish or change those permissions.
+        {% endif %}
     </p>
     <p>
         <label for="resume-publication-slug">Public address</label>

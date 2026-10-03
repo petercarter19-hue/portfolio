@@ -328,7 +328,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.assertIn('2022', page.locator('.resume-intake__review-facts').inner_text())
         self.assertNotIn('2022-01-01', page.locator('.resume-intake__review-facts').inner_text())
         self.assertEqual(page.locator('.resume-editor__panel').evaluate('el => getComputedStyle(el).filter'), 'blur(8px)')
-        page.get_by_role('button', name='Change something').click()
+        page.get_by_role('button', name='Edit fields manually').click()
         self.field(page, 'start_date').fill('2021')
         self.capture(page, 'runtime-correction-desktop')
         self.confirm(page)
@@ -441,12 +441,12 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
                         'date_precision': 'unknown', 'start_date': '2019-02-03'}}])
         page = self.page(); self.submit(page, 'My education dates are approximate and my role date is unknown.')
         self.assertIn('Around 2018-06-15', page.locator('.resume-intake__review-facts').inner_text())
-        page.get_by_role('button', name='Change something').click()
+        page.get_by_role('button', name='Edit fields manually').click()
         self.assertEqual(self.field(page, 'date_precision').input_value(), 'approximate')
         self.confirm(page)
         self.assertNotIn('2019-02-03', page.locator('.resume-intake__review-facts').inner_text())
         self.assertIn('Date unknown', page.locator('.resume-intake__review-facts').inner_text())
-        page.get_by_role('button', name='Change something').click()
+        page.get_by_role('button', name='Edit fields manually').click()
         self.assertEqual(self.field(page, 'date_precision').locator('option[value="approximate"]').count(), 0)
         self.confirm(page)
         records = {row['record_type']: row['values'] for row in self.catalog.list_items(self.owner)}
@@ -466,12 +466,12 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.typed_service([{'kind': 'inferred_wording', 'record_type': 'accomplishment', 'confidence': 'uncertain',
                             'values': {'wording': 'Simplified onboarding'}}])
         self.submit(page, 'I simplified onboarding.')
-        page.get_by_role('button', name='Change something').click()
+        page.get_by_role('button', name='Edit fields manually').click()
         page.locator('#resume-proposal-parent').select_option(role['record_key'])
         self.field(page, 'wording').fill('Simplified customer onboarding')
         page.locator('#resume-intake-back').click()
         page.locator('#resume-intake-review-pending').click()
-        page.get_by_role('button', name='Change something').click()
+        page.get_by_role('button', name='Edit fields manually').click()
         self.assertEqual(page.locator('#resume-proposal-parent').input_value(), role['record_key'])
         page.locator('#resume-intake-hide').click(); page.locator('#resume-intake-reopen').click()
         self.assertEqual(page.locator('#resume-proposal-parent').input_value(), role['record_key'])
@@ -547,7 +547,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
                 return result
         self.typed_service([self.role_proposal()], LostDecision)
         page = self.page(); self.submit(page, 'My role source.')
-        page.get_by_role('button',name='Change something').click()
+        page.get_by_role('button',name='Edit fields manually').click()
         self.field(page,'start_date').fill('2021')
         page.get_by_role('button',name='Confirm details',exact=True).click()
         page.locator('#resume-intake-status[data-kind=error]').wait_for()
@@ -851,7 +851,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
                            matching_exclusions=lambda owner: [])
         self.submit(page,'I helped onboarding.')
         self.assertIn('existing entry',page.locator('.resume-intake__proposal-source').inner_text())
-        page.get_by_role('button',name='Change something').click()
+        page.get_by_role('button',name='Edit fields manually').click()
         self.field(page,'summary').fill('I simplified new customer onboarding.')
         self.confirm(page)
         workspace=self.draft_service.get_workspace(self.owner)
@@ -864,8 +864,10 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
     def test_story_destination_and_repeated_question_use_existing_controls(self):
         page=self.page();self.input(page)
         page.locator('#resume-intake-input-finish').click();page.locator('#resume-intake-add-story').click()
+        self.assertTrue(page.locator('#resume-intake-input').is_visible())
+        self.assertIn('outside work',page.locator('#resume-intake-question').inner_text())
+        page.locator('#resume-intake-skip').click()
         self.assertFalse(page.locator('#resume-intake').is_visible())
-        self.assertTrue(page.evaluate("document.querySelector('#resume-editor-story-controls').contains(document.activeElement)"))
         self.input(page)
         page.locator('#resume-intake-new-question').click()
         self.assertIn('AI guidance is unavailable',page.locator('#resume-intake-context').inner_text())
@@ -889,9 +891,9 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
     def test_corrections_survive_back_and_reopen_without_silent_save(self):
         self.typed_service([self.role_proposal()])
         page=self.page();self.submit(page,'Role source.')
-        page.get_by_role('button',name='Change something').click();self.field(page,'start_date').fill('2021')
+        page.get_by_role('button',name='Edit fields manually').click();self.field(page,'start_date').fill('2021')
         page.locator('#resume-intake-back').click();page.locator('#resume-intake-review-pending').click()
-        page.get_by_role('button',name='Change something').click()
+        page.get_by_role('button',name='Edit fields manually').click()
         self.assertEqual(self.field(page,'start_date').input_value(),'2021')
         page.locator('#resume-intake-hide').click();page.locator('#resume-intake-reopen').click()
         self.assertEqual(self.field(page,'start_date').input_value(),'2021')
@@ -909,11 +911,257 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         page=self.page();self.input(page)
         page.locator('#resume-intake-new-question').click()
         page.locator('#resume-intake-question').get_by_text('What outcome mattered?',exact=True).wait_for()
-        page.locator('#resume-intake-skip-question').click();page.locator('#resume-intake-back').click()
-        page.locator('#resume-intake-new-question').click()
+        page.locator('#resume-intake-skip-question').click()
         page.locator('#resume-intake-optional:visible').wait_for()
         self.assertIn('already covered',page.locator('#resume-intake-status').inner_text())
         self.assertEqual(len(calls),2);self.assertEqual(len(self.catalog.list_items(self.owner)),0)
+
+    def test_latest_answer_is_acknowledged_and_old_suggestions_remain_selectable(self):
+        service=self.typed_service([self.role_proposal()])
+        page=self.page();self.submit(page,'My first role.')
+        service._interpreter=lambda text,kind: [{'kind':'inferred_wording','record_type':'skill',
+            'values':{'name':'Systems thinking','summary':'I connect complex systems.'}}]
+        self.submit(page,'My new strength.')
+        self.assertIn('Systems thinking',page.locator('#resume-intake-proposals').inner_text())
+        self.assertIn('I received your answer',page.locator('#resume-intake-suggestion-overview').inner_text())
+        page.locator('#resume-intake-suggestion-overview').get_by_role('button',name='Product designer',exact=True).click()
+        self.assertIn('Northstar Studio',page.locator('#resume-intake-proposals').inner_text())
+        self.assertEqual(len(self.catalog.list_items(self.owner)),0)
+        page.locator('#resume-intake-suggestion-overview').get_by_role('button',name='New: Systems thinking',exact=True).click()
+        self.confirm(page)
+        self.assertEqual(self.catalog.list_items(self.owner)[0]['values']['name'],'Systems thinking')
+        self.assertEqual(len(service.get_workspace(self.owner)['pending_proposals']),1)
+        self.assertEqual(self.errors,[])
+
+    def test_conversational_correction_proposes_partial_changes_before_confirmation(self):
+        calls=[]
+        class Interview:
+            def interview(inner,owner,payload,*,review_proposal=None):
+                calls.append((owner,dict(payload),review_proposal))
+                return {'saved':False,'publishes':False,'next_question':'', 'response':'I changed the start year.',
+                    'base_revision':payload['expected_draft_version'], 'candidates':[{'record_type':'role',
+                    'values':{'start_date':'2021-01-01','date_precision':'year'},'quote':payload['statement']}]}
+        app.config.update(PEERSLATE_RESUME_INTERVIEW_ENABLED=True,RESUME_PRIVATE_ASSISTANCE_SERVICE=Interview())
+        service=self.typed_service([self.role_proposal()])
+        page=self.page();self.submit(page,'My original role.')
+        page.get_by_role('button',name='Change something',exact=True).click()
+        page.locator('#resume-intake-text').fill('I started in 2021, not 2022.')
+        page.locator('#resume-intake-add').click()
+        self.field(page,'start_date').wait_for(state='visible')
+        self.assertEqual(self.field(page,'start_date').input_value(),'2021')
+        self.assertEqual(self.field(page,'employer_name').input_value(),'Northstar Studio')
+        self.assertEqual(self.field(page,'role_title').input_value(),'Product designer')
+        self.assertEqual(calls[0][0],self.owner)
+        self.assertEqual(calls[0][2]['proposed_values']['start_date'],'2022-01-01')
+        self.assertNotIn('proposal_key',calls[0][1])
+        self.assertEqual(len(self.catalog.list_items(self.owner)),0)
+        self.assertEqual(len(service.get_workspace(self.owner)['pending_proposals']),1)
+        self.confirm(page)
+        values=self.catalog.list_items(self.owner)[0]['values']
+        self.assertEqual((values['start_date'],values['date_precision']),('2021-01-01','year'))
+        self.assertEqual(values['employer_name'],'Northstar Studio')
+        self.assertEqual(self.errors,[])
+
+    def test_guided_personal_story_stays_private_and_keeps_canonical_type_unspecified_until_confirmed(self):
+        from tests.mvp1_acceptance_support import SharedMvp1Fixture
+        shared=SharedMvp1Fixture()
+        old=app.config.get('ENTRY_POLICY_SERVICE');self.addCleanup(app.config.__setitem__,'ENTRY_POLICY_SERVICE',old)
+        self.catalog=shared.canonical;self.draft_service=shared.draft
+        app.config.update(RESUME_DRAFT_SERVICE=shared.draft,ENTRY_POLICY_SERVICE=shared.policy)
+        self.typed_service([{'kind':'inferred_wording','record_type':'unspecified',
+            'values':{'wording':'I help at a radio repair café outside work.'}}])
+        page=self.page();self.input(page)
+        page.locator('#resume-intake-input-finish').click();page.locator('#resume-intake-add-story').click()
+        page.locator('#resume-intake-text').fill('I help at a radio repair café outside work.')
+        page.locator('#resume-intake-add').click()
+        self.field(page,'wording').wait_for(state='visible')
+        self.assertEqual(page.locator('[data-proposal-type]').input_value(),'knowledge')
+        self.assertEqual(self.field(page,'classification').input_value(),'personal')
+        proposal=app.config['RESUME_INTAKE_SERVICE'].get_workspace(self.owner)['pending_proposals'][0]
+        self.assertEqual(proposal['record_type'],'unspecified')
+        self.assertEqual(self.catalog.list_items(self.owner),[])
+        self.confirm(page)
+        item=self.catalog.list_items(self.owner)[0]
+        self.assertEqual(item['record_type'],'knowledge')
+        self.assertIn('radio repair',item['values']['wording'])
+        self.assertFalse(item['resume_display']);self.assertFalse(item['visitor_ai'])
+        entry=shared.policy.list_entries(self.owner)['entries'][0]
+        self.assertEqual(entry['canonical_type'],'knowledge')
+        self.assertEqual(entry['values']['classification'],'personal')
+        self.assertFalse(entry['resume_display']);self.assertFalse(entry['visitor_ai'])
+        self.assertEqual(self.errors,[])
+
+    def test_correction_failure_retains_words_and_retry_identity_with_newer_input(self):
+        from services.resume_intake_runtime import SynthesisError
+        calls=[]
+        class Interview:
+            def interview(inner,owner,payload,*,review_proposal=None):
+                calls.append(dict(payload))
+                if len(calls)==1: raise SynthesisError('unavailable')
+                return {'saved':False,'publishes':False,'next_question':'','response':'Proposed the year.',
+                    'base_revision':payload['expected_draft_version'],'candidates':[{'record_type':'role',
+                    'values':{'start_date':'2021-01-01','date_precision':'year'},'quote':payload['statement']}]}
+        app.config.update(PEERSLATE_RESUME_INTERVIEW_ENABLED=True,RESUME_PRIVATE_ASSISTANCE_SERVICE=Interview())
+        self.typed_service([self.role_proposal()])
+        page=self.page();self.submit(page,'Original role.')
+        page.get_by_role('button',name='Change something',exact=True).click()
+        original='The start year was 2021.'
+        page.locator('#resume-intake-text').fill(original);page.locator('#resume-intake-add').click()
+        page.locator('#resume-intake-status').get_by_text('could not complete',exact=False).wait_for()
+        self.assertEqual(page.locator('#resume-intake-text').input_value(),original)
+        newer=original+' Keep this later thought too.'
+        page.locator('#resume-intake-text').fill(newer);page.locator('#resume-intake-add').click()
+        self.field(page,'start_date').wait_for(state='visible')
+        self.assertEqual(calls[0],calls[1])
+        self.assertEqual(page.locator('#resume-intake-text').input_value(),newer)
+        self.assertEqual(self.catalog.list_items(self.owner),[])
+        self.confirm(page)
+        self.assertEqual(page.locator('#resume-intake-text').input_value(),newer)
+        self.assertEqual(self.catalog.list_items(self.owner)[0]['values']['start_date'],'2021-01-01')
+
+    def test_dictated_correction_uses_the_same_review_and_confirmation_boundary(self):
+        calls=[]
+        class Interview:
+            def interview(inner,owner,payload,*,review_proposal=None):
+                calls.append(dict(payload))
+                return {'saved':False,'publishes':False,'next_question':'','response':'Proposed your contribution.',
+                    'base_revision':payload['expected_draft_version'],'candidates':[{'record_type':'role',
+                    'values':{'summary':'I led a cross-team migration.'},'quote':payload['statement']}]}
+        app.config.update(PEERSLATE_RESUME_INTERVIEW_ENABLED=True,RESUME_PRIVATE_ASSISTANCE_SERVICE=Interview())
+        self.typed_service([self.role_proposal()],transcription_adapter=ResumeTranscriptionAdapter(service=self.transcriber))
+        page=self.page(390,844);self.submit(page,'Original role.')
+        page.get_by_role('button',name='Change something',exact=True).click()
+        self.record(page);page.locator('#resume-intake-mic').click()
+        page.wait_for_function("() => document.querySelector('#resume-intake-text').value.includes('cross-team migration')")
+        self.assertEqual(self.catalog.list_items(self.owner),[])
+        page.locator('#resume-intake-add').click()
+        self.field(page,'summary').wait_for(state='visible')
+        self.assertEqual(self.field(page,'summary').input_value(),'I led a cross-team migration.')
+        self.assertIn(TRANSCRIPT,calls[0]['statement']);self.assertEqual(self.catalog.list_items(self.owner),[])
+        self.confirm(page)
+        self.assertEqual(self.catalog.list_items(self.owner)[0]['values']['summary'],'I led a cross-team migration.')
+        self.assertEqual(self.errors,[])
+
+    def test_failed_correction_then_manual_confirmation_preserves_newer_words_and_allows_next_correction(self):
+        from services.resume_intake_runtime import SynthesisError
+        calls=[]
+        class Interview:
+            def interview(inner,owner,payload,*,review_proposal=None):
+                calls.append(dict(payload,proposal_key=review_proposal['proposal_key']))
+                if len(calls)==1: raise SynthesisError('unavailable')
+                return {'saved':False,'publishes':False,'next_question':'','response':'Proposed the second year.',
+                    'base_revision':payload['expected_draft_version'],'candidates':[{'record_type':'role',
+                    'values':{'start_date':'2020-01-01','date_precision':'year'},'quote':payload['statement']}]}
+        app.config.update(PEERSLATE_RESUME_INTERVIEW_ENABLED=True,RESUME_PRIVATE_ASSISTANCE_SERVICE=Interview())
+        second=self.role_proposal();second['values']=dict(second['values'],employer_name='Atlas Lab')
+        service=self.typed_service([self.role_proposal(),second])
+        page=self.page();self.submit(page,'Two original roles.')
+        page.get_by_role('button',name='Change something',exact=True).click()
+        original='The first role started in 2021.'
+        page.locator('#resume-intake-text').fill(original);page.locator('#resume-intake-add').click()
+        page.locator('#resume-intake-status').get_by_text('could not complete',exact=False).wait_for()
+        newer=original+' Keep this later thought too.'
+        page.locator('#resume-intake-text').fill(newer);page.locator('#resume-intake-back').click()
+        page.get_by_role('button',name='Edit fields manually',exact=True).click()
+        self.field(page,'start_date').fill('2021');self.confirm(page)
+        self.assertEqual(page.locator('#resume-intake-text').input_value(),newer)
+        self.assertEqual(len(service.get_workspace(self.owner)['pending_proposals']),1)
+        # Explicitly finish the retained answer before starting another correction.
+        page.locator('#resume-intake-back').click()
+        page.locator('#resume-intake-text').fill('')
+        page.locator('#resume-intake-review-pending').click()
+        page.get_by_role('button',name='Change something',exact=True).click()
+        page.locator('#resume-intake-text').fill('The Atlas role started in 2020.')
+        page.locator('#resume-intake-add').click();self.field(page,'start_date').wait_for(state='visible')
+        self.assertEqual(self.field(page,'start_date').input_value(),'2020')
+        self.assertNotEqual(calls[0]['proposal_key'],calls[1]['proposal_key'])
+        self.assertEqual(len(self.catalog.list_items(self.owner)),1)
+        self.confirm(page)
+        self.assertEqual(len(self.catalog.list_items(self.owner)),2)
+        self.assertEqual(self.errors,[])
+
+    def test_back_from_correction_restores_its_words_when_resumed(self):
+        self.typed_service([self.role_proposal()])
+        page=self.page();self.submit(page,'Original role.')
+        page.get_by_role('button',name='Change something',exact=True).click()
+        page.locator('#resume-intake-text').fill('A correction I have not sent.')
+        page.locator('#resume-intake-back').click()
+        page.get_by_role('button',name='Change something',exact=True).click()
+        self.assertEqual(page.locator('#resume-intake-text').input_value(),'A correction I have not sent.')
+        self.assertEqual(self.catalog.list_items(self.owner),[])
+
+    def test_source_named_project_suggests_the_only_eligible_role_for_explicit_confirmation(self):
+        self.typed_service([])
+        page=self.page();self.manual(page)
+        self.queue(page,'role',role_title='Designer',employer_name='Halcyon Studio')
+        self.save_manual(page,1)
+        role=self.catalog.list_items(self.owner)[0]
+        text='At Halcyon Studio I led the Beacon pilot, reducing review time by 12 percent.'
+        from unittest.mock import patch
+        create_patch=patch.object(self.catalog,'create_private',wraps=self.catalog.create_private)
+        create=create_patch.start();self.addCleanup(create_patch.stop)
+        self.typed_service([{'kind':'inferred_wording','record_type':'accomplishment','quote':text,
+            'values':{'wording':'Led the Beacon pilot, reducing review time by 12 percent.'}}])
+        self.submit(page,text)
+        page.wait_for_function("key => document.querySelector('#resume-proposal-parent').value === key",arg=role['record_key'])
+        self.assertEqual(len(self.catalog.list_items(self.owner)),1)
+        page.get_by_role('button',name='Edit fields manually',exact=True).click()
+        self.assertEqual(page.locator('#resume-proposal-parent').input_value(),role['record_key'])
+        self.confirm(page)
+        contribution=next(row for row in self.catalog.list_items(self.owner) if row['record_type']=='accomplishment')
+        self.assertEqual(create.call_args.args[1]['parent_key'],role['record_key'])
+        self.assertFalse(contribution['resume_display']);self.assertFalse(contribution['visitor_ai'])
+
+    def test_new_optional_screen_clears_old_validation_and_distinguishes_next_question_from_finish(self):
+        self.typed_service([self.role_proposal()])
+        page=self.page();self.submit(page,'Original role.')
+        page.get_by_role('button',name='Edit fields manually',exact=True).click()
+        self.field(page,'employer_name').fill('');page.get_by_role('button',name='Confirm details',exact=True).click()
+        self.assertIn('employer',page.locator('#resume-intake-status').inner_text())
+        page.locator('#resume-intake-back').click();page.locator('#resume-intake-input-finish').click()
+        self.assertEqual(page.locator('#resume-intake-status').inner_text(),'')
+        page.locator('#resume-intake-add-story').click()
+        self.assertIn('outside work',page.locator('#resume-intake-question').inner_text())
+        page.locator('#resume-intake-new-question').click()
+        self.assertTrue(page.locator('#resume-intake-input').is_visible())
+        page.locator('#resume-intake-input-finish').click()
+        self.assertTrue(page.locator('#resume-intake-optional').is_visible())
+        self.assertEqual(self.catalog.list_items(self.owner),[])
+
+    def test_private_local_credential_months_survive_confirmation_editor_and_direct_preview(self):
+        import copy
+        from tests.mvp1_acceptance_support import SharedMvp1Fixture
+        shared=SharedMvp1Fixture()
+        keys=('RESUME_PUBLICATION_SERVICE','PEERSLATE_RESUME_PUBLICATION_ENABLED','ENTRY_POLICY_SERVICE')
+        old={key:app.config.get(key) for key in keys};self.addCleanup(app.config.update,old)
+        self.catalog=shared.canonical;self.draft_service=shared.draft
+        app.config.update(RESUME_DRAFT_SERVICE=shared.draft,RESUME_PUBLICATION_SERVICE=shared.publication,
+            PEERSLATE_RESUME_PUBLICATION_ENABLED=True,ENTRY_POLICY_SERVICE=shared.policy)
+        values={'name':'Service Design Practitioner','issuer':'Example Institute','completion_status':'completed',
+            'issue_date':'2022-06-01','issue_date_precision':'month',
+            'expiration_date':'2027-06-01','expiration_date_precision':'month'}
+        self.typed_service([{'kind':'inferred_wording','record_type':'credential','values':values}])
+        page=self.page();self.submit(page,'My credential was issued June 2022 and expires June 2027.')
+        self.assertIn('2022-06',page.locator('#resume-intake-proposals').inner_text())
+        self.assertNotIn('2022-06-01',page.locator('#resume-intake-proposals').inner_text())
+        self.assertEqual(shared.policy.list_entries(self.owner)['entries'],[])
+        page.get_by_role('button',name='Edit fields manually',exact=True).click()
+        self.assertEqual(self.field(page,'issue_date').input_value(),'2022-06')
+        self.assertEqual(self.field(page,'expiration_date').input_value(),'2027-06')
+        self.confirm(page)
+        item=self.catalog.list_items(self.owner)[0]
+        self.assertEqual((item['values']['issue_date_precision'],item['values']['expiration_date_precision']),('month','month'))
+        before=copy.deepcopy(shared.policy.repository.load_owner(self.owner))
+        page.locator('#resume-intake-next-finish').click();page.locator('#resume-intake-optional-next').click()
+        page.locator('#resume-intake-complete').click()
+        page.locator('#resume-intake-view').click()
+        page.wait_for_url('**/app/resume/publication?preview=private')
+        page.locator('#resume-private-preview:not([hidden]) .resume-publication__guest').wait_for()
+        content=page.locator('#resume-private-preview-content').inner_text()
+        self.assertIn('Issued 2022-06',content);self.assertIn('Expires 2027-06',content)
+        self.assertNotIn('2022-06-01',content);self.assertNotIn('2027-06-01',content)
+        self.assertEqual(shared.policy.repository.load_owner(self.owner),before)
+        self.assertEqual(self.errors,[])
 
 
     def test_uncertain_words_require_member_type_choice(self):
@@ -925,6 +1173,20 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         page.locator('[data-proposal-type]').select_option('skill')
         self.field(page,'name').fill('Systems thinking');self.confirm(page)
         self.assertEqual(self.catalog.list_items(self.owner)[0]['values']['name'],'Systems thinking')
+
+    def test_unsorted_words_do_not_become_a_skill_summary_without_member_wording(self):
+        source='Explicit document contribution: coordinating a workshop.'
+        self.typed_service([{'kind':'inferred_wording','record_type':'unspecified','values':{'text':source}}])
+        page=self.page();self.submit(page,source)
+        page.locator('[data-proposal-type]').select_option('skill')
+        self.field(page,'name').fill('Workshop coordination')
+        self.assertEqual(self.field(page,'summary').input_value(),'')
+        self.assertIn(source,page.locator('#resume-intake-proposals').inner_text())
+        self.confirm(page)
+        item=self.catalog.list_items(self.owner)[0]
+        self.assertEqual(item['values']['name'],'Workshop coordination')
+        self.assertFalse(item['values'].get('summary'))
+        self.assertFalse(item['resume_display']);self.assertFalse(item['visitor_ai'])
 
 
 

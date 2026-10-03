@@ -461,6 +461,10 @@ class ResumeDraftService:
 
     def commit(self, owner: str, payload: object) -> dict:
         command = self._normalize_command(payload)
+        if (command.get('record_type') == 'credential' and isinstance(self.repository, SqlResumeDraftRepository)
+                and {'issue_date_precision', 'expiration_date_precision'} & set(command.get('values') or {})):
+            from services.living_resume_editor_service import CREDENTIAL_PRECISION_UNAVAILABLE
+            raise ResumeDraftValidationError(CREDENTIAL_PRECISION_UNAVAILABLE)
         try:
             snapshot = self._load(owner)
         except ResumeDraftUnavailableError as error:

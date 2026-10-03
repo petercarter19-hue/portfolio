@@ -19,6 +19,7 @@ import json
 import re
 from collections.abc import Mapping
 from datetime import date
+from calendar import monthrange
 from urllib.parse import urlparse
 from uuid import UUID
 
@@ -64,6 +65,9 @@ EMPLOYMENT_TYPES = frozenset(
     }
 )
 CREDENTIAL_STATUSES = frozenset({"planned", "in_progress", "completed"})
+CREDENTIAL_PRECISION_FIELDS = frozenset({'issue_date_precision', 'expiration_date_precision'})
+CREDENTIAL_PRECISION_UNAVAILABLE = ('This storage does not support credential date precision yet. '
+    'Your input is kept. Use the private local workspace or keep this suggestion for later; do not invent an exact day.')
 
 # Education uses the existing canonical chapter precision/status vocabulary.
 EDUCATION_DATE_PRECISIONS = DATE_PRECISIONS | {"approximate"}
@@ -114,6 +118,8 @@ _CREDENTIAL_FIELDS = frozenset(
         "identifier",
         "issue_date",
         "expiration_date",
+        "issue_date_precision",
+        "expiration_date_precision",
         "verification_url",
         "completion_status",
     }
@@ -336,18 +342,54 @@ def _skill_values(raw: object) -> dict[str, object]:
     }
 
 
+def credential_date_text(value, precision=None):
+    """Validate and project a copy to supplied precision; legacy ISO stays exact."""
+    if value is None:
+        return None
+    if not isinstance(value, str) or len(value) not in {4, 7, 10}:
+        raise LivingResumeEditorValidationError('Invalid credential date.')
+    precision = precision or {4: 'year', 7: 'month', 10: 'day'}.get(len(value))
+    if precision not in {'year', 'month', 'day'}:
+        raise LivingResumeEditorValidationError('Invalid credential date detail.')
+    if len(value) < 10 and {4: 'year', 7: 'month'}[len(value)] != precision:
+        raise LivingResumeEditorValidationError('Credential date does not match its supplied detail.')
+    # Partial strings occur only in the read-only local evidence projection.
+    padded = value + ('-01-01' if len(value) == 4 else '-01' if len(value) == 7 else '')
+    parsed = _date_value({'date': padded}, 'date')
+    if parsed is None: raise LivingResumeEditorValidationError('Invalid credential date.')
+    if (precision == 'year' and (parsed.month, parsed.day) != (1, 1)
+            or precision == 'month' and parsed.day != 1):
+        raise LivingResumeEditorValidationError('Credential date does not match its supplied detail.')
+    return parsed.isoformat()[:{'year': 4, 'month': 7, 'day': 10}[precision]]
+
+
+def _credential_upper(value, precision):
+    if precision == 'year': return date(value.year, 12, 31)
+    if precision == 'month': return date(value.year, value.month, monthrange(value.year, value.month)[1])
+    return value
+
+
 def _credential_values(raw: object) -> dict[str, object]:
     values = _validate_exact_fields(raw, _CREDENTIAL_FIELDS)
     status = _choice(values, "completion_status", CREDENTIAL_STATUSES, required=True)
     issue = _date_value(values, "issue_date")
     expiration = _date_value(values, "expiration_date")
+    precisions = {}
+    for name, parsed in (('issue_date', issue), ('expiration_date', expiration)):
+        precision = _choice(values, name + '_precision', {'year', 'month', 'day'})
+        if precision and parsed is None:
+            raise LivingResumeEditorValidationError('Credential date detail needs its date.')
+        if parsed:
+            credential_date_text(parsed.isoformat(), precision)
+        if precision in {'year', 'month'}: precisions[name + '_precision'] = precision
     if status in {"planned", "in_progress"} and (issue is not None or expiration is not None):
         raise LivingResumeEditorValidationError(
             "planned and in_progress credentials cannot have issue or expiration dates."
         )
     if status == "completed" and issue is None:
         raise LivingResumeEditorValidationError("A completed credential requires issue_date.")
-    if issue is not None and expiration is not None and expiration < issue:
+    if issue is not None and expiration is not None and _credential_upper(
+            expiration, precisions.get('expiration_date_precision')) < issue:
         raise LivingResumeEditorValidationError("expiration_date cannot be before issue_date.")
     verification_url = _text(values, "verification_url", 1000)
     if verification_url is not None:
@@ -367,6 +409,7 @@ def _credential_values(raw: object) -> dict[str, object]:
         "expiration_date": expiration.isoformat() if expiration else None,
         "verification_url": verification_url,
         "completion_status": status,
+        **precisions,
     }
 
 
@@ -456,6 +499,8 @@ def normalize_editor_intent(record_type: str, values: object) -> dict[str, objec
         elif name in {"start_date", "end_date", "issue_date", "expiration_date"}:
             parsed = _date_value(supplied, name)
             normalized[name] = parsed.isoformat() if parsed else None
+        elif name in CREDENTIAL_PRECISION_FIELDS:
+            normalized[name] = _choice(supplied, name, {'year', 'month', 'day'})
         elif name == "date_precision":
             choices = EDUCATION_DATE_PRECISIONS if record_type == "education" else DATE_PRECISIONS
             normalized[name] = _choice(supplied, name, choices)
@@ -665,6 +710,8 @@ class LivingResumeEditorService:
     def commit(self, user_key: object, payload: object) -> dict[str, object]:
         clean_user_key = self._user_key(user_key)
         normalized, command_json, expected_digest = normalize_command(payload)
+        if CREDENTIAL_PRECISION_FIELDS & set(normalized['values']):
+            raise LivingResumeEditorValidationError(CREDENTIAL_PRECISION_UNAVAILABLE)
         try:
             result_sets = self._executor.execute_procedure(
                 "usp_CommitLivingResumeCommandForOwner",

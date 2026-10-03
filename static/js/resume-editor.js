@@ -13,7 +13,7 @@
     const fieldOrder = {
         role: ["role_title", "employer_name", "summary", "location_text", "date_precision", "start_date", "end_date", "current_role"],
         education: ["title", "institution_name", "field_of_study", "education_status", "summary", "date_precision", "start_date", "end_date"],
-        credential: ["name", "issuer", "completion_status", "identifier"],
+        credential: ["name", "issuer", "completion_status", "identifier", "issue_date", "issue_date_precision", "expiration_date", "expiration_date_precision"],
         skill: ["name", "summary"],
         accomplishment: ["wording", "metric_value", "metric_label"],
         knowledge: ["title", "wording"],
@@ -80,6 +80,18 @@
                 merged[name] = raw + (precision === "year" ? "-01-01" : precision === "month" ? "-01" : "");
             });
         }
+        if (recordType === 'credential') {
+            ['issue_date', 'expiration_date'].forEach(function (name) {
+                const raw = String(merged[name] || '').trim();
+                if (!raw) { merged[name] = null; delete merged[name + '_precision']; return; }
+                const precision = merged[name + '_precision'] || ({4: 'year', 7: 'month', 10: 'day'})[raw.length];
+                const pattern = {year: /^\d{4}$/, month: /^\d{4}-\d{2}$/, day: /^\d{4}-\d{2}-\d{2}$/}[precision];
+                if (!pattern || !pattern.test(raw)) throw new Error('Use YYYY, YYYY-MM or YYYY-MM-DD to match the credential date detail.');
+                merged[name] = raw + (precision === 'year' ? '-01-01' : precision === 'month' ? '-01' : '');
+                if (precision === 'day') delete merged[name + '_precision'];
+                else merged[name + '_precision'] = precision;
+            });
+        }
         return merged;
     }
 
@@ -94,7 +106,8 @@
             // Preserve pre-existing unqualified date values in the edit form;
             // an unknown precision never presents them as established dates.
             field.value = dateText(value, source.date_precision) || (value || "");
-        } else field.value = value == null ? "" : value;
+        } else if (['issue_date', 'expiration_date'].includes(field.name)) field.value = dateText(value, source[field.name + '_precision'] || 'day');
+        else field.value = value == null ? "" : value;
     }
 
     function fillForm(form, item) {
@@ -197,6 +210,13 @@
             if (!start && !end) dates.textContent = (values.current_role === true ? "Current role · " : "") + "Dates not supplied";
             card.appendChild(dates);
         }
+        if (item.record_type === 'credential') {
+            const dates = document.createElement('p'); dates.className = 'resume-editor__entry-detail';
+            dates.textContent = ['issue_date', 'expiration_date'].filter(function (name) { return values[name]; }).map(function (name) {
+                return (name === 'issue_date' ? 'Issued ' : 'Expires ') + dateText(values[name], values[name + '_precision'] || 'day');
+            }).join(' · ');
+            if (dates.textContent) card.appendChild(dates);
+        }
         const wording = document.createElement("p");
         wording.className = "resume-editor__entry-wording";
         wording.textContent = values.summary || (heading.textContent !== values.wording ? values.wording : "") || "";
@@ -228,7 +248,10 @@
             label.setAttribute("for", fieldId);
             label.textContent = name === "date_precision" ? "Date detail" : name === "current_role" ? "Current role" : name.replace(/_/g, " ");
             let field;
-            if (name === "date_precision") {
+            if (name === 'issue_date_precision' || name === 'expiration_date_precision') {
+                field = document.createElement('select');
+                [['', 'From supplied date'], ['year', 'Year'], ['month', 'Month'], ['day', 'Exact day']].forEach(function (option) { field.add(new Option(option[1], option[0])); });
+            } else if (name === "date_precision") {
                 field = document.createElement("select");
                 [["unknown", "Not supplied"], ["year", "Year"], ["month", "Month"], ["day", "Exact day"]]
                     .concat(item.record_type === "education" ? [["approximate", "Approximate"]] : [])
@@ -413,7 +436,7 @@
             return;
         }
         if (this.dataset.pageUrl) {
-            window.location.assign(this.dataset.pageUrl);
+            window.location.assign(this.dataset.pageUrl + '?preview=private');
             return;
         }
         const result = await send(reviewUrl, {

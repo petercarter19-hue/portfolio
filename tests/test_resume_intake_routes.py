@@ -954,6 +954,32 @@ if __name__ == "__main__":
 
 # Selected model/private assistance integration regressions; fixtures only.
 class RouteBoundaryTests(unittest.TestCase):
+    def test_correction_binds_owner_pending_source_and_refuses_a_foreign_or_changed_proposal(self):
+        from unittest.mock import Mock, patch
+        proposal={'proposal_key':str(uuid4()),'state':'pending','record_type':'role',
+            'quote':'Owner source','proposed_values':{'role_title':'Designer'}}
+        intake=Mock();intake.get_workspace.return_value={'pending_proposals':[proposal]}
+        payload={'request_id':str(uuid4()),'expected_draft_version':7,
+            'statement':'The start year was 2021.','proposal_key':proposal['proposal_key']}
+        self.service.interview.return_value={'saved':False,'publishes':False,'candidates':[]}
+        with patch.object(self.routes,'_service',return_value=intake):
+            response=self.client.post('/api/resume-interview/me/turn',json=payload,
+                headers={'X-PeerSlate-Request':'same-origin'})
+            self.assertEqual(response.status_code,200)
+            self.service.interview.assert_called_once_with('fiction-owner',
+                {k:v for k,v in payload.items() if k!='proposal_key'},review_proposal=proposal)
+            self.assertTrue(all(call.args==('fiction-owner',) for call in intake.get_workspace.call_args_list))
+            self.service.interview.reset_mock()
+            intake.get_workspace.return_value={'pending_proposals':[]}
+            response=self.client.post('/api/resume-interview/me/turn',json=payload,
+                headers={'X-PeerSlate-Request':'same-origin'})
+            self.assertEqual(response.status_code,404);self.service.interview.assert_not_called()
+            intake.get_workspace.side_effect=[{'pending_proposals':[proposal]},
+                {'pending_proposals':[{**proposal,'state':'accepted'}]}]
+            response=self.client.post('/api/resume-interview/me/turn',json=payload,
+                headers={'X-PeerSlate-Request':'same-origin'})
+            self.assertEqual(response.status_code,409)
+
     def test_private_flag_off_precedes_cross_origin_and_identity(self):
         from unittest.mock import patch
         self.app.config['PEERSLATE_RESUME_SYNTHESIS_ENABLED'] = False
@@ -1154,7 +1180,7 @@ class TypedExtractionReviewBrowserTests(unittest.TestCase):
             'role_title': 'Assistant', 'employer_name': 'Example Cooperative',
             'employment_type': 'Seasonal fellowship', 'summary': 'An explicitly described seasonal fellowship.'},
             'Riley worked as an Assistant at Example Cooperative in a seasonal fellowship.')
-        proposal.get_by_role('button', name='Change something', exact=True).click()
+        proposal.get_by_role('button', name='Edit fields manually', exact=True).click()
         employment = proposal.get_by_role('combobox', name='Employment type', exact=True)
         self.assertIn('Source: Seasonal fellowship', employment.inner_text())
         self.assertEqual(employment.input_value(), 'Seasonal fellowship')
@@ -1176,7 +1202,7 @@ class TypedExtractionReviewBrowserTests(unittest.TestCase):
                     'name': 'Example License', 'issuer': 'Example Board', 'completion_status': 'completed',
                     'issue_date': '2024-06-01', 'expiration_date': '2027-06-01', 'identifier': 'fixture-credential'},
                     'Riley completed Example License issued by Example Board on June 1, 2024, expiring June 1, 2027.')
-                proposal.get_by_role('button', name='Change something', exact=True).click()
+                proposal.get_by_role('button', name='Edit fields manually', exact=True).click()
                 proposal.get_by_role('combobox', name='Credential status', exact=True).select_option(status)
                 self.assertTrue(proposal.locator('[data-proposal-field=issue_date]').is_hidden())
                 proposal.get_by_role('button', name='Confirm details', exact=True).click()

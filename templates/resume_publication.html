@@ -25,7 +25,8 @@
 <article class="resume-publication__entry">
     <h3>{{ words.role_title or words.title or words.name or words.skill_name or words.credential_name or words.degree_name or words.institution_name or ('Achievement' if words.wording else 'Shared information') }}</h3>
     {% if words.employer_name or words.institution_name or words.issuer or words.issuer_name %}<p class="resume-publication__organization">{{ words.employer_name or words.institution_name or words.issuer or words.issuer_name }}</p>{% endif %}
-    {% if words.date_precision != 'unknown' and (words.start_date or words.end_date or words.issue_date) %}<p class="resume-publication__dates">{{ resume_date(words.start_date or words.issue_date, words.date_precision) }}{% if words.current_role %} – Present{% elif words.end_date %}{% if words.start_date or words.issue_date %} – {% endif %}{{ resume_date(words.end_date, words.date_precision) }}{% endif %}</p>{% endif %}
+    {% if words.issue_date or words.expiration_date %}<p class="resume-publication__dates">{% if words.issue_date %}Issued {{ resume_date(words.issue_date, words.issue_date_precision) }}{% endif %}{% if words.expiration_date %}{% if words.issue_date %} · {% endif %}Expires {{ resume_date(words.expiration_date, words.expiration_date_precision) }}{% endif %}</p>
+    {% elif words.date_precision != 'unknown' and (words.start_date or words.end_date) %}<p class="resume-publication__dates">{{ resume_date(words.start_date, words.date_precision) }}{% if words.current_role %} – Present{% elif words.end_date %}{% if words.start_date %} – {% endif %}{{ resume_date(words.end_date, words.date_precision) }}{% endif %}</p>{% endif %}
     {% if words.date_precision == 'unknown' %}<p class="resume-publication__dates">{% if words.current_role %}Current role · {% endif %}Dates not supplied</p>{% endif %}
     {% if words.education_status %}<p class="resume-publication__education-status">{{ {'planned': 'Planned', 'in_progress': 'In progress', 'completed': 'Completed', 'incomplete': 'Incomplete', 'withdrawn': 'Withdrawn'}.get(words.education_status, words.education_status | replace('_', ' ') | capitalize) }}</p>{% endif %}
     {% if words.location_text %}<p>{{ words.location_text }}</p>{% endif %}
@@ -133,26 +134,32 @@
     </div>
 </section>
 {% else %}
-<section class="owner-app resume-publication{% if visitor_ai_enabled %} resume-publication--with-ai{% endif %}" aria-labelledby="resume-publication-title">
+{% set direct_private_mode = request.args.get('preview') == 'private' %}
+<section class="owner-app resume-publication{% if visitor_ai_enabled and not direct_private_mode %} resume-publication--with-ai{% endif %}" aria-labelledby="resume-publication-title">
     <div class="resume-publication__layout">
     <div class="owner-app__panel resume-publication__panel">
         <header class="resume-publication__intro">
             <p class="owner-app__eyebrow">Private Resume</p>
-            <h1 id="resume-publication-title">Publish Resume</h1>
+            <h1 id="resume-publication-title">{{ 'Preview my Resume privately' if direct_private_mode else 'Publish Resume' }}</h1>
             <p>
                 Welcome, {{ member.display_name or 'PeerSlate member' }}.
+                {% if direct_private_mode %}Preview your current draft privately. Nothing is published.
+                {% else %}
                 Review your current information and sharing choices before publishing.
                 Your changes stay private until you publish them.
+                {% endif %}
             </p>
             <p class="resume-editor__privacy-note">
-                Display and visitor AI stay independent. Restoring a deleted fact stays private.
+                {% if direct_private_mode %}These selections apply only to this preview. Your saved sharing choices stay unchanged.
+                {% else %}Display and visitor AI stay independent. Restoring a deleted fact stays private.
                 Turning sharing off hides the public page immediately.
+                {% endif %}
             </p>
         </header>
         {% include "partials/resume/_publication_review.html" %}
-        {% if visitor_ai_enabled %}<button class="visitor-ai__open" id="visitor-ai-open" type="button" aria-controls="visitor-ai-panel">Try visitor AI</button>{% endif %}
+        {% if visitor_ai_enabled and not direct_private_mode %}<button class="visitor-ai__open" id="visitor-ai-open" type="button" aria-controls="visitor-ai-panel">Try visitor AI</button>{% endif %}
     </div>
-    {% if visitor_ai_enabled %}{{ ai_panel(true) }}{% endif %}
+    {% if visitor_ai_enabled and not direct_private_mode %}{{ ai_panel(true) }}{% endif %}
     </div>
 </section>
 <section id="resume-private-preview" aria-label="Private Resume layout preview" hidden>
