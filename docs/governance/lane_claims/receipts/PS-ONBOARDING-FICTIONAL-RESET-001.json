@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-ONBOARDING-FICTIONAL-RESET-001",
+  "candidate_sha": "981cab9e15a8b617ed5fe871d5bbc7e5c1cbc146",
+  "reviewer_ref": "session:01a0fafc-327e-7481-a330-2a29f452b6fc",
+  "result": "pass",
+  "reviewed_at": "2026-10-03T00:36:18Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-ONBOARDING-FICTIONAL-RESET-001.md",
+  "review_type": "independent"
+}

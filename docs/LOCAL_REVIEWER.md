@@ -7,6 +7,20 @@ Keep the PC awake while using the site. Closing the browser preserves saved work
 `Stop.cmd` stops only this site. No Windows Sandbox or review ZIP is part of
 ordinary use.
 
+For a fresh fictional demo, double-click `Fresh Demo.cmd` while the onboarding
+workspace at port8444 is selected. It saves a recovery checkpoint, clears the
+fictional resume, proposals, profile and onboarding progress, restarts the site,
+and opens the empty resume page. Personal data and AI allowances are preserved.
+Personal selection refuses reset before stopping the site. The PC must remain
+awake while the demo runs.
+
+The command waits for current work to finish and refuses unresolved provider
+reservations. If an error says **Fictional reset committed**, the data was already
+cleared and its checkpoint was saved. Use `Status.cmd` to check startup, then
+`Start.cmd` if stopped; do not repeat reset to fix startup. To recover the old
+fictional content, stop and confirm shutdown, use `Run.cmd restore <checkpoint>`
+with the reported checkpoint name while onboarding remains selected, then start.
+
 Stop acknowledges promptly, refuses new work and finishes the current request
 before closing. Status reports when it is stopping. Updates wait for that work
 and process shutdown to finish before promoting another version.

@@ -393,7 +393,8 @@ if (root / "data/fictional-workspaces/onboarding").exists() or "workspace" in ma
 raise SystemExit(subprocess.call([str(root / "runtime" / "Scripts" / "python.exe"), "-I", "-B", str(directory / "scripts" / "local_reviewer.py"), "--root", str(root), *sys.argv[1:]]))
 '''
     atomic_write(root / "reviewer.py", launcher.encode())
-    for action, command in {"Start": "start", "Stop": "stop", "Status": "status", "Checkpoint": "checkpoint"}.items():
+    for action, command in {"Start": "start", "Stop": "stop", "Status": "status", "Checkpoint": "checkpoint",
+                            "Fresh Demo": "reset-fictional-workspace --open"}.items():
         content = '@echo off\r\n"' + str(root / "runtime" / "Scripts" / "python.exe") + '" -I -B "' + str(root / "reviewer.py") + '" ' + command + '\r\n'
         if command == "start":
             content += 'if not errorlevel 1 "' + str(root / "runtime" / "Scripts" / "python.exe") + '" -I -B "' + str(root / "reviewer.py") + '" open\r\n'
@@ -731,6 +732,47 @@ def restore_private(root, name):
         return {"restored": name, "previous": previous, "workspace": context.binding, "provider_calls": 0}
 
 
+def reset_fictional_workspace(root):
+    """Explicit local demo reset; caller holds control.lock throughout restart."""
+    from .runtime import WORKSPACE_ID, selected_context, build_fixture, ordinary_path
+    manifest = read(root / "installation.json")
+    original = selected_context(root, manifest)
+    if not manifest.get("private_profile") or original.key != WORKSPACE_ID or not original.namespace:
+        raise ValueError("Select the existing fictional onboarding workspace before reset; personal reset is unavailable")
+    # Refuse a missing, foreign or corrupt namespace before touching its server.
+    raw = ordinary_path(original.state_path).read_bytes()
+    saved = json.loads(raw)
+    if (type(saved) is not dict or set(saved) != {"body", "sha256"}
+            or type(saved["body"]) is not dict
+            or saved["body"].get("namespace") != original.namespace
+            or hashlib.sha256(canonical(saved["body"])).hexdigest() != saved["sha256"]):
+        raise ValueError("Invalid fictional saved state; preserve it instead of resetting")
+    stop(root, wait=True)
+    with private_operator(root) as (manifest, _, configuration, budget):
+        require_inactive(configuration, budget)
+        context = selected_context(root, manifest)
+        if context.binding != original.binding:
+            raise ValueError("Selected fictional context changed; reset refused")
+        with ExitStack() as stack:
+            _, _, _, state = build_fixture(verify_release(root, manifest) / "source", stack)
+            fresh = state.capture()
+            store = context.store(state)
+            store.load()  # Validate the latest post-drain typed state before checkpoint/write.
+            checkpoint = offline_checkpoint(root)
+            store.save(fresh)
+            generation = store.generation
+    try:
+        status = start(root)
+        if not status.get("running") or status.get("stopping"):
+            raise ValueError("Owned startup was not confirmed")
+    except Exception as exc:
+        raise ValueError("Fictional reset committed; recovery checkpoint " + checkpoint
+                         + ". Startup was not confirmed. Use Status before restarting; do not repeat reset to recover startup.") from exc
+    return {"reset": WORKSPACE_ID, "checkpoint": checkpoint, "generation": generation,
+            "workspace": context.binding, "url": context.identity.origin + "/app/resume",
+            "running": True, "provider_calls": 0}
+
+
 def resolve_failed_public(root, proof_path, review_path):
     from .provider_budget import request_id
     proof, review = read(proof_path), read(review_path)
@@ -803,6 +845,8 @@ def main(argv=None):
     for action in ("start", "stop", "status", "checkpoint", "rollback", "serve", "open"):
         sub.add_parser(action)
     sub.add_parser("create-fictional-workspace")
+    fresh = sub.add_parser("reset-fictional-workspace")
+    fresh.add_argument("--open", action="store_true", help="Open the fresh demo after confirmed restart")
     workspace = sub.add_parser("select-workspace")
     workspace.add_argument("workspace", choices=("personal", "onboarding"))
     restore = sub.add_parser("restore")
@@ -881,6 +925,11 @@ def main(argv=None):
             result = create_workspace(root)
         elif args.action == "select-workspace":
             result = select_workspace(root, args.workspace)
+        elif args.action == "reset-fictional-workspace":
+            result = reset_fictional_workspace(root)
+            if args.open:
+                import webbrowser
+                result["browser_open_requested"] = bool(webbrowser.open(result["url"]))
         elif args.action == "reset":
             result = control(root, "reset", {"member": args.member})
         elif args.action == "rollback":

@@ -721,6 +721,135 @@ class WorkspaceOperatorTests(unittest.TestCase):
         self.assertEqual(context.state_path.read_bytes(), saved)
         self.assertEqual((self.root / "data/state.json").read_bytes(), self.personal)
 
+    def prepare_fictional_reset(self):
+        from tools.local_reviewer.runtime import selected_context
+        self.manager.create_workspace(self.root)
+        self.manager.select_workspace(self.root, "onboarding")
+        context = selected_context(self.root)
+        store = context.store(self.fresh()[3]); store.load()
+        store.state.bindings["values"][0].values = {
+            "resume": "old fictional text", "submissions": ["saved"],
+            "proposals": ["pending"], "profile": "old profile", "guide": "finished"}
+        store.save()
+        return context, context.state_path.read_bytes()
+
+    def test_fictional_reset_preserves_checkpoint_personal_configuration_and_accounting(self):
+        context, old = self.prepare_fictional_reset()
+        self.manager.write(self.root / "previous.json", {"manifest": self.old, "checkpoint": None})
+        paths = ["installation.json", "private-access.json", "live-ai.json", "ai-allocation.json",
+                 "ai-factory.json", "previous.json", "data/state.json", "data/provider-budget-v1.sqlite3"]
+        protected = {p: (self.root / p).read_bytes() for p in paths if (self.root / p).exists()}
+        accounting = self.snapshots()
+        with patch.object(self.manager, "stop") as stop, patch.object(self.manager, "start", return_value={"running": True}) as start:
+            result = self.manager.reset_fictional_workspace(self.root)
+        stop.assert_called_once_with(self.root, wait=True); start.assert_called_once_with(self.root)
+        self.assertEqual(result["reset"], "onboarding")
+        self.assertEqual(result["url"], context.identity.origin + "/app/resume")
+        self.assertEqual(result["provider_calls"], 0)
+        self.assertEqual((context.checkpoints / result["checkpoint"]).read_bytes(), old)
+        fresh = context.store(self.fresh()[3]); fresh.load()
+        self.assertEqual(fresh.state.bindings["values"][0].values, {"fresh-fixture": True})
+        self.assertEqual(fresh.generation, json.loads(old)["body"]["generation"] + 1)
+        self.assertEqual(self.snapshots(), accounting)
+        self.assertEqual({p: (self.root / p).read_bytes() for p in protected}, protected)
+        # Exercise the existing supported restore, rather than infer recovery from a filename.
+        self.manager.restore_private(self.root, result["checkpoint"])
+        restored = context.store(self.fresh()[3]); restored.load()
+        self.assertEqual(restored.state.capture(), restored.unpack(old)["state"])
+        self.assertEqual((self.root / "data/state.json").read_bytes(), self.personal)
+
+    def test_fictional_reset_refuses_personal_selection_before_stop(self):
+        self.manager.create_workspace(self.root)
+        with patch.object(self.manager, "stop") as stop, patch.object(self.manager, "start") as start:
+            with self.assertRaisesRegex(ValueError, "personal reset is unavailable"):
+                self.manager.reset_fictional_workspace(self.root)
+        stop.assert_not_called(); start.assert_not_called()
+        self.assertEqual((self.root / "data/state.json").read_bytes(), self.personal)
+
+    def test_fictional_reset_refuses_corrupt_foreign_or_missing_snapshot_before_stop(self):
+        context, old = self.prepare_fictional_reset()
+        foreign = json.loads(old); foreign["body"]["namespace"] = "0" * 64
+        foreign["sha256"] = __import__("hashlib").sha256(canonical(foreign["body"])).hexdigest()
+        for raw in (b"{", canonical(foreign), old.replace(b'"sha256":"', b'"sha256":"0')):
+            context.state_path.write_bytes(raw)
+            with patch.object(self.manager, "stop") as stop:
+                with self.assertRaises(ValueError): self.manager.reset_fictional_workspace(self.root)
+                stop.assert_not_called()
+            self.assertEqual(context.state_path.read_bytes(), raw)
+        context.state_path.unlink()
+        with patch.object(self.manager, "stop") as stop:
+            with self.assertRaises(OSError): self.manager.reset_fictional_workspace(self.root)
+            stop.assert_not_called()
+        self.assertEqual(list(context.checkpoints.glob("*.json")), [])
+        self.assertEqual((self.root / "data/state.json").read_bytes(), self.personal)
+
+    def test_each_active_profile_blocks_fictional_reset_without_state_write(self):
+        context, old = self.prepare_fictional_reset()
+        for name, profile in self.config["profiles"].items():
+            request = str(uuid4())
+            self.assertTrue(self.budget.reserve({"@UserKey": self.identity.owner, "@Scope": profile["scope"],
+                "@RequestId": request, "@ReservationMicroUsd": profile["reservation_micro_usd"],
+                "@MaximumCalls": profile["maximum_calls"], "@HardCapMicroUsd": profile["hard_cap_micro_usd"],
+                "@ConcurrentRequests": 1}))
+            with self.subTest(profile=name), patch.object(self.manager, "stop"), patch.object(self.manager, "start") as start:
+                with self.assertRaisesRegex(ValueError, "active reservations"):
+                    self.manager.reset_fictional_workspace(self.root)
+                start.assert_not_called()
+            self.assertEqual(context.state_path.read_bytes(), old)
+            self.assertEqual(list(context.checkpoints.glob("*.json")), [])
+            event = {"phase": 1, "identity_sha256": __import__("hashlib").sha256(request.encode()).hexdigest()}
+            event.update({"seconds": 1} if "duration_tariff" in profile else {"input_tokens": 1, "output_tokens": 0})
+            self.budget.settle(self.identity.owner, profile["scope"], request, [event])
+
+    def test_fictional_reset_requires_complete_server_teardown(self):
+        context, old = self.prepare_fictional_reset()
+        self.status.return_value = {"running": True}
+        with patch.object(self.manager, "stop"):
+            with self.assertRaisesRegex(ValueError, "Stop the private site"):
+                self.manager.reset_fictional_workspace(self.root)
+        self.status.return_value = {"running": False}
+        with self.manager.exclusive(self.root, "server.lock"), patch.object(self.manager, "stop"):
+            with self.assertRaises(OSError): self.manager.reset_fictional_workspace(self.root)
+        self.assertEqual(context.state_path.read_bytes(), old)
+        self.assertEqual(list(context.checkpoints.glob("*.json")), [])
+
+    def test_fictional_reset_interrupted_save_keeps_checkpoint_and_previous_state(self):
+        from tools.local_reviewer.persistence import atomic_write
+        context, old = self.prepare_fictional_reset()
+        def fail_state(path, data):
+            if path == context.state_path: raise OSError("interrupted fictional save")
+            return atomic_write(path, data)
+        with patch.object(self.manager, "stop"), patch.object(self.manager, "start") as start, patch("tools.local_reviewer.persistence.atomic_write", side_effect=fail_state):
+            with self.assertRaisesRegex(OSError, "interrupted fictional save"):
+                self.manager.reset_fictional_workspace(self.root)
+            start.assert_not_called()
+        self.assertEqual(context.state_path.read_bytes(), old)
+        self.assertEqual([p.read_bytes() for p in context.checkpoints.glob("*.json")], [old])
+
+    def test_fictional_reset_failed_restart_reports_committed_reset_without_retry(self):
+        context, old = self.prepare_fictional_reset()
+        with patch.object(self.manager, "stop"), patch.object(self.manager, "start", side_effect=ValueError("startup uncertain")) as start:
+            with self.assertRaisesRegex(ValueError, "Fictional reset committed; recovery checkpoint.*Use Status"):
+                self.manager.reset_fictional_workspace(self.root)
+            start.assert_called_once_with(self.root)
+        current = context.store(self.fresh()[3]); current.load()
+        self.assertEqual(current.state.bindings["values"][0].values, {"fresh-fixture": True})
+        self.assertEqual([p.read_bytes() for p in context.checkpoints.glob("*.json")], [old])
+        self.assertEqual((self.root / "data/state.json").read_bytes(), self.personal)
+
+    def test_updated_controller_installs_explicit_fresh_demo_launcher(self):
+        self.probe.side_effect = None; self.probe.return_value = SimpleNamespace(returncode=0)
+        self.prepare.return_value = ("old", {"candidate_state": "accepted-main"}, {})
+        self.args.factory = None
+        self.manager.install_artifact(self.root, self.args)
+        launcher = (self.root / "Fresh Demo.cmd").read_text()
+        self.assertIn('" -I -B "', launcher)
+        self.assertIn("reset-fictional-workspace --open", launcher)
+        with patch.object(self.manager, "safe_root", return_value=self.root), patch.object(self.manager, "require_private_runtime"), patch.object(self.manager, "reset_fictional_workspace", return_value={"url": "https://test.example.ts.net:8444/app/resume"}) as reset, patch("webbrowser.open", return_value=True) as browser:
+            self.manager.main(["reset-fictional-workspace", "--open"])
+        reset.assert_called_once_with(self.root)
+        browser.assert_called_once_with("https://test.example.ts.net:8444/app/resume")
+
     def test_workspace_directory_links_are_refused_before_loading_state(self):
         from tools.local_reviewer.runtime import selected_context
         self.manager.create_workspace(self.root)
