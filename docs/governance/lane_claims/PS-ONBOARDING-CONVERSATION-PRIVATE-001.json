@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-ONBOARDING-CONVERSATION-PRIVATE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Qualify one independently reviewed factory/interface/controller pair for accepted PS-ONBOARDING-CONVERSATION-001 source, then supported private promotion and HTTPS journey proof. Wait for the source owner's accepted SHA, review/CI, archive/hash, full B6 overlay and exact replacement interface. Preserve both saved namespaces/generations without reset or rewind, root identity/signing/configs, all provider profiles/models/rates/caps, seven ledger tables, Native counts, checkpoints and rollback lineage. Require stopped/drained server lifetime lock and all five scopes inactive. Validate exact source pins, contracts, unreviewed/incompatible refusal, atomic pair/recovery and state compatibility. Carry prior incomplete browser/personal-return proof honestly. Independent Protected review, current-target CI and accepted controller merge precede installation. Zero live provider calls; no source-owner edits, cloud exposure, auth changes, migration or reset.",
   "assignment": "implementation",
   "writer_ref": "session:01a0faaf-5e48-7060-990a-c28989a8d247",
@@ -28,6 +28,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "76492d0d11f6fbb2b1a7196588d8dce08964fdc5",
+  "closed_at": "2026-10-03T22:27:42Z"
 }
