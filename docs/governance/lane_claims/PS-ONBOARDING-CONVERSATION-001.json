@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-ONBOARDING-CONVERSATION-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Repair the owner-selected private conversation-first Resume onboarding flow: upload or speak/type, acknowledge and organize source-backed suggestions, ask only genuine gaps, accept typed/spoken corrections, propose contextual existing-role/project amendments, explicit confirmation and immediate private preview. Preserve manual alternatives, exact source/date precision, human authority, owner isolation, retention and provider controls. Carry forward the independent review findings; validate synthetic document/follow-up/story/project/correction/preview journeys, obtain independent Protected review, current-target CI and accepted merge, and coordinate private installation with the existing installer. Public production enablement, fixture reset and external cloud access are excluded.",
   "assignment": "implementation",
   "writer_ref": "session:01a0ff26-7f5a-76a3-8f13-f051ebd04255",
@@ -57,6 +57,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "965dde2b3e9c31ab97c7bc1b02d3bba20db0d20f",
+  "closed_at": "2026-10-03T18:12:33Z"
 }
