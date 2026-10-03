@@ -31,10 +31,26 @@
     "tests/test_resume_publication_browser.py",
     "docs/governance/lane_claims/PS-ONBOARDING-CONVERSATION-001.json",
     "docs/governance/lane_claims/receipts/PS-ONBOARDING-CONVERSATION-001.json",
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-CONVERSATION-001.md",
+    "services/living_resume_editor_service.py",
+    "services/entry_policy_service.py",
+    "services/resume_draft_service.py",
+    "services/resume_publication_projection.py",
+    "templates/resume_publication.html",
+    "tests/test_living_resume_editor_service.py",
+    "tests/test_entry_policy_service.py",
+    "tests/test_resume_draft_service.py",
+    "tests/test_resume_publication_projection.py"
+  ],
+  "domains": [
+    "runtime:resume:onboarding",
+    "runtime:resume:intake:context",
+    "runtime:my-data:extraction:source-spans",
+    "runtime:resume:publication:private-preview"
+  ],
+  "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-ONBOARDING-CONVERSATION-001.md"
   ],
-  "domains": ["runtime:resume:onboarding", "runtime:resume:intake:context", "runtime:my-data:extraction:source-spans", "runtime:resume:publication:private-preview"],
-  "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-ONBOARDING-CONVERSATION-001.md"],
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
