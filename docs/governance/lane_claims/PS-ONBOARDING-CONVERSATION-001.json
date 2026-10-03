@@ -40,7 +40,9 @@
     "tests/test_living_resume_editor_service.py",
     "tests/test_entry_policy_service.py",
     "tests/test_resume_draft_service.py",
-    "tests/test_resume_publication_projection.py"
+    "tests/test_resume_publication_projection.py",
+    "scripts/run_mvp1_acceptance_browser_tests.py",
+    "scripts/run_resume_publication_browser_tests.py"
   ],
   "domains": [
     "runtime:resume:onboarding",
