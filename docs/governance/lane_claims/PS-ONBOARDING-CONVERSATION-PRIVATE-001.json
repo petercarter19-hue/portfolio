@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "package": "PS-ONBOARDING-CONVERSATION-PRIVATE-001",
+  "state": "active",
+  "outcome": "Qualify one independently reviewed factory/interface/controller pair for accepted PS-ONBOARDING-CONVERSATION-001 source, then supported private promotion and HTTPS journey proof. Wait for the source owner's accepted SHA, review/CI, archive/hash, full B6 overlay and exact replacement interface. Preserve both saved namespaces/generations without reset or rewind, root identity/signing/configs, all provider profiles/models/rates/caps, seven ledger tables, Native counts, checkpoints and rollback lineage. Require stopped/drained server lifetime lock and all five scopes inactive. Validate exact source pins, contracts, unreviewed/incompatible refusal, atomic pair/recovery and state compatibility. Carry prior incomplete browser/personal-return proof honestly. Independent Protected review, current-target CI and accepted controller merge precede installation. Zero live provider calls; no source-owner edits, cloud exposure, auth changes, migration or reset.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0faaf-5e48-7060-990a-c28989a8d247",
+  "branch": "codex/2026-10-03-onboarding-conversation-private-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "400b010eb38598b0647cc52bd620ab58c85c3160",
+  "owner_outcome_ref": "session:01a0faaf-5e48-7060-990a-c28989a8d247/turn:01a101fa-0bd4-79d0-8e64-15cc7c352761/message:msg_01a101fa-113e-7a00-8642-a60897049b77",
+  "surfaces": [
+    "tools/local_reviewer/providers.py",
+    "tests/test_local_reviewer.py",
+    "docs/LOCAL_REVIEWER.md",
+    "docs/governance/lane_claims/PS-ONBOARDING-CONVERSATION-PRIVATE-001.json",
+    "docs/governance/lane_claims/receipts/PS-ONBOARDING-CONVERSATION-PRIVATE-001.json",
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-CONVERSATION-PRIVATE-001.md"
+  ],
+  "domains": [
+    "tooling:local-reviewer:factory-qualification"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-CONVERSATION-PRIVATE-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
