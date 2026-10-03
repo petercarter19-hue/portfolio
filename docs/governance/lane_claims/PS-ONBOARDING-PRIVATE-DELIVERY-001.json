@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-ONBOARDING-PRIVATE-DELIVERY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Install accepted onboarding application693865dda23e7b2cd5613b1e9adb783f718ce7a0 on the existing owner-only private Tailscale site using an exact independently reviewed immutable app/factory/controller compatibility pair. Preserve both existing saved workspaces, original root configs/signing/owner, shared provider ledger/models/rates/caps/counts, V11/V12 loading and old fa6/V12 rollback lineage. Use supported stopped/drained/lifetime-lock/all-five-inactive promotion after required Protected review, tests, current-target CI and accepted source merge. Carry the actual installed fictional8444 browser proof pending from the repository-closed fictional-workspace prerequisite into this delivery without relabeling its historical criterion passed; verify compatible saved-state persistence, private UI/origin isolation and explicit personal8443 return/ready. Zero additional provider/Native Visitor calls or diagnostics; no public deployment, state rewind/reset or new chat.",
   "assignment": "implementation",
   "writer_ref": "session:01a0faaf-5e48-7060-990a-c28989a8d247",
@@ -29,7 +29,7 @@
   ],
   "review_requirement": "independent",
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null,
+  "merged_sha": "ea89002447fb5e6749ec1bec25aeaf8c07f4f972",
+  "closed_at": "2026-10-02T23:48:50Z",
   "handoff": null
 }
