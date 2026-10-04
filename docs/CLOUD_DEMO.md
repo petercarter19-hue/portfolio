@@ -49,11 +49,18 @@ of the same uncertain attempt. Creation/configuration occurs only on the fixed
 existing Linux B1 plan, using explicit subscription arguments; no new plan or scale.
 Production and the stopped candidate are verified and never changed.
 
-The new site stays stopped while its exact package builds. `deployment-status
+The main site stays behind a deny-all Azure access restriction while its exact
+package builds. The Linux app is enabled and started only after its dedicated
+startup, fictional authentication settings and separate authenticated SCM access
+are configured and verified. This lets Azure accept the upload without opening
+the demo before deployment succeeds. `deployment-status
 --target <target>` reads the actual build. `start --manifest <json> --target
 <target>` requires the recorded successful request, its exact remote deployment
 ID, unique completed successful build and actual source/owner setting. Missing
-identity refuses start; a timestamp alone cannot qualify a different build. Verify certificate-checked HTTPS, protected
+identity refuses start and keeps the main site blocked; a timestamp alone cannot
+qualify a different build. Only a qualified `start` removes the deployment access
+restriction after restarting the Linux container to load the completed package.
+Verify certificate-checked HTTPS, protected
 routes, wrong/anonymous identity, two-site separation and ordinary browser paths.
 Measure actual plan memory/CPU before admitting the second site. Stop new sites on
 auth, state, capacity or release-identity failure; retain snapshots and artifact.

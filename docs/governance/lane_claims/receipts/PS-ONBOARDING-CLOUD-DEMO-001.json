@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "package": "PS-ONBOARDING-CLOUD-DEMO-001",
-  "candidate_sha": "f53c5469cfb8c36bcf0b14c493d8fe29aa68d6b7",
+  "candidate_sha": "0b26a84e9076af94badeadf6721cdae516385a26",
   "reviewer_ref": "session:01a0fafc-327e-7481-a330-2a29f452b6fc",
   "result": "pass",
-  "reviewed_at": "2026-10-03T23:18:01Z",
+  "reviewed_at": "2026-10-04T01:13:41Z",
   "findings": [],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-ONBOARDING-CLOUD-DEMO-001.md",
   "review_type": "independent"

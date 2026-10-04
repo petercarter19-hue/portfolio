@@ -239,7 +239,7 @@ def vault_path():
     directory.mkdir(parents=True, exist_ok=True)
     identity = subprocess.run(['whoami','/user','/fo','csv','/nh'],capture_output=True,text=True,check=True).stdout
     sid = re.search(r'S-1-5-[0-9-]+',identity).group()
-    acl = subprocess.run(['icacls',str(directory),'/inheritance:r','/grant:r',sid+':(OI)(CI)F',
+    acl = subprocess.run(['icacls',str(directory),'/inheritance:r','/grant:r','*'+sid+':(OI)(CI)F',
                           '*S-1-5-18:(OI)(CI)F'],capture_output=True,text=True,check=False)
     if acl.returncode:
         raise RuntimeError('Secure credential directory ACL failed')
@@ -303,9 +303,18 @@ def deploy(manifest_path, target):
     arm.request(site_path+'/config/appsettings',{'properties':settings},'PUT')
     config = arm.request(site_path+'/config/web',{'properties':{'linuxFxVersion':'PYTHON|3.12',
         'appCommandLine':release['startup'],'numberOfWorkers':1,'alwaysOn':False,
-        'ftpsState':'Disabled','minTlsVersion':'1.2','http20Enabled':True}},'PUT')
+        'ftpsState':'Disabled','minTlsVersion':'1.2','http20Enabled':True,
+        **access_settings(blocked=True)}},'PUT')
     if config['properties']['appCommandLine'] != release['startup'] or config['properties']['numberOfWorkers'] != 1:
         raise ValueError('Dedicated startup/one worker setting not applied')
+    check_access(config, blocked=True)
+    # Disabled Linux apps cannot accept SCM deployment. Keep the main site
+    # deny-all while starting the platform's separate authenticated SCM site.
+    enabled = arm.request(site_path,{'properties':{'enabled':True}},'PATCH')
+    check_site(enabled,target)
+    if enabled['properties'].get('enabled') is not True:
+        raise ValueError('Deployment transport was not enabled')
+    arm.request(site_path+'/start',{},'POST')
     # Azure CLI owns supported ZipDeploy authentication; no secrets in argv.
     result = subprocess.run([shutil.which('az.cmd') or 'az','webapp','deploy',
         '--subscription',SUBSCRIPTION,'--resource-group',GROUP,'--name',SITES[target],
@@ -323,8 +332,27 @@ def deploy(manifest_path, target):
     write_new(evidence / ('DEPLOY_REQUEST_'+target+'_'+release['source_sha']+'.json'),safe)
     if result.returncode:
         raise RuntimeError('Deployment command did not confirm acceptance. Inspect the recorded operation; do not replay.')
-    # Start only after supported build completion is separately verified.
+    # Main-site access remains blocked until exact build completion is verified.
     print(json.dumps(safe))
+
+def access_settings(*, blocked):
+    return {'ipSecurityRestrictions': (
+                [{'ipAddress':'0.0.0.0/0','action':'Deny','priority':100,
+                  'name':'PeerSlate deployment block'}] if blocked else []),
+            'ipSecurityRestrictionsDefaultAction':'Deny' if blocked else 'Allow',
+            'scmIpSecurityRestrictions':[],
+            'scmIpSecurityRestrictionsDefaultAction':'Allow',
+            'scmIpSecurityRestrictionsUseMain':False}
+
+def check_access(config, *, blocked):
+    properties = config['properties']
+    expected = 'Deny' if blocked else 'Allow'
+    if (properties.get('ipSecurityRestrictionsDefaultAction') != expected
+            or properties.get('scmIpSecurityRestrictionsUseMain') is not False
+            or properties.get('scmIpSecurityRestrictionsDefaultAction') != 'Allow'
+            or any(row.get('action') != expected for row in properties.get('ipSecurityRestrictions', []))
+            or any(row.get('action') != 'Allow' for row in properties.get('scmIpSecurityRestrictions', []))):
+        raise ValueError('Actual main/SCM deployment access restrictions differ')
 
 def deployment_status(target):
     result = subprocess.run([shutil.which('az.cmd') or 'az','webapp','log','deployment','list',
@@ -373,7 +401,15 @@ def operate(target, action, manifest_path=None):
             settings = arm.request(path+'/config/appsettings/list',{},'POST')['properties']
             if settings.get('DEMO_SOURCE_SHA') != release['source_sha'] or settings.get('DEMO_OWNER') != MEMBERS[target]:
                 raise ValueError('Actual site source/owner binding differs')
-        arm.request(path+'/'+action,{},'POST')
+        # SCM upload runs on a started Linux app. Restart after the exact build
+        # so its container loads the new package rather than an earlier worker.
+        arm.request(path+('/restart' if action == 'start' else '/'+action),{},'POST')
+        if action == 'start':
+            # Opening the guarded demo is a distinct step after exact accepted
+            # request, remote build completion and source/owner verification.
+            config = arm.request(path+'/config/web',
+                {'properties':access_settings(blocked=False)},'PUT')
+            check_access(config, blocked=False)
         print(json.dumps({'site':site['name'],'requested_action':action,'recorded_at':now()}))
 
 def show_credentials(target):

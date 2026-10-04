@@ -219,7 +219,9 @@ class ReleaseIdentityTests(unittest.TestCase):
             arm = Mock()
             arm.request.side_effect = lambda path, *args: (
                 {'properties': {'DEMO_SOURCE_SHA': source, 'DEMO_OWNER': 'g-member-a'}}
-                if path.endswith('/config/appsettings/list') else site)
+                if path.endswith('/config/appsettings/list') else
+                {'properties': release.access_settings(blocked=False)}
+                if path.endswith('/config/web') else site)
             unrelated = {'id': 'unrelated', 'status': 4, 'complete': True,
                 'start_time': '2026-10-03T00:01:00Z'}
             with patch.object(release, 'Arm', return_value=arm), \
@@ -233,9 +235,64 @@ class ReleaseIdentityTests(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         release.operate('grok', 'start', manifest)
                     self.assertFalse(any(call.args[0].endswith('/start') for call in arm.request.call_args_list))
+                    self.assertFalse(any(call.args[0].endswith('/restart') for call in arm.request.call_args_list))
+                    self.assertFalse(any(call.args[0].endswith('/config/web') for call in arm.request.call_args_list))
                 status.return_value = [{'id': 'expected', 'status': 4, 'complete': True}]
                 release.operate('grok', 'start', manifest)
-                self.assertTrue(any(call.args[0].endswith('/start') for call in arm.request.call_args_list))
+                restart = next(i for i, call in enumerate(arm.request.call_args_list) if call.args[0].endswith('/restart'))
+                admission = next(i for i, call in enumerate(arm.request.call_args_list) if call.args[0].endswith('/config/web'))
+                self.assertLess(restart, admission)
+
+    def test_upload_requires_verified_deny_all_before_enabling_linux_scm(self):
+        from scripts import cloud_demo_release as release
+        for refuse_restrictions in (False, True):
+            with self.subTest(refuse_restrictions=refuse_restrictions), tempfile.TemporaryDirectory() as directory:
+                manifest = Path(directory) / 'manifest.json'
+                source, artifact = '1' * 40, 'a' * 64
+                site = {'name': release.SITES['grok'], 'properties': {'enabled': False}}
+                secure = {'origin':'https://fictional.example.test','username':'fictional-demo',
+                    'password_hash':'synthetic-hash','signing_key':'a'*64,
+                    'owner':'g-member-a','namespace':'b'*64}
+                effects = []
+                def request(path, body=None, method='GET'):
+                    effects.append((path, body, method))
+                    if path.endswith('/config/web'):
+                        properties = dict(body['properties'])
+                        if refuse_restrictions:
+                            properties['ipSecurityRestrictionsDefaultAction'] = 'Allow'
+                        return {'properties': properties}
+                    if method == 'PATCH':
+                        return {'name':site['name'],'properties':{'enabled':True}}
+                    return site
+                arm = Mock()
+                arm.request.side_effect = request
+                arm.verify_plan.return_value = {'synthetic_plan':'existing-test-plan'}
+                def upload(*args, **kwargs):
+                    effects.append(('UPLOAD', None, None))
+                    return subprocess.CompletedProcess(args[0], 0, json.dumps({'id':'exact-test-deployment'}), '')
+                with patch.object(release, 'Arm', return_value=arm), \
+                     patch.object(release, 'check_site', side_effect=lambda row, target: row), \
+                     patch.object(release, 'load_manifest', return_value={
+                        'source_sha':source,'artifact_sha256':artifact,'artifact':'synthetic.zip',
+                        'startup':'python -u source/tools/cloud_demo/wsgi.py'}), \
+                     patch.object(release, 'credentials', return_value=secure), \
+                     patch.object(release, 'vault_path', return_value=Path(directory)/'synthetic-vault'), \
+                     patch.object(release.subprocess, 'run', side_effect=upload), \
+                     patch('builtins.print'):
+                    if refuse_restrictions:
+                        with self.assertRaises(ValueError):
+                            release.deploy(manifest, 'grok')
+                        self.assertFalse(any(row[2]=='PATCH' or row[0]=='UPLOAD' or row[0].endswith('/start') for row in effects))
+                    else:
+                        release.deploy(manifest, 'grok')
+                        restriction = next(i for i,row in enumerate(effects) if row[0].endswith('/config/web'))
+                        enable = next(i for i,row in enumerate(effects) if row[2]=='PATCH')
+                        start = next(i for i,row in enumerate(effects) if row[0].endswith('/start'))
+                        uploaded = next(i for i,row in enumerate(effects) if row[0]=='UPLOAD')
+                        self.assertLess(restriction, enable)
+                        self.assertLess(enable, start)
+                        self.assertLess(start, uploaded)
+                        self.assertFalse(any(row[1] and row[1].get('properties',{}).get('ipSecurityRestrictionsDefaultAction')=='Allow' for row in effects))
 
 
 class ActualFixtureTests(unittest.TestCase):
