@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "package": "PS-ONBOARDING-RESET-CONTROL-001",
+  "state": "active",
+  "outcome": "Add an authenticated, explicit on-page reset control to the local fictional onboarding workspace and the separate Grok and Muse cloud demos. Each reset must be limited to its current fictional site, require confirmation and a fresh same-origin request, preserve a recoverable validated pre-reset checkpoint, restore the exact accepted empty fixture, and keep personal local content and other sites untouched. Cover stale confirmations, unauthorized requests, failed backup/save, restart and isolation with focused tests. Deliver reviewed accepted source, install the local controller and release both existing non-production cloud demos, verify all three live controls. Do not change production, credentials, hosting plan, provider configuration or the personal workspace.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a1049e-233e-7191-ab7e-07d1febe732e",
+  "branch": "codex/2026-10-04-onboarding-reset-control-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "4b511dd0c1cc5f3db62db31597d4ddc47b6dcdd4",
+  "owner_outcome_ref": "session:01a1049e-233e-7191-ab7e-07d1febe732e/user:reset-all-three-and-add-on-page-control",
+  "surfaces": [
+    "tools/cloud_demo/runtime.py",
+    "tools/local_reviewer/runtime.py",
+    "tools/local_reviewer/manager.py",
+    "scripts/cloud_demo_release.py",
+    "tests/test_cloud_demo.py",
+    "tests/test_local_reviewer.py",
+    "docs/CLOUD_DEMO.md",
+    "docs/LOCAL_REVIEWER.md",
+    "docs/governance/lane_claims/PS-ONBOARDING-RESET-CONTROL-001.json",
+    "docs/governance/lane_claims/receipts/PS-ONBOARDING-RESET-CONTROL-001.json",
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-RESET-CONTROL-001.md"
+  ],
+  "domains": [
+    "tooling:cloud-demo:onboarding-reset",
+    "tooling:local-reviewer:fictional-reset-ui"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-RESET-CONTROL-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
