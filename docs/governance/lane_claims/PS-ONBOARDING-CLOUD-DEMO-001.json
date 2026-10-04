@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-ONBOARDING-CLOUD-DEMO-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver separately authenticated externally reachable HTTPS fictional demos for Grok and Muse cloud browsers, reusing accepted onboarding pages. Two server-owned fictional owners have independent processes, credentials, sessions and durable state. Qualify anonymous/wrong/expired identity refusal, selector/header impersonation, origin/CSRF, two-owner isolation, upload/type/edit/review/explicit save/private preview, restart and rollback, truthful AI-unavailable operation. Deploy exact accepted source only to separately named apps on verified existing non-production capacity; preserve stopped candidate and production. No new paid hosting plan, paid worker, live provider/Native calls, private PC state/config/signing/ledger copy, migration, reset or external platform launch/login/message. Return usable URLs, secure credential delivery and self-contained receiver instructions; actual vendor-browser connection remains unproven until receivers verify.",
   "assignment": "implementation",
   "writer_ref": "session:01a0faaf-5e48-7060-990a-c28989a8d247",
@@ -23,11 +23,15 @@
     "docs/governance/lane_claims/receipts/PS-ONBOARDING-CLOUD-DEMO-001.json",
     "docs/governance/lane_claims/evidence/PS-ONBOARDING-CLOUD-DEMO-001.md"
   ],
-  "domains": ["tooling:cloud-demo:onboarding"],
-  "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-ONBOARDING-CLOUD-DEMO-001.md"],
+  "domains": [
+    "tooling:cloud-demo:onboarding"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-CLOUD-DEMO-001.md"
+  ],
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "a14f7cf8b601ebcdce9714ba4a4d8405210a3b77",
+  "closed_at": "2026-10-04T02:54:14Z"
 }
