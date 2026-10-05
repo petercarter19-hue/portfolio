@@ -126,46 +126,50 @@ class PrivateFactoryIntegrityTests(unittest.TestCase):
         with self.assertRaisesRegex(ResumeDocumentReadError, "ocr_dependency_unpinned"):
             self.providers.selected_ocr_configuration(self.root)
 
-    def test_exact_diagnostic_successor_and_original_pairs_keep_source_and_ocr_binding(self):
+    def test_exact_accepted_successor_and_original_pairs_keep_source_and_ocr_binding(self):
         from copy import deepcopy
         original = self.select_pair(self.config, self.factory)
         original_source = (self.source / "service.py").read_bytes()
-        diagnostic_source = b"synthetic independently reviewed safe diagnostic source"
-        (self.source / "service.py").write_bytes(diagnostic_source)
-        interface = deepcopy(self.interface)
-        interface["files_sha256"]["service.py"] = sha256(diagnostic_source).hexdigest()
-        proof = deepcopy(self.providers.PRIVATE_DIAGNOSTIC_ONBOARDING_QUALIFICATION)
-        proof["resume_ocr"] = deepcopy(self.proof["resume_ocr"])
-        interface["private_onboarding_qualification"] = proof
-        factory = self.canonical(interface)
-        config = deepcopy(self.config)
-        config["factory"]["files_sha256"] = deepcopy(interface["files_sha256"])
-        with patch.object(self.providers, "PRIVATE_DIAGNOSTIC_DELIVERY_FACTORY_SHA256", sha256(factory).hexdigest()), \
-                patch.object(self.providers, "PRIVATE_DIAGNOSTIC_ONBOARDING_QUALIFICATION", proof):
-            successor = self.select_pair(config, factory)
-            self.assertEqual(self.providers.bound_factory(factory, for_promotion=True), interface)
-            self.assertEqual(self.providers.load_configuration(self.root, self.identity, self.source), config)
-            self.assertEqual(self.providers.selected_ocr_configuration(self.root), str(self.manifest))
-            (self.source / "service.py").write_bytes(original_source)
-            with self.assertRaisesRegex(ValueError, "Application factory changed"):
-                self.providers.load_configuration(self.root, self.identity, self.source)
-            (self.source / "service.py").write_bytes(diagnostic_source)
-            with self.assertRaisesRegex(ValueError, "Application factory changed"):
-                self.providers.load_configuration(self.root, self.identity, self.source, configuration_id=original)
-            for field in ("reviewed_source_sha", "accepted_source_sha", "source_review_receipt_sha256"):
-                changed = deepcopy(interface)
-                changed["private_onboarding_qualification"][field] = "0" * len(proof[field])
-                with self.assertRaisesRegex(ValueError, "qualification changed"):
-                    self.providers.onboarding_qualification(changed)
-                with self.assertRaisesRegex(ValueError, "factory binding"):
-                    self.providers.bound_factory(self.canonical(changed), for_promotion=True)
-            self.assertEqual(self.providers.selected_configuration(self.root, successor)[0]["profiles"],
-                             self.providers.selected_configuration(self.root, original)[0]["profiles"])
-            (self.source / "service.py").write_bytes(original_source)
-            self.assertEqual(self.providers.load_configuration(self.root, self.identity, self.source,
-                             configuration_id=original), self.config)
-            self.assertEqual(self.providers.selected_ocr_configuration(self.root, configuration_id=original),
-                             str(self.manifest))
+        for factory_name, proof_name in (
+                ("PRIVATE_DIAGNOSTIC_DELIVERY_FACTORY_SHA256", "PRIVATE_DIAGNOSTIC_ONBOARDING_QUALIFICATION"),
+                ("PRIVATE_FIELD_CONTRACT_DELIVERY_FACTORY_SHA256", "PRIVATE_FIELD_CONTRACT_ONBOARDING_QUALIFICATION")):
+            with self.subTest(factory=factory_name):
+                successor_source = ("synthetic independently reviewed source " + factory_name).encode("utf-8")
+                (self.source / "service.py").write_bytes(successor_source)
+                interface = deepcopy(self.interface)
+                interface["files_sha256"]["service.py"] = sha256(successor_source).hexdigest()
+                proof = deepcopy(getattr(self.providers, proof_name))
+                proof["resume_ocr"] = deepcopy(self.proof["resume_ocr"])
+                interface["private_onboarding_qualification"] = proof
+                factory = self.canonical(interface)
+                config = deepcopy(self.config)
+                config["factory"]["files_sha256"] = deepcopy(interface["files_sha256"])
+                with patch.object(self.providers, factory_name, sha256(factory).hexdigest()), \
+                        patch.object(self.providers, proof_name, proof):
+                    successor = self.select_pair(config, factory)
+                    self.assertEqual(self.providers.bound_factory(factory, for_promotion=True), interface)
+                    self.assertEqual(self.providers.load_configuration(self.root, self.identity, self.source), config)
+                    self.assertEqual(self.providers.selected_ocr_configuration(self.root), str(self.manifest))
+                    (self.source / "service.py").write_bytes(original_source)
+                    with self.assertRaisesRegex(ValueError, "Application factory changed"):
+                        self.providers.load_configuration(self.root, self.identity, self.source)
+                    (self.source / "service.py").write_bytes(successor_source)
+                    with self.assertRaisesRegex(ValueError, "Application factory changed"):
+                        self.providers.load_configuration(self.root, self.identity, self.source, configuration_id=original)
+                    for field in ("reviewed_source_sha", "accepted_source_sha", "source_review_receipt_sha256"):
+                        changed = deepcopy(interface)
+                        changed["private_onboarding_qualification"][field] = "0" * len(proof[field])
+                        with self.assertRaisesRegex(ValueError, "qualification changed"):
+                            self.providers.onboarding_qualification(changed)
+                        with self.assertRaisesRegex(ValueError, "factory binding"):
+                            self.providers.bound_factory(self.canonical(changed), for_promotion=True)
+                    self.assertEqual(self.providers.selected_configuration(self.root, successor)[0]["profiles"],
+                                     self.providers.selected_configuration(self.root, original)[0]["profiles"])
+                    (self.source / "service.py").write_bytes(original_source)
+                    self.assertEqual(self.providers.load_configuration(self.root, self.identity, self.source,
+                                     configuration_id=original), self.config)
+                    self.assertEqual(self.providers.selected_ocr_configuration(self.root, configuration_id=original),
+                                     str(self.manifest))
         self.assertFalse((self.root / "data/provider-budget-v1.sqlite3").exists())
 
     def test_unreviewed_factory_and_ocr_in_closed_live_ai_are_rejected(self):

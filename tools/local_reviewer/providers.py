@@ -573,7 +573,8 @@ def bound_document(path, expected):
 
 def bound_factory(data, *, for_promotion=False):
     allowed = (SUCCESSOR_FACTORY_SHA256, ONBOARDING_FACTORY_SHA256, CONVERSATION_FACTORY_SHA256,
-               PRIVATE_DELIVERY_FACTORY_SHA256, PRIVATE_DIAGNOSTIC_DELIVERY_FACTORY_SHA256)
+               PRIVATE_DELIVERY_FACTORY_SHA256, PRIVATE_DIAGNOSTIC_DELIVERY_FACTORY_SHA256,
+               PRIVATE_FIELD_CONTRACT_DELIVERY_FACTORY_SHA256)
     if not for_promotion:
         allowed += (FACTORY_SHA256,)
     if not isinstance(data, bytes) or hashlib.sha256(data).hexdigest() not in allowed:
@@ -583,6 +584,7 @@ def bound_factory(data, *, for_promotion=False):
 
 PRIVATE_DELIVERY_FACTORY_SHA256 = "e64b1454dfc7bddb1c86a149c5914a47191e69ffceb2c9eeede07d7332edb64e"
 PRIVATE_DIAGNOSTIC_DELIVERY_FACTORY_SHA256 = "02da9db67c221ec6a0a80f31d9859c2b4e5f8f4b6686c4658f65c3cb9246fdf4"
+PRIVATE_FIELD_CONTRACT_DELIVERY_FACTORY_SHA256 = "88432919501a4d6e1a3abc2270464cc5c221aa3a4c1708ebe554aa4c3b4c0042"
 PRIVATE_ONBOARDING_QUALIFICATION = {
     "schema": 1,
     "reviewed_source_sha": "4f699d76077d1b8698e1e2c46f959d9b0251cc5a",
@@ -604,11 +606,20 @@ PRIVATE_DIAGNOSTIC_ONBOARDING_QUALIFICATION = {
 }
 
 
+PRIVATE_FIELD_CONTRACT_ONBOARDING_QUALIFICATION = {
+    **PRIVATE_ONBOARDING_QUALIFICATION,
+    "reviewed_source_sha": "11934962e3b52f5096bd9084478001a0ab8df9b0",
+    "accepted_source_sha": "3e2ac536e316e628212fe2d411d7591dd4a15440",
+    "source_review_receipt_sha256": "dfd73a477d65675568917bcc29f757941e04bcc53ae408513d4900d8ec469bef",
+}
+
+
 def onboarding_qualification(interface):
     proof = interface.get("private_onboarding_qualification")
     if proof is None:
         return None
-    if proof not in (PRIVATE_ONBOARDING_QUALIFICATION, PRIVATE_DIAGNOSTIC_ONBOARDING_QUALIFICATION):
+    if proof not in (PRIVATE_ONBOARDING_QUALIFICATION, PRIVATE_DIAGNOSTIC_ONBOARDING_QUALIFICATION,
+                     PRIVATE_FIELD_CONTRACT_ONBOARDING_QUALIFICATION):
         raise ValueError("Reviewed private onboarding qualification changed")
     return proof
 
