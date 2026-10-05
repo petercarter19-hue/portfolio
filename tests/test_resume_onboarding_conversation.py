@@ -6,10 +6,17 @@ import copy
 import json
 import unittest
 from uuid import uuid4
+from unittest.mock import Mock, patch
 from itsdangerous import URLSafeTimedSerializer
 
-from services.resume_intake_runtime import PrivateResumeAssistanceService, SynthesisError, CONVERSATION_SCHEMA
-from services.resume_intake_service import ResumeIntakeConflictError
+from services.resume_intake_runtime import (
+    PrivateResumeAssistanceService, SynthesisError, CONVERSATION_SCHEMA,
+    CONVERSATION_PROMPT, BoundedPrivateResumeProvider,
+)
+from services.resume_intake_service import (
+    ResumeIntakeConflictError, EDITOR_FIELDS, CONVERSATION_FIELDS,
+    CONVERSATION_BULLET_FIELDS, conversation_field_contract,
+)
 from tests.test_my_data_intake_ai import build_service, add_request
 from tests.test_my_data_intake_sources import extracted_pipeline, FakeUpload
 from services.my_data_extraction_adapter import DeterministicFakeExtractionAdapter
@@ -35,6 +42,36 @@ def operation(context, *, op='revise_content', ref=None, record_type='role', val
         'explicit_clears': clears or [], 'bullet_edits': bullets or [],
         'source_refs': refs or [{'source_key': turn['source_key'], 'unit_id': turn['units'][0]['unit_id']}],
         'presentation_section': section}
+
+
+def check_conversation_schema(value, rule=CONVERSATION_SCHEMA):
+    """Validate every keyword used by this fixed schema; fail closed on additions.
+
+    This bounded witness checker is not a general JSON Schema implementation.
+    """
+    if set(rule) - {'type', 'enum', 'properties', 'required', 'additionalProperties', 'items'}:
+        raise AssertionError('Unimplemented schema keyword')
+    types = rule['type'] if isinstance(rule['type'], list) else [rule['type']]
+    checks = {'object': lambda v: isinstance(v, dict), 'array': lambda v: isinstance(v, list),
+        'string': lambda v: isinstance(v, str), 'number': lambda v: type(v) in (int, float),
+        'integer': lambda v: type(v) is int, 'boolean': lambda v: type(v) is bool,
+        'null': lambda v: v is None}
+    if not any(checks[kind](value) for kind in types):
+        raise AssertionError('Schema type mismatch')
+    if 'enum' in rule and value not in rule['enum']:
+        raise AssertionError('Schema enum mismatch')
+    if isinstance(value, dict):
+        if set(rule.get('required', [])) - set(value):
+            raise AssertionError('Required field missing')
+        properties = rule.get('properties', {})
+        if rule.get('additionalProperties') is False and set(value) - set(properties):
+            raise AssertionError('Unexpected property')
+        for key, item in value.items():
+            if key in properties:
+                check_conversation_schema(item, properties[key])
+    if isinstance(value, list) and 'items' in rule:
+        for item in value:
+            check_conversation_schema(item, rule['items'])
 
 
 class ConversationTests(unittest.TestCase):
@@ -72,6 +109,201 @@ class ConversationTests(unittest.TestCase):
         if values is not None:
             payload['confirmed_values'] = values
         return self.intake.decide(self.owner, payload)
+
+    def test_actual_empty_and_populated_azure_wire_has_backend_record_field_contract(self):
+        from services.ai_foundation.errors import ProviderUnavailableError
+        from tests.test_resume_intake_runtime import selected_private_settings
+        for populated in (False, True):
+            with self.subTest(populated=populated):
+                self.setUp()
+                if populated:
+                    self.seed()
+                token = Mock(side_effect=AssertionError('No credential read permitted'))
+                transport = Mock()
+                transport.post.side_effect = AssertionError('No HTTP permitted')
+                bounded = BoundedPrivateResumeProvider('interview', settings=selected_private_settings('interview'),
+                    database=None, token_provider=token, transport=transport)
+                foundation = bounded._new_provider()
+                original_builder, wires = foundation.structured_payload, []
+                def build_wire(*args, **kwargs):
+                    wire = original_builder(*args, **kwargs)
+                    wires.append(wire)
+                    return wire
+                wire_builder = Mock(side_effect=build_wire)
+                foundation.structured_payload = wire_builder
+                foundation.respond = Mock(side_effect=AssertionError('No dispatch permitted'))
+                bounded._new_provider = lambda: foundation
+                self.assistance.providers['interview'] = bounded
+                with patch.object(bounded.protections, 'reserve',
+                        side_effect=ProviderUnavailableError('Synthetic stop before dispatch')) as reserve:
+                    with self.assertRaises(ProviderUnavailableError):
+                        self.turn('I am an Engineer at Example Labs.')
+                self.assertEqual(wire_builder.call_count, 1)
+                request = wire_builder.call_args.args[0]
+                wire = wires[0]
+                context = json.loads(request.input_text)['context']
+                self.assertEqual(bool(context['targets']), populated)
+                contract = context['field_contract']
+                self.assertEqual(contract, conversation_field_contract())
+                self.assertEqual(wire['text']['format']['schema'], CONVERSATION_SCHEMA)
+                self.assertIn(CONVERSATION_PROMPT, wire['input'])
+                self.assertIn('use only the EXACT value_fields', wire['input'])
+                self.assertIn('a role uses role_title', wire['input'])
+                self.assertIn('not biography or valid source_refs', wire['input'])
+                self.assertNotIn('field_contract', json.dumps(context['materials']))
+                for record_type, fields in contract['record_types'].items():
+                    expected = set(EDITOR_FIELDS.get(record_type, ()))
+                    if record_type == 'knowledge':
+                        expected = {'title', 'wording', 'classification'}
+                    if record_type == 'credential':
+                        expected.add('resume_credential_wording')
+                    self.assertEqual(set(fields['value_fields']), expected)
+                    self.assertEqual(set(fields['explicit_clear_fields']), expected)
+                    self.assertEqual(set(fields['bullet_edit_fields']), expected & CONVERSATION_BULLET_FIELDS)
+                reserve.assert_called_once()
+                token.assert_not_called()
+                transport.post.assert_not_called()
+                foundation.respond.assert_not_called()
+
+    def test_field_schema_and_fresh_catalog_use_same_closed_names_without_aliases(self):
+        props = CONVERSATION_SCHEMA['properties']['operations']['items']['properties']
+        all_fields = set().union(*CONVERSATION_FIELDS.values())
+        self.assertEqual(set(props['values']['items']['properties']['field']['enum']), all_fields)
+        self.assertEqual(set(props['explicit_clears']['items']['enum']), all_fields)
+        self.assertEqual(set(props['bullet_edits']['items']['properties']['field']['enum']), CONVERSATION_BULLET_FIELDS)
+        self.assertNotIn('null', props['values']['items']['properties']['value']['type'])
+        contract = conversation_field_contract()
+        contract['record_types']['role']['value_fields'].append('job_title')
+        self.assertNotIn('job_title', conversation_field_contract()['record_types']['role']['value_fields'])
+        for field in ('job_title', 'employer', 'resume_credential_wording'):
+            self.assertNotIn(field, EDITOR_FIELDS['role'])
+        self.assertNotIn('knowledge', EDITOR_FIELDS)
+        self.assertNotIn('resume_credential_wording', EDITOR_FIELDS['credential'])
+        for field, value in (('job_title','Engineer'), ('role_title',None)):
+            with self.subTest(field=field, value=value), self.assertRaises(AssertionError):
+                check_conversation_schema({'field':field,'value':value}, props['values']['items'])
+        with self.assertRaises(AssertionError):
+            check_conversation_schema('job_title', props['explicit_clears']['items'])
+
+    def test_exact_fields_add_and_correct_role_education_skill_and_credential(self):
+        cases = [
+            ('role', 'Experience', 'Engineer at Example Labs.',
+                {'role_title':'Engineer','employer_name':'Example Labs'}, {'location_text':'Boulder'}),
+            ('education', 'Education', 'Bachelor at Example University; completed.',
+                {'title':'Bachelor','degree_name':'Bachelor','institution_name':'Example University',
+                 'education_status':'completed'}, {'field_of_study':'Engineering'}),
+            ('skill', 'Skills', 'Python for data analysis.', {'name':'Python'}, {'summary':'Python for reporting.'}),
+            ('credential', 'Credentials', 'Example Certificate from Example Board; issued June 1, 2020. I am not licensed.',
+                {'name':'Example Certificate','issuer':'Example Board','completion_status':'completed','issue_date':'2020-06-01'},
+                {'resume_credential_wording':'Example Certificate from Example Board; issued June 1, 2020. I have not renewed it; I am not licensed.'}),
+        ]
+        for record_type, section, statement, values, correction in cases:
+            with self.subTest(record_type=record_type):
+                self.setUp()
+                def add(ctx):
+                    output = {'response':'Review the supplied words.','next_question':'','operations':[
+                        operation(ctx, op='add_content', record_type=record_type, values=values, section=section)]}
+                    check_conversation_schema(output)
+                    return output
+                self.behavior = add
+                result = self.turn(statement)
+                self.assertEqual(self.intake.draft_service.catalog.list_items(self.owner), [])
+                proposal = result['proposals'][0]
+                approved = self.confirm(proposal)
+                key = approved['item']['record_key']
+                before = copy.deepcopy(self.intake.draft_service.catalog.list_items(self.owner))
+                def revise(ctx):
+                    output = {'response':'Review the correction.','next_question':'','operations':[
+                        operation(ctx, ref='record:'+key, record_type=record_type, values=correction, section=section)]}
+                    check_conversation_schema(output)
+                    return output
+                self.behavior = revise
+                revised = self.turn('Correct this detail: '+str(next(iter(correction.values()))), 'record:'+key)['proposals'][0]
+                self.assertEqual(self.intake.draft_service.catalog.list_items(self.owner), before)
+                self.confirm(revised)
+                workspace = self.intake.draft_service.get_workspace(self.owner)
+                item = next(row for row in workspace['items'] if row['record_key'] == key)
+                effective = {**item['values'], **(item.get('proposed_values') or {})}
+                if record_type == 'credential':
+                    binding = self.intake.get_workspace(self.owner)['resume_credential_bindings'][0]
+                    note = next(row for row in workspace['items'] if row['record_key'] == binding['supplement_key'])
+                    self.assertEqual((note.get('proposed_values') or note['values'])['wording'], correction['resume_credential_wording'])
+                    self.assertEqual(effective['name'], values['name'])
+                else:
+                    for name, value in correction.items():
+                        self.assertEqual(effective[name], value)
+
+    def test_knowledge_fields_correct_work_and_personal_without_source_catalog_refs(self):
+        for section, classification in (('Professional summary','work'), ('My Story','personal')):
+            with self.subTest(classification=classification):
+                self.setUp()
+                key = str(uuid4())
+                self.intake.draft_service.catalog.create_private(self.owner, {'record_key':key,
+                    'record_type':'knowledge','values':{'title':'Introduction','wording':'Original words.',
+                    'classification':classification}})
+                wording = 'Corrected words with the limitation intact.'
+                self.behavior = lambda ctx: {'response':'Review your words.','next_question':'','operations':[
+                    operation(ctx, ref='record:'+key, record_type='knowledge', section=section,
+                        values={'title':'Corrected introduction','wording':wording,'classification':classification})]}
+                proposal = self.turn('Correct my introduction to '+wording)['proposals'][0]
+                check_conversation_schema(self.behavior(self.calls[-1]['context']))
+                self.confirm(proposal)
+                item = self.intake.draft_service.get_workspace(self.owner)['items'][0]
+                self.assertEqual(item['proposed_values']['wording'], wording)
+                self.assertEqual(item['proposed_values']['classification'], classification)
+
+    def test_wire_union_does_not_allow_fields_from_another_record_type_in_backend(self):
+        for record_type, wrong_field in (('role','title'), ('education','role_title'),
+                ('skill','issuer'), ('credential','employer_name'), ('knowledge','current_role')):
+            with self.subTest(record_type=record_type):
+                self.setUp(); self.seed()
+                def invalid(ctx):
+                    output = {'response':'Review.','next_question':'','operations':[
+                        operation(ctx, op='add_content', record_type=record_type, values={wrong_field:'Incorrect'})]}
+                    # A shared schema enum is intentionally a union. The actual
+                    # type-specific backend predicate still rejects this name.
+                    check_conversation_schema(output)
+                    return output
+                self.behavior = invalid
+                self._assert_failed_diagnostic(self.command('Supplied synthetic content.'),
+                    'operation_contract','value_field')
+
+    def test_catalog_keeps_explicit_clear_omission_and_false_distinct(self):
+        key = self.seed()
+        before = self.intake.draft_service.get_workspace(self.owner)['items'][0]['values']
+        self.behavior = lambda ctx: {'response':'Review these changes.','next_question':'','operations':[
+            operation(ctx, ref='record:'+key, values={'current_role':False}, clears=['location_text'])]}
+        proposal = self.turn('Clear the location; this is not my current role.')['proposals'][0]
+        check_conversation_schema(self.behavior(self.calls[-1]['context']))
+        self.assertIs(proposal['proposed_values']['current_role'], False)
+        self.assertEqual(proposal['explicit_clears'], ['location_text'])
+        self.assertNotIn('employer_name', proposal['proposed_values'])
+        self.confirm(proposal)
+        current = self.intake.draft_service.get_workspace(self.owner)['items'][0]['proposed_values']
+        self.assertIsNone(current['location_text'])
+        self.assertIs(current['current_role'], False)
+        self.assertEqual(current['employer_name'], before['employer_name'])
+
+    def test_record_incorrect_and_unknown_field_names_remain_rejected_and_no_retry(self):
+        cases = [({'title':'Engineer'}, [], [], 'value_field'),
+            ({'job_title':'Engineer'}, [], [], 'value_field'),
+            ({}, ['title'], [], 'clear_fields'), ({}, ['job_title'], [], 'clear_fields'),
+            ({'resume_credential_wording':'Unrelated wording.'}, [], [], 'value_field'),
+            ({}, [], [{'action':'exclude','field':'wording','index':0,
+                'expected_text':'Original words.','replacement':None}], 'bullet_edit_shape')]
+        for values, clears, bullets, reason in cases:
+            with self.subTest(values=values, clears=clears, bullets=bullets):
+                self.setUp(); key = self.seed()
+                self.behavior = lambda ctx: {'response':'Review.','next_question':'','operations':[
+                    operation(ctx, ref='record:'+key, values=values, clears=clears, bullets=bullets)]}
+                self._assert_failed_diagnostic(self.command('Correct the Engineer entry.'), 'operation_contract', reason)
+        self.setUp(); self.seed()
+        def catalog_ref(ctx):
+            return {'response':'Review.','next_question':'','operations':[
+                operation(ctx, op='add_content', values={'role_title':'Engineer'},
+                    refs=[{'source_key':'field_contract','unit_id':'role_title'}])]}
+        self.behavior = catalog_ref
+        self._assert_failed_diagnostic(self.command('Engineer at Example Labs.'), 'operation_contract', 'source_ref_binding')
 
     def test_revision_is_durable_and_untouched_fields_remain_after_confirmation(self):
         key = self.seed()

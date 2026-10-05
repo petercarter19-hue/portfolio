@@ -180,6 +180,29 @@ EDITOR_FIELDS = {
     "accomplishment": frozenset({"wording", "metric_value", "metric_label"}),
 }
 BOOLEAN_FIELDS = frozenset({"current_role"})
+# Conversation-only fields do not widen the manual editor's field contract.
+# This same closed set drives validation and the model's control/schema catalog.
+CONVERSATION_FIELDS = {
+    **EDITOR_FIELDS,
+    "credential": EDITOR_FIELDS["credential"] | {"resume_credential_wording"},
+    "knowledge": frozenset({"title", "wording", "classification"}),
+}
+CONVERSATION_BULLET_FIELDS = frozenset({"summary", "wording", "resume_credential_wording"})
+
+
+def conversation_field_contract():
+    """Fresh server-owned control metadata, never member/source evidence."""
+    return {"schema_version": 1, "record_types": {
+        record_type: {
+            "value_fields": sorted(fields),
+            "explicit_clear_fields": sorted(fields),
+            "bullet_edit_fields": sorted(fields & CONVERSATION_BULLET_FIELDS),
+            "boolean_fields": sorted(fields & BOOLEAN_FIELDS),
+        }
+        for record_type, fields in sorted(CONVERSATION_FIELDS.items())
+    }}
+
+
 _SUBJECT_FIELDS = {
     "role": "role_title",
     "education": "title",
@@ -753,7 +776,7 @@ class ResumeIntakeService:
                 guide_control['section'] = (selected.get('resume_conversation_v1') or {}).get('presentation_section')
         return {'canonical': copy.deepcopy(canonical), 'targets': targets,
                 'materials': materials, 'prior_turns': turns,
-                'guide_control': guide_control,
+                'guide_control': guide_control, 'field_contract': conversation_field_contract(),
                 'lifecycle_epoch': snapshot['lifecycle_epoch'], 'policy_version': snapshot['policy_version']}
 
     def _conversation_response(self, snapshot, source, *, replayed=False):
@@ -998,10 +1021,7 @@ class ResumeIntakeService:
                 raise conversation_rejection('invalid_output', 'operation_contract', 'target_binding')
             if ref and (ref in changed_targets or target['record_type'] != record_type):
                 raise conversation_rejection('invalid_output', 'operation_contract', 'record_type_or_duplicate_target')
-            fields = ({'title', 'wording', 'classification'} if record_type == 'knowledge' else
-                      EDITOR_FIELDS.get(record_type))
-            if record_type == 'credential':
-                fields = fields | {'resume_credential_wording'}
+            fields = CONVERSATION_FIELDS.get(record_type)
             if fields is None:
                 raise conversation_rejection('invalid_output', 'operation_contract', 'unsupported_record_type')
             patch = {}
@@ -1042,7 +1062,7 @@ class ResumeIntakeService:
             edited_fields = set()
             for edit in operation['bullet_edits']:
                 if (not isinstance(edit, dict) or set(edit) != {'action', 'field', 'index', 'expected_text', 'replacement'}
-                        or edit['action'] not in {'include', 'exclude', 'revise'} or edit['field'] not in {'summary', 'wording', 'resume_credential_wording'}
+                        or edit['action'] not in {'include', 'exclude', 'revise'} or edit['field'] not in CONVERSATION_BULLET_FIELDS
                         or edit['field'] not in fields or edit['field'] in patch or edit['field'] in clears
                         or type(edit['index']) is not int or edit['index'] < 0):
                     raise conversation_rejection('invalid_output', 'operation_contract', 'bullet_edit_shape')

@@ -664,7 +664,7 @@ from services.ai_foundation.azure_foundry import (
 from services.my_data_extraction_adapter import (
     EXTRACTION_RESPONSE_SCHEMA, EXTRACTION_INSTRUCTIONS, validate_extraction_payload,
 )
-from services.resume_intake_service import EDITOR_FIELDS
+from services.resume_intake_service import EDITOR_FIELDS, CONVERSATION_FIELDS, CONVERSATION_BULLET_FIELDS
 
 
 PRIVATE_ASSISTANCE_PROFILES = {
@@ -716,19 +716,20 @@ CONVERSATION_SCHEMA = {
             'properties': {
                 'operation': {'type': 'string', 'enum': sorted(CONVERSATION_OPERATIONS)},
                 'target_ref': {'type': ['string', 'null']},
-                'record_type': {'type': 'string', 'enum': sorted(set(EDITOR_FIELDS) | {'knowledge', 'unspecified'})},
+                'record_type': {'type': 'string', 'enum': sorted(set(CONVERSATION_FIELDS) | {'unspecified'})},
                 'presentation_section': {'type': ['string', 'null']},
                 'values': {'type': 'array', 'items': {'type': 'object', 'additionalProperties': False,
-                    'properties': {'field': {'type': 'string'},
-                        'value': {'type': ['string', 'number', 'boolean', 'null']}},
+                    'properties': {'field': {'type': 'string', 'enum': sorted(set().union(*CONVERSATION_FIELDS.values()))},
+                        'value': {'type': ['string', 'number', 'boolean']}},
                     'required': ['field', 'value']}},
-                'explicit_clears': {'type': 'array', 'items': {'type': 'string'}},
+                'explicit_clears': {'type': 'array', 'items': {'type': 'string',
+                    'enum': sorted(set().union(*CONVERSATION_FIELDS.values()))}},
                 'source_refs': {'type': 'array', 'items': {'type': 'object', 'additionalProperties': False,
                     'properties': {'source_key': {'type': 'string'}, 'unit_id': {'type': 'string'}},
                     'required': ['source_key', 'unit_id']}},
                 'bullet_edits': {'type': 'array', 'items': {'type': 'object', 'additionalProperties': False,
                     'properties': {'action': {'type': 'string', 'enum': ['include', 'exclude', 'revise']},
-                        'field': {'type': 'string'}, 'index': {'type': 'integer'},
+                        'field': {'type': 'string', 'enum': sorted(CONVERSATION_BULLET_FIELDS)}, 'index': {'type': 'integer'},
                         'expected_text': {'type': 'string'}, 'replacement': {'type': ['string', 'null']}},
                     'required': ['action', 'field', 'index', 'expected_text', 'replacement']}},
             }, 'required': sorted(CONVERSATION_OPERATION_FIELDS)}},
@@ -743,6 +744,17 @@ context for interpreting answers such as 'the first one' and the current topic.
 They are not biography, factual evidence or valid source_refs. Only literal
 member/source units support a proposal; do not quote an assistant question as fact.
 Return only the closed schema. Nothing is saved or published by this response.
+field_contract is server-owned control, not biography or valid source_refs.
+For each operation's record_type, use only the EXACT value_fields,
+explicit_clear_fields and bullet_edit_fields in field_contract.record_types.
+Friendly labels and aliases are not field names: a role uses role_title and
+employer_name, education uses title and institution_name, a skill uses name,
+a credential uses name and issuer, and knowledge uses title, wording and
+classification. The schema's field enum is a union; a name allowed for another
+record type is still invalid here. Use actual booleans for boolean_fields;
+false is a value, not a clear. Omit unknown or unchanged fields; never send null
+values. Explicit requested clears name exact fields in explicit_clears and
+remain subject to required-field validation when the member confirms.
 Choose typed operations: add_content for new biography; revise_content for a specific
 change; exclude_content/restore_content for resume inclusion; clarify for ambiguity;
 answer_question for a question; skip_topic for stopping or skipping. Never turn a
