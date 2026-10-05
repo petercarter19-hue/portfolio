@@ -15,6 +15,7 @@ import socket
 import stat
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -176,6 +177,8 @@ def stop(root, *, wait=False):
 
 
 def start(root):
+    from .runtime import require_publication_ready
+    require_publication_ready(root)
     manifest = read(root / "installation.json")
     release = verify_release(root, manifest)
     if (root / "private-access.json").exists() and not manifest.get("private_profile"):
@@ -442,6 +445,8 @@ def offline_checkpoint(root):
 
 
 def rollback(root):
+    from .runtime import require_publication_ready
+    require_publication_ready(root)
     previous = read(root / "previous.json")
     old = previous["manifest"]
     current = read(root / "installation.json")
@@ -467,8 +472,29 @@ def rollback(root):
 
 
 def rollback_stopped(root, previous, old):
-    from .runtime import selected_context, ordinary_path
+    from .runtime import selected_context, ordinary_path, require_publication_ready
+    # Stop may have drained a request that established an unresolved fence
+    # after rollback's initial check. Recheck before any recovery side effect.
+    require_publication_ready(root)
     context = selected_context(root)
+    if old.get("private_profile"):
+        # The previous pointer never authorizes restoring old content. Probe
+        # its exact app/configuration in a fresh child, including both current
+        # namespaces and the behavior needed by their approved content.
+        command = [sys.executable, "-I", "-B", str(Path(__file__).resolve().parents[2] / "scripts/local_reviewer.py"),
+                   "--root", str(root), "probe", "--release", old["release"], "--rollback-target"]
+        if "provider_configuration" in old:
+            command.extend(["--provider-configuration", old["provider_configuration"]])
+        else:
+            command.append("--original-provider-configuration")
+        probe = subprocess.run(command, capture_output=True, text=True, timeout=60)
+        if probe.returncode:
+            raise ValueError("Rollback target cannot preserve current approved content; retain it and use a reviewed forward correction: " + probe.stderr[-1000:])
+        checkpoint = offline_checkpoint(root)
+        write(root / "rollback-receipt.json", {"from": read(root / "installation.json")["release"],
+              "to": old["release"], "displaced_checkpoint": checkpoint, "content_preserved": True})
+        write(root / "installation.json", old)
+        return {"rolled_back": old["release"], "displaced_checkpoint": checkpoint, "content_preserved": True}
     checkpoint = offline_checkpoint(root)
     if "workspace" in old:
         # The context pointer and its durable content are separate authorities.
@@ -492,6 +518,117 @@ def rollback_stopped(root, previous, old):
     write(root / "rollback-receipt.json", {"from": read(root / "installation.json")["release"], "to": old["release"], "displaced_checkpoint": checkpoint})
     write(root / "installation.json", old)
     return {"rolled_back": old["release"], "displaced_checkpoint": checkpoint}
+
+
+def required_onboarding_behaviors(state):
+    required = set()
+    owners = state.validate(state.capture()).get("intake._owners", {})
+    for owner in owners.values():
+        if not isinstance(owner, dict):
+            raise ValueError("Invalid saved intake owner")
+        if (owner.get("draft_revision", 0) or (owner.get("drafts") or {}).get("composer")):
+            required.add("monotonic_composer_lifecycle")
+        for proposal in (owner.get("proposals") or {}).values():
+            if (proposal.get("resume_conversation_v1") or {}).get("approved_credential_binding"):
+                required.add("bound_credential_details")
+    return required
+
+
+def qualify_onboarding_behavior(fixture, app):
+    """Actual zero-provider synthetic routes/renderer, not capability labels."""
+    from datetime import datetime, timedelta, timezone
+    from unittest.mock import patch
+    from uuid import uuid4
+    from identity import PeerSlatePrincipal
+    from services.resume_guide_service import ResumeGuideService
+    from tests.test_resume_onboarding_coverage import ResumeOnboardingCoverageTests
+    intake, owner, _, command = ResumeOnboardingCoverageTests().credential_proposal(
+        draft_service=fixture.shared.draft)
+    intake.original_files = fixture.intake.original_files
+    principal = PeerSlatePrincipal("development", "private-delivery-behavior-probe", owner,
+                                  display_name="Synthetic qualification owner", is_development=True)
+    configuration = {"RESUME_INTAKE_SERVICE": intake, "RESUME_DRAFT_SERVICE": fixture.shared.draft,
+                     "ENTRY_POLICY_SERVICE": fixture.shared.policy,
+                     "RESUME_GUIDE_SERVICE": ResumeGuideService(repository=intake.repository),
+                     "PEERSLATE_RESUME_INTAKE_ENABLED": True, "PEERSLATE_RESUME_EDITOR_ENABLED": True,
+                     "PEERSLATE_RESUME_INTAKE_FIXTURE_POLICY_ENABLED": True}
+    with patch.dict(app.config, configuration), patch("identity.get_current_principal", return_value=principal), \
+            patch("auth_routes.get_current_principal", return_value=principal):
+        client = app.test_client()
+        headers = {"X-PeerSlate-Request": "same-origin"}
+        def request(path, method="POST", payload=None):
+            return client.open(path, method=method, json=payload, headers=headers)
+        route = "/api/resume-intake/me/proposals/decision"
+        approved = request(route, payload=command)
+        if approved.status_code != 200 or not request(route, payload=command).json.get("replayed"):
+            raise ValueError("Target credential approval/replay behavior failed")
+        rows = intake.draft_service.get_workspace(owner)["items"]
+        if sorted(row["record_type"] for row in rows) != ["credential", "knowledge"]:
+            raise ValueError("Target credential parent/supplement composition failed")
+        reviewed = fixture.shared.publication.review_for_owner(owner, {"entries": [
+            {"entry_key": row["record_key"], "resume_display": True, "visitor_ai": False} for row in rows]}).reviewed
+        if reviewed is None:
+            raise ValueError("Target credential preview review failed")
+        reference = reviewed.candidate.profile_identity
+        preview = request("/api/resume-publication/me/preview", payload={
+            "candidate": fixture.shared.publication.publish_candidate(reviewed), "reviewed_digest": reviewed.digest,
+            "profile_identity": reference.to_payload() if reference else None})
+        data = preview.json or {}
+        display = list(data.get("display", {}).values())
+        credentials = re.search(r'<section\b[^>]*\bid="resume-credentials"[^>]*>(.*?)</section>',
+                                data.get("html", ""), re.S)
+        if (preview.status_code != 200 or len(display) != 1 or display[0].get("canonical_type") != "credential"
+                or not display[0].get("credential_details") or credentials is None
+                or 'class="resume-publication__credential-details"' not in credentials.group(1)
+                or "not currently licensed." not in credentials.group(1)
+                or "&lt;literal&gt;" not in credentials.group(1)):
+            raise ValueError("Target cannot render the approved credential limitation in its bound Credentials placement")
+        approved_owner = intake.repository.load_owner(owner)
+        draft_route = "/api/resume-intake/me/draft"
+        for action, legacy in (("direct_expiry", True), ("read_expiry", True), ("discard", True), ("discard", False)):
+            # Independent synthetic legacy fixtures; actual namespace content
+            # was loaded/captured separately and is never written by this probe.
+            intake.repository.save_owner(owner, approved_owner)
+            seed = request(draft_route, "PUT", {"request_id": str(uuid4()), "text": "Acknowledged legacy words"})
+            if seed.status_code != 200:
+                raise ValueError("Target cannot construct the actual composer fixture")
+            snapshot = intake.repository.load_owner(owner)
+            snapshot["drafts"]["composer"]["version"] = 37
+            snapshot["drafts"]["composer"]["expires_at"] = (datetime.now(timezone.utc)
+                + timedelta(days=1) if action == "discard" else datetime.now(timezone.utc)
+                - timedelta(days=1)).isoformat()
+            if legacy:
+                snapshot.pop("draft_revision", None)
+            else:
+                snapshot["draft_revision"] = 37
+            intake.repository.save_owner(owner, snapshot)
+            if action == "read_expiry":
+                dropped = request(draft_route, "GET")
+                if dropped.status_code != 200 or dropped.json.get("draft") is not None:
+                    raise ValueError("Target expired composer behavior failed")
+            elif action == "discard":
+                if request(draft_route, "DELETE", {"request_id": str(uuid4()), "expected_version": 37}).status_code != 200:
+                    raise ValueError("Target composer discard behavior failed")
+            first = request(draft_route, "PUT", {"request_id": str(uuid4()), "text": "First acknowledged recreation"})
+            if first.status_code != 200 or first.json["draft"]["version"] != 38:
+                raise ValueError("Target does not retain the legacy composer high-water")
+            if request(draft_route, "DELETE", {"request_id": str(uuid4()), "expected_version": 38}).status_code != 200:
+                raise ValueError("Target composer rediscard behavior failed")
+            next_command = {"request_id": str(uuid4()), "text": "Second acknowledged recreation <literal>"}
+            second = request(draft_route, "PUT", next_command)
+            if second.status_code != 200 or second.json["draft"]["version"] != 39:
+                raise ValueError("Target composer recreation is not monotonic")
+            before = intake.repository.load_owner(owner)
+            replay = request(draft_route, "PUT", next_command)
+            stale = request(draft_route, "PUT", {"request_id": str(uuid4()), "expected_version": 38,
+                                               "text": "Stale first-device words"})
+            after = intake.repository.load_owner(owner)
+            if (replay.status_code != 200 or not replay.json.get("replayed") or stale.status_code != 409
+                    or not stale.json.get("input_preserved") or after != before
+                    or after["drafts"]["composer"]["text"] != next_command["text"]
+                    or after["proposals"] != approved_owner["proposals"]):
+                raise ValueError("Target accepts stale composer input or loses acknowledged approval")
+    return ["bound_credential_details", "monotonic_composer_lifecycle"]
 
 
 def private_permissions(root, *, apply=False):
@@ -856,6 +993,8 @@ def main(argv=None):
     probe = sub.add_parser("probe")
     probe.add_argument("--release", required=True)
     probe.add_argument("--provider-configuration")
+    probe.add_argument("--original-provider-configuration", action="store_true")
+    probe.add_argument("--rollback-target", action="store_true")
     private = sub.add_parser("setup-private")
     private.add_argument("--origin", required=True)
     private.add_argument("--login", required=True)
@@ -887,25 +1026,84 @@ def main(argv=None):
     if args.action == "probe":
         if not re.fullmatch(r"[0-9a-f]{40}-[0-9a-f]{12}", args.release):
             raise ValueError("Invalid release identity")
-        from .runtime import build_fixture, selected_context
+        from .runtime import build_fixture, selected_context, ordinary_path
         from .persistence import SnapshotStore
         with ExitStack() as stack:
-            fixture, app, _, state = build_fixture(root / "releases" / args.release / "source", stack)
             current = read(root / "installation.json") if (root / "installation.json").exists() else {}
+            target = read(root / "previous.json")["manifest"] if args.rollback_target else None
+            if target is not None:
+                if (target["release"] != args.release or target.get("provider_configuration") != args.provider_configuration
+                        or args.original_provider_configuration != ("provider_configuration" not in target)):
+                    raise ValueError("Explicit rollback app/configuration pair differs from the preserved target")
+                verify_release(root, target)
+            source = root / "releases" / args.release / "source"
+            interface = ocr_configuration = None
             if (root / "private-access.json").exists() or current.get("private_profile"):
                 require_private_files(root)
-                from .providers import load_configuration, configure_private_providers
+                sys.path.insert(0, str(source))
+                from .providers import (load_configuration, selected_configuration,
+                                        selected_ocr_configuration, onboarding_qualification)
                 identity = selected_context(root, current).identity
-                config = load_configuration(root, identity, root / "releases" / args.release / "source",
-                                            configuration_id=args.provider_configuration)
-                configure_private_providers(fixture, app, root, identity, config)
-            context = selected_context(root, current)
-            store = context.store(state)
-            if context.namespace and not store.path.is_file():
-                raise ValueError("Fictional saved state missing; probe cannot recreate it")
-            if store.path.exists():
-                store.load()
-            print(json.dumps({"compatible": True, "contract": state.contract}))
+                load_configuration(root, identity, source, configuration_id=args.provider_configuration,
+                                   original=args.original_provider_configuration)
+                _, interface = selected_configuration(root, args.provider_configuration,
+                                                      original=args.original_provider_configuration)
+                ocr_configuration = selected_ocr_configuration(root, configuration_id=args.provider_configuration,
+                                                              original=args.original_provider_configuration)
+            selected_proof = onboarding_qualification(interface) if interface is not None else None
+            expected_ocr = selected_proof["resume_ocr"]["manifest_sha256"] if selected_proof else None
+            fixture, app, _, state = build_fixture(source, stack, ocr_configuration=ocr_configuration,
+                                                ocr_manifest_sha256=expected_ocr)
+            if interface is not None and (len(state.bindings) != 29
+                    or state.contract != "9b0391909811ad0caf0a2056b857d6319f0161026a46dfca0b00c3239954ae86"):
+                raise ValueError("Private snapshot bindings or approved record constructors changed")
+            fresh = state.capture()
+            selections = [current]
+            if "workspace" in current:
+                selections = [{**current, "workspace": {**current["workspace"], "selected": name}}
+                              for name in ("personal", "onboarding")]
+            required = set()
+            namespaces = []
+            for selection in selections:
+                state.restore(fresh)
+                context = selected_context(root, selection)
+                store = context.store(state)
+                if context.namespace and not ordinary_path(store.path).is_file():
+                    raise ValueError("Fictional saved state missing; probe cannot recreate it")
+                if ordinary_path(store.path).exists():
+                    raw = store.path.read_bytes()
+                    store.load()
+                    encoded = state.capture()
+                    required.update(required_onboarding_behaviors(state))
+                    # Capture/resave proof runs on an external temporary copy;
+                    # the actual snapshot and its generation are never changed.
+                    with tempfile.TemporaryDirectory(prefix="peerslate-private-qualification-") as directory:
+                        copy = SnapshotStore(Path(directory) / "state.json", state, namespace=context.namespace)
+                        copy.path.write_bytes(raw)
+                        copy.load()
+                        copy.save(encoded)
+                        copy.load()
+                        if state.capture() != encoded:
+                            raise ValueError("Target loses typed snapshot content through capture/resave")
+                    if store.path.read_bytes() != raw:
+                        raise ValueError("Saved content changed during qualification; stop and qualify a fresh copy")
+                namespaces.append(context.key)
+            proof = onboarding_qualification(interface) if interface is not None else None
+            if required and proof is None:
+                raise ValueError("Target lacks exact reviewed factory/source proof for current approved credential/composer behavior")
+            if required and target is not None:
+                for relative in ("tools/local_reviewer/runtime.py", "tools/local_reviewer/manager.py"):
+                    if target.get("controller_files", {}).get(relative) != digest(Path(__file__).resolve().parents[2] / relative):
+                        raise ValueError("Target controller lacks the qualified save and semantic rollback boundary; preserve content and use a reviewed forward correction")
+            behaviors = []
+            if proof is not None:
+                state.restore(fresh)
+                behaviors = qualify_onboarding_behavior(fixture, app)
+            print(json.dumps({"compatible": True, "contract": state.contract, "bindings": len(state.bindings),
+                              "record_constructors": len(state.codec.classes),
+                              "namespaces": namespaces, "required_behaviors": sorted(required),
+                              "qualified_behaviors": behaviors, "provider_dispatches": 0,
+                              "ocr_manifest_verified": ocr_configuration is not None}))
         return
     with exclusive(root):
         if args.action in {"install", "update"}:

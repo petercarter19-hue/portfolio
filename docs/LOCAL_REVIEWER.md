@@ -158,6 +158,68 @@ Preserve these private pair files with the data and ledger. Missing, altered or
 incompatible pairs refuse startup; no fallback, allowance reset or provider call
 occurs during preparation.
 
+The conversational onboarding successor uses the exact reviewed private-delivery
+factory interface `e64b1454dfc7bddb1c86a149c5914a47191e69ffceb2c9eeede07d7332edb64e`.
+It binds reviewed app source `4f699d76077d1b8698e1e2c46f959d9b0251cc5a`, accepted
+in PR1265 at `7b42199aefbdb0bb37fc9739d73ef350e8c3ae6d`, and 64 explicit affected
+source pins. The complete reviewed dependency overlay remains unchanged. Its
+`private_onboarding_qualification` field belongs only to the immutable
+`factory_utf8` snapshot. The five-key live-AI settings, provider profiles, caps,
+allocation, owner and signing identity retain their existing contracts.
+
+That interface alone selects the absolute manifest-path string
+`X:\PeerSlate\runtimes\ocr\resume-ocr-v1.json`, bound to SHA256
+`1d6a2b63053a8c85bf2aae15448491d115c75b941ec0af63a0c7fd8269e9794b`.
+Qualification verifies its seven-key schema and all 219 ordinary contained
+native/package/data pins through the application's reader validator. Runtime
+isolation first drops inherited OCR settings, then supplies this verified path
+before the default reader's first parse captures it. Subsequent reads reverify
+that captured manifest. The factory's expected hash also guards the application's
+actual validator throughout first lazy construction and every subsequent read;
+changing manifest bytes or dependency pins cannot establish a new baseline.
+Neither a browser request nor an inherited environment
+value selects another OCR runtime. No global Python, PATH or PIL update is used.
+
+Candidate qualification runs in a fresh offline child with the explicit
+app/configuration pair and both current personal/onboarding namespace snapshots.
+It validates all 29 typed bindings and the existing snapshot contract, and proves
+capture/resave on temporary copies. It also exercises synthetic authenticated
+approval, the actual credential preview renderer, expiry/discard/recreation of
+legacy composer rows, identical retries and stale-device refusal. These checks
+dispatch no providers and do not write the installation's snapshots or ledger.
+They establish processing and behavior compatibility; actual installed
+AI/Speech/OCR/browser acceptance remains a separate requirement.
+
+Private rollback preserves current content. It probes the exact preserved target
+pair in a fresh child; `--original-provider-configuration` explicitly selects the
+root pair when a prior manifest predates immutable pair selection. Current
+credential bindings or composer high-water require the exact reviewed factory
+and source pins, successful behavior checks, and the qualified controller
+boundary. The older installed app passes snapshot decoding/resave but cannot
+render the approved credential limitation in its bound placement and accepts
+stale composer input after recreation. Such a target is refused before selecting
+its pointer or restoring any checkpoint. Preserve current content and use a
+reviewed forward correction. Snapshot readability is never a behavioral
+rollback pass.
+
+Before dispatch, the request boundary atomically records a pending recovery
+fence in the existing ordinary diagnostic file. Failure to establish protection
+refuses before content mutation or provider work. After an operation, it reads and
+validates the actual typed envelope, namespace and generation. A proven prior
+envelope permits restoring memory and returning a truthful unsaved result. A
+proven next-generation commit keeps the buffered result and its saved receipt
+without rerunning the command. An unreadable, foreign, malformed or unrelated
+envelope proves neither result: the server stops accepting application work,
+preserves the evidence and reports an unknown save outcome. Recovery never
+rewinds the separate provider ledger. The retained unknown diagnostic also
+refuses ordinary Start, direct Serve and rollback until reviewed recovery resolves it;
+neither an update nor a retry silently clears that fence. Failed diagnostic update
+or clearance stops the current process. If the durable file still records pending
+or unknown, ordinary restart remains fenced; a proven resolved replacement permits
+a fresh start even if its caller raised afterward. Known committed/prior results
+retain their truthful response. A lost response after a proven save is
+resolved by the ordinary identical-request receipt replay.
+
 The onboarding interface matches accepted application
 `693865dda23e7b2cd5613b1e9adb783f718ce7a0`, archive SHA256
 `7c6d971ab37ebc8da2189020d357dc6b19aa97501a43bc3fce106d8e282a0629`.

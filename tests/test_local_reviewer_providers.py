@@ -42,6 +42,198 @@ def configuration(owner):
                 "maximum_field_bytes": 8000, "proof_max_age_seconds": 900}}}
 
 
+class PrivateFactoryIntegrityTests(unittest.TestCase):
+    def setUp(self):
+        from copy import deepcopy
+        from types import SimpleNamespace
+        from tools.local_reviewer import providers
+        from tools.local_reviewer.persistence import canonical
+        self.providers, self.canonical = providers, canonical
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = Path(self.directory.name)
+        self.source = self.root / "source"
+        self.source.mkdir()
+        (self.source / "service.py").write_bytes(b"synthetic reviewed source")
+        self.identity = SimpleNamespace(owner=str(uuid4()))
+        self.config = configuration(self.identity.owner)
+        self.config["factory"]["files_sha256"] = {"service.py": sha256((self.source / "service.py").read_bytes()).hexdigest()}
+        allocation = canonical({"profiles": self.config["profiles"]})
+        self.config["allocation_sha256"] = sha256(allocation).hexdigest()
+        (self.root / "ai-allocation.json").write_bytes(allocation)
+        runtime = self.root / "ocr"
+        filenames = ["bin/tesseract.exe", "tessdata/eng.traineddata", "tessdata/osd.traineddata",
+                     "python-packages/pypdfium2/__init__.py", "python-packages/pypdfium2_raw/__init__.py"]
+        filenames += ["bin/dependency-" + str(i) for i in range(214)]
+        pins = {}
+        for name in filenames:
+            path = runtime / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(("synthetic pinned dependency " + name).encode())
+            pins[str(path)] = sha256(path.read_bytes()).hexdigest()
+        manifest = {"schema_version": 1, "runtime_root": str(runtime), "tesseract": str(runtime / filenames[0]),
+                    "tessdata": str(runtime / "tessdata"), "renderer": "pypdfium2", "renderer_version": "5.14.0",
+                    "files_sha256": pins}
+        self.manifest = self.root / "ocr-manifest.json"
+        self.manifest.write_bytes(canonical(manifest))
+        self.proof = deepcopy(providers.PRIVATE_ONBOARDING_QUALIFICATION)
+        self.proof["resume_ocr"] = {"manifest_path": str(self.manifest), "manifest_sha256": sha256(self.manifest.read_bytes()).hexdigest()}
+        self.interface = {**self.config["factory"], "ongoing_budget_port": providers.ONGOING_BINDINGS,
+                          "private_onboarding_qualification": self.proof}
+        self.factory = canonical(self.interface)
+        self.original = canonical({**self.config["factory"], "ongoing_budget_port": providers.ONGOING_BINDINGS})
+        (self.root / "live-ai.json").write_bytes(canonical(self.config))
+        (self.root / "ai-factory.json").write_bytes(self.original)
+        self.stack = ExitStack()
+        self.addCleanup(self.stack.close)
+        self.stack.enter_context(patch.object(providers, "ALLOCATION_SHA256", self.config["allocation_sha256"]))
+        self.stack.enter_context(patch.object(providers, "FACTORY_SHA256", sha256(self.original).hexdigest()))
+        self.stack.enter_context(patch.object(providers, "PRIVATE_DELIVERY_FACTORY_SHA256", sha256(self.factory).hexdigest()))
+        self.stack.enter_context(patch.object(providers, "PRIVATE_ONBOARDING_QUALIFICATION", self.proof))
+        self.select_pair(self.config, self.factory)
+
+    def select_pair(self, config, factory):
+        pair = self.canonical({"live_ai": config, "factory_utf8": factory.decode()})
+        selected = sha256(pair).hexdigest()
+        directory = self.root / "data/provider-configurations"
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / (selected + ".json")).write_bytes(pair)
+        (self.root / "installation.json").write_bytes(self.canonical({"provider_configuration": selected}))
+        return selected
+
+    def test_exact_factory_selects_all_219_verified_native_pins_without_provider_dispatch(self):
+        self.assertEqual(self.providers.load_configuration(self.root, self.identity, self.source), self.config)
+        self.assertEqual(self.providers.selected_ocr_configuration(self.root), str(self.manifest))
+        self.assertFalse((self.root / "data/provider-budget-v1.sqlite3").exists())
+        self.assertEqual(self.providers.selected_configuration(self.root, original=True)[1], json.loads(self.original))
+        self.assertIsNone(self.providers.selected_ocr_configuration(self.root, original=True))
+        with self.assertRaisesRegex(ValueError, "one explicit"):
+            self.providers.selected_configuration(self.root, "a" * 64, original=True)
+
+    def test_manifest_native_pin_and_unpinned_import_changes_fail_closed(self):
+        from services.resume_onboarding_document_reader import ResumeDocumentReadError
+        raw = self.manifest.read_bytes()
+        self.manifest.write_bytes(raw + b" ")
+        with self.assertRaisesRegex(ValueError, "manifest changed"):
+            self.providers.selected_ocr_configuration(self.root)
+        self.manifest.write_bytes(raw)
+        native = self.root / "ocr/bin/dependency-0"
+        native.write_bytes(b"altered")
+        with self.assertRaisesRegex(ResumeDocumentReadError, "ocr_dependency_changed"):
+            self.providers.selected_ocr_configuration(self.root)
+        native.write_bytes(b"synthetic pinned dependency bin/dependency-0")
+        (self.root / "ocr/python-packages/unpinned.py").write_bytes(b"unreviewed import")
+        with self.assertRaisesRegex(ResumeDocumentReadError, "ocr_dependency_unpinned"):
+            self.providers.selected_ocr_configuration(self.root)
+
+    def test_unreviewed_factory_and_ocr_in_closed_live_ai_are_rejected(self):
+        changed = json.loads(self.factory)
+        changed["private_onboarding_qualification"]["resume_ocr"]["manifest_path"] = "unreviewed.json"
+        with self.assertRaisesRegex(ValueError, "factory binding"):
+            self.providers.bound_factory(self.canonical(changed), for_promotion=True)
+        self.select_pair({**self.config, "resume_ocr": str(self.manifest)}, self.factory)
+        with self.assertRaisesRegex(ValueError, "Invalid private AI configuration"):
+            self.providers.load_configuration(self.root, self.identity, self.source)
+
+    def test_fresh_child_receives_verified_path_after_isolation_before_lazy_capture(self):
+        import subprocess
+        import sys
+        selected = self.providers.selected_ocr_configuration(self.root)
+        program = """
+import json,os,sys
+from contextlib import ExitStack
+from pathlib import Path
+sys.path.insert(0,sys.argv[1])
+from tools.local_reviewer.runtime import build_fixture
+from services.resume_intake_policy import selected_policy_for_tests
+os.environ['PEERSLATE_RESUME_OCR_CONFIGURATION']='inherited-unreviewed-value'
+with ExitStack() as stack:
+ fixture,app,_,state=build_fixture(Path(sys.argv[1]),stack,ocr_configuration=sys.argv[2],ocr_manifest_sha256=sys.argv[3])
+ adapter=fixture.intake.document_adapter
+ assert adapter._reader is None
+ assert os.environ['PEERSLATE_RESUME_OCR_CONFIGURATION']==sys.argv[2]
+ first=adapter.parse('text/plain',b'Synthetic bounded text',selected_policy_for_tests())
+ assert first.ok and first.text=='Synthetic bounded text'
+ assert adapter._reader.configuration==sys.argv[2]
+ os.environ['PEERSLATE_RESUME_OCR_CONFIGURATION']='later-unreviewed-value'
+ second=adapter.parse('text/plain',b'Second bounded text',selected_policy_for_tests())
+ assert second.ok and adapter._reader.configuration==sys.argv[2]
+ print(json.dumps({'bindings':len(state.bindings),'constructors':len(state.codec.classes),'native_ocr_executions':0}))
+"""
+        child = subprocess.run([sys.executable, "-I", "-B", "-c", program, str(SOURCE), selected,
+                                self.proof["resume_ocr"]["manifest_sha256"]],
+                               capture_output=True, text=True, timeout=30)
+        self.assertEqual(child.returncode, 0, child.stderr[-2000:])
+        self.assertEqual(json.loads(child.stdout), {"bindings": 29, "constructors": 54, "native_ocr_executions": 0})
+
+    def test_first_lazy_capture_rejects_changed_manifest_or_native_dependency_pin(self):
+        from services.resume_intake_policy import selected_policy_for_tests
+        from tools.local_reviewer.runtime import build_fixture
+        original = self.manifest.read_bytes()
+        expected = self.proof["resume_ocr"]["manifest_sha256"]
+        dependency = self.root / "ocr/bin/dependency-0"
+        for change in ("whitespace", "dependency_and_pin"):
+            with self.subTest(change=change), ExitStack() as stack:
+                self.manifest.write_bytes(original)
+                dependency.write_bytes(b"synthetic pinned dependency bin/dependency-0")
+                selected = self.providers.selected_ocr_configuration(self.root)
+                fixture, _, _, _ = build_fixture(SOURCE, stack, ocr_configuration=selected,
+                                                ocr_manifest_sha256=expected)
+                adapter = fixture.intake.document_adapter
+                self.assertIsNone(adapter._reader)
+                if change == "whitespace":
+                    self.manifest.write_bytes(original + b" ")
+                else:
+                    dependency.write_bytes(b"unreviewed replacement dependency")
+                    settings = json.loads(original)
+                    settings["files_sha256"][str(dependency)] = sha256(dependency.read_bytes()).hexdigest()
+                    self.manifest.write_bytes(self.canonical(settings))
+                result = adapter.parse("text/plain", b"Synthetic literal document", selected_policy_for_tests())
+                self.assertFalse(result.ok)
+                self.assertEqual(result.reason, "ocr_dependency_changed")
+                self.assertIsNone(adapter._reader)
+                self.assertIsNone(result.ocr_configuration_sha256)
+        self.manifest.write_bytes(original)
+        dependency.write_bytes(b"synthetic pinned dependency bin/dependency-0")
+
+    def test_reviewed_lazy_capture_reverifies_expected_hash_after_first_read(self):
+        from services.resume_intake_policy import selected_policy_for_tests
+        from tools.local_reviewer.runtime import build_fixture
+        selected = self.providers.selected_ocr_configuration(self.root)
+        expected = self.proof["resume_ocr"]["manifest_sha256"]
+        with ExitStack() as stack:
+            fixture, _, _, _ = build_fixture(SOURCE, stack, ocr_configuration=selected,
+                                            ocr_manifest_sha256=expected)
+            adapter = fixture.intake.document_adapter
+            self.assertIsNone(adapter._reader)
+            first = adapter.parse("text/plain", b"Synthetic literal document", selected_policy_for_tests())
+            self.assertTrue(first.ok)
+            self.assertEqual(first.ocr_configuration_sha256, expected)
+            self.manifest.write_bytes(self.manifest.read_bytes() + b" ")
+            second = adapter.parse("text/plain", b"Second document", selected_policy_for_tests())
+            self.assertFalse(second.ok)
+            self.assertEqual(second.reason, "ocr_dependency_changed")
+
+    def test_source_link_cannot_hide_behind_resolve(self):
+        original = Path.is_symlink
+        target = self.source / "service.py"
+        ordinary = self.source / "ordinary.py"
+        ordinary.write_bytes(target.read_bytes())
+        try:
+            linked = self.source / "linked.py"
+            linked.symlink_to(ordinary)
+        except OSError:
+            with patch.object(Path, "is_symlink", autospec=True,
+                              side_effect=lambda path: path == target or original(path)):
+                with self.assertRaisesRegex(ValueError, "Factory source path unavailable"):
+                    self.providers.load_configuration(self.root, self.identity, self.source)
+        else:
+            target.unlink()
+            linked.rename(target)
+            with self.assertRaisesRegex(ValueError, "Factory source path unavailable"):
+                self.providers.load_configuration(self.root, self.identity, self.source)
+
+
 class ProviderCompositionTests(unittest.TestCase):
     def setUp(self):
         from tools.local_reviewer.runtime import build_fixture

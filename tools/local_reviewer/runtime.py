@@ -56,6 +56,45 @@ def ordinary_path(path):
     return path
 
 
+class PublicationOutcome(enum.Enum):
+    PRIOR = "proven_prior"
+    COMMITTED = "proven_commit"
+    UNKNOWN = "unknown"
+
+
+@dataclasses.dataclass(frozen=True)
+class PublicationResolution:
+    outcome: PublicationOutcome
+    generation: int | None = None
+
+
+def reconcile_publication(store, previous, generation, current=None):
+    """Prove the actual typed envelope after an uncertain snapshot save.
+
+    The provider ledger is independent and is never part of reconciliation.
+    A missing, foreign, unreadable or unrelated envelope proves neither result.
+    """
+    try:
+        body = store.unpack(ordinary_path(store.path).read_bytes())
+        if body["generation"] == generation and body["state"] == previous:
+            return PublicationResolution(PublicationOutcome.PRIOR, generation)
+        if (current is not None and body["generation"] == generation + 1
+                and body["state"] == current):
+            return PublicationResolution(PublicationOutcome.COMMITTED, generation + 1)
+    except Exception:
+        pass
+    return PublicationResolution(PublicationOutcome.UNKNOWN)
+
+
+def require_publication_ready(install):
+    """Unresolved publication protection is never cleared by ordinary Start."""
+    path = ordinary_path(install / "logs" / "last-error.json")
+    if path.exists():
+        diagnostic = json.loads(path.read_bytes())
+        if type(diagnostic) is not dict or diagnostic.get("save_resolution") in {"pending", "unknown"}:
+            raise ValueError("Unresolved snapshot publication remains fenced; preserve content and obtain reviewed recovery before starting")
+
+
 @dataclasses.dataclass(frozen=True)
 class WorkspaceContext:
     identity: object
@@ -216,8 +255,18 @@ class UnavailableSpeech:
         raise RecordingIntakeError("transcription_unavailable")
 
 
-def build_fixture(source: Path, stack: ExitStack, *, live_ai=False):
+def build_fixture(source: Path, stack: ExitStack, *, live_ai=False, ocr_configuration=None,
+                  ocr_manifest_sha256=None):
     isolated_environment()
+    if ocr_configuration is not None:
+        if (type(ocr_configuration) is not str or not Path(ocr_configuration).is_absolute()
+                or not ordinary_path(Path(ocr_configuration)).is_file()
+                or type(ocr_manifest_sha256) is not str
+                or not re.fullmatch(r"[0-9a-f]{64}", ocr_manifest_sha256)):
+            raise ValueError("Absolute reviewed OCR manifest path string required")
+        # Only the explicitly selected verified immutable factory can supply
+        # this argument. Inherited environment values have already been erased.
+        os.environ["PEERSLATE_RESUME_OCR_CONFIGURATION"] = ocr_configuration
     # Fixture consumers share the test process; suppression belongs to this
     # runtime's lifetime and must not disable unrelated application audit tests.
     stack.callback(logging.disable, logging.root.manager.disable)
@@ -225,6 +274,23 @@ def build_fixture(source: Path, stack: ExitStack, *, live_ai=False):
     warnings.filterwarnings("ignore", message="Using the in-memory storage.*", category=UserWarning)
     sys.path.insert(0, str(source))
     os.chdir(source)
+    if ocr_configuration is not None:
+        from services import resume_onboarding_document_reader as reader_module
+        load_original = reader_module.load_ocr_configuration
+        def load_reviewed_ocr(configuration):
+            if (configuration != ocr_configuration
+                    or hashlib.sha256(ordinary_path(Path(configuration)).read_bytes()).hexdigest()
+                    != ocr_manifest_sha256):
+                raise reader_module.ResumeDocumentReadError("ocr_dependency_changed")
+            verified = load_original(configuration)
+            if verified["manifest_sha256"] != ocr_manifest_sha256:
+                raise reader_module.ResumeDocumentReadError("ocr_dependency_changed")
+            return verified
+        # Keep the application's path-string/lazy constructor intact. Its
+        # actual validator must prove the factory hash before initial capture
+        # and again before every bounded child invocation.
+        load_reviewed_ocr(ocr_configuration)
+        stack.enter_context(patch.object(reader_module, "load_ocr_configuration", load_reviewed_ocr))
     stack.enter_context(patch("dotenv.load_dotenv", return_value=False))
     stack.enter_context(patch("mssql_python.connect", side_effect=refuse_sql))
     if not live_ai:
@@ -237,12 +303,17 @@ def build_fixture(source: Path, stack: ExitStack, *, live_ai=False):
         fixture = stack.enter_context(Mvp1AcceptanceServer(interactive=True))
     from app import app
     from services.resume_intake_policy import SELECTED_RESUME_ONBOARDING_POLICY
+    from services.resume_intake_document_adapter import ResumeDocumentAdapter
     from services.resume_recording_probe import ProbedResumeTranscriptionAdapter
     from services.resume_original_file_service import ResumeOriginalFileService
     from services.resume_intake_runtime import PrivateResumeMatchingExclusions
     from tests.test_resume_original_files import Metadata
     fixture.original_storage, fixture.original_metadata = OriginalStorage(), Metadata()
     fixture.intake._policy = SELECTED_RESUME_ONBOARDING_POLICY
+    # The application keeps a module-level default adapter. Each isolated
+    # factory lifetime needs its own still-lazy reader, never a cached binding
+    # captured by another factory/test lifetime in this process.
+    fixture.intake.document_adapter = ResumeDocumentAdapter()
     fixture.intake.transcription_adapter = ProbedResumeTranscriptionAdapter(service=UnavailableSpeech())
     fixture.intake.original_files = ResumeOriginalFileService(repository=fixture.original_metadata, storage=fixture.original_storage)
     fixture.intake._matching_exclusions = PrivateResumeMatchingExclusions(fixture.shared.policy, fixture.shared.canonical)
@@ -594,18 +665,53 @@ class Boundary:
             if self.stop_event.is_set():
                 return draining()
             previous = self.store.state.capture()
+            generation = self.store.generation
+            current = None
+            diagnostic_path = self.install / "logs" / "last-error.json"
+            try:
+                require_publication_ready(self.install)
+                # Establish restart protection before dispatch can change
+                # content or call a provider. A crash or failed post-error
+                # diagnostic cannot erase this already-durable pending fence.
+                atomic_write(diagnostic_path, canonical({"error_type": "PublicationPending",
+                             "path": "operation", "generation": generation, "save_resolution": "pending"}))
+            except Exception:
+                self.stop_event.set()
+                return self.respond(self.response({"error": "Local operation was refused before dispatch because durable recovery protection is unavailable. Saved content was not changed."}, 503),
+                                    environ, start_response)
+            error = None
             try:
                 response = self.dispatch(environ)
                 current = self.store.state.capture()
                 if current != previous or environ.get("peerslate.reset_save"):
                     self.store.save(current)
-            except Exception as error:
-                self.store.state.restore(previous)
-                try:
-                    atomic_write(self.install / "logs" / "last-error.json", canonical({"error_type": type(error).__name__, "path": "operation", "generation": self.store.generation}))
-                except OSError:
-                    pass
-                response = self.response({"error": "Local operation failed; the previous durable state is preserved. Check installation diagnostics."}, 503)
+            except Exception as caught:
+                error = caught
+            resolution = reconcile_publication(self.store, previous, generation, current)
+            if resolution.outcome is PublicationOutcome.PRIOR:
+                if error is not None:
+                    self.store.state.restore(previous)
+                    response = self.response({"error": "Local operation was not saved; the previous durable state is preserved. Check installation diagnostics."}, 503)
+                self.store.generation = resolution.generation
+            elif resolution.outcome is PublicationOutcome.COMMITTED:
+                # os.replace may have committed before its caller raised.
+                # Keep the original buffered result and its saved receipt;
+                # never dispatch the command again to manufacture an ack.
+                self.store.generation = resolution.generation
+            else:
+                # Neither content nor accounting is restored on an unproven
+                # outcome. Even a failed diagnostic leaves the pending fence.
+                self.stop_event.set()
+                response = self.response({"error": "Local save outcome is unknown. The site is stopping; preserve its saved content and inspect installation diagnostics before recovery."}, 503)
+            try:
+                atomic_write(diagnostic_path, canonical({"error_type": type(error).__name__ if error else "PublicationResolved",
+                             "path": "operation", "generation": self.store.generation,
+                             "save_resolution": resolution.outcome.value}))
+            except Exception:
+                # Known snapshot results still have their truthful response.
+                # Failed fence resolution stops future work, retains evidence
+                # and requires reviewed recovery rather than silently restarting.
+                self.stop_event.set()
             return self.respond(response, environ, start_response)
 
     def respond(self, response, environ, start_response):
@@ -623,15 +729,26 @@ class Boundary:
 
 
 def serve(install: Path, release: Path, metadata, token):
+    require_publication_ready(install)
     from waitress import create_server
     with ExitStack() as stack:
         context = selected_context(install)
         identity = context.identity
-        fixture, app, endpoints, state = build_fixture(release / "source", stack, live_ai=bool(identity))
+        configuration = ocr_configuration = ocr_manifest_sha256 = None
+        if identity:
+            sys.path.insert(0, str(release / "source"))
+            from .providers import (load_configuration, configure_private_providers,
+                                    selected_ocr_configuration, selected_configuration,
+                                    onboarding_qualification)
+            configuration = load_configuration(install, identity, release / "source")
+            _, interface = selected_configuration(install)
+            proof = onboarding_qualification(interface)
+            ocr_manifest_sha256 = proof["resume_ocr"]["manifest_sha256"] if proof else None
+            ocr_configuration = selected_ocr_configuration(install)
+        fixture, app, endpoints, state = build_fixture(release / "source", stack,
+            live_ai=bool(identity), ocr_configuration=ocr_configuration, ocr_manifest_sha256=ocr_manifest_sha256)
         fresh_state = state.capture()
         if identity:
-            from .providers import load_configuration, configure_private_providers
-            configuration = load_configuration(install, identity, release / "source")
             identity.bind_principal(stack)
             configure_private_providers(fixture, app, install, identity, configuration)
             metadata = {**metadata, "provider": "live_azure_ai", "url": identity.origin}

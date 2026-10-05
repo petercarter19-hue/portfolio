@@ -572,7 +572,8 @@ def bound_document(path, expected):
 
 
 def bound_factory(data, *, for_promotion=False):
-    allowed = (SUCCESSOR_FACTORY_SHA256, ONBOARDING_FACTORY_SHA256, CONVERSATION_FACTORY_SHA256)
+    allowed = (SUCCESSOR_FACTORY_SHA256, ONBOARDING_FACTORY_SHA256, CONVERSATION_FACTORY_SHA256,
+               PRIVATE_DELIVERY_FACTORY_SHA256)
     if not for_promotion:
         allowed += (FACTORY_SHA256,)
     if not isinstance(data, bytes) or hashlib.sha256(data).hexdigest() not in allowed:
@@ -580,13 +581,38 @@ def bound_factory(data, *, for_promotion=False):
     return json_codec.loads(data)
 
 
-def selected_configuration(root, configuration_id=None):
+PRIVATE_DELIVERY_FACTORY_SHA256 = "e64b1454dfc7bddb1c86a149c5914a47191e69ffceb2c9eeede07d7332edb64e"
+PRIVATE_ONBOARDING_QUALIFICATION = {
+    "schema": 1,
+    "reviewed_source_sha": "4f699d76077d1b8698e1e2c46f959d9b0251cc5a",
+    "accepted_source_sha": "7b42199aefbdb0bb37fc9739d73ef350e8c3ae6d",
+    "source_review_receipt_sha256": "cdd12dfc0cf010d52bd2affa9c8cd909449de78b872490027e03f6d32943b2a1",
+    "behaviors": ["bound_credential_details", "monotonic_composer_lifecycle"],
+    "resume_ocr": {
+        "manifest_path": r"X:\PeerSlate\runtimes\ocr\resume-ocr-v1.json",
+        "manifest_sha256": "1d6a2b63053a8c85bf2aae15448491d115c75b941ec0af63a0c7fd8269e9794b",
+    },
+}
+
+
+def onboarding_qualification(interface):
+    proof = interface.get("private_onboarding_qualification")
+    if proof is None:
+        return None
+    if proof != PRIVATE_ONBOARDING_QUALIFICATION:
+        raise ValueError("Reviewed private onboarding qualification changed")
+    return proof
+
+
+def selected_configuration(root, configuration_id=None, *, original=False):
     """The manifest atomically selects a private app/configuration pair."""
     from pathlib import Path
     root = Path(root)
+    if original and configuration_id is not None:
+        raise ValueError("Choose one explicit private configuration pair")
     manifest_path = root / "installation.json"
     selected = configuration_id is not None
-    if not selected and manifest_path.exists():
+    if not selected and not original and manifest_path.exists():
         manifest = json_codec.loads(manifest_path.read_text(encoding="utf-8"))
         selected = "provider_configuration" in manifest
         configuration_id = manifest.get("provider_configuration")
@@ -606,11 +632,12 @@ def selected_configuration(root, configuration_id=None):
     return json_codec.loads(path.read_text(encoding="utf-8")), bound_factory(factory_path.read_bytes())
 
 
-def load_configuration(root, identity, source, *, configuration_id=None):
+def load_configuration(root, identity, source, *, configuration_id=None, original=False):
     """Read explicit installed configuration; never discover or create budgets."""
     from pathlib import Path
     from .provider_budget import validate_allocation
-    config, interface = selected_configuration(root, configuration_id)
+    config, interface = selected_configuration(root, configuration_id, original=original)
+    onboarding_qualification(interface)
     if not isinstance(config, dict) or set(config) != {
         "allocation_sha256", "owner", "profiles", "factory", "signing_key"
     }:
@@ -631,8 +658,11 @@ def load_configuration(root, identity, source, *, configuration_id=None):
     if not isinstance(factory, dict) or set(factory) != {"files_sha256", "profile_contract", "limits_maxima"}:
         raise ValueError("Bound application factory configuration required")
     for relative, expected in factory["files_sha256"].items():
-        path = (Path(source) / relative).resolve()
-        if not path.is_relative_to(Path(source).resolve()) or not path.is_file():
+        path = Path(source) / relative
+        if (not isinstance(relative, str) or not path.is_relative_to(Path(source))
+                or ".." in Path(relative).parts or not path.is_file()
+                or any(p.is_symlink() or getattr(p, "is_junction", lambda: False)()
+                       for p in (path, *path.parents))):
             raise ValueError("Factory source path unavailable")
         if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
             raise ValueError("Application factory changed; explicit compatibility update required")
@@ -642,6 +672,28 @@ def load_configuration(root, identity, source, *, configuration_id=None):
                 or qualified["tier"] != allocated["service_tier"]):
             raise ValueError("Allocated model profile differs from qualified factory")
     return config
+
+
+def selected_ocr_configuration(root, *, configuration_id=None, original=False):
+    """The exact reviewed factory alone selects native local processing."""
+    _, interface = selected_configuration(root, configuration_id, original=original)
+    proof = onboarding_qualification(interface)
+    if proof is None:
+        return None
+    binding = proof["resume_ocr"]
+    from pathlib import Path
+    manifest = Path(binding["manifest_path"])
+    if not manifest.is_absolute():
+        raise ValueError("Absolute reviewed OCR manifest required")
+    raw = ordinary_configuration_bytes(manifest)
+    if hashlib.sha256(raw).hexdigest() != binding["manifest_sha256"]:
+        raise ValueError("Reviewed OCR manifest changed")
+    from services.resume_onboarding_document_reader import load_ocr_configuration
+    verified = load_ocr_configuration(str(manifest))
+    if (verified["manifest_sha256"] != binding["manifest_sha256"]
+            or len(verified["settings"]["files_sha256"]) != 219):
+        raise ValueError("Reviewed OCR dependency binding changed")
+    return str(manifest)
 
 
 def azure_cli_token_callback():

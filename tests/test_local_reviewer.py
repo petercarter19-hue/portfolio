@@ -284,11 +284,21 @@ class FactoryPairTests(unittest.TestCase):
         with self.assertRaises(OSError):
             with self.manager.exclusive(self.root, "server.lock"):
                 pass
-        configuration_id = command[command.index("--provider-configuration") + 1]
+        before = (self.root / "installation.json").read_bytes()
+        configuration_id = (command[command.index("--provider-configuration") + 1]
+                            if "--provider-configuration" in command else None)
         release = command[command.index("--release") + 1]
+        original = "--original-provider-configuration" in command
+        if "--rollback-target" in command:
+            target = self.manager.read(self.root / "previous.json")["manifest"]
+            self.assertEqual(release, target["release"])
+            self.assertEqual(configuration_id, target.get("provider_configuration"))
+            self.assertEqual(original, "provider_configuration" not in target)
+        else:
+            self.assertEqual(self.manager.read(self.root / "installation.json"), self.old)
         self.providers.load_configuration(self.root, self.identity, self.sources[release],
-                                          configuration_id=configuration_id)
-        self.assertEqual(self.manager.read(self.root / "installation.json"), self.old)
+                                          configuration_id=configuration_id, original=original)
+        self.assertEqual((self.root / "installation.json").read_bytes(), before)
         return SimpleNamespace(returncode=0)
 
     def assert_preserved(self):
@@ -561,6 +571,58 @@ class FactoryPairTests(unittest.TestCase):
         self.assertEqual(result["rolled_back"], "old")
         self.assertEqual(self.manager.read(self.root / "installation.json"), self.old)
         self.assertEqual(self.providers.load_configuration(self.root, self.identity, self.sources["old"]), self.config)
+        self.assert_preserved()
+
+    def test_failed_semantic_rollback_probe_preserves_pointer_content_pairs_and_ledger(self):
+        install(self.root, self.args)
+        paths = ["installation.json", "previous.json", "data/state.json", "data/provider-budget-v1.sqlite3"]
+        before = {name: (self.root / name).read_bytes() for name in paths}
+        checkpoints = sorted((self.root / "checkpoints").glob("*.json"))
+        with patch.object(self.manager, "stop", return_value={"stopped": True}), \
+                patch.object(self.manager.subprocess, "run", return_value=SimpleNamespace(
+                    returncode=1, stderr="Target cannot preserve credential placement and monotonic composer behavior")):
+            with self.assertRaisesRegex(ValueError, "reviewed forward correction"):
+                self.manager.rollback(self.root)
+        for name, data in before.items():
+            self.assertEqual((self.root / name).read_bytes(), data, name)
+        self.assertEqual(sorted((self.root / "checkpoints").glob("*.json")), checkpoints)
+        self.assertFalse((self.root / "rollback-receipt.json").exists())
+        self.assert_preserved()
+
+    def test_pending_or_unknown_publication_refuses_rollback_before_any_control_effect(self):
+        install(self.root, self.args)
+        paths = ["installation.json", "previous.json", "data/state.json", "data/provider-budget-v1.sqlite3"]
+        before = {name: (self.root / name).read_bytes() for name in paths}
+        checkpoints = sorted((self.root / "checkpoints").glob("*.json"))
+        for outcome in ("pending", "unknown"):
+            with self.subTest(outcome=outcome):
+                self.manager.write(self.root / "logs/last-error.json", {"save_resolution": outcome})
+                with patch.object(self.manager, "stop") as stop, patch.object(self.manager.subprocess, "run") as probe:
+                    with self.assertRaisesRegex(ValueError, "remains fenced"):
+                        self.manager.rollback(self.root)
+                stop.assert_not_called()
+                probe.assert_not_called()
+                for name, data in before.items():
+                    self.assertEqual((self.root / name).read_bytes(), data, name)
+                self.assertEqual(sorted((self.root / "checkpoints").glob("*.json")), checkpoints)
+                self.assertFalse((self.root / "rollback-receipt.json").exists())
+                self.assert_preserved()
+
+    def test_rollback_rechecks_publication_fence_after_stop_drains_request(self):
+        install(self.root, self.args)
+        paths = ["installation.json", "previous.json", "data/state.json", "data/provider-budget-v1.sqlite3"]
+        before = {name: (self.root / name).read_bytes() for name in paths}
+        checkpoints = sorted((self.root / "checkpoints").glob("*.json"))
+        def drain(root, **kwargs):
+            self.manager.write(root / "logs/last-error.json", {"save_resolution": "unknown"})
+        with patch.object(self.manager, "stop", side_effect=drain), patch.object(self.manager.subprocess, "run") as probe:
+            with self.assertRaisesRegex(ValueError, "remains fenced"):
+                self.manager.rollback(self.root)
+        probe.assert_not_called()
+        for name, data in before.items():
+            self.assertEqual((self.root / name).read_bytes(), data, name)
+        self.assertEqual(sorted((self.root / "checkpoints").glob("*.json")), checkpoints)
+        self.assertFalse((self.root / "rollback-receipt.json").exists())
         self.assert_preserved()
 
     def test_active_successor_request_refuses_rollback_without_stranding_recovery(self):
@@ -1021,6 +1083,250 @@ class FixtureTests(unittest.TestCase):
         self.assertEqual(self.store.path.read_bytes(), before)
         self.assertEqual(self.fixture.shared.policy.list_entries("g-member-a")["entries"], [])
 
+    @contextmanager
+    def credential_boundary(self, namespace):
+        from identity import PeerSlatePrincipal
+        from services.resume_guide_service import ResumeGuideService
+        from tests.test_resume_onboarding_coverage import ResumeOnboardingCoverageTests
+        from tools.local_reviewer.runtime import WorkspaceContext
+        from werkzeug.test import Client
+        from werkzeug.wrappers import Response
+        original = self.fixture.intake
+        intake, owner, proposal, command = ResumeOnboardingCoverageTests().credential_proposal(
+            draft_service=self.fixture.shared.draft)
+        original.repository._owners = intake.repository._owners
+        intake.repository = original.repository
+        intake.original_files = original.original_files
+        context = WorkspaceContext(None, "onboarding" if namespace else "personal", namespace,
+                                   self.install / "data" / "state.json", self.install / "checkpoints")
+        store = context.store(self.state)
+        store.save()
+        # Each subcase is a newly authored fixture, not recovery of the
+        # previous subcase's unknown operation.
+        (self.install / "logs/last-error.json").unlink(missing_ok=True)
+        principal = PeerSlatePrincipal("development", "controller-credential-test", owner,
+                                      display_name="Synthetic credential owner", is_development=True)
+        with ExitStack() as stack:
+            stack.enter_context(patch.dict(self.app.config, {
+                "RESUME_INTAKE_SERVICE": intake, "RESUME_DRAFT_SERVICE": self.fixture.shared.draft,
+                "ENTRY_POLICY_SERVICE": self.fixture.shared.policy,
+                "RESUME_GUIDE_SERVICE": ResumeGuideService(repository=intake.repository),
+                "PEERSLATE_RESUME_INTAKE_ENABLED": True, "PEERSLATE_RESUME_EDITOR_ENABLED": True,
+                "PEERSLATE_RESUME_INTAKE_FIXTURE_POLICY_ENABLED": True}))
+            stack.enter_context(patch("identity.get_current_principal", return_value=principal))
+            stack.enter_context(patch("auth_routes.get_current_principal", return_value=principal))
+            stack.enter_context(patch("tools.local_reviewer.runtime.selected_context", return_value=context))
+            boundary = Boundary(self.fixture, self.app, self.endpoints, store, self.install,
+                                self.boundary.metadata, "credential-test-token", threading.Event())
+            client = Client(boundary, Response)
+            def approve():
+                return client.post("/api/resume-intake/me/proposals/decision", base_url=self.base,
+                    environ_base={"REMOTE_ADDR": "127.0.0.1"}, headers=self.headers, json=command)
+            yield store, boundary, intake, owner, command, approve
+
+    def assert_credential_commit(self, store, intake, owner, command):
+        rows = intake.draft_service.get_workspace(owner)["items"]
+        self.assertEqual(sorted(row["record_type"] for row in rows), ["credential", "knowledge"])
+        note = next(row for row in rows if row["record_type"] == "knowledge")
+        self.assertEqual(note["values"]["classification"], "work")
+        self.assertIn("not currently licensed. <literal>", note["values"]["wording"])
+        workspace = intake.get_workspace(owner)
+        self.assertEqual(len(workspace["resume_credential_bindings"]), 1)
+        self.assertIn(command["request_id"], intake.repository.load_owner(owner)["receipts"])
+        self.assertEqual(workspace["pending_proposals"], [])
+        self.assertTrue(workspace["source_accounting"])
+        body = store.unpack(store.path.read_bytes())
+        self.assertEqual(body["generation"], store.generation)
+        self.assertEqual(body["state"], self.state.capture())
+        self.assertEqual(len(self.state.bindings), 29)
+        self.assertFalse(any("ledger" in name or "budget" in name for name in self.state.bindings))
+
+    def test_actual_credential_save_before_after_replace_and_lost_ack_in_both_namespaces(self):
+        from tools.local_reviewer import persistence
+        for namespace in (None, "a" * 64):
+            for fault in ("before", "after", "ack"):
+                with self.subTest(namespace=namespace, fault=fault):
+                    self.state.restore(self.initial)
+                    with self.credential_boundary(namespace) as (store, boundary, intake, owner, command, approve):
+                        prior = store.path.read_bytes()
+                        generation = store.generation
+                        real_replace = persistence.os.replace
+                        def fail_replace(source, destination):
+                            if Path(destination) == store.path:
+                                if fault == "after":
+                                    real_replace(source, destination)
+                                raise OSError("Snapshot replacement fault")
+                            return real_replace(source, destination)
+                        if fault == "ack":
+                            with patch.object(boundary, "respond", side_effect=OSError("Acknowledgment lost")):
+                                with self.assertRaises(OSError):
+                                    approve()
+                        else:
+                            with patch.object(persistence.os, "replace", side_effect=fail_replace):
+                                response = approve()
+                            self.assertEqual(response.status_code, 503 if fault == "before" else 200,
+                                             response.get_data(as_text=True))
+                        self.assertFalse(boundary.stop_event.is_set(),
+                                         (self.install / "logs/last-error.json").read_text())
+                        if fault == "before":
+                            self.assertEqual(store.path.read_bytes(), prior)
+                            self.assertEqual(store.generation, generation)
+                            self.assertNotIn(command["request_id"], intake.repository.load_owner(owner)["receipts"])
+                            self.assertEqual(approve().status_code, 200)
+                        self.assertEqual(store.generation, generation + 1)
+                        self.assert_credential_commit(store, intake, owner, command)
+                        committed = store.path.read_bytes()
+                        retry = approve()
+                        self.assertEqual(retry.status_code, 200,
+                                         retry.get_data(as_text=True) + " "
+                                         + (self.install / "logs/last-error.json").read_text())
+                        self.assertTrue(retry.json["replayed"])
+                        self.assertEqual(store.path.read_bytes(), committed)
+                        self.state.restore(self.initial)
+                        store.load()
+                        self.assert_credential_commit(store, intake, owner, command)
+                        self.assertTrue(approve().json["replayed"])
+                        self.assertEqual(store.path.read_bytes(), committed)
+
+    def test_unknown_credential_publication_fences_without_memory_or_disk_rewind(self):
+        from tools.local_reviewer import persistence
+        from hashlib import sha256
+        for namespace in (None, "a" * 64):
+            for damage in ("malformed", "foreign", "unrelated", "missing"):
+                with self.subTest(namespace=namespace, damage=damage):
+                    self.state.restore(self.initial)
+                    with self.credential_boundary(namespace) as (store, boundary, intake, owner, command, approve):
+                        real_replace = persistence.os.replace
+                        def uncertain_replace(source, destination):
+                            result = real_replace(source, destination)
+                            if Path(destination) == store.path:
+                                if damage == "missing":
+                                    store.path.unlink()
+                                elif damage == "malformed":
+                                    store.path.write_bytes(b"incomplete envelope")
+                                else:
+                                    document = json.loads(store.path.read_bytes())
+                                    if damage == "foreign":
+                                        document["body"]["namespace"] = "b" * 64
+                                    else:
+                                        document["body"]["generation"] += 1
+                                    document["sha256"] = sha256(canonical(document["body"])).hexdigest()
+                                    store.path.write_bytes(canonical(document))
+                                raise OSError("Uncertain snapshot publication")
+                            return result
+                        with patch.object(persistence.os, "replace", side_effect=uncertain_replace):
+                            response = approve()
+                        self.assertEqual(response.status_code, 503)
+                        self.assertIn("outcome is unknown", response.json["error"])
+                        self.assertTrue(boundary.stop_event.is_set())
+                        self.assertIn(command["request_id"], intake.repository.load_owner(owner)["receipts"])
+                        self.assertEqual(len(intake.draft_service.get_workspace(owner)["items"]), 2)
+                        current = self.state.capture()
+                        disk = store.path.read_bytes() if store.path.exists() else None
+                        self.assertEqual(approve().status_code, 503)
+                        self.assertEqual(self.state.capture(), current)
+                        self.assertEqual(store.path.read_bytes() if store.path.exists() else None, disk)
+                        from tools.local_reviewer import manager
+                        from tools.local_reviewer.runtime import require_publication_ready, serve
+                        with self.assertRaisesRegex(ValueError, "remains fenced"):
+                            require_publication_ready(self.install)
+                        with self.assertRaisesRegex(ValueError, "remains fenced"):
+                            manager.start(self.install)
+                        with self.assertRaisesRegex(ValueError, "remains fenced"):
+                            serve(self.install, self.install / "unselected-release", {}, "unused-token")
+
+    def test_durable_protection_creation_and_resolution_failures_in_both_namespaces(self):
+        from tools.local_reviewer import persistence, runtime
+        from hashlib import sha256
+        for namespace in (None, "a" * 64):
+            for fault in ("create_before", "create_after", "prior_clear_before", "prior_clear_after",
+                          "commit_clear_before", "commit_clear_after", "unknown_update"):
+                with self.subTest(namespace=namespace, fault=fault):
+                    self.state.restore(self.initial)
+                    with self.credential_boundary(namespace) as (store, boundary, intake, owner, command, approve):
+                        prior = store.path.read_bytes()
+                        previous = self.state.capture()
+                        real_write, real_replace = runtime.atomic_write, persistence.os.replace
+                        def diagnostic_write(path, data):
+                            outcome = json.loads(data)["save_resolution"]
+                            fail = ((fault.startswith("create") and outcome == "pending")
+                                    or (fault.startswith("prior_clear") and outcome == "proven_prior")
+                                    or (fault.startswith("commit_clear") and outcome == "proven_commit")
+                                    or (fault == "unknown_update" and outcome == "unknown"))
+                            if fail and fault.endswith("after"):
+                                real_write(path, data)
+                            if fail:
+                                raise PermissionError("Synthetic recovery diagnostic lock")
+                            return real_write(path, data)
+                        def unknown_replace(source, destination):
+                            if fault.startswith("prior_clear") and Path(destination) == store.path:
+                                raise OSError("Snapshot replacement refused before commit")
+                            result = real_replace(source, destination)
+                            if fault == "unknown_update" and Path(destination) == store.path:
+                                doc = json.loads(store.path.read_bytes())
+                                doc["body"]["generation"] += 1
+                                doc["sha256"] = sha256(canonical(doc["body"])).hexdigest()
+                                store.path.write_bytes(canonical(doc))
+                                raise OSError("Unrelated typed generation")
+                            return result
+                        with patch.object(runtime, "atomic_write", side_effect=diagnostic_write), \
+                                patch.object(persistence.os, "replace", side_effect=unknown_replace), \
+                                patch.object(boundary, "dispatch", wraps=boundary.dispatch) as dispatch:
+                            response = approve()
+                        self.assertTrue(boundary.stop_event.is_set())
+                        if fault.startswith("create"):
+                            self.assertEqual(response.status_code, 503)
+                            dispatch.assert_not_called()
+                            self.assertEqual(store.path.read_bytes(), prior)
+                            self.assertEqual(self.state.capture(), previous)
+                            self.assertNotIn(command["request_id"], intake.repository.load_owner(owner)["receipts"])
+                        elif fault.startswith("commit_clear"):
+                            self.assertEqual(response.status_code, 200)
+                            self.assert_credential_commit(store, intake, owner, command)
+                        elif fault.startswith("prior_clear"):
+                            self.assertEqual(response.status_code, 503)
+                            self.assertIn("previous durable state is preserved", response.json["error"])
+                            self.assertEqual(store.path.read_bytes(), prior)
+                            self.assertEqual(self.state.capture(), previous)
+                        else:
+                            self.assertEqual(response.status_code, 503)
+                            self.assertIn("outcome is unknown", response.json["error"])
+                            self.assertEqual(store.unpack(store.path.read_bytes())["generation"], 3)
+                            self.assertIn(command["request_id"], intake.repository.load_owner(owner)["receipts"])
+                        fenced = fault in {"create_after", "prior_clear_before", "commit_clear_before", "unknown_update"}
+                        if fenced:
+                            self.assertEqual(json.loads((self.install / "logs/last-error.json").read_bytes())["save_resolution"], "pending")
+                            for gate in (runtime.require_publication_ready, __import__("tools.local_reviewer.manager", fromlist=["start"]).start,
+                                         __import__("tools.local_reviewer.manager", fromlist=["rollback"]).rollback):
+                                with self.assertRaisesRegex(ValueError, "remains fenced"):
+                                    gate(self.install)
+                            with self.assertRaisesRegex(ValueError, "remains fenced"):
+                                runtime.serve(self.install, self.install / "unselected-release", {}, "unused-token")
+                            import subprocess, sys
+                            child = subprocess.run([sys.executable, "-I", "-B", "-c", """
+import sys
+from pathlib import Path
+from unittest.mock import patch
+sys.path.insert(0,sys.argv[1])
+from tools.local_reviewer import runtime,manager
+root=Path(sys.argv[2]);before=(root/'data/state.json').read_bytes()
+# A fenced process must refuse even without its optional listener dependency.
+with patch.dict(sys.modules,{'waitress':None}), patch.object(runtime,'build_fixture',side_effect=AssertionError('No fixture or provider admission')):
+ for gate in (lambda:manager.start(root),lambda:runtime.serve(root,root/'unselected-release',{},'unused'),lambda:manager.rollback(root)):
+  try:gate()
+  except ValueError as error:assert 'remains fenced' in str(error)
+  else:raise AssertionError('Fresh process bypassed pending recovery fence')
+assert (root/'data/state.json').read_bytes()==before
+print('Start/Serve/rollback fenced; no fixture/listener; content unchanged')
+""", str(Path(__file__).resolve().parents[1]), str(self.install)], capture_output=True, text=True, timeout=30)
+                            self.assertEqual(child.returncode, 0, child.stderr[-1500:])
+                            self.assertIn("Start/Serve/rollback fenced", child.stdout)
+                        else:
+                            runtime.require_publication_ready(self.install)
+                        content = store.path.read_bytes()
+                        self.assertEqual(approve().status_code, 503)
+                        self.assertEqual(store.path.read_bytes(), content)
+
     def test_reset_and_restore_preserve_other_member_and_linked_media_originals(self):
         from hashlib import sha256
         for member, label in (("member-a", "A"), ("member-b", "B")):
@@ -1029,6 +1335,7 @@ class FixtureTests(unittest.TestCase):
             self.fixture.shared.seed_photo("g-" + member, width=12, height=8)
             source = {"source_key": str(uuid4()), "version": 1, "sha256": sha256(label.encode()).hexdigest(), "content_type": "text/plain", "state": "active"}
             self.fixture.intake.original_files.retain("g-" + member, source, label.encode())
+            self.store.save()  # Publish fixture-only writes before another request.
         self.store.save()
         expected = self.state.capture()
         member_b = self.fixture.shared.policy.repository._owners["g-member-b"]
@@ -1134,6 +1441,7 @@ class FixtureTests(unittest.TestCase):
         manifest = {"installation": "fictional-test", "private_profile": True}
         manager.write(self.install / "installation.json", manifest)
         def client_for(store):
+            store.load()  # A real restarted Serve loads its store/generation.
             boundary = Boundary(self.fixture, self.app, self.endpoints, store, self.install,
                 {"port": 53720, "source_sha": "a" * 40, "candidate_state": "reviewed-preview"},
                 "test-control-token", threading.Event(), fresh_state=self.initial)
