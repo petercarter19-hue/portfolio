@@ -4,7 +4,7 @@
   "state": "active",
   "outcome": "Complete owner-approved MVP1 conversational Resume onboarding from the combined owner walkthrough and Grok/Dot evidence: professional optional elaboration; accumulated upload/voice/type context; correct add/edit/remove/clarify intent and targeted bullet changes; complete source accounting, at least 95 percent verified automatic section and record placement on fixed representative fixtures, and 100 percent approved-content preservation; Skills naming; supported text and scan extraction; lean contextual guidance, reliable navigation/state/manual recovery and actual private resume preview. Preserve source/proposal/canonical separation, privacy, explicit confirmation, existing saved content, provider controls and working manual/validation paths. Deliver independent Astra Extra High architecture, Sol Extra High implementation, separate Astra Extra High visual/functional and exact-candidate review, correction loop, current-target CI and accepted source for private release qualification. Expanded chatbot UI and optional tutorial remain MVP2. No reset, provider budget reset, production enablement, schema migration or edits to separately owned reset-control surfaces.",
   "assignment": "implementation",
-  "writer_ref": "session:01a0ff26-7f5a-76a3-8f13-f051ebd04255",
+  "writer_ref": "session:01a10998-9b42-7633-a44d-7eba59db7950",
   "branch": "codex/2026-10-04-onboarding-conversation-002",
   "delivery_path": "Protected",
   "repository_authority": "through_merge",
@@ -66,7 +66,12 @@
     "docs/governance/lane_claims/evidence/PS-ONBOARDING-CONVERSATION-002.md"
   ],
   "review_requirement": "independent",
-  "handoff": null,
+  "handoff": {
+    "from_ref": "session:01a0ff26-7f5a-76a3-8f13-f051ebd04255",
+    "to_ref": "session:01a10998-9b42-7633-a44d-7eba59db7950",
+    "checkpoint_sha": "c875f5d00ed34de2d7ec77213e9775269cc394a3",
+    "relinquished": true
+  },
   "checkpoint_sha": null,
   "merged_sha": null,
   "closed_at": null
