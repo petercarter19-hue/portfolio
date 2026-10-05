@@ -23,6 +23,7 @@ blank values the member never touched.
 
 from __future__ import annotations
 
+import copy
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from uuid import uuid4
@@ -152,6 +153,7 @@ def present(proposal: dict) -> dict:
         "kind": proposal["kind"],
         "record_type": proposal["record_type"],
         "target_key": proposal.get("target_key"),
+        "resume_conversation_v1": dict(proposal.get("resume_conversation_v1") or {}),
         "quote": proposal.get("quote"),
         "span": [proposal.get("span_start"), proposal.get("span_end")],
         "proposed_values": dict(proposal.get("proposed_values") or {}),
@@ -181,6 +183,11 @@ def binding_is_current(snapshot: dict, proposal: dict) -> bool:
         return False
     if int(snapshot.get("lifecycle_epoch") or 0) != int(binding.get("lifecycle_epoch") or 0):
         return False
+    for dependency in (proposal.get('resume_conversation_v1') or {}).get('source_bindings') or []:
+        original = snapshot.get('sources', {}).get(dependency.get('source_key'))
+        if (not original or original.get('state') != 'active'
+                or original.get('version') != dependency.get('version')):
+            return False
     return True
 
 
@@ -258,7 +265,9 @@ def invalidate_for_source(snapshot: dict, source_key: str, *, now: datetime | No
 
     affected = 0
     for proposal in snapshot.get("proposals", {}).values():
-        if (proposal.get("binding") or {}).get("source_key") != source_key:
+        if ((proposal.get("binding") or {}).get("source_key") != source_key
+                and source_key not in {b.get('source_key') for b in
+                    (proposal.get('resume_conversation_v1') or {}).get('source_bindings') or []}):
             continue
         proposal["source_purged"] = True
         if proposal["state"] == "pending":
@@ -276,8 +285,30 @@ def redact_source_text(snapshot: dict, source_key: str) -> int:
     """
 
     redacted = 0
+    affected_sources = {source_key}
+    while True:
+        expanded = affected_sources | {row['source_key'] for row in snapshot.get('sources', {}).values()
+            if affected_sources & {b.get('source_key') for b in
+                ((row.get('structured_values') or {}).get('resume_conversation_v1') or {}).get('dependencies', [])}}
+        if expanded == affected_sources:
+            break
+        affected_sources = expanded
+    affected_requests = {((row.get('structured_values') or {}).get('resume_conversation_v1') or {}).get('request_id')
+        for row in snapshot.get('sources', {}).values() if row['source_key'] in affected_sources}
+    affected_requests.discard(None)
     for source in snapshot.get("sources", {}).values():
-        if source.get("source_key") != source_key:
+        meta = (source.get('structured_values') or {}).get('resume_conversation_v1') or {}
+        dependent = source.get('source_key') in affected_sources and source.get('source_key') != source_key
+        if source.get("source_key") not in affected_sources:
+            continue
+        if dependent:
+            source['text'] = None
+            source['structured_values'] = {'resume_conversation_v1': {
+                'schema_version': 1, 'request_id': meta.get('request_id'),
+                'request_digest': meta.get('request_digest'), 'turn_state': 'redacted',
+                'dependencies': meta.get('dependencies') or []}}
+            source['state'] = 'purged'
+            source['version'] = int(source.get('version') or 0) + 1
             continue
         # Structured values are member words held outside source_text. Pending
         # extracted equivalents retain identifier-only tombstones so a stale
@@ -304,24 +335,35 @@ def redact_source_text(snapshot: dict, source_key: str) -> int:
                 ]
             }
         else:
-            source["structured_values"] = None
+            source["structured_values"] = ({'resume_conversation_v1': {
+                'schema_version': 1, 'request_id': meta.get('request_id'),
+                'request_digest': meta.get('request_digest'), 'turn_state': 'redacted'}}
+                if meta.get('request_id') else None)
     for proposal in snapshot.get("proposals", {}).values():
-        if (proposal.get("binding") or {}).get("source_key") != source_key:
+        if ((proposal.get("binding") or {}).get("source_key") not in affected_sources
+                and not affected_sources & {b.get('source_key') for b in
+                    (proposal.get('resume_conversation_v1') or {}).get('source_bindings') or []}):
             continue
+        proposal['source_purged'] = True
+        if proposal['state'] == 'pending':
+            invalidate(snapshot, proposal['proposal_key'])
         proposal["quote"] = None
         proposal["proposed_values"] = dict(REDACTED_VALUE)
         if proposal.get("confirmed_values") is not None:
             proposal["confirmed_values"] = dict(REDACTED_VALUE)
+        metadata = proposal.get('resume_conversation_v1') or {}
+        for name in ('excluded_bullets', 'bullet_edits'):
+            metadata.pop(name, None)
         redacted += 1
     for receipt in snapshot.get("receipts", {}).values():
         result = (receipt or {}).get("result")
         if not isinstance(result, dict):
             continue
         submission = result.get("submission") or {}
-        touch = source_key in (submission.get("source_keys") or [])
+        touch = bool(affected_sources & set(submission.get("source_keys") or []))
         # A pre-Add transcription receipt has no submission; its own source_key
         # identifies it, and the member's words must be dropped there too.
-        if result.get("source_key") == source_key:
+        if result.get("source_key") in affected_sources:
             result.pop("transcript", None)
             nested = result.get("receipt")
             if isinstance(nested, dict):
@@ -330,14 +372,61 @@ def redact_source_text(snapshot: dict, source_key: str) -> int:
         if not touch:
             continue
         for proposal_view in result.get("proposals") or []:
-            if (proposal_view.get("provenance") or {}).get("source_key") == source_key:
+            if (proposal_view.get("provenance") or {}).get("source_key") in affected_sources:
                 proposal_view["quote"] = None
                 proposal_view["proposed_values"] = dict(REDACTED_VALUE)
         for row in result.get("results") or []:
-            if row.get("source_key") == source_key:
+            if row.get("source_key") in affected_sources:
                 row["document"] = None
                 row.pop("message", None)
+    redact_source_drafts(snapshot, source_key)
     return redacted
+
+
+def redact_source_drafts(snapshot: dict, source_key: str) -> None:
+    """Redact current draft copies without repeating source lifecycle writes."""
+    affected_sources = {source_key}
+    while True:
+        expanded = affected_sources | {row['source_key'] for row in snapshot.get('sources', {}).values()
+            if affected_sources & {b.get('source_key') for b in
+                ((row.get('structured_values') or {}).get('resume_conversation_v1') or {}).get('dependencies', [])}}
+        if expanded == affected_sources:
+            break
+        affected_sources = expanded
+    affected_requests = {((row.get('structured_values') or {}).get('resume_conversation_v1') or {}).get('request_id')
+        for row in snapshot.get('sources', {}).values() if row['source_key'] in affected_sources}
+    affected_requests.discard(None)
+    affected = {p['proposal_key'] for p in snapshot.get('proposals', {}).values() if p.get('source_purged')}
+    for draft in snapshot.get('drafts', {}).values():
+        before = copy.deepcopy(draft)
+        state = draft.get('guide_state') or {}
+        if state.get('correction_target_key') in affected:
+            state['correction_draft'] = None
+        for name in ('proposal_drafts', 'correction_inputs'):
+            if isinstance(state.get(name), dict):
+                state[name] = {key: value for key, value in state[name].items() if key not in affected}
+        for name in ('selected_proposal_key', 'correction_target_key'):
+            if state.get(name) in affected:
+                state[name] = None
+        if state:
+            state['question'] = None; state['context'] = None
+            if 'seen_questions' in state:
+                state['seen_questions'] = []
+            if 'navigation_history' in state:
+                state['navigation_history'] = []
+            pending = state.get('pending_conversation') or {}
+            if (affected_sources & set(pending.get('source_keys', []))
+                    or pending.get('request_id') in affected_requests
+                    or (pending.get('selected_target') or '').split(':')[-1] in affected):
+                if draft.get('text') == pending.get('statement'):
+                    draft['text'] = None
+                state['pending_conversation'] = None
+        if draft != before:
+            # Fence outstanding autosaves only when retained content changed;
+            # unrelated acknowledged words and no-op reads keep their version.
+            draft['version'] = int(draft.get('version') or 0) + 1
+            draft['last_request_id'] = None
+            snapshot['draft_revision'] = max(int(snapshot.get('draft_revision') or 0),draft['version'])
 
 
 def spec_as_dict(spec: ProposalSpec) -> dict:

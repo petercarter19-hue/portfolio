@@ -59,6 +59,7 @@ PLANNED_RATE_LIMITS = MappingProxyType(
         "resume_intake.post_submission": "30 per hour",
         "resume_intake.post_recording": "20 per hour",
         "resume_intake.post_proposal_decision": "60 per hour",
+        "resume_intake.post_saved_choice_review": "30 per hour",
         "resume_intake.post_source_purge": "30 per hour",
         "resume_intake.get_draft": "60 per minute",
         "resume_intake.put_draft": "60 per hour",
@@ -202,6 +203,28 @@ def get_intake_workspace():
         return jsonify(_unavailable(error, "The composer is unavailable.")), 503
     result["fixture_policy_enabled"] = _fixture_policy_enabled()
     return jsonify({"success": True, **result})
+
+
+@resume_intake.post('/api/resume-intake/me/saved-choices/review')
+def post_saved_choice_review():
+    identity = _identity_or_not_found()
+    if identity is None:
+        return jsonify({'success': False, 'message': 'Not found.'}), 404
+    try:
+        result = _service().review_resume_history(identity.user_key, _json_body(),
+            allow_fixture_policy=_fixture_policy_enabled())
+    except ResumeIntakeValidationError as error:
+        return jsonify({'success': False, 'code': 'invalid', 'message': str(error)}), 400
+    except ResumeIntakePolicyError as error:
+        return _policy_response(error)
+    except ResumeIntakeNotFoundError:
+        return jsonify({'success': False, 'message': 'Not found.'}), 404
+    except ResumeIntakeConflictError as error:
+        return jsonify({'success': False, 'code': error.error_code, 'message': str(error)}), 409
+    except ResumeIntakeUnavailableError:
+        return jsonify({'success': False, 'code': 'unavailable',
+            'message': 'Saved-choice review is unavailable. Your approved information is kept.'}), 503
+    return jsonify({'success': True, **result})
 
 
 @resume_intake.post("/api/resume-intake/me/submissions")
@@ -525,7 +548,10 @@ def _private_assistance(kind, method):
                 result[key] = value
             return result
         payload = json.loads(raw, object_pairs_hook=closed_pairs)
-        if method == 'interview' and isinstance(payload, dict) and 'proposal_key' in payload:
+        if method == 'interview' and callable(getattr(type(service), 'conversation', None)):
+            result = _service().converse(identity.user_key, payload, assistance=service,
+                allow_fixture_policy=_fixture_policy_enabled())
+        elif method == 'interview' and isinstance(payload, dict) and 'proposal_key' in payload:
             proposal_key = payload.pop('proposal_key')
             workspace = _service().get_workspace(identity.user_key)
             proposal = next((row for row in workspace.get('pending_proposals', [])
@@ -543,16 +569,22 @@ def _private_assistance(kind, method):
     except ResumeDraftConflictError as error:
         return jsonify({'success': False, 'code': 'changed', 'message': str(error),
                         'proposed_values': error.proposed}), 409
+    except ResumeIntakeConflictError as error:
+        return jsonify({'success': False, 'code': 'changed', 'message': str(error)}), 409
+    except ResumeIntakeNotFoundError:
+        return jsonify({'success': False, 'code': 'not_found', 'message': 'Not found.'}), 404
+    except ResumeIntakePolicyError as error:
+        return _policy_response(error)
     except SynthesisError as error:
         code = error.code
         status = 404 if code == 'not_found' else 409 if code == 'changed' else 503 if code == 'unavailable' else 400
         return jsonify({'success': False, 'code': code,
             'message': 'Private assistance could not complete. Your words and manual editor remain available.'}), status
-    except (ProviderUnavailableError, ExecutionLimitError, ResumeDraftUnavailableError,
+    except (ProviderUnavailableError, ExecutionLimitError, TimeoutError, ResumeDraftUnavailableError,
             ResumeIntakeUnavailableError):
         return jsonify({'success': False, 'code': 'unavailable',
             'message': 'Private assistance is unavailable. Your manual editor remains available.'}), 503
-    except (ValueError, TypeError, KeyError, ResumeDraftValidationError, ExtractionError):
+    except (ValueError, TypeError, KeyError, ResumeDraftValidationError, ResumeIntakeValidationError, ExtractionError):
         return jsonify({'success': False, 'code': 'invalid',
                         'message': 'Review the request and try again. Your words are preserved.'}), 400
     return jsonify({'success': True, **result})

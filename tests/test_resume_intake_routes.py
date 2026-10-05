@@ -134,6 +134,8 @@ class GateTests(unittest.TestCase):
     def test_feature_off_is_a_neutral_404(self):
         client = app.test_client()
         self.assertEqual(client.get("/api/resume-intake/me").status_code, 404)
+        self.assertEqual(client.post('/api/resume-intake/me/saved-choices/review',json={},
+            headers={'X-PeerSlate-Request':'same-origin'}).status_code,404)
         self.assertEqual(
             client.post(
                 "/api/resume-intake/me/submissions",
@@ -166,6 +168,20 @@ class GateTests(unittest.TestCase):
 
 
 class ComposerHttpTests(IntakeRoutesTestCase):
+    def test_saved_choice_review_enforces_private_identity_origin_and_closed_request(self):
+        endpoint='/api/resume-intake/me/saved-choices/review'
+        client=self.client()
+        self.assertEqual(client.post(endpoint,json={}).status_code,403)
+        self.assertEqual(client.post(endpoint,json={},headers={'X-PeerSlate-Request':'same-origin',
+            'Origin':'https://unrelated.invalid'}).status_code,403)
+        self.assertEqual(client.post(endpoint,json={'bypass':True},
+            headers={'X-PeerSlate-Request':'same-origin'}).status_code,400)
+        app.config.update(PEERSLATE_ALLOW_DEV_IDENTITY=False,PEERSLATE_DEV_USER_KEY=None)
+        response=client.post(endpoint,json={},headers={'X-PeerSlate-Request':'same-origin'})
+        self.assertEqual(response.status_code,404)
+        self.assertIn('no-store',response.headers['Cache-Control'])
+        self.assertEqual(self.catalog.list_items('member-a'),[])
+
     def test_workspace_read_is_private_and_does_not_process(self):
         client = self.client()
         response = client.get("/api/resume-intake/me")
@@ -954,6 +970,22 @@ if __name__ == "__main__":
 
 # Selected model/private assistance integration regressions; fixtures only.
 class RouteBoundaryTests(unittest.TestCase):
+    def test_actual_conversation_timeout_is_unavailable_and_same_key_never_redispatches(self):
+        from tests.test_resume_onboarding_conversation import ConversationTests
+        from unittest.mock import patch
+        fixture=ConversationTests();fixture.setUp()
+        fixture.behavior=lambda ctx: (_ for _ in ()).throw(TimeoutError('synthetic private provider timeout'))
+        self.app.config['RESUME_PRIVATE_ASSISTANCE_SERVICE']=fixture.assistance
+        payload=fixture.command('What could I add?')
+        with patch.object(self.routes,'_service',return_value=fixture.intake):
+            for attempt in range(2):
+                response=self.client.post('/api/resume-interview/me/turn',json=payload,
+                    headers={'X-PeerSlate-Request':'same-origin'})
+                self.assertEqual(response.status_code,503,response.get_json())
+                self.assertEqual(response.get_json()['code'],'unavailable')
+        self.assertEqual(len(fixture.calls),1)
+        self.assertEqual(fixture.intake.draft_service.catalog.list_items('fiction-owner'),[])
+
     def test_correction_binds_owner_pending_source_and_refuses_a_foreign_or_changed_proposal(self):
         from unittest.mock import Mock, patch
         proposal={'proposal_key':str(uuid4()),'state':'pending','record_type':'role',
@@ -1125,7 +1157,9 @@ class TypedExtractionReviewBrowserTests(unittest.TestCase):
         page.on('request', lambda request: confirmations.append(request.post_data_json)
             if request.url.endswith('/api/resume-intake/me/proposals/decision') else None)
         page.goto(self.base_url + '/app/resume')
-        page.locator('#resume-intake-start-type').click()
+        page.locator('#resume-intake').wait_for(state='visible')
+        if page.locator('#resume-intake-start-type').is_visible():
+            page.locator('#resume-intake-start-type').click()
         page.locator('#resume-intake-text').fill(text)
         page.locator('#resume-intake-add').click()
         proposals = page.locator('#resume-intake-proposals > li:not(.resume-intake__hint)')
@@ -1167,7 +1201,19 @@ class TypedExtractionReviewBrowserTests(unittest.TestCase):
         page = context.new_page()
         page.route('https://fonts.**', lambda route: route.abort())
         page.goto(self.base_url + '/app/resume')
-        page.locator('#resume-intake-start-type').click()
+        page.locator('#resume-intake').wait_for(state='visible')
+        for _ in range(12):
+            if page.locator('#resume-intake-input').is_visible():
+                break
+            if page.locator('#resume-intake-start-type').is_visible():
+                page.locator('#resume-intake-start-type').click()
+            elif page.locator('#resume-intake-next-question').is_visible():
+                page.locator('#resume-intake-next-question').click()
+            elif page.locator('#resume-intake-keep-adding').is_visible():
+                page.locator('#resume-intake-keep-adding').click()
+            else:
+                page.locator('#resume-intake-back').click()
+        page.locator('#resume-intake-input').wait_for(state='visible')
         page.locator('#resume-intake-text').fill(text)
         page.locator('#resume-intake-add').click()
         proposal = page.locator('#resume-intake-proposals > li:not(.resume-intake__hint)').first

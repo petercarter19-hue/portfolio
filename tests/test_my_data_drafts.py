@@ -483,8 +483,67 @@ class DraftExpiryTests(unittest.TestCase):
         row["expires_at"] = (backdated + timedelta(days=30)).isoformat()
         self.service.repository.save_owner(self.owner, snapshot)
         fresh = self.service.save_draft(self.owner, draft_body(text="New words"))
-        self.assertEqual(fresh["draft"]["version"], 1)
+        self.assertGreater(fresh["draft"]["version"], saved["draft"]["version"])
         self.assertEqual(fresh["draft"]["text"], "New words")
+        self.assertGreater(datetime.fromisoformat(fresh['draft']['expires_at']),datetime.fromisoformat(row['expires_at']))
+        self.assertEqual((datetime.fromisoformat(fresh['draft']['expires_at']) - datetime.fromisoformat(fresh['draft']['updated_at'])).days,30)
+        with self.assertRaises(ResumeIntakeConflictError):
+            self.service.save_draft(self.owner, draft_body(text='Stale device words', expected_version=saved['draft']['version']))
+        self.assertEqual(self.service.get_draft(self.owner)['draft']['text'], 'New words')
+
+    def test_legacy_row_high_water_survives_expiry_read_and_discard_without_marker(self):
+        for action in ('direct_expiry', 'read_expiry', 'discard'):
+            with self.subTest(action=action):
+                owner = 'legacy-' + action
+                first = self.service.save_draft(owner, draft_body(text='Old device copy'))['draft']
+                snapshot = self.service.repository.load_owner(owner)
+                snapshot.pop('draft_revision', None)
+                snapshot['drafts']['composer']['version'] = 37
+                if 'expiry' in action:
+                    snapshot['drafts']['composer']['expires_at'] = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+                self.service.repository.save_owner(owner, snapshot)
+                if action == 'read_expiry':
+                    self.assertIsNone(self.service.get_draft(owner)['draft'])
+                elif action == 'discard':
+                    self.service.discard_draft(owner, {'request_id':str(uuid4()), 'expected_version':37})
+                if action != 'direct_expiry':
+                    with self.assertRaises(ResumeIntakeConflictError) as missing:
+                        self.service.save_draft(owner, draft_body(text='Old device overwrite', expected_version=37))
+                    self.assertEqual(missing.exception.conflicts[0]['reason'], 'draft_missing')
+                    self.assertEqual(missing.exception.proposed['text'], 'Old device overwrite')
+                new = self.service.save_draft(owner, draft_body(text='Deliberately recreated copy'))['draft']
+                self.assertGreater(new['version'], 37)
+                with self.assertRaises(ResumeIntakeConflictError):
+                    self.service.save_draft(owner, draft_body(text='Old device overwrite', expected_version=37))
+                self.assertEqual(self.service.get_draft(owner)['draft']['text'], 'Deliberately recreated copy')
+
+    def test_legacy_normalization_noop_reads_and_replay_keep_version_words_and_expiry(self):
+        body = draft_body(text='Current words')
+        first = self.service.save_draft(self.owner, body)['draft']
+        snapshot = self.service.repository.load_owner(self.owner)
+        snapshot.pop('draft_revision', None)
+        self.service.repository.save_owner(self.owner, snapshot)
+        self.assertEqual(self.service.get_draft(self.owner)['draft'], first)
+        replay = self.service.save_draft(self.owner, body)
+        self.assertTrue(replay['replayed']); self.assertEqual(replay['draft'], first)
+        self.assertEqual(self.service.repository.load_owner(self.owner)['draft_revision'], first['version'])
+
+    def test_two_devices_recreate_same_missing_version_only_one_wins(self):
+        old = self.service.save_draft(self.owner, draft_body(text='Original'))['draft']
+        self.service.discard_draft(self.owner, {'request_id':str(uuid4()), 'expected_version':old['version']})
+        barrier = threading.Barrier(2); outcomes = []
+        def save(words):
+            barrier.wait()
+            try:
+                result = self.service.save_draft(self.owner, draft_body(text=words))
+                outcomes.append(('saved', result['draft']['text']))
+            except ResumeIntakeConflictError as error:
+                outcomes.append(('conflict', error.proposed['text']))
+        threads = [threading.Thread(target=save, args=(words,)) for words in ('Device A', 'Device B')]
+        for thread in threads: thread.start()
+        for thread in threads: thread.join()
+        self.assertEqual(sorted(result[0] for result in outcomes), ['conflict', 'saved'])
+        self.assertEqual(self.service.get_draft(self.owner)['draft']['text'], next(words for state, words in outcomes if state == 'saved'))
 
 
 class DraftStoreSupportTests(unittest.TestCase):

@@ -400,6 +400,13 @@ def build_owner_review_candidate(
     if story_entry_key is not None and not any(row["entry_key"] == story_entry_key
             and row["canonical_type"] == "knowledge" for row in entries):
         raise ContractError("Story reference is unavailable")
+    if story_entry_key is not None:
+        original = next(row for row in entries if row['entry_key'] == story_entry_key)
+        workspace = workspace_items.get(story_entry_key) or {}
+        effective = {**(original.get('values') or {}), **(workspace.get('values') or {}),
+                     **(workspace.get('proposed_values') or {})}
+        if effective.get('classification') != 'personal':
+            raise ContractError('Choose a personal entry for My Story')
     if any(item.get("orphaned") or item.get("draft_is_stale") for item in overlays.values()):
         raise ContractError("stale Resume draft")
     wording_fields = {key: tuple((item.get("proposed_values") or {}).keys()) for key, item in overlays.items()}

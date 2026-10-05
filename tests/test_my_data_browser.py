@@ -1067,13 +1067,15 @@ class MyDataBrowserTests(unittest.TestCase):
         self._open_composer(page)
         page.locator("[data-my-data-text]").fill("Device one words")
         page.wait_for_timeout(2000)
+        acknowledged = self.intake_service.get_draft(BROWSER_MEMBER)["draft"]
+        self.assertEqual(acknowledged["text"], "Device one words")
         # Another device saves a newer version behind this page's back.
         saved = self.intake_service.save_draft(
             BROWSER_MEMBER,
             {"request_id": str(uuid4()), "text": "Device two words",
-             "expected_version": 1},
+             "expected_version": acknowledged["version"]},
         )
-        self.assertEqual(saved["draft"]["version"], 2)
+        self.assertGreater(saved["draft"]["version"], acknowledged["version"])
         page.locator("[data-my-data-text]").fill("Device one words plus more")
         page.wait_for_function(
             "Array.from(document.querySelectorAll('.my-data__proposal h4'))"
@@ -1119,12 +1121,14 @@ class MyDataBrowserTests(unittest.TestCase):
         self._open_composer(page)
         page.locator("[data-my-data-text]").fill("Device A stale words")
         page.wait_for_timeout(2000)
+        acknowledged = self.intake_service.get_draft(BROWSER_MEMBER)["draft"]
+        self.assertEqual(acknowledged["text"], "Device A stale words")
         saved = self.intake_service.save_draft(
             BROWSER_MEMBER,
             {"request_id": str(uuid4()), "text": "Device B newer words",
-             "expected_version": 1},
+             "expected_version": acknowledged["version"]},
         )
-        self.assertEqual(saved["draft"]["version"], 2)
+        self.assertGreater(saved["draft"]["version"], acknowledged["version"])
         page.locator("[data-my-data-close]").click()
         page.wait_for_function(
             "document.querySelector('[data-my-data-overlay]').hidden === true",
@@ -1156,11 +1160,12 @@ class MyDataBrowserTests(unittest.TestCase):
         page.locator("[data-my-data-discard]").click()
 
     def test_delayed_draft_get_after_typing_shows_conflict(self):
+        retained_revision = self.intake_repository.load_owner(BROWSER_MEMBER).get("draft_revision", 0)
         seeded = self.intake_service.save_draft(
             BROWSER_MEMBER,
             {"request_id": str(uuid4()), "text": "Server device words"},
         )
-        self.assertEqual(seeded["draft"]["version"], 1)
+        self.assertGreater(seeded["draft"]["version"], retained_revision)
         page = self._new_page(viewport={"width": 1440, "height": 1000})
         pending_gets = []
 

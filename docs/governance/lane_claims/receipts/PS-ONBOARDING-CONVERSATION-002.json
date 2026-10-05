@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "package": "PS-ONBOARDING-CONVERSATION-002",
+  "candidate_sha": "4f699d76077d1b8698e1e2c46f959d9b0251cc5a",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a10a55-c6ca-75e3-9300-82cb1f0a5eab",
+  "result": "pass",
+  "reviewed_at": "2026-10-05T10:54:33Z",
+  "findings": [
+    {
+      "id": "R1",
+      "status": "resolved"
+    },
+    {
+      "id": "R2",
+      "status": "resolved"
+    },
+    {
+      "id": "R3",
+      "status": "resolved"
+    },
+    {
+      "id": "R4",
+      "status": "resolved"
+    },
+    {
+      "id": "R5",
+      "status": "resolved"
+    },
+    {
+      "id": "R6",
+      "status": "resolved"
+    },
+    {
+      "id": "R7",
+      "status": "resolved"
+    },
+    {
+      "id": "R8",
+      "status": "resolved"
+    },
+    {
+      "id": "R9",
+      "status": "resolved"
+    },
+    {
+      "id": "R10",
+      "status": "resolved"
+    },
+    {
+      "id": "R11",
+      "status": "resolved"
+    },
+    {
+      "id": "R12",
+      "status": "resolved"
+    },
+    {
+      "id": "R13",
+      "status": "resolved"
+    },
+    {
+      "id": "R14",
+      "status": "resolved"
+    },
+    {
+      "id": "W1",
+      "status": "resolved"
+    }
+  ],
+  "evidence_ref": "X:/PeerSlate/evidence/PS-ONBOARDING-CONVERSATION-002/independent-review/R13_R14_SOURCE_PASS_REVIEW.md (source/fixture PASS only; installed A01-A15 pending)"
+}
+

@@ -5,12 +5,15 @@
     data-intake-submit-url="{{ url_for('resume_intake.post_submission') }}"
     data-intake-recording-url="{{ url_for('resume_intake.post_recording') }}"
     data-intake-decision-url="{{ url_for('resume_intake.post_proposal_decision') }}"
+    data-history-review-url="{{ url_for('resume_intake.post_saved_choice_review') }}"
     data-intake-originals-url="{{ url_for('resume_intake.get_original_files') }}"
     data-intake-purge-url="{{ url_for('resume_intake.post_source_purge') }}"
     data-guide-url="{{ url_for('resume_intake.get_guide_state') }}"
     data-guide-status-url="{{ url_for('resume_intake.post_guide_status') }}"
     data-interview-enabled="{{ 'true' if config.get('PEERSLATE_RESUME_INTERVIEW_ENABLED', false) else 'false' }}"
     data-interview-url="{{ url_for('resume_intake.post_private_interview') }}"
+    data-draft-url="{{ url_for('resume_intake.get_draft') }}"
+    {% if config.get('PEERSLATE_RESUME_PUBLICATION_ENABLED', false) %}data-review-url="{{ url_for('resume_publication.review_resume_publication') }}" data-preview-url="{{ url_for('resume_publication.preview_resume_publication') }}"{% endif %}
     aria-labelledby="resume-intake-title" aria-describedby="resume-intake-description">
   <div class="resume-intake__surface">
     <header class="resume-intake__header">
@@ -21,6 +24,7 @@
     <div id="resume-intake-guide">
       <h2 id="resume-intake-title" class="resume-intake__title" tabindex="-1">The more PeerSlate knows you, the more it can do for you.</h2>
       <p id="resume-intake-description" class="resume-intake__description" hidden></p>
+      <section id="resume-intake-history-review" class="resume-intake__inset" aria-label="Review saved Resume choices" hidden></section>
       <section id="resume-intake-welcome" aria-label="How PeerSlate helps you">
         <div class="resume-intake__inset resume-intake__benefits">
           <div class="resume-intake__benefit">
@@ -32,7 +36,7 @@
             <div><h3>Your personal AI, better informed</h3><p>Answers for recruiters, using only what you choose to share.</p></div>
           </div>
         </div>
-        <p class="resume-intake__begin">Start anywhere. Add more anytime.</p>
+        <p class="resume-intake__begin">Supply résumé content directly, or talk with AI to organize and refine it. Start anywhere.</p>
         <div class="resume-intake__paired-actions">
           <button type="button" class="resume-intake__add" id="resume-intake-start-upload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M5 15v5h14v-5"/></svg>Upload files</button>
           <button type="button" class="resume-intake__secondary" id="resume-intake-start-voice"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a3 3 0 0 1 3 3v4a3 3 0 0 1-6 0V7a3 3 0 0 1 3-3zM6 11a6 6 0 0 0 12 0M12 17v3"/></svg>Start talking</button>
@@ -78,22 +82,23 @@
             </div>
         </form>
         <details class="resume-intake__policy-details"><summary>Supported files and privacy</summary><p id="resume-intake-policy">Files and recordings stay private.</p></details>
-        <p class="resume-intake__draft" id="resume-intake-draft-state"><span id="resume-intake-draft-label">Your answer is not added yet.</span></p>
+        <p class="resume-intake__draft" id="resume-intake-draft-state" hidden><span id="resume-intake-draft-label"></span></p>
         <div class="resume-intake__quiet-actions">
           <button type="button" class="resume-intake__quiet" id="resume-intake-review-pending" hidden>Review suggested details</button>
-          <button type="button" class="resume-intake__quiet" id="resume-intake-new-question">Ask another question</button>
-          <button type="button" class="resume-intake__quiet" id="resume-intake-skip-question">Skip this question</button>
-          <button type="button" class="resume-intake__quiet" id="resume-intake-input-finish">Finish this section</button>
+          <button type="button" class="resume-intake__quiet" id="resume-intake-new-question" hidden>Explore another detail</button>
+          <button type="button" class="resume-intake__quiet" id="resume-intake-skip-question" hidden>Skip this question</button>
+          <button type="button" class="resume-intake__quiet" id="resume-intake-input-finish" hidden>Finish for now</button>
         </div>
       </section>
       <section id="resume-intake-review" aria-label="Review suggested details" hidden>
         <p id="resume-intake-review-position" class="resume-intake__hint"></p>
         <ul class="resume-intake__proposals" id="resume-intake-proposals"></ul>
+        <details id="resume-intake-source-review" class="resume-intake__policy-details" hidden><summary>Review original text and coverage</summary><div id="resume-intake-source-units"></div></details>
       </section>
       <section id="resume-intake-next" hidden>
-        <div class="resume-intake__inset"><h3>One useful detail at a time.</h3><p>We can explore a contribution, what you learned, or something that makes your experience yours.</p></div>
+        <div class="resume-intake__inset"><h3>An optional next detail</h3><p id="resume-intake-followup"></p><p>You can add it now or finish for now.</p></div>
         <div class="resume-intake__paired-actions">
-          <button type="button" class="resume-intake__add" id="resume-intake-next-question">Ask another question</button>
+          <button type="button" class="resume-intake__add" id="resume-intake-next-question">Add a detail</button>
           <button type="button" class="resume-intake__secondary" id="resume-intake-next-finish">Finish for now</button>
         </div>
       </section>
@@ -119,6 +124,15 @@
       <div class="resume-intake__receipt" id="resume-intake-receipt" role="status" aria-live="polite" hidden></div>
       <div id="resume-intake-activity-slot"><p class="resume-intake__activity" id="resume-intake-activity" role="status" aria-live="polite" aria-atomic="true" hidden><span class="resume-intake__activity-mark" aria-hidden="true"></span><span id="resume-intake-activity-text"></span></p></div>
       <p class="resume-intake__status" id="resume-intake-status" role="status" aria-live="polite"></p>
+      <section class="resume-intake__inset" id="resume-intake-draft-recovery" aria-label="Choose your draft copy" hidden>
+        <p id="resume-intake-draft-recovery-message"></p>
+        <details id="resume-intake-draft-recovery-current"><summary>Review the saved copy</summary><pre id="resume-intake-draft-recovery-saved"></pre></details>
+        <div class="resume-intake__paired-actions" id="resume-intake-draft-recovery-actions">
+          <button type="button" class="resume-intake__secondary" id="resume-intake-draft-recovery-keep">Save this page's draft</button>
+          <button type="button" class="resume-intake__secondary" id="resume-intake-draft-recovery-use">Use the saved draft</button>
+        </div>
+        <details id="resume-intake-draft-recovery-held" hidden><summary>Review the earlier copy kept on this page</summary><pre id="resume-intake-draft-recovery-earlier"></pre><button type="button" class="resume-intake__quiet" id="resume-intake-draft-recovery-return">Return to this copy</button></details>
+      </section>
     </div>
     <footer class="resume-intake__footer">
       <p><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2M6 10h12v9H6z"/></svg><span id="resume-intake-privacy">New additions start private.<br>You decide what gets shared.</span></p>
@@ -142,7 +156,7 @@
                     <select id="resume-intake-type" name="record_type">
                         <option value="">Nothing structured</option>
                         <option value="role">Role</option>
-                        <option value="skill">Strength</option>
+                        <option value="skill">Skill</option>
                         <option value="education">Education</option>
                         <option value="credential">Credential</option>
                         <option value="accomplishment">Impact</option>
@@ -155,6 +169,12 @@
                 <p data-role-field hidden>
                     <label for="resume-intake-employer">Employer</label>
                     <input id="resume-intake-employer" name="employer_name" type="text" maxlength="300" autocomplete="off">
+                </p>
+                <p data-role-field hidden>
+                    <label for="resume-intake-role-location">Location (optional)</label>
+                    <input id="resume-intake-role-location" type="text" maxlength="300">
+                    <label for="resume-intake-role-summary">Responsibilities and results (optional)</label>
+                    <textarea id="resume-intake-role-summary" rows="4" maxlength="8000"></textarea>
                 </p>
                 <p data-role-field hidden>
                     <label for="resume-intake-current-role">Role status (optional)</label>
@@ -180,8 +200,10 @@
                     <input id="resume-intake-role-end" type="text" maxlength="10" placeholder="YYYY, YYYY-MM or YYYY-MM-DD" aria-describedby="resume-intake-date-hint">
                 </p>
                 <p data-skill-field hidden>
-                    <label for="resume-intake-skill">Strength</label>
+                    <label for="resume-intake-skill">Skill</label>
                     <input id="resume-intake-skill" name="name" type="text" maxlength="200" autocomplete="off">
+                    <label for="resume-intake-skill-summary">How you use it (optional)</label>
+                    <textarea id="resume-intake-skill-summary" rows="3" maxlength="8000"></textarea>
                 </p>
                 <p data-education-field hidden>
                     <label for="resume-intake-education-title">Program or title</label>
@@ -194,6 +216,7 @@
                 <p data-education-field hidden>
                     <label for="resume-intake-education-status">Status</label>
                     <select id="resume-intake-education-status" name="education_status">
+                        <option value="">Choose your status</option>
                         <option value="in_progress">In progress</option>
                         <option value="completed">Completed</option>
                         <option value="planned">Planned</option>
@@ -201,6 +224,18 @@
                         <option value="paused">Paused</option>
                         <option value="withdrawn">Withdrawn</option>
                     </select>
+                </p>
+                <p data-education-field hidden>
+                    <label for="resume-intake-degree">Degree or qualification (optional)</label>
+                    <input id="resume-intake-degree" type="text" maxlength="300">
+                    <label for="resume-intake-study">Field of study (optional)</label>
+                    <input id="resume-intake-study" type="text" maxlength="300">
+                    <label for="resume-intake-grade">Grade (optional)</label>
+                    <input id="resume-intake-grade" type="text" maxlength="300">
+                    <label for="resume-intake-education-location">Location (optional)</label>
+                    <input id="resume-intake-education-location" type="text" maxlength="300">
+                    <label for="resume-intake-education-summary">Details and qualifications (optional)</label>
+                    <textarea id="resume-intake-education-summary" rows="4" maxlength="8000"></textarea>
                 </p>
                 <p data-education-field hidden>
                     <label for="resume-intake-education-date-precision">Education date detail (optional)</label>
@@ -229,6 +264,7 @@
                 <p data-credential-field hidden>
                     <label for="resume-intake-credential-status">Status</label>
                     <select id="resume-intake-credential-status" name="completion_status">
+                        <option value="">Choose your status</option>
                         <option value="in_progress">In progress</option>
                         <option value="planned">Planned</option>
                         <option value="completed">Completed</option>

@@ -1,3 +1,95 @@
+/* Descriptive-field dictation stays in the owner editor. It never submits a
+ * form or creates source/canonical facts. Each session owns one exact field;
+ * canceled, detached, revised or repeated results cannot reach another field. */
+(function () {
+    let active = null;
+    let generation = 0;
+    function stop() {
+        generation += 1;
+        const session = active; active = null;
+        if (!session) return;
+        clearTimeout(session.timer);
+        if (session.recognition) { try { session.recognition.abort(); } catch (_) {} }
+        session.button.textContent = 'Dictate'; session.button.setAttribute('aria-pressed', 'false');
+        session.cancel.hidden = true; session.message.textContent = '';
+    }
+    function bind(field, label, announce) {
+        if (field.dataset.resumeVoiceBound) return;
+        field.dataset.resumeVoiceBound = 'true';
+        const controls = document.createElement('div'); controls.className = 'resume-field-voice';
+        const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Dictate';
+        button.className = 'resume-intake__quiet resume-editor__button resume-editor__button--quiet';
+        button.setAttribute('aria-label', 'Dictate ' + label); button.setAttribute('aria-pressed', 'false');
+        const cancel = document.createElement('button'); cancel.type = 'button'; cancel.textContent = 'Cancel dictation'; cancel.hidden = true;
+        cancel.className = button.className;
+        const message = document.createElement('span'); message.setAttribute('role', 'status');
+        const supported = Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
+        button.disabled = !supported;
+        if (!supported) message.textContent = 'Dictation is unavailable in this browser. You can type here.';
+        controls.append(button, cancel, message); field.after(controls);
+        function eligible(session) {
+            const modal = document.querySelector('dialog[open]');
+            return active === session && session.generation === generation && field.isConnected &&
+                !field.disabled && !field.readOnly && field.getClientRects().length > 0 && (!modal || modal.contains(field));
+        }
+        function arm(session) { clearTimeout(session.timer); session.timer = setTimeout(stop, 10000); }
+        button.addEventListener('click', async function () {
+            if (active && active.field === field) { stop(); return; }
+            stop();
+            if (!supported || field.disabled || field.readOnly || !field.getClientRects().length) return;
+            const session = {field, button, cancel, message, generation: generation, finalIndexes: new Set(), inserting: false};
+            active = session; cancel.hidden = false; message.textContent = 'Requesting microphone access…';
+            arm(session);
+            try {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    const stream = await navigator.mediaDevices.getUserMedia({audio:true, video:false});
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                if (!eligible(session)) return;
+                const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const recognition = session.recognition = new Recognition();
+                recognition.lang = document.documentElement.lang || 'en-US';
+                recognition.continuous = true; recognition.interimResults = true;
+                recognition.onresult = function (event) {
+                    if (!eligible(session)) { if (active === session) stop(); return; }
+                    let interim = '';
+                    for (let index = event.resultIndex; index < event.results.length; index += 1) {
+                        const result = event.results[index]; const words = (result[0] || {}).transcript || '';
+                        if (result.isFinal && !session.finalIndexes.has(index)) {
+                            session.finalIndexes.add(index); session.inserting = true;
+                            try { window.PeerSlateDictation.appendTranscript(field, words); } finally { session.inserting = false; }
+                        } else if (!result.isFinal) interim += words;
+                    }
+                    message.textContent = interim || 'Listening. Stop or cancel when finished; stops after 10 seconds of silence.';
+                    arm(session);
+                };
+                recognition.onerror = function (event) {
+                    if (!eligible(session)) return;
+                    const text = window.PeerSlateDictation.friendlySpeechError(event.error);
+                    stop(); message.textContent = text; if (announce) announce(text, 'error');
+                };
+                recognition.onend = function () { if (active === session) stop(); };
+                button.textContent = 'Stop dictation'; button.setAttribute('aria-pressed', 'true');
+                message.textContent = 'Listening. Review your words before saving.'; arm(session); recognition.start();
+            } catch (_) {
+                if (active !== session) return;
+                stop(); message.textContent = 'Microphone access is unavailable. You can keep typing.';
+            }
+        });
+        cancel.addEventListener('click', stop);
+        field.addEventListener('input', function () { if (active && active.field === field && !active.inserting) stop(); });
+    }
+    document.addEventListener('focusin', function (event) {
+        if (active && event.target.matches('input,textarea,select') && event.target !== active.field) stop();
+    });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') stop(); });
+    document.addEventListener('submit', stop, true);
+    document.addEventListener('toggle', function () {
+        if (active && (!active.field.isConnected || !active.field.getClientRects().length)) stop();
+    }, true);
+    window.addEventListener('pagehide', stop);
+    window.PeerSlateResumeFieldVoice = {bind, stop};
+})();
 (function () {
     const root = document.getElementById("resume-editor-lists");
     const status = document.getElementById("resume-editor-status");
@@ -22,9 +114,9 @@
         role: "Experience",
         education: "Education",
         credential: "Credentials",
-        skill: "Strengths",
+        skill: "Skills",
         accomplishment: "Impact",
-        knowledge: "Personal entries",
+        knowledge: "Private entries",
     };
     let workspace = null;
     let pendingStory = null;
@@ -56,6 +148,10 @@
         const payload = await response.json().catch(function () {
             return {};
         });
+        if (url === commandsUrl && response.ok && payload.success === true &&
+            ['save_item', 'discard_item', 'create_private_item', 'bind_story', 'clear_story'].includes(body.type)) {
+            document.dispatchEvent(new Event('resume-private-draft-changed'));
+        }
         return { response: response, payload: payload };
     }
 
@@ -271,6 +367,7 @@
             field.name = name;
             form.appendChild(label);
             form.appendChild(field);
+            if (field.tagName === 'TEXTAREA') window.PeerSlateResumeFieldVoice.bind(field, label.textContent, setStatus);
         });
         fillForm(form, item);
         if (["role", "education"].includes(item.record_type)) {
@@ -323,6 +420,7 @@
     }
 
     function renderWorkspace(payload) {
+        window.PeerSlateResumeFieldVoice.stop();
         workspace = payload;
         refreshAssistanceTargets();
         // Retain the live media nodes and handlers across workspace reloads.
@@ -333,16 +431,20 @@
         const storyChoice = document.getElementById("resume-story-choice");
         if (storyChoice) {
             storyChoice.replaceChildren(new Option("No Story selected", ""));
-            items.filter(item => item.record_type === "knowledge" && !item.orphaned).forEach(item => {
-                storyChoice.add(new Option((item.values || {}).title || "Personal entry", item.record_key));
+            items.filter(item => item.record_type === "knowledge" && !item.orphaned &&
+                Object.assign({}, item.values || {}, item.proposed_values || {}).classification === 'personal').forEach(item => {
+                const values = Object.assign({}, item.values || {}, item.proposed_values || {});
+                storyChoice.add(new Option(values.title || "Personal entry", item.record_key));
             });
             storyChoice.value = payload.story_entry_key || "";
         }
-        const story = items.find(item => item.record_key === payload.story_entry_key && !item.orphaned);
+        const story = items.find(item => item.record_key === payload.story_entry_key && !item.orphaned &&
+            Object.assign({}, item.values || {}, item.proposed_values || {}).classification === 'personal');
         const storyPreview = document.getElementById("resume-editor-story-preview");
         if (storyPreview) {
             const values = story ? Object.assign({}, story.values || {}, story.proposed_values || {}) : {};
-            storyPreview.textContent = values.wording || "No Story selected. Choose a saved personal entry to preview your introduction.";
+            storyPreview.textContent = values.wording ? ((values.title || 'My Story') + '\n' + values.wording) :
+                "No Story selected. Choose a saved personal entry to preview your introduction.";
         }
         const grouped = {};
         items.forEach(function (item) {
@@ -427,6 +529,18 @@
         }
         loadWorkspace(true);
     });
+    document.addEventListener('resume-private-draft-changed', function (event) {
+        const receipt = event.detail;
+        // A confirmed media-only mutation leaves text/source bindings intact.
+        // Advance only our exact matching baseline from its actual receipt;
+        // never realign an older/different workspace or an unresolved command.
+        if (workspace && receipt && receipt.source === 'media' &&
+            Number.isInteger(receipt.draftVersion) && Number.isInteger(receipt.previousDraftVersion) &&
+            receipt.draftVersion === receipt.previousDraftVersion + 1 &&
+            workspace.draft_version === receipt.previousDraftVersion) {
+            workspace.draft_version = receipt.draftVersion;
+        }
+    });
     document.getElementById("resume-editor-reload").addEventListener("click", function () {
         loadWorkspace();
     });
@@ -493,8 +607,11 @@
 
     const storyStatus = document.getElementById("resume-story-status");
     const storyCreate = document.getElementById("resume-story-create");
+    const storyWords = document.getElementById('resume-story-wording');
+    if (storyWords) window.PeerSlateResumeFieldVoice.bind(storyWords, 'My Story words', setStatus);
     const storySelect = document.getElementById("resume-story-select");
     async function commitStory(command, message) {
+        window.PeerSlateResumeFieldVoice.stop();
         pendingStory = pendingStory || command;
         const wording = document.getElementById("resume-story-wording");
         const choice = document.getElementById("resume-story-choice");
@@ -623,6 +740,7 @@
             });
             if (!payload) return;
             synthesisProposal = null;
+            document.dispatchEvent(new Event('resume-private-draft-changed'));
             await loadWorkspace();
             assistanceStatus.textContent = "Selected wording saved privately. It has not been published.";
         });
@@ -634,13 +752,14 @@
         const payload = await assistanceRequest(assistance.dataset.interviewUrl, {
             request_id: requestId(), expected_draft_version: workspace.draft_version,
             statement: document.getElementById("resume-career-interview-statement").value,
+            selected_target: null, source_keys: [],
         });
         if (!payload) return;
         document.getElementById("resume-career-interview-response").textContent = payload.response;
         document.getElementById("resume-career-interview-question").textContent = payload.next_question;
         const candidates = document.getElementById("resume-career-interview-candidates");
         candidates.replaceChildren();
-        payload.candidates.forEach(function (candidate) {
+        (payload.proposals || payload.candidates || []).forEach(function (candidate) {
             const row = document.createElement("li");
             row.textContent = candidate.record_type + ": " + candidate.quote;
             candidates.appendChild(row);

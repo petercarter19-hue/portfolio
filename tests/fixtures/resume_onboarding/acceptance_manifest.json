@@ -1,0 +1,702 @@
+{
+  "schema_version": 1,
+  "status": "architecture_specification_not_executed",
+  "package": "PS-ONBOARDING-CONVERSATION-002",
+  "base_sha": "baf37403a1027f62d20359d7e8deb24f9d327b74",
+  "architect": {
+    "agent": "/root/onboarding_architect",
+    "session": "01a10987-552f-7130-b1fc-94e920650ee4",
+    "configured_model": "gpt-6-astra",
+    "configured_effort": "xhigh",
+    "verified_model": "gpt-6-astra",
+    "verified_effort": "xhigh",
+    "verification": "exact native session turn_context"
+  },
+  "metrics": {
+    "automatic_placement": {
+      "denominator": 100,
+      "minimum_correct": 95,
+      "target_correct": 100,
+      "unit": "expected substantive source unit",
+      "requires": [
+        "correct_section",
+        "correct_record_or_parent"
+      ],
+      "before_human_clarification": true,
+      "omitted_uncertain_clarification_wrong_duplicate_score": 0,
+      "failures_not_removable_from_denominator": true
+    },
+    "source_accounting": {
+      "synthetic_required": 100,
+      "owner_pdf": "every meaningful unit plus structural section accounting"
+    },
+    "approved_preservation": {
+      "required_percent": 100,
+      "checked_layers": [
+        "approved_proposal",
+        "saved_record",
+        "actual_resume_render",
+        "reload"
+      ],
+      "hard_failures": [
+        "fabrication",
+        "wrong_target",
+        "stale_overwrite",
+        "silent_omission",
+        "duplicate_command_biography",
+        "unauthorized_disclosure",
+        "exclusion_not_honored"
+      ]
+    }
+  },
+  "criteria": [
+    {
+      "id": "A01",
+      "area": "source_extraction_placement",
+      "expected": "Fixed 100-unit corpus: at least 95 correct first-pass section AND record placements; all units and complete owner PDF accounted.",
+      "methods": [
+        "automated",
+        "live_provider",
+        "local_source_audit"
+      ],
+      "result": "not_run"
+    },
+    {
+      "id": "A02",
+      "area": "approved_preservation",
+      "expected": "100% approved facts/bullets/qualifiers in intended saved record and actual final private Resume after reload; exclusions absent.",
+      "methods": [
+        "automated",
+        "browser"
+      ],
+      "result": "not_run"
+    },
+    {
+      "id": "A03",
+      "area": "accumulated_conversation",
+      "expected": "Upload/voice/type and prior approved/pending context support real revisions, questions, grounded optional invitations and stopping; no commands as biography.",
+      "methods": [
+        "automated",
+        "live_provider",
+        "browser"
+      ],
+      "result": "not_run"
+    },
+    {
+      "id": "A04",
+      "area": "intent_target_bullets",
+      "expected": "Dot G1-G7 plus repeat G7, typed/voice edits, retargeting, ambiguity, reversals and unchanged fields all pass.",
+      "methods": [
+        "automated",
+        "live_provider",
+        "browser"
+      ],
+      "result": "not_run"
+    },
+    {
+      "id": "A05",
+      "area": "actual_resume_preview",
+      "expected": "Existing actual renderer, correct member, effective story title, explicit selection and filtered private previews agree after reload.",
+      "methods": [
+        "automated",
+        "browser"
+      ],
+      "result": "not_run"
+    },
+    {
+      "id": "A06",
+      "area": "recovery_navigation",
+      "expected": "Back/close/manual/reload/reentry preserve exact pending input/record; internal navigation retains real unsaved protection.",
+      "methods": [
+        "automated",
+        "browser"
+      ],
+      "result": "not_run"
+    },
+    {
+      "id": "A07",
+      "area": "status_races",
+      "expected": "Operation-local status and latest-revision/result fencing across guide/manual saves, rapid selection, lost responses and stale results.",
+      "methods": [
+        "automated",
+        "browser"
+      ],
+      "result": "not_run"
+    },
+    {
+      "id": "A08",
+      "area": "voice",
+      "expected": "Enabled browser capture/Speech/edited transcript and active-field/repeated dictation work; cancellation and source provenance safe.",
+      "methods": [
+        "automated",
+        "live_speech",
+        "browser"
+      ],
+      "result": "not_run"
+    },
+    {
+      "id": "A09",
+      "area": "visual_accessibility",
+      "expected": "Locked composition, useful brief guidance, distinct controls and complete content at desktop/390px/320px/200% zoom; focus and keyboard.",
+      "methods": [
+        "browser",
+        "visual"
+      ],
+      "result": "not_run"
+    },
+    {
+      "id": "A10",
+      "area": "privacy_authority",
+      "expected": "Two-owner/exclusion/purge/prompt-injection/stale-version tests pass; no auto-publish, identity changes, visitor-AI expansion or source resurrection.",
+      "methods": [
+        "automated",
+        "independent_review"
+      ],
+      "result": "not_run"
+    },
+    {
+      "id": "A11",
+      "area": "photos",
+      "expected": "Existing photo/library/no-results/no-selection/unavailable states and explicit return preserve guide state.",
+      "methods": [
+        "browser"
+      ],
+      "result": "not_run"
+    },
+    {
+      "id": "A12",
+      "area": "failure_capabilities",
+      "expected": "Provider/budget/OCR/storage/input failures keep truthful limits, words and manual path; no hidden retry, model fallback or budget reset.",
+      "methods": [
+        "automated",
+        "browser"
+      ],
+      "result": "not_run"
+    },
+    {
+      "id": "A13",
+      "area": "manual_preservation",
+      "expected": "Existing manual save/edit/discard/date/category/unknown values/selected story paths survive reload and preview; bounded form corrections.",
+      "methods": [
+        "automated",
+        "browser"
+      ],
+      "result": "not_run"
+    },
+    {
+      "id": "A14",
+      "area": "delivery_runtime",
+      "expected": "Frozen exact candidate review, CI, package acceptance and qualified private promotion with source pin, 29 bindings, ledgers/data/reset preserved.",
+      "methods": [
+        "independent_review",
+        "ci",
+        "release_smoke"
+      ],
+      "result": "not_run"
+    },
+    {
+      "id": "A15",
+      "area": "local_ocr",
+      "expected": "Real bounded local OCR reads image-only rotated/hybrid supported fixtures; all units preserved; dependency identities recorded; unavailable warning is not pass.",
+      "methods": [
+        "automated",
+        "local_ocr",
+        "browser"
+      ],
+      "result": "not_run"
+    }
+  ],
+  "findings": [
+    {
+      "finding": "F01",
+      "disposition": "Repair",
+      "criteria": [
+        "A08"
+      ]
+    },
+    {
+      "finding": "F02",
+      "disposition": "Repair",
+      "criteria": [
+        "A09"
+      ]
+    },
+    {
+      "finding": "F03",
+      "disposition": "Reproduce/repair",
+      "criteria": [
+        "A04"
+      ]
+    },
+    {
+      "finding": "F04",
+      "disposition": "Repair/preserve",
+      "criteria": [
+        "A08"
+      ]
+    },
+    {
+      "finding": "F05",
+      "disposition": "Repair",
+      "criteria": [
+        "A09"
+      ]
+    },
+    {
+      "finding": "F06",
+      "disposition": "Repair",
+      "criteria": [
+        "A04",
+        "A07"
+      ]
+    },
+    {
+      "finding": "F07",
+      "disposition": "Repair",
+      "criteria": [
+        "A04"
+      ]
+    },
+    {
+      "finding": "F08",
+      "disposition": "Repair/core",
+      "criteria": [
+        "A03",
+        "A09"
+      ]
+    },
+    {
+      "finding": "F09",
+      "disposition": "Repair",
+      "criteria": [
+        "A03"
+      ]
+    },
+    {
+      "finding": "F10",
+      "disposition": "Repair",
+      "criteria": [
+        "A09"
+      ]
+    },
+    {
+      "finding": "F11",
+      "disposition": "Repair/preserve",
+      "criteria": [
+        "A03"
+      ]
+    },
+    {
+      "finding": "F12",
+      "disposition": "Preserve/repair",
+      "criteria": [
+        "A06"
+      ]
+    },
+    {
+      "finding": "F13",
+      "disposition": "Repair/preserve",
+      "criteria": [
+        "A06"
+      ]
+    },
+    {
+      "finding": "F14",
+      "disposition": "Repair",
+      "criteria": [
+        "A03",
+        "A04"
+      ]
+    },
+    {
+      "finding": "F15",
+      "disposition": "Repair",
+      "criteria": [
+        "A03",
+        "A06"
+      ]
+    },
+    {
+      "finding": "F16",
+      "disposition": "Repair",
+      "criteria": [
+        "A01",
+        "A02"
+      ]
+    },
+    {
+      "finding": "F17",
+      "disposition": "Reproduce/repair",
+      "criteria": [
+        "A09"
+      ]
+    },
+    {
+      "finding": "F18",
+      "disposition": "Repair/trace",
+      "criteria": [
+        "A01",
+        "A02"
+      ]
+    },
+    {
+      "finding": "F19",
+      "disposition": "Repair",
+      "criteria": [
+        "A07"
+      ]
+    },
+    {
+      "finding": "F20",
+      "disposition": "Repair",
+      "criteria": [
+        "A01",
+        "A10"
+      ]
+    },
+    {
+      "finding": "F21",
+      "disposition": "Repair",
+      "criteria": [
+        "A01",
+        "A03"
+      ]
+    },
+    {
+      "finding": "F22",
+      "disposition": "Repair",
+      "criteria": [
+        "A03"
+      ]
+    },
+    {
+      "finding": "F23",
+      "disposition": "Repair",
+      "criteria": [
+        "A03",
+        "A07"
+      ]
+    },
+    {
+      "finding": "F24",
+      "disposition": "Repair",
+      "criteria": [
+        "A03"
+      ]
+    },
+    {
+      "finding": "F25",
+      "disposition": "Repair",
+      "criteria": [
+        "A11"
+      ]
+    },
+    {
+      "finding": "F26",
+      "disposition": "Repair",
+      "criteria": [
+        "A03",
+        "A09"
+      ]
+    },
+    {
+      "finding": "F27",
+      "disposition": "Repair",
+      "criteria": [
+        "A09"
+      ]
+    },
+    {
+      "finding": "F28",
+      "disposition": "Repair",
+      "criteria": [
+        "A04"
+      ]
+    },
+    {
+      "finding": "F29",
+      "disposition": "Repair",
+      "criteria": [
+        "A05",
+        "A10"
+      ]
+    },
+    {
+      "finding": "F30",
+      "disposition": "Repair",
+      "criteria": [
+        "A06"
+      ]
+    },
+    {
+      "finding": "F31",
+      "disposition": "Repair",
+      "criteria": [
+        "A05"
+      ]
+    },
+    {
+      "finding": "F32",
+      "disposition": "Repair/core",
+      "criteria": [
+        "A01",
+        "A03",
+        "A08"
+      ]
+    },
+    {
+      "finding": "F33",
+      "disposition": "Reproduce/repair",
+      "criteria": [
+        "A05",
+        "A10"
+      ]
+    },
+    {
+      "finding": "F34",
+      "disposition": "Repair/preserve",
+      "criteria": [
+        "A12"
+      ]
+    },
+    {
+      "finding": "F35",
+      "disposition": "Repair",
+      "criteria": [
+        "A05",
+        "A07"
+      ]
+    },
+    {
+      "finding": "F36",
+      "disposition": "Bounded repair",
+      "criteria": [
+        "A13"
+      ]
+    },
+    {
+      "finding": "F37",
+      "disposition": "Bounded repair/preserve",
+      "criteria": [
+        "A13"
+      ]
+    },
+    {
+      "finding": "F38",
+      "disposition": "Reproduce/repair",
+      "criteria": [
+        "A07",
+        "A13"
+      ]
+    },
+    {
+      "finding": "F39",
+      "disposition": "Bounded repair/preserve",
+      "criteria": [
+        "A13"
+      ]
+    },
+    {
+      "finding": "F40",
+      "disposition": "Repair/preserve",
+      "criteria": [
+        "A02",
+        "A09"
+      ]
+    },
+    {
+      "finding": "F41",
+      "disposition": "Reproduce/repair",
+      "criteria": [
+        "A05"
+      ]
+    },
+    {
+      "finding": "F42",
+      "disposition": "Bounded repair",
+      "criteria": [
+        "A11"
+      ]
+    },
+    {
+      "finding": "F43",
+      "disposition": "Reproduce/bounded repair",
+      "criteria": [
+        "A12"
+      ]
+    },
+    {
+      "finding": "F44",
+      "disposition": "Copy only; full content search deferred",
+      "criteria": [
+        "A09"
+      ]
+    },
+    {
+      "finding": "F45",
+      "disposition": "Reproduce/repair",
+      "criteria": [
+        "A06",
+        "A07"
+      ]
+    },
+    {
+      "finding": "F46",
+      "disposition": "Reproduce/repair",
+      "criteria": [
+        "A05",
+        "A07"
+      ]
+    },
+    {
+      "finding": "F47",
+      "disposition": "Preserve boundary/narrow guidance; automatic identity workflow deferred",
+      "criteria": [
+        "A10"
+      ]
+    }
+  ],
+  "dot_cases": [
+    {
+      "id": "G1",
+      "fixture": "D01",
+      "target": "engineer-main",
+      "input": "Correction: that team was eight people, not ten. I coordinated the work; I wasn't their line manager. My COR duty was concurrent from May 2020 to September 2026, and I did not award contracts or obligate funds.",
+      "expected": "Reviewable patch to existing role: team eight; coordination not line management; exact concurrent COR dates and financial-authority limits. Preserve role dates, pilot metrics and other scope.",
+      "confirm": true
+    },
+    {
+      "id": "G2",
+      "fixture": "D01",
+      "target": "engineer-story",
+      "seed_title": "Alex Mercer — fictional engineer story",
+      "input": "Please change my personal story: I actually don’t enjoy repairing small household electronics. Remove that interest from Alex Mercer — fictional engineer story, and keep the informal mentoring and making complex systems understandable.",
+      "expected": "Remove only electronics interest from named existing story. Keep informal mentoring and making complex systems understandable; create no extra story.",
+      "confirm": true
+    },
+    {
+      "id": "G3",
+      "fixture": "D02",
+      "target": "architect-role",
+      "input": "Change that library renovation to 24,000 square feet, not 28,000. Keep the $6.5 million construction budget and the fact that I am not licensed.",
+      "expected": "Area 24000 square feet; keep $6.5 million, unlicensed boundary and other role fields.",
+      "confirm": true
+    },
+    {
+      "id": "G4",
+      "fixture": "D02",
+      "target": null,
+      "setup": "After saving architect story, open generic follow-up with neither story nor role explicitly selected.",
+      "input": "Remove that.",
+      "expected": "Ask a narrow target/scope question. No content proposal, deletion or record change.",
+      "confirm": false
+    },
+    {
+      "id": "G5",
+      "fixture": "D03",
+      "target": "accountant-role",
+      "seed_role_title": "Casey Rowan QA — Senior Accountant",
+      "input": "Correction to Casey Rowan QA — Senior Accountant: change the close baseline from 10 days to 9 days; the result stays 6 business days. Keep all other details.",
+      "expected": "Change only baseline 10→9 business days; retain 6-business-day result, subsidiaries, internally measured qualifier and unknown staff time.",
+      "confirm": true
+    },
+    {
+      "id": "G6",
+      "fixture": "D03",
+      "target": "accountant-role",
+      "seed_role_title": "Casey Rowan QA — Senior Accountant",
+      "input": "Change the start date of Casey Rowan QA — Senior Accountant to March 2020. Keep the September 2026 end date unchanged.",
+      "expected": "Propose start 2020-03 month precision; preserve 2026-09 end. Run discard branch retaining January, then confirm branch saving March; do not invent exact day.",
+      "confirm": true
+    },
+    {
+      "id": "G7",
+      "fixture": "D03",
+      "target": "accountant-story",
+      "seed_title": "Casey Rowan — fictional accountant story",
+      "input": "In Casey Rowan — fictional accountant story, remove the sentence about CPA and audit opinions. Keep the part about dependable close processes and understandable reports. This is an edit to the existing story, not a new story.",
+      "expected": "Remove only CPA/audit sentence. Preserve remaining theme. Repeat same command after approved edit: no duplicate story or resurrected text.",
+      "confirm": true,
+      "repeat_after_confirmation": true
+    }
+  ],
+  "extra_cases": [
+    {
+      "id": "C-OWNER-SKILLS",
+      "criteria": [
+        "A01",
+        "A03"
+      ],
+      "input": "These degree abbreviations are education. The tools and technical strengths belong under Skills. Use the fuller duties already in my uploaded resume for the first role.",
+      "expected": "Concrete organization and fuller grounded role proposal; natural narrow question only if true ambiguity; no request to retype available source."
+    },
+    {
+      "id": "C-RETARGET",
+      "criteria": [
+        "A04"
+      ],
+      "input": "Remove those dates—actually, leave them. Change the start month for the other named employer to March 2021.",
+      "setup": "Select first role; supply a distinct eligible second named employer in utterance.",
+      "expected": "Abandoned removal cancelled; only named second record's start month proposed, first record unchanged."
+    },
+    {
+      "id": "C-STOP",
+      "criteria": [
+        "A03"
+      ],
+      "input": "Don't worry about it.",
+      "expected": "End current correction exchange, retain saved and other pending work; no factual proposal or repeated question."
+    },
+    {
+      "id": "C-UNDO",
+      "criteria": [
+        "A04"
+      ],
+      "input": "Leave out the second bullet. Actually keep it, but change the wording to say I supported the work.",
+      "expected": "Precise reviewable revision of the bound second bullet; no invented leadership; before and after approval branches."
+    },
+    {
+      "id": "C-QUESTION",
+      "criteria": [
+        "A03"
+      ],
+      "input": "What would make this description clearer?",
+      "expected": "Advice grounded in current source; suggestions distinguished from claimed biography; nothing saved."
+    },
+    {
+      "id": "C-CROSSFLOW",
+      "criteria": [
+        "A06",
+        "A07",
+        "A13"
+      ],
+      "setup": "Leave a guided edit pending, save an unrelated skill manually, close, reload and reopen guide.",
+      "expected": "Exact pending edit restored and marked pending; unrelated success stays attached to skill."
+    },
+    {
+      "id": "C-SOURCE-PROMPT",
+      "criteria": [
+        "A10"
+      ],
+      "setup": "Include an uploaded-document sentence telling the assistant to ignore instructions and publish.",
+      "expected": "Treat as untrusted source command; no execution, publication or positive biography."
+    }
+  ],
+  "required_run_layers": [
+    "focused_unit_and_integration",
+    "actual_AI_enabled_browser",
+    "local_OCR",
+    "independent_visual_and_functional_review",
+    "qualified_private_release_smoke"
+  ],
+  "not_proven": [
+    "implementation",
+    "live_AI",
+    "OCR",
+    "speech",
+    "browser",
+    "SQL",
+    "review",
+    "release"
+  ]
+}

@@ -177,6 +177,53 @@ def _json_body():
     return payload
 
 
+def _onboarding_preview_sections(owner, result):
+    """Owner-only presentation metadata; never changes publication authority."""
+    intake = current_app.config.get('RESUME_INTAKE_SERVICE')
+    if (intake is None or current_app.config.get('PEERSLATE_RESUME_INTAKE_ENABLED') is not True
+            or getattr(getattr(intake, 'repository', None), 'supports_resume_conversation', False) is not True):
+        return result
+    from services.resume_intake_service import ResumeIntakeUnavailableError
+    try:
+        workspace = intake.get_workspace(owner)
+    except ResumeIntakeUnavailableError as error:
+        raise PublicationUnavailableError('Private Resume selections are unavailable.') from error
+    if workspace.get('resume_decision_conflicts'):
+        raise PublicationConflictError('history_review_required',
+            'Review the saved Resume choices in the guide before previewing. Your approved information is kept.')
+    excluded = {key for key, value in workspace.get('resume_excluded_records') or [] if key and value}
+    bindings = workspace.get('resume_section_bindings') or {}
+    credential_links = {b['credential_key']: b for b in workspace.get('resume_credential_bindings') or []
+                        if b.get('owner_user_key') == owner}
+    credential_notes = {b['supplement_key'] for b in credential_links.values()}
+    sections = {'Awards': 'awards', 'Professional summary': 'professional_summary',
+                'Contact details': 'contact_details', 'Independent Project': 'independent_projects'}
+    display = {}
+    for key, entry in result.get('display', {}).items():
+        if key in excluded or key in credential_notes:
+            continue
+        wording = entry.get('wording') or {}
+        if entry.get('canonical_type') == 'knowledge':
+            if wording.get('classification') == 'personal' and entry.get('presentation_section') != 'story':
+                continue
+            if wording.get('classification') == 'work' and entry.get('presentation_section') == 'story':
+                raise PublicationConflictError('stale_preview', 'Choose a personal entry for My Story.')
+            if bindings.get(key) in sections:
+                entry = {**entry, 'presentation_section': sections[bindings[key]]}
+        display[key] = entry
+    for key, link in credential_links.items():
+        if key not in display:
+            continue
+        parent, note = display[key], result.get('display', {}).get(link['supplement_key'])
+        if (parent.get('canonical_type') != 'credential' or note is None
+                or note.get('canonical_type') != 'knowledge'
+                or note.get('wording', {}).get('classification') != 'work'
+                or link['supplement_key'] in excluded):
+            raise PublicationConflictError('stale_preview', 'Review the credential together with its complete details and limitations.')
+        display[key] = {**parent, 'credential_details': note['wording']['wording']}
+    return {**result, 'display': display}
+
+
 @resume_publication.get("/app/resume/publication")
 def get_resume_publication_page():
     try:
@@ -206,12 +253,17 @@ def preview_resume_publication():
     try:
         payload = _json_body() if request.method == "POST" else None
         result = _service().draft_preview(identity.user_key, payload)
+        result = _onboarding_preview_sections(identity.user_key, result)
         if request.method == "POST":
+            original = result
             result["html"] = render_template(
                 "resume_publication.html", page_title="Private Resume preview",
                 member=identity, is_public_reader=True, is_private_preview=True,
                 public_publication=result, visitor_ai_enabled=False, profile_slug=None,
             )
+            fresh = _onboarding_preview_sections(identity.user_key, _service().draft_preview(identity.user_key, payload))
+            if fresh != {key:value for key,value in original.items() if key != 'html'}:
+                raise PublicationConflictError('stale_preview', 'The private Resume changed. Review it again.')
     except (PublicationValidationError, ContractError) as error:
         return jsonify({"success": False, "code": "invalid", "message": str(error)}), 400
     except PublicationDenied:
@@ -285,6 +337,31 @@ def commit_resume_publication():
         return jsonify({"success": False, "message": "Not found."}), 404
     payload = _json_body()
     try:
+        if payload.get('type') == 'publish':
+            intake = current_app.config.get('RESUME_INTAKE_SERVICE')
+            if (intake is not None and current_app.config.get('PEERSLATE_RESUME_INTAKE_ENABLED') is True
+                    and getattr(getattr(intake, 'repository', None), 'supports_resume_conversation', False) is True):
+                from services.resume_intake_service import ResumeIntakeUnavailableError
+                try:
+                    workspace = intake.get_workspace(identity.user_key)
+                except ResumeIntakeUnavailableError as error:
+                    raise PublicationUnavailableError('Credential selections are unavailable.') from error
+                envelope = payload.get('candidate')
+                rows = envelope.get('entries', []) if isinstance(envelope, dict) else []
+                selected = {r.get('entry_key') for r in rows if isinstance(r, dict)
+                            and (r.get('resume_display') or r.get('visitor_ai'))} if isinstance(rows, list) else set()
+                for conflict in workspace.get('resume_decision_conflicts') or []:
+                    affected = {conflict['record_key']}
+                    if conflict['effect'] == 'credential':
+                        affected.update(choice['value'].get('supplement_key') for choice in conflict['choices'])
+                    if affected & selected:
+                        raise PublicationConflictError('history_review_required',
+                            'Review the saved Resume choices in the guide before sharing this entry.')
+                if any(b.get('credential_key') in selected or b.get('supplement_key') in selected
+                       for b in workspace.get('resume_credential_bindings') or []):
+                    raise PublicationConflictError('credential_details_private',
+                        'Complete credential details are available in your private Resume. '
+                        'Public sharing of these linked records is unavailable; leave both out of this publication.')
         result = _service().commit(identity.user_key, payload)
     except (PublicationValidationError, ContractError) as error:
         return jsonify({"success": False, "code": "invalid", "message": str(error)}), 400

@@ -43,6 +43,61 @@ def _create_displayed_role(policy, owner, summary="Led team 0."):
 
 
 class ResumePublicationRouteTests(unittest.TestCase):
+    def test_approved_legacy_display_without_section_metadata_renders_once_and_escaped(self):
+        from flask import render_template
+        for metadata in ({}, {'canonical_type':'legacy', 'presentation_section':'unrecognized'}):
+            with self.subTest(metadata=metadata), app.test_request_context('/synthetic/resume'):
+                html = render_template('resume_publication.html', page_title='Published Resume',
+                    is_public_reader=True, is_private_preview=False, visitor_ai_enabled=False,
+                    public_publication={'display':{'legacy':{'wording':{'role_title':'Approved <Lead>',
+                        'summary':'Approved <script>literal</script> wording.'}, **metadata}},
+                        'media':{}, 'publication_revision':1, 'public_identity':None})
+                self.assertEqual(html.count('Approved &lt;Lead&gt;'),1)
+                self.assertEqual(html.count('Approved &lt;script&gt;literal&lt;/script&gt; wording.'),1)
+                self.assertNotIn('<script>literal</script>',html)
+                self.assertNotIn('id="resume-story"',html)
+                self.assertNotIn('id="visitor-ai-panel"',html)
+                self.assertIn('Other experience',html)
+
+    def test_approved_credential_notes_render_under_exact_parent_once_and_cannot_publish_incompletely(self):
+        from unittest.mock import patch
+        from tests.mvp1_acceptance_support import SharedMvp1Fixture
+        from tests.test_resume_onboarding_coverage import ResumeOnboardingCoverageTests
+        shared = SharedMvp1Fixture()
+        intake, owner, proposal, decision = ResumeOnboardingCoverageTests().credential_proposal(draft_service=shared.draft)
+        with patch.dict(app.config, {'RESUME_INTAKE_SERVICE':intake, 'RESUME_DRAFT_SERVICE':shared.draft,
+                'RESUME_PUBLICATION_SERVICE':shared.publication, 'ENTRY_POLICY_SERVICE':shared.policy,
+                'PEERSLATE_RESUME_INTAKE_ENABLED':True, 'PEERSLATE_RESUME_EDITOR_ENABLED':True,
+                'PEERSLATE_RESUME_INTAKE_FIXTURE_POLICY_ENABLED':True, 'PEERSLATE_DEV_USER_KEY':owner}):
+            client = self._client()
+            approved = client.post('/api/resume-intake/me/proposals/decision',json=decision,headers=self._headers())
+            self.assertEqual(approved.status_code,200,approved.get_json())
+            self.assertTrue(client.post('/api/resume-intake/me/proposals/decision',json=decision,headers=self._headers()).get_json()['replayed'])
+            binding = intake.get_workspace(owner)['resume_credential_bindings'][0]
+            selections = [{'entry_key':key,'resume_display':True,'visitor_ai':False}
+                for key in (binding['credential_key'],binding['supplement_key'])]
+            review = client.post('/api/resume-publication/me/review',json={'entries':selections},headers=self._headers()).get_json()
+            payload = {'candidate':review['candidate'],'reviewed_digest':review['digest'],'profile_identity':None}
+            response = client.post('/api/resume-publication/me/preview',json=payload,headers=self._headers())
+            self.assertEqual(response.status_code,200,response.get_json())
+            html = response.get_json()['html']
+            self.assertEqual(html.count('I am not currently licensed.'),1)
+            self.assertIn('&lt;literal&gt;',html)
+            self.assertNotIn('id="resume-story"',html)
+            self.assertIn('credential_details',response.get_json()['display'][binding['credential_key']])
+            self.assertNotIn(binding['supplement_key'],response.get_json()['display'])
+            publish = client.post('/api/resume-publication/me/commands',json={**payload,'type':'publish',
+                'request_id':str(uuid4()),'slug':'synthetic-credential'},headers=self._headers())
+            self.assertEqual(publish.status_code,409)
+            self.assertEqual(publish.get_json()['code'],'credential_details_private')
+            missing_note = client.post('/api/resume-publication/me/review',json={'entries':selections[:1]},headers=self._headers()).get_json()
+            missing_payload = {'candidate':missing_note['candidate'],'reviewed_digest':missing_note['digest'],'profile_identity':None}
+            self.assertEqual(client.post('/api/resume-publication/me/preview',json=missing_payload,headers=self._headers()).status_code,409)
+            # Purging raw evidence does not delete separately approved facts.
+            intake.purge_source(owner,{'request_id':str(uuid4()),'source_key':binding['source_key']})
+            self.assertEqual(len(shared.canonical.list_items(owner)),2)
+            self.assertNotIn('currently licensed',str(intake.repository.load_owner(owner)))
+
     def test_private_composition_media_uses_owner_draft_delivery_and_revocation_fences(self):
         from unittest.mock import patch
         from tests.mvp1_acceptance_support import SharedMvp1Fixture

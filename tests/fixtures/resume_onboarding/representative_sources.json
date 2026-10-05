@@ -1,0 +1,1099 @@
+{
+  "schema_version": 1,
+  "kind": "frozen_synthetic_architecture_fixture_specification",
+  "base_sha": "baf37403a1027f62d20359d7e8deb24f9d327b74",
+  "synthetic": true,
+  "contains_owner_resume": false,
+  "expected_unit_count": 100,
+  "notes": [
+    "Freeze source bytes and gold manifest before candidate measurement.",
+    "Materialize PDF/DOCX/scan layouts locally without changing facts; record SHA-256 for every resulting file.",
+    "D02 uses real table cells. D05 preserves each whole role in its intended column. D08 U07-U12 occur exclusively on its image-only second page.",
+    "D04/D06 must contain no hidden selectable text; D06 rotates the page image 90 degrees.",
+    "All 100 expected units stay in the automatic placement denominator. Clarification before placement scores zero on first-pass automation.",
+    "Source header/member labels are accounted separately as presentation context; do not append expected_record_id labels to provider input or rendered files.",
+    "The seven Dot correction fixtures use the named record aliases in ACCEPTANCE_MATRIX.json; set their reviewed fixture titles before running those separate correction cases."
+  ],
+  "fixtures": [
+    {
+      "id": "D01",
+      "format": "selectable_pdf",
+      "layout": "single_column_two_pages",
+      "member": "Alex Mercer, fictional engineer",
+      "expected_unit_count": 20,
+      "source_text": "Alex Mercer, fictional engineer\n\nExperience\nSystems Engineer, Meridian Instruments, Huntsville Alabama, March 2020 to September 2026.\nCoordinated a ten-person engineering team; I was not their line manager.\nConcurrent COR duty from May 2020 to September 2026; I did not award contracts or obligate funds.\nAn internal pilot reduced review time by 32%; the result was not independently verified.\nThe pilot covered two product teams, not the whole company.\n\nExperience\nTest Engineer, Pine Research, Athens Alabama, 2017 to 2019.\nMaintained bench-test procedures for prototype avionics.\n\nTechnical Strengths\nSQL.\n\nTechnical Strengths\nDOORS requirements tracing.\n\nTechnical Strengths\nMBSE with Cameo.\n\nTechnical Strengths\nInformal technical mentoring.\n\nEducation\nM.S. Engineering Management, Pine State University, May 2018.\nDegree completed; concentration in operations management.\n\nCredentials\nProject Management Professional (PMP), issued by PMI.\nPMP certification completed.\nPMP issued May 2022; expiration May 2028.\n\nAwards\n2024 Prototype Test Team Award, Meridian Instruments; team award.\n\nMy Story\nI enjoy repairing small household electronics, informal mentoring, and making complex systems understandable.\n\nProfessional summary\nSystems engineer with prototype testing and requirements experience.\n\nContact details\nalex.mercer@example.test; 202-555-0101.\n",
+      "units": [
+        {
+          "id": "D01-U01",
+          "source_text": "Systems Engineer, Meridian Instruments, Huntsville Alabama, March 2020 to September 2026.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "engineer-main",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U02",
+          "source_text": "Coordinated a ten-person engineering team; I was not their line manager.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "engineer-main",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U03",
+          "source_text": "Concurrent COR duty from May 2020 to September 2026; I did not award contracts or obligate funds.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "engineer-main",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U04",
+          "source_text": "An internal pilot reduced review time by 32%; the result was not independently verified.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "engineer-main",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U05",
+          "source_text": "The pilot covered two product teams, not the whole company.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "engineer-main",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U06",
+          "source_text": "Test Engineer, Pine Research, Athens Alabama, 2017 to 2019.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "engineer-earlier",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U07",
+          "source_text": "Maintained bench-test procedures for prototype avionics.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "engineer-earlier",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U08",
+          "source_text": "SQL.",
+          "expected_section": "Skills",
+          "source_section": "Technical Strengths",
+          "expected_record_id": "engineer-sql",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U09",
+          "source_text": "DOORS requirements tracing.",
+          "expected_section": "Skills",
+          "source_section": "Technical Strengths",
+          "expected_record_id": "engineer-doors",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U10",
+          "source_text": "MBSE with Cameo.",
+          "expected_section": "Skills",
+          "source_section": "Technical Strengths",
+          "expected_record_id": "engineer-mbse",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U11",
+          "source_text": "Informal technical mentoring.",
+          "expected_section": "Skills",
+          "source_section": "Technical Strengths",
+          "expected_record_id": "engineer-mentoring",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U12",
+          "source_text": "M.S. Engineering Management, Pine State University, May 2018.",
+          "expected_section": "Education",
+          "source_section": "Education",
+          "expected_record_id": "engineer-degree",
+          "expected_record_type": "education",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U13",
+          "source_text": "Degree completed; concentration in operations management.",
+          "expected_section": "Education",
+          "source_section": "Education",
+          "expected_record_id": "engineer-degree",
+          "expected_record_type": "education",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U14",
+          "source_text": "Project Management Professional (PMP), issued by PMI.",
+          "expected_section": "Credentials",
+          "source_section": "Credentials",
+          "expected_record_id": "engineer-pmp",
+          "expected_record_type": "credential",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U15",
+          "source_text": "PMP certification completed.",
+          "expected_section": "Credentials",
+          "source_section": "Credentials",
+          "expected_record_id": "engineer-pmp",
+          "expected_record_type": "credential",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U16",
+          "source_text": "PMP issued May 2022; expiration May 2028.",
+          "expected_section": "Credentials",
+          "source_section": "Credentials",
+          "expected_record_id": "engineer-pmp",
+          "expected_record_type": "credential",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U17",
+          "source_text": "2024 Prototype Test Team Award, Meridian Instruments; team award.",
+          "expected_section": "Awards",
+          "source_section": "Awards",
+          "expected_record_id": "engineer-award",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U18",
+          "source_text": "I enjoy repairing small household electronics, informal mentoring, and making complex systems understandable.",
+          "expected_section": "My Story",
+          "source_section": "My Story",
+          "expected_record_id": "engineer-story",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U19",
+          "source_text": "Systems engineer with prototype testing and requirements experience.",
+          "expected_section": "Professional summary",
+          "source_section": "Professional summary",
+          "expected_record_id": "engineer-summary",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D01-U20",
+          "source_text": "alex.mercer@example.test; 202-555-0101.",
+          "expected_section": "Contact details",
+          "source_section": "Contact details",
+          "expected_record_id": "engineer-contact",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        }
+      ]
+    },
+    {
+      "id": "D02",
+      "format": "docx",
+      "layout": "table_headings_and_cells",
+      "member": "Jordan Vale, fictional architect",
+      "expected_unit_count": 12,
+      "source_text": "Jordan Vale, fictional architect\n\nExperience\nArchitectural Designer, Harbor Studio, Boston Massachusetts, June 2019 to August 2026.\nLibrary renovation construction budget: $6.5 million.\nLibrary renovation area: 28,000 square feet.\nI am not licensed as an architect.\nI prepared design documents under a licensed architect; I did not sign or seal them.\n\nStrengths\nRevit.\n\nStrengths\nAccessibility drawing coordination.\n\nEducation\nB.Arch., Harbor University, completed May 2019.\n\nIndependent Project\nIndependent exhibit model: designed and built a cardboard neighborhood model; no employer affiliation.\n\nAwards\n2021 Community Exhibit Mention from Harbor Arts Council.\n\nMy Story\nI sketch neighborhood buildings and volunteer at a community drawing club.\n\nProfessional summary\nArchitectural designer focused on accessible civic spaces.\n",
+      "units": [
+        {
+          "id": "D02-U01",
+          "source_text": "Architectural Designer, Harbor Studio, Boston Massachusetts, June 2019 to August 2026.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "architect-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D02-U02",
+          "source_text": "Library renovation construction budget: $6.5 million.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "architect-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D02-U03",
+          "source_text": "Library renovation area: 28,000 square feet.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "architect-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D02-U04",
+          "source_text": "I am not licensed as an architect.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "architect-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D02-U05",
+          "source_text": "I prepared design documents under a licensed architect; I did not sign or seal them.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "architect-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D02-U06",
+          "source_text": "Revit.",
+          "expected_section": "Skills",
+          "source_section": "Strengths",
+          "expected_record_id": "architect-revit",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D02-U07",
+          "source_text": "Accessibility drawing coordination.",
+          "expected_section": "Skills",
+          "source_section": "Strengths",
+          "expected_record_id": "architect-accessibility",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D02-U08",
+          "source_text": "B.Arch., Harbor University, completed May 2019.",
+          "expected_section": "Education",
+          "source_section": "Education",
+          "expected_record_id": "architect-degree",
+          "expected_record_type": "education",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D02-U09",
+          "source_text": "Independent exhibit model: designed and built a cardboard neighborhood model; no employer affiliation.",
+          "expected_section": "Independent Project",
+          "source_section": "Independent Project",
+          "expected_record_id": "architect-project",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D02-U10",
+          "source_text": "2021 Community Exhibit Mention from Harbor Arts Council.",
+          "expected_section": "Awards",
+          "source_section": "Awards",
+          "expected_record_id": "architect-award",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D02-U11",
+          "source_text": "I sketch neighborhood buildings and volunteer at a community drawing club.",
+          "expected_section": "My Story",
+          "source_section": "My Story",
+          "expected_record_id": "architect-story",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D02-U12",
+          "source_text": "Architectural designer focused on accessible civic spaces.",
+          "expected_section": "Professional summary",
+          "source_section": "Professional summary",
+          "expected_record_id": "architect-summary",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        }
+      ]
+    },
+    {
+      "id": "D03",
+      "format": "txt",
+      "layout": "plain_text_bullets",
+      "member": "Casey Rowan QA, fictional accountant",
+      "expected_unit_count": 14,
+      "source_text": "Casey Rowan QA, fictional accountant\n\nExperience\nSenior Accountant, Rowan Services, Chicago Illinois, January 2020 to September 2026.\nClose baseline was 10 business days.\nAfter the process change, close took 6 business days.\nI coordinated the month-end checklist for three subsidiaries.\nThe timing change was measured internally, not audited.\nThe amount of staff time saved was not measured.\n\nSkills\nExcel financial models.\n\nSkills\nAccount reconciliation.\n\nEducation\nB.S. Accounting, Lake University, completed May 2018.\n\nEducation\nCompleted Financial Reporting short course at Lake University in 2021; course certificate only.\n\nMy Story\nI value dependable close processes and understandable reports. I am not a CPA and do not issue audit opinions.\n\nContact details\ncasey.rowan@example.test.\n\nIndependent Project\nIndependent household budget spreadsheet; no client financial advice.\n\nAwards\n2025 Internal Service Award, Rowan Services.\n",
+      "units": [
+        {
+          "id": "D03-U01",
+          "source_text": "Senior Accountant, Rowan Services, Chicago Illinois, January 2020 to September 2026.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "accountant-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D03-U02",
+          "source_text": "Close baseline was 10 business days.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "accountant-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D03-U03",
+          "source_text": "After the process change, close took 6 business days.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "accountant-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D03-U04",
+          "source_text": "I coordinated the month-end checklist for three subsidiaries.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "accountant-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D03-U05",
+          "source_text": "The timing change was measured internally, not audited.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "accountant-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D03-U06",
+          "source_text": "The amount of staff time saved was not measured.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "accountant-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D03-U07",
+          "source_text": "Excel financial models.",
+          "expected_section": "Skills",
+          "source_section": "Skills",
+          "expected_record_id": "accountant-excel",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D03-U08",
+          "source_text": "Account reconciliation.",
+          "expected_section": "Skills",
+          "source_section": "Skills",
+          "expected_record_id": "accountant-reconciliation",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D03-U09",
+          "source_text": "B.S. Accounting, Lake University, completed May 2018.",
+          "expected_section": "Education",
+          "source_section": "Education",
+          "expected_record_id": "accountant-degree",
+          "expected_record_type": "education",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D03-U10",
+          "source_text": "Completed Financial Reporting short course at Lake University in 2021; course certificate only.",
+          "expected_section": "Education",
+          "source_section": "Education",
+          "expected_record_id": "accountant-course",
+          "expected_record_type": "education",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D03-U11",
+          "source_text": "I value dependable close processes and understandable reports. I am not a CPA and do not issue audit opinions.",
+          "expected_section": "My Story",
+          "source_section": "My Story",
+          "expected_record_id": "accountant-story",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D03-U12",
+          "source_text": "casey.rowan@example.test.",
+          "expected_section": "Contact details",
+          "source_section": "Contact details",
+          "expected_record_id": "accountant-contact",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D03-U13",
+          "source_text": "Independent household budget spreadsheet; no client financial advice.",
+          "expected_section": "Independent Project",
+          "source_section": "Independent Project",
+          "expected_record_id": "accountant-project",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D03-U14",
+          "source_text": "2025 Internal Service Award, Rowan Services.",
+          "expected_section": "Awards",
+          "source_section": "Awards",
+          "expected_record_id": "accountant-award",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        }
+      ]
+    },
+    {
+      "id": "D04",
+      "format": "scanned_pdf",
+      "layout": "single_column_300dpi",
+      "member": "Taylor Brook, fictional early-career member",
+      "expected_unit_count": 10,
+      "source_text": "Taylor Brook, fictional early-career member\n\nEducation\nAdmitted to M.S. Systems Engineering at Valley University; study starts January 2027 and has not begun.\n\nIndependent Project\nClass project: built a prototype sensor dashboard for Systems Lab.\nThe dashboard used simulated readings.\nThe prototype was not deployed to a real facility.\n\nExperience\nLab Assistant, Valley University, June 2025 to May 2026.\nPrepared lab equipment under staff supervision.\n\nSkills\nPython data plotting.\n\nEducation\nB.S. Physics, Valley University, completed May 2026.\n\nAwards\n2026 Undergraduate Lab Service Recognition, Valley University.\n\nMy Story\nI enjoy hiking local trails and explaining science to younger students.\n",
+      "units": [
+        {
+          "id": "D04-U01",
+          "source_text": "Admitted to M.S. Systems Engineering at Valley University; study starts January 2027 and has not begun.",
+          "expected_section": "Education",
+          "source_section": "Education",
+          "expected_record_id": "early-admitted",
+          "expected_record_type": "education",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D04-U02",
+          "source_text": "Class project: built a prototype sensor dashboard for Systems Lab.",
+          "expected_section": "Independent Project",
+          "source_section": "Independent Project",
+          "expected_record_id": "early-project",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D04-U03",
+          "source_text": "The dashboard used simulated readings.",
+          "expected_section": "Independent Project",
+          "source_section": "Independent Project",
+          "expected_record_id": "early-project",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D04-U04",
+          "source_text": "The prototype was not deployed to a real facility.",
+          "expected_section": "Independent Project",
+          "source_section": "Independent Project",
+          "expected_record_id": "early-project",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D04-U05",
+          "source_text": "Lab Assistant, Valley University, June 2025 to May 2026.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "early-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D04-U06",
+          "source_text": "Prepared lab equipment under staff supervision.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "early-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D04-U07",
+          "source_text": "Python data plotting.",
+          "expected_section": "Skills",
+          "source_section": "Skills",
+          "expected_record_id": "early-python",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D04-U08",
+          "source_text": "B.S. Physics, Valley University, completed May 2026.",
+          "expected_section": "Education",
+          "source_section": "Education",
+          "expected_record_id": "early-degree",
+          "expected_record_type": "education",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D04-U09",
+          "source_text": "2026 Undergraduate Lab Service Recognition, Valley University.",
+          "expected_section": "Awards",
+          "source_section": "Awards",
+          "expected_record_id": "early-award",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D04-U10",
+          "source_text": "I enjoy hiking local trails and explaining science to younger students.",
+          "expected_section": "My Story",
+          "source_section": "My Story",
+          "expected_record_id": "early-story",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        }
+      ]
+    },
+    {
+      "id": "D05",
+      "format": "selectable_pdf",
+      "layout": "two_columns_repeated_employer",
+      "member": "Morgan Lee, fictional technician",
+      "expected_unit_count": 14,
+      "source_text": "Morgan Lee, fictional technician\n\nExperience\nSenior Technician, Cedar Labs, February 2023 to Present.\nMaintains calibration records for six instruments.\nTrains new technicians on approved procedures.\n\nExperience\nTechnician, Cedar Labs, July 2020 to January 2023.\nMaintained calibration records for two instruments.\nAssisted with incoming inspection; no release authority.\n\nTechnical Strengths\nOscilloscope measurement.\n\nTechnical Strengths\nTechnical documentation.\n\nTechnical Strengths\nSoldering.\n\nTechnical Strengths\nInventory tracking.\n\nEducation\nA.S. Electronics, Cedar College, completed May 2020.\n\nCredentials\nCertified Calibration Technician, issued by ASQ, completed June 2023.\n\nAwards\n2024 Cedar Labs Quality Recognition, individual award.\n\nProfessional summary\nLaboratory technician experienced in calibration documentation and supervised inspection.\n",
+      "units": [
+        {
+          "id": "D05-U01",
+          "source_text": "Senior Technician, Cedar Labs, February 2023 to Present.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "tech-current",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D05-U02",
+          "source_text": "Maintains calibration records for six instruments.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "tech-current",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D05-U03",
+          "source_text": "Trains new technicians on approved procedures.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "tech-current",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D05-U04",
+          "source_text": "Technician, Cedar Labs, July 2020 to January 2023.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "tech-earlier",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D05-U05",
+          "source_text": "Maintained calibration records for two instruments.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "tech-earlier",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D05-U06",
+          "source_text": "Assisted with incoming inspection; no release authority.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "tech-earlier",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D05-U07",
+          "source_text": "Oscilloscope measurement.",
+          "expected_section": "Skills",
+          "source_section": "Technical Strengths",
+          "expected_record_id": "tech-measurement",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D05-U08",
+          "source_text": "Technical documentation.",
+          "expected_section": "Skills",
+          "source_section": "Technical Strengths",
+          "expected_record_id": "tech-documentation",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D05-U09",
+          "source_text": "Soldering.",
+          "expected_section": "Skills",
+          "source_section": "Technical Strengths",
+          "expected_record_id": "tech-soldering",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D05-U10",
+          "source_text": "Inventory tracking.",
+          "expected_section": "Skills",
+          "source_section": "Technical Strengths",
+          "expected_record_id": "tech-inventory",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D05-U11",
+          "source_text": "A.S. Electronics, Cedar College, completed May 2020.",
+          "expected_section": "Education",
+          "source_section": "Education",
+          "expected_record_id": "tech-degree",
+          "expected_record_type": "education",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D05-U12",
+          "source_text": "Certified Calibration Technician, issued by ASQ, completed June 2023.",
+          "expected_section": "Credentials",
+          "source_section": "Credentials",
+          "expected_record_id": "tech-credential",
+          "expected_record_type": "credential",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D05-U13",
+          "source_text": "2024 Cedar Labs Quality Recognition, individual award.",
+          "expected_section": "Awards",
+          "source_section": "Awards",
+          "expected_record_id": "tech-award",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D05-U14",
+          "source_text": "Laboratory technician experienced in calibration documentation and supervised inspection.",
+          "expected_section": "Professional summary",
+          "source_section": "Professional summary",
+          "expected_record_id": "tech-summary",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        }
+      ]
+    },
+    {
+      "id": "D06",
+      "format": "scanned_pdf",
+      "layout": "rotated_90_degrees_300dpi",
+      "member": "Riley Chen, fictional analyst",
+      "expected_unit_count": 8,
+      "source_text": "Riley Chen, fictional analyst\n\nExperience\nOperations Analyst, Elm Cooperative, September 2022 to April 2026.\nPrepared weekly service-volume reports for two local branches.\nA scheduling pilot reduced missed appointments from 12% to 9%; one branch only.\n\nEducation\nB.A. Economics, Elm College, completed May 2022.\n\nSkills\nSpreadsheet analysis.\n\nSkills\nStakeholder interviews.\n\nAwards\n2025 Elm Cooperative Service Recognition.\n\nContact details\nriley.chen@example.test.\n",
+      "units": [
+        {
+          "id": "D06-U01",
+          "source_text": "Operations Analyst, Elm Cooperative, September 2022 to April 2026.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "analyst-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D06-U02",
+          "source_text": "Prepared weekly service-volume reports for two local branches.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "analyst-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D06-U03",
+          "source_text": "A scheduling pilot reduced missed appointments from 12% to 9%; one branch only.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "analyst-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D06-U04",
+          "source_text": "B.A. Economics, Elm College, completed May 2022.",
+          "expected_section": "Education",
+          "source_section": "Education",
+          "expected_record_id": "analyst-degree",
+          "expected_record_type": "education",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D06-U05",
+          "source_text": "Spreadsheet analysis.",
+          "expected_section": "Skills",
+          "source_section": "Skills",
+          "expected_record_id": "analyst-spreadsheets",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D06-U06",
+          "source_text": "Stakeholder interviews.",
+          "expected_section": "Skills",
+          "source_section": "Skills",
+          "expected_record_id": "analyst-interviews",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D06-U07",
+          "source_text": "2025 Elm Cooperative Service Recognition.",
+          "expected_section": "Awards",
+          "source_section": "Awards",
+          "expected_record_id": "analyst-award",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D06-U08",
+          "source_text": "riley.chen@example.test.",
+          "expected_section": "Contact details",
+          "source_section": "Contact details",
+          "expected_record_id": "analyst-contact",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        }
+      ]
+    },
+    {
+      "id": "D07",
+      "format": "txt",
+      "layout": "identical_duties_distinct_records",
+      "member": "Sam Patel, fictional volunteer",
+      "expected_unit_count": 10,
+      "source_text": "Sam Patel, fictional volunteer\n\nExperience\nVolunteer Coordinator, North Food Bank, 2018 to 2020.\nCoordinated the weekly volunteer rota.\nNorth Food Bank rota covered 12 volunteers.\n\nExperience\nVolunteer Coordinator, South Food Bank, 2021 to 2024.\nCoordinated the weekly volunteer rota.\nSouth Food Bank rota covered 18 volunteers.\n\nSkills\nVolunteer scheduling.\n\nSkills\nCommunity communication.\n\nEducation\nCompleted a food-safety awareness course at County Learning Centre in 2018; not a professional license.\n\nMy Story\nI enjoy community cooking and helping neighbors access practical information.\n",
+      "units": [
+        {
+          "id": "D07-U01",
+          "source_text": "Volunteer Coordinator, North Food Bank, 2018 to 2020.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "volunteer-north",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D07-U02",
+          "source_text": "Coordinated the weekly volunteer rota.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "volunteer-north",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D07-U03",
+          "source_text": "North Food Bank rota covered 12 volunteers.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "volunteer-north",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D07-U04",
+          "source_text": "Volunteer Coordinator, South Food Bank, 2021 to 2024.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "volunteer-south",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D07-U05",
+          "source_text": "Coordinated the weekly volunteer rota.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "volunteer-south",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D07-U06",
+          "source_text": "South Food Bank rota covered 18 volunteers.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "volunteer-south",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D07-U07",
+          "source_text": "Volunteer scheduling.",
+          "expected_section": "Skills",
+          "source_section": "Skills",
+          "expected_record_id": "volunteer-scheduling",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D07-U08",
+          "source_text": "Community communication.",
+          "expected_section": "Skills",
+          "source_section": "Skills",
+          "expected_record_id": "volunteer-communication",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D07-U09",
+          "source_text": "Completed a food-safety awareness course at County Learning Centre in 2018; not a professional license.",
+          "expected_section": "Education",
+          "source_section": "Education",
+          "expected_record_id": "volunteer-course",
+          "expected_record_type": "education",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D07-U10",
+          "source_text": "I enjoy community cooking and helping neighbors access practical information.",
+          "expected_section": "My Story",
+          "source_section": "My Story",
+          "expected_record_id": "volunteer-story",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        }
+      ]
+    },
+    {
+      "id": "D08",
+      "format": "hybrid_pdf",
+      "layout": "text_page_plus_image_page_300dpi",
+      "member": "Drew Kim, fictional researcher",
+      "expected_unit_count": 12,
+      "source_text": "Drew Kim, fictional researcher\n\nExperience\nResearch Assistant, Birch Institute, August 2021 to June 2025.\nPrepared sample logs and maintained traceability for 240 samples.\nI supported the study and was not the principal investigator.\nA local labeling change reduced transcription errors by 14%; internal study only.\n\nSkills\nR statistical analysis.\n\nSkills\nLaboratory documentation.\n\nEducation\nB.S. Biology, Birch University, completed May 2021.\n\nEducation\nCompleted Good Research Practice course at Birch Institute in 2022.\n\nAwards\n2024 Birch Institute Research Support Award.\n\nIndependent Project\nIndependent plant-growth notebook using household materials; not peer reviewed.\n\nMy Story\nI volunteer in a community garden and enjoy documenting seasonal changes.\n\nProfessional summary\nResearch assistant with sample traceability and study-support experience.\n",
+      "units": [
+        {
+          "id": "D08-U01",
+          "source_text": "Research Assistant, Birch Institute, August 2021 to June 2025.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "research-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D08-U02",
+          "source_text": "Prepared sample logs and maintained traceability for 240 samples.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "research-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D08-U03",
+          "source_text": "I supported the study and was not the principal investigator.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "research-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D08-U04",
+          "source_text": "A local labeling change reduced transcription errors by 14%; internal study only.",
+          "expected_section": "Experience",
+          "source_section": "Experience",
+          "expected_record_id": "research-role",
+          "expected_record_type": "role",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D08-U05",
+          "source_text": "R statistical analysis.",
+          "expected_section": "Skills",
+          "source_section": "Skills",
+          "expected_record_id": "research-statistics",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D08-U06",
+          "source_text": "Laboratory documentation.",
+          "expected_section": "Skills",
+          "source_section": "Skills",
+          "expected_record_id": "research-documentation",
+          "expected_record_type": "skill",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D08-U07",
+          "source_text": "B.S. Biology, Birch University, completed May 2021.",
+          "expected_section": "Education",
+          "source_section": "Education",
+          "expected_record_id": "research-degree",
+          "expected_record_type": "education",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D08-U08",
+          "source_text": "Completed Good Research Practice course at Birch Institute in 2022.",
+          "expected_section": "Education",
+          "source_section": "Education",
+          "expected_record_id": "research-course",
+          "expected_record_type": "education",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D08-U09",
+          "source_text": "2024 Birch Institute Research Support Award.",
+          "expected_section": "Awards",
+          "source_section": "Awards",
+          "expected_record_id": "research-award",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D08-U10",
+          "source_text": "Independent plant-growth notebook using household materials; not peer reviewed.",
+          "expected_section": "Independent Project",
+          "source_section": "Independent Project",
+          "expected_record_id": "research-project",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D08-U11",
+          "source_text": "I volunteer in a community garden and enjoy documenting seasonal changes.",
+          "expected_section": "My Story",
+          "source_section": "My Story",
+          "expected_record_id": "research-story",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        },
+        {
+          "id": "D08-U12",
+          "source_text": "Research assistant with sample traceability and study-support experience.",
+          "expected_section": "Professional summary",
+          "source_section": "Professional summary",
+          "expected_record_id": "research-summary",
+          "expected_record_type": "knowledge",
+          "required_preservation": "all factual meaning, numbers, units, dates, negations and scope limits",
+          "automatic_placement_eligible": true
+        }
+      ]
+    }
+  ]
+}

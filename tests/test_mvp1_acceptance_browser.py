@@ -218,20 +218,27 @@ class Mvp1AcceptanceBrowserTests(unittest.TestCase):
         expect(page.locator("#resume-intake-receipt")).to_contain_text("needs your review")
         self.assertEqual(len(self.server.shared.policy.list_entries("g-member-a")["entries"]), 3)
         nav = page.locator('.resume-editor__sections')
-        panel = page.locator('.resume-editor__panel')
+        document = page.locator('#resume-intake-document')
+        expect(document.locator('.resume-publication--public')).to_be_visible()
+        for approved in ('Synthetic engineer', 'Requirements management', 'Systems thinking'):
+            expect(document).to_contain_text(approved)
         expect(nav).to_be_visible()
-        self.assertLessEqual(nav.bounding_box()['x'] + nav.bounding_box()['width'], panel.bounding_box()['x'])
+        self.assertLessEqual(nav.bounding_box()['x'] + nav.bounding_box()['width'], document.bounding_box()['x'])
         page.locator('#resume-intake-reopen').click()
         expect(page.locator('#resume-intake')).to_be_visible()
         self.assertEqual(self.server.shared.draft.repository.load_owner("g-member-a").get("media_placements", {}), {})
-        panel = page.locator('.resume-editor__panel')
         nav = page.locator('.resume-editor__sections')
         guide = page.locator('#resume-intake')
         expect(nav).to_be_hidden()
-        panel_box, guide_box = panel.bounding_box(), guide.bounding_box()
-        self.assertLess(guide_box['x'], panel_box['x'] + panel_box['width'])
-        self.assertGreater(guide_box['x'] + guide_box['width'], panel_box['x'])
-        self.assertGreater(panel_box['width'], 500)
+        document_box, guide_box = document.bounding_box(), guide.bounding_box()
+        self.assertLess(guide_box['x'], document_box['x'] + document_box['width'])
+        self.assertGreater(guide_box['x'] + guide_box['width'], document_box['x'])
+        self.assertGreater(document_box['width'], 500)
+        page.wait_for_function(r"""() => {
+            const filter = getComputedStyle(document.querySelector('#resume-intake-document')).filter;
+            const blur = filter.match(/blur\(([0-9.]+)px\)/);
+            return blur && Number(blur[1]) > 0 && Number(blur[1]) < 8;
+        }""")
         self.assertEqual(guide.evaluate('el => el.tagName'), 'DIALOG')
         expect(page.locator('.resume-editor__card details[open]')).to_have_count(0)
         self.capture(page, "private-intake-three-facts")
@@ -325,7 +332,8 @@ class Mvp1AcceptanceBrowserTests(unittest.TestCase):
         story = str(uuid4())
         owner = "g-member-a"
         self.server.shared.canonical.create_private(owner, dict(command_id=str(uuid4()), record_key=story,
-            record_type="knowledge", values={"title": "A personal introduction", "wording": "I like learning new crafts."}))
+            record_type="knowledge", values={"title": "A personal introduction", "wording": "I like learning new crafts.",
+                                             "classification": "personal"}))
         item = self.server.shared.canonical.get_item(owner, story)
         self.server.shared.draft.commit(owner, dict(request_id=str(uuid4()), type="bind_story", record_key=story,
             expected_draft_version=0, expected_content_token=item["content_token"], expected_access_revision=item["access_revision"]))
@@ -377,7 +385,7 @@ class Mvp1AcceptanceBrowserTests(unittest.TestCase):
         self.capture(guest, "two-photos-published")
         page.goto(self.server.url + "/app/resume")
         expect(page.locator("#resume-intake")).to_be_hidden()
-        expect(page.locator("#resume-editor-story-preview")).to_have_text("I like learning new crafts.")
+        expect(page.locator("#resume-editor-story-preview")).to_have_text("A personal introduction\nI like learning new crafts.")
         for slot in ("story_banner", "experience_support"):
             expect(page.locator("#resume-media-placement-badge-" + slot)).to_have_text("Saved in your private draft")
         expect(page.locator(".resume-editor__experience-composition #resume-media-placement-image-experience_support")).to_be_visible()

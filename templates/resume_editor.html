@@ -27,7 +27,7 @@
         <a href="#resume-story-title">My Story</a>
         <a href="#resume-section-role">Experience</a>
         <a href="#resume-section-education">Education</a>
-        <a href="#resume-section-skill">Strengths</a>
+        <a href="#resume-section-skill">Skills</a>
         {% if config.get('PEERSLATE_RESUME_MEDIA_ENABLED', false) %}<a href="#resume-media-placement">Photos</a>{% endif %}
         <a href="{{ url_for('owner.my_data') }}">My Data</a>
     </nav>
@@ -150,7 +150,7 @@
                 <button type="button" class="resume-editor__button" id="resume-synthesis-confirm" disabled>Save selected wording privately</button>
             </div>
             {% endif %}
-            {% if config.get('PEERSLATE_RESUME_INTERVIEW_ENABLED', false) %}
+            {% if config.get('PEERSLATE_RESUME_INTERVIEW_ENABLED', false) and not config.get('PEERSLATE_RESUME_INTAKE_ENABLED', false) %}
             <form id="resume-career-interview-form">
                 <label for="resume-career-interview-statement">Tell us about one experience or contribution</label>
                 <textarea id="resume-career-interview-statement" rows="4" maxlength="8000" required></textarea>
@@ -201,6 +201,12 @@
         </section>
 
     </div>
+    {% if config.get('PEERSLATE_RESUME_INTAKE_ENABLED', false) and config.get('PEERSLATE_RESUME_PUBLICATION_ENABLED', false) %}
+    <section id="resume-intake-document" aria-label="Your actual private Resume preview" hidden>
+        <p class="resume-intake__hint" id="resume-intake-document-status">Private Resume preview. Suggested details appear in the guide until you confirm them.</p>
+        <div id="resume-intake-document-content"></div>
+    </section>
+    {% endif %}
     <div class="resume-editor__guides">
         {% if config.get('PEERSLATE_RESUME_INTAKE_ENABLED', false) %}
         {% include "partials/resume/_intake_composer.html" %}
@@ -210,12 +216,12 @@
         {% endif %}
     </div>
 </section>
+<script src="{{ url_for('static', filename='js/dictation.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/resume-editor.js') }}" defer></script>
 {% if config.get('PEERSLATE_RESUME_MEDIA_ENABLED', false) %}
 <script src="{{ url_for('static', filename='js/resume-media.js') }}" defer></script>
 {% endif %}
 {% if config.get('PEERSLATE_RESUME_INTAKE_ENABLED', false) %}
-<script src="{{ url_for('static', filename='js/dictation.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/resume-intake.js') }}" defer></script>
 {% endif %}
 {% endblock %}

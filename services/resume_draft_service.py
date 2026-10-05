@@ -165,8 +165,6 @@ def _normalize_draft_values(record_type, values):
             values.get("title"), values.get("wording"), values.get("classification", "personal"))
     except KnowledgeServiceError as error:
         raise LivingResumeEditorValidationError(str(error)) from error
-    if classification != "personal":
-        raise LivingResumeEditorValidationError("Choose a personal entry for My Story.")
     return {"title": title, "wording": wording, "classification": classification}
 
 
@@ -537,6 +535,10 @@ class ResumeDraftService:
             canonical = self._catalog_get(owner, command["record_key"])
             if canonical is None or canonical.get("record_type") != "knowledge":
                 raise ResumeDraftNotFoundError()
+            effective = {**(canonical.get("values") or {}),
+                         **((snapshot["items"].get(command["record_key"]) or {}).get("proposed_values") or {})}
+            if effective.get("classification") != "personal":
+                raise ResumeDraftValidationError("Choose a personal entry for My Story.")
             if (canonical.get("content_token") != command["expected_content_token"]
                     or canonical.get("access_revision") != command["expected_access_revision"]
                     or canonical.get("publication_eligible") is not True):
@@ -578,7 +580,11 @@ class ResumeDraftService:
                 proposed=command["values"],
             )
         try:
-            merged = {**(canonical.get("values") or {}), **command["values"]}
+            previous = snapshot['items'].get(command['record_key']) or {}
+            previous_values = (previous.get('proposed_values') or {}) if (
+                previous.get('base_content_token') == str(canonical['content_token'])
+                and previous.get('base_access_revision') == int(canonical['access_revision'])) else {}
+            merged = {**(canonical.get("values") or {}), **previous_values, **command["values"]}
             proposed = _normalize_draft_values(command["record_type"], merged)
         except LivingResumeEditorValidationError as error:
             raise ResumeDraftValidationError(str(error)) from error

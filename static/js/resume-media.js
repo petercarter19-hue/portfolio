@@ -69,6 +69,20 @@
         retry: document.getElementById("resume-media-retry"),
     };
 
+    const libraryLoading = document.createElement('p');
+    libraryLoading.id = 'resume-media-library-loading';
+    libraryLoading.className = 'resume-media__hint';
+    libraryLoading.setAttribute('role', 'status');
+    libraryLoading.textContent = 'Loading the image library…';
+    libraryLoading.hidden = true;
+    elements.libraryEmpty.before(libraryLoading);
+    function showLibraryLoading() {
+        libraryLoading.hidden = false;
+        elements.libraryEmpty.hidden = true;
+        elements.libraryMore.hidden = true;
+        elements.libraryResults.setAttribute('aria-busy', 'true');
+    }
+
     let workspace = null;
     let staged = {};
     let saved = {};
@@ -365,7 +379,7 @@
         });
     }
 
-    function renderPreviewPanel() {
+    function renderPreviewPanel(preserveInputs) {
         SLOTS.forEach(function (slot) {
             const entry = selectedEntry(slot);
             const image = document.getElementById("resume-media-preview-image-" + slot);
@@ -382,7 +396,7 @@
             image.hidden = false;
             label.textContent = (entryLabel(entry) || "Selected") +
                 (staged[slot] ? "" : " (saved privately)");
-            if (cropFields && !cropFields.hidden) {
+            if (cropFields && !cropFields.hidden && !preserveInputs) {
                 fillCropInputs(slot, entry.crop || {});
             }
         });
@@ -495,7 +509,7 @@
         return card;
     }
 
-    function renderLibraryPage(payload, append) {
+    function renderLibraryPage(payload, append, query) {
         if (!append) {
             elements.libraryResults.replaceChildren();
         }
@@ -506,6 +520,9 @@
         libraryCursor = payload ? payload.next_cursor : null;
         elements.libraryMore.hidden = !libraryCursor;
         if (!append) {
+            elements.libraryEmpty.textContent = query
+                ? 'No library images match that search.'
+                : 'No library illustrations are available right now. You can use your own photos.';
             elements.libraryEmpty.hidden = items.length !== 0;
         }
     }
@@ -528,6 +545,9 @@
         libraryInFlight = window.AbortController ? new AbortController() : null;
         elements.libraryError.hidden = true;
         elements.libraryError.textContent = "";
+        if (!append) {
+            showLibraryLoading();
+        }
         let result;
         try {
             const options = { credentials: "same-origin" };
@@ -544,11 +564,16 @@
             elements.libraryError.textContent =
                 "The PeerSlate library could not be reached. Your own photos are unaffected.";
             elements.libraryError.hidden = false;
+            elements.libraryEmpty.hidden = true;
+            libraryLoading.hidden = true;
+            elements.libraryResults.setAttribute('aria-busy', 'false');
             return;
         }
         if (epoch !== libraryEpoch) {
             return;
         }
+        elements.libraryResults.setAttribute('aria-busy', 'false');
+        libraryLoading.hidden = true;
         libraryInFlight = null;
         if (!result.response.ok) {
             elements.libraryError.textContent = result.response.status === 503
@@ -562,7 +587,7 @@
             }
             return;
         }
-        renderLibraryPage(result.payload, append);
+        renderLibraryPage(result.payload, append, query);
     }
 
     function sourceRefForEntry(entry) {
@@ -609,6 +634,10 @@
             SLOT_LABEL[slot] + " is a placement preview \u00b7 Not added yet.",
             "ok"
         );
+        // Preparing a choice can follow text/Story edits in this same tab.
+        // Read their current shared draft version without committing or
+        // replacing the member's unfinished caption and crop fields.
+        await loadWorkspace(true);
         return result.payload.preview;
     }
 
@@ -849,6 +878,10 @@
             return null;
         }
         setPendingCommand(null);
+        document.dispatchEvent(new CustomEvent('resume-private-draft-changed', {detail: {
+            source: 'media', previousDraftVersion: command.payload.expected_draft_version,
+            draftVersion: result.payload.draft_version
+        }}));
         return result.payload;
     }
 
@@ -1039,7 +1072,7 @@
         }
     }
 
-    async function loadWorkspace() {
+    async function loadWorkspace(preserveInputs) {
         const epoch = ++workspaceEpoch;
         const intentAtStart = intentVersion;
         let result;
@@ -1079,7 +1112,7 @@
         renderPhotos();
         renderAssignments();
         renderPlacement();
-        renderPreviewPanel();
+        renderPreviewPanel(preserveInputs);
     }
 
     if (elements.upload) {
@@ -1139,6 +1172,12 @@
         if (event.key === "ArrowLeft") { selectTab("photos"); elements.tabPhotos.focus(); }
     });
     elements.librarySearch.addEventListener("input", function () {
+        // Typing changes intent immediately, before the debounced request.
+        // An older response cannot describe the newly entered query.
+        libraryEpoch += 1;
+        if (libraryInFlight) libraryInFlight.abort();
+        elements.libraryError.hidden = true;
+        showLibraryLoading();
         window.clearTimeout(elements.librarySearch._timer);
         elements.librarySearch._timer = window.setTimeout(function () {
             loadLibrary(false);
@@ -1147,7 +1186,7 @@
     elements.libraryMore.addEventListener("click", function () { loadLibrary(true); });
     elements.hide.addEventListener("click", hideGuide);
     elements.previewHide.addEventListener("click", hideGuide);
-    elements.reopen.addEventListener("click", showGuide);
+    elements.reopen.addEventListener("click", function () { showGuide(); loadWorkspace(true); });
     elements.previewPlacement.addEventListener("click", showPreviewPanel);
     elements.previewBack.addEventListener("click", showGuide);
     elements.changePhotos.addEventListener("click", showGuide);
@@ -1190,6 +1229,12 @@
         });
     }
 
+    document.addEventListener('resume-private-draft-changed', function (event) {
+        // Our own accepted command already reloads below its receipt. Other
+        // editors share the draft version; refresh without clearing their
+        // pending photo choices or any unfinished media form inputs.
+        if (!event.detail || event.detail.source !== 'media') loadWorkspace(true);
+    });
     loadWorkspace();
     selectTab("photos");
     syncWithComposer();

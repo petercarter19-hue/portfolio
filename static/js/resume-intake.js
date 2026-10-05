@@ -36,11 +36,14 @@
         submit: root.getAttribute('data-intake-submit-url'),
         recording: root.getAttribute('data-intake-recording-url'),
         decision: root.getAttribute('data-intake-decision-url'),
+        historyReview: root.getAttribute('data-history-review-url'),
         purge: root.getAttribute('data-intake-purge-url'),
         originals: root.getAttribute('data-intake-originals-url'),
         guide: root.getAttribute('data-guide-url'),
         guideStatus: root.getAttribute('data-guide-status-url'),
-        interview: root.getAttribute('data-interview-url')
+        interview: root.getAttribute('data-interview-url'),
+        draft: root.getAttribute('data-draft-url'),
+        review: root.getAttribute('data-review-url'), preview: root.getAttribute('data-preview-url')
     };
 
     var guidePanel = document.getElementById('resume-intake-guide');
@@ -88,17 +91,21 @@
                     'education_status', 'grade_text', 'location_text', 'summary',
                     'start_date', 'end_date', 'date_precision'],
         credential: ['name', 'issuer', 'identifier', 'issue_date', 'expiration_date',
-                     'issue_date_precision', 'expiration_date_precision', 'verification_url', 'completion_status'],
+                     'issue_date_precision', 'expiration_date_precision', 'verification_url', 'completion_status', 'resume_credential_wording'],
         skill: ['name', 'summary'],
         accomplishment: ['wording', 'metric_value', 'metric_label'],
         knowledge: ['title', 'wording', 'classification']
     };
     var FIELD_INPUTS = {
         role: {role_title: 'resume-intake-role-title', employer_name: 'resume-intake-employer',
+               location_text: 'resume-intake-role-location', summary: 'resume-intake-role-summary',
                current_role: 'resume-intake-current-role', date_precision: 'resume-intake-role-date-precision',
                start_date: 'resume-intake-role-start', end_date: 'resume-intake-role-end'},
-        skill: {name: 'resume-intake-skill'},
+        skill: {name: 'resume-intake-skill', summary: 'resume-intake-skill-summary'},
         education: {title: 'resume-intake-education-title', institution_name: 'resume-intake-institution',
+                    degree_name: 'resume-intake-degree', field_of_study: 'resume-intake-study',
+                    grade_text: 'resume-intake-grade', location_text: 'resume-intake-education-location',
+                    summary: 'resume-intake-education-summary',
                     education_status: 'resume-intake-education-status',
                     date_precision: 'resume-intake-education-date-precision',
                     start_date: 'resume-intake-education-start', end_date: 'resume-intake-education-end'},
@@ -110,7 +117,7 @@
     };
     var REQUIRED_HINT = {
         role: 'role title and employer',
-        skill: 'strength',
+        skill: 'skill',
         education: 'program and institution',
         credential: 'credential and issuer',
         accomplishment: 'what you did'
@@ -144,6 +151,7 @@
     var correctionDraft = null;
     var pendingCorrection = null;
     var conversationIntent = null;
+    var navigationHistory = [];
     var lastAcknowledgement = '';
     var lastConfirmedKey = null;
     var proposalDrafts = {};
@@ -154,9 +162,27 @@
     var seenQuestions = [];
     var welcomeTitle = document.getElementById('resume-intake-title').textContent;
     var parentCandidates = [];     // owner-scoped parents for an Impact entry
+    var parentCatalogGeneration = 0;
+    var parentCatalogAvailable = false;
+    var parentUnavailableMessage = 'Roles are unavailable right now. Your unfinished Impact and selected role are kept here. Choose Impact again to retry before queueing it.';
     var guideHidden = false;
     var guideDismissed = false;
     var unsavedBeforeUnload = null;
+    var conversationSupported = false;
+    var conversationNavigationEpoch = 0;
+    var pendingConversation = null;
+    // Only this page can know a prepared turn never reached dispatch. Restored
+    // descriptors have an unknown outcome and retain their immutable replay.
+    var undispatchedConversationKey = null;
+    var conversationGeneration = 0;
+    var draftVersion = null, draftReady = false, draftBusy = null, draftTimer = null;
+    var savedDraftSignature = null, pendingDraftSave = null;
+    var draftRecovery = null, draftRecoveryBusy = false, draftRecoveryGeneration = 0, heldDraftCopy = null;
+    var draftRecoveryBox = document.getElementById('resume-intake-draft-recovery');
+    var draftRecoveryKeep = document.getElementById('resume-intake-draft-recovery-keep');
+    var draftRecoveryUse = document.getElementById('resume-intake-draft-recovery-use');
+    var previewGeneration = 0;
+    var restoringDraft = false;
 
     function requestId() {
         if (window.crypto && window.crypto.randomUUID) {
@@ -176,6 +202,7 @@
     }
 
     function loadParentCandidates() {
+        var generation = ++parentCatalogGeneration;
         var url = editorLists && editorLists.getAttribute('data-workspace-url');
         if (!url) {
             return Promise.resolve([]);
@@ -187,9 +214,13 @@
             })
             .then(function (payload) {
                 if (!Array.isArray(payload.items)) throw new Error('Workspace unavailable');
+                // A later refresh owns this catalog even when its response is
+                // still pending. Older responses cannot remove a newer choice.
+                if (generation !== parentCatalogGeneration) return parentCandidates;
+                parentCatalogAvailable = true;
                 ownerCatalog = payload.items.slice();
+                acknowledgedFacts = payload.items.length;
                 if (!catalogLoaded) {
-                    acknowledgedFacts = payload.items.length;
                     catalogLoaded = true;
                     updateReveal();
                 }
@@ -202,11 +233,29 @@
                 });
                 return parentCandidates;
             })
-            .catch(function () { ownerCatalog = []; parentCandidates = []; return []; });
+            .catch(function () {
+                if (generation === parentCatalogGeneration) {
+                    ownerCatalog = []; parentCandidates = []; parentCatalogAvailable = false;
+                }
+                return parentCandidates;
+            });
     }
 
     function fillParentSelect(select) {
         if (!select) {
+            return;
+        }
+        // Read the member's latest choice here, after the asynchronous read.
+        // An outage preserves the unfinished selection, but cannot authorize it.
+        var selected = select.value;
+        select.disabled = !parentCatalogAvailable;
+        if (!parentCatalogAvailable) {
+            if (!select.options.length) {
+                var unavailable = document.createElement('option');
+                unavailable.value = ''; unavailable.textContent = 'Roles are unavailable right now';
+                select.appendChild(unavailable);
+            }
+            if (select === parentSelect && typeSelect.value === 'accomplishment') setStatus(parentUnavailableMessage, 'error');
             return;
         }
         select.replaceChildren();
@@ -222,6 +271,15 @@
             option.textContent = candidate.label + ' (role)';
             select.appendChild(option);
         });
+        var eligible = parentCandidates.some(function (candidate) { return candidate.record_key === selected; });
+        select.value = eligible ? selected : '';
+        if (select === parentSelect && typeSelect.value === 'accomplishment') {
+            if (selected && !eligible) {
+                setStatus('The role you selected is no longer available. Your Impact wording is still here. Choose an eligible role before queueing it.', 'error');
+            } else if (manualStatus.textContent === parentUnavailableMessage) {
+                setStatus('Roles refreshed. Your unfinished Impact is still here.', 'ok');
+            }
+        }
     }
 
     function signatureOf(value) {
@@ -234,7 +292,7 @@
             queuedFacts.length ||
             attachments.some(function (row) { return row.status !== 'cancelled'; }) ||
             microphonePending || (recorder && recorder.state === 'recording') ||
-            heldRecording || pendingAdd || pendingDecision || pendingCorrection ||
+            heldRecording || pendingAdd || pendingDecision || pendingCorrection || pendingConversation ||
             Object.values(correctionInputs).some(function (value) { return Boolean(value.trim()); }) || Object.keys(proposalDrafts).length
         );
     }
@@ -243,9 +301,12 @@
         if (!draftLabel) {
             return;
         }
-        draftLabel.textContent = hasUnsavedInput()
-            ? 'Draft answer \u00b7 Not added yet'
-            : (proposals.length + ' suggestions to review · ' + acknowledgedFacts + ' saved privately');
+        document.getElementById('resume-intake-draft-state').hidden = true;
+        document.getElementById('resume-intake-new-question').hidden = !seenQuestions.length;
+        document.getElementById('resume-intake-skip-question').hidden = !seenQuestions.length;
+        document.getElementById('resume-intake-input-finish').hidden = !lastConfirmedKey && !seenQuestions.length && !hasUnsavedInput();
+        if (!addOperation && !interviewBusy) document.getElementById('resume-intake-add-label').textContent =
+            pendingAdd ? 'Retry submission' : pendingConversation ? 'Recover turn' : 'Continue';
     }
 
     function protectNavigation() {
@@ -253,7 +314,9 @@
             return;
         }
         unsavedBeforeUnload = function (event) {
-            if (!hasUnsavedInput()) {
+            if (!hasUnsavedInput() || (savedDraftSignature === signatureOf(draftContents()) &&
+                    !heldRecording && !microphonePending && !(recorder && recorder.state === 'recording') &&
+                    !attachments.some(function (row) { return row.file || row.blob; }))) {
                 return undefined;
             }
             event.preventDefault();
@@ -352,8 +415,8 @@
 
     function labelFor(type) {
         return {
-            role: 'Role', skill: 'Strength', education: 'Education',
-            credential: 'Credential', accomplishment: 'Impact', knowledge: 'Personal story', unspecified: 'Unsorted words'
+            role: 'Role', skill: 'Skill', education: 'Education',
+            credential: 'Credential', accomplishment: 'Impact', knowledge: 'Private entry', unspecified: 'Unsorted words'
         }[type] || type;
     }
 
@@ -515,6 +578,7 @@
                 });
                 renderQueued();
                 refreshDraftLabel();
+                scheduleDraft();
             });
             item.appendChild(document.createTextNode(' '));
             item.appendChild(remove);
@@ -525,6 +589,7 @@
     function renderAttachments() {
         attachmentList.replaceChildren();
         attachments.forEach(function (row) {
+            if (row.kind === 'recording' && row.source_key && row.status === 'ready') return;
             var item = document.createElement('li');
             var tag = document.createElement('span');
             tag.className = 'resume-intake__tag';
@@ -543,8 +608,8 @@
             if (row.message) {
                 item.appendChild(document.createTextNode(' \u00b7 ' + row.message));
             }
-            if ((row.kind === 'document' && (row.status === 'selected' || row.status === 'failed')) ||
-                (row.kind === 'recording' && !row.transcribing && ['selected', 'failed', 'held', 'pending'].indexOf(row.status) !== -1)) {
+            if ((row.kind === 'document' && ['selected', 'failed', 'needs_reattach'].indexOf(row.status) !== -1) ||
+                (row.kind === 'recording' && !row.transcribing && ['selected', 'failed', 'held', 'pending', 'needs_reattach'].indexOf(row.status) !== -1)) {
                 var remove = document.createElement('button');
                 remove.type = 'button';
                 remove.className = 'resume-intake__quiet';
@@ -557,6 +622,7 @@
                     attachments = attachments.filter(function (entry) { return entry.client_key !== row.client_key; });
                     renderAttachments();
                     refreshDraftLabel();
+                    scheduleDraft();
                     setStatus('Removed this unsent attachment. Your other input is kept.', 'ok');
                 });
                 item.appendChild(document.createTextNode(' '));
@@ -631,7 +697,8 @@
         name: 'Name', issuer: 'Issuer', identifier: 'Identifier', issue_date: 'Issue date',
         expiration_date: 'Expiration date', verification_url: 'Verification link',
         issue_date_precision: 'Issue date detail', expiration_date_precision: 'Expiration date detail',
-        completion_status: 'Credential status', wording: 'Contribution', metric_value: 'Result', metric_label: 'Result measure'
+        completion_status: 'Credential status', resume_credential_wording: 'Complete credential details and limitations',
+        wording: 'Contribution', metric_value: 'Result', metric_label: 'Result measure'
     };
     var CHOICES = {
         current_role: [['true', 'Current role'], ['false', 'Past role']],
@@ -658,7 +725,30 @@
         document.dispatchEvent(new Event('resume-intake-fact-saved'));
         loadParentCandidates().then(function () { fillParentSelect(parentSelect); });
     }
-    function showScreen(next, focus) {
+    function navigationFrame() {
+        return {screen: screen, text: textarea.value, question: questionPrompt.textContent,
+            context: questionContext.textContent, conversation_intent: conversationIntent,
+            selected_proposal_key: selectedProposalKey};
+    }
+    function historyFits() {
+        // Match the server's ASCII JSON accounting, including escaped Unicode;
+        // keep margin for its whitespace without blocking the live draft save.
+        var escaped = JSON.stringify(navigationHistory).replace(/[\u0080-\uffff]/g, function (character) {
+            return '\\u' + ('0000' + character.charCodeAt(0).toString(16)).slice(-4);
+        });
+        return escaped.length <= 30000 && navigationHistory.every(function (frame) {
+            return ['text', 'question', 'context'].every(function (name) {
+                return new TextEncoder().encode(frame[name]).length <= 20000;
+            });
+        });
+    }
+    function showScreen(next, focus, recovering, previousFrame) {
+        if (next !== screen && root.open && !restoringDraft && !recovering) {
+            navigationHistory.push(previousFrame || navigationFrame());
+            while (navigationHistory.length > 12 || (navigationHistory.length && !historyFits())) navigationHistory.shift();
+        }
+        if (next !== screen && window.PeerSlateResumeFieldVoice) window.PeerSlateResumeFieldVoice.stop();
+        if (!restoringDraft && next !== screen) conversationNavigationEpoch += 1;
         if (next !== screen) setStatus('', 'ok');
         if (screen === 'input' && next !== 'input' && microphonePending) {
             recordingGeneration += 1; microphonePending = false; syncRecordingCancel();
@@ -673,7 +763,7 @@
         });
         var copy = {
             welcome: [welcomeTitle, ''],
-            input: ['Let’s start with you.', 'Talk naturally or type. We’ll help you turn the details into something useful.'],
+            input: ['Let’s start with you.', 'Supply résumé content directly, or talk with AI to organize and refine it.'],
             review: ['Does this look right?', 'These details are suggestions. Confirm them before they become part of your résumé.'],
             correction: ['Make it yours.', 'Keep what’s right and correct anything we missed.'],
             next: ['Your résumé is taking shape.', 'Your confirmed details are saved. A little more context can help your personal AI understand your work.'],
@@ -685,10 +775,12 @@
         var description = document.getElementById('resume-intake-description');
         description.textContent = copy[1]; description.hidden = !copy[1];
         document.getElementById('resume-intake-eyebrow').textContent = next === 'welcome' ? 'WELCOME TO PEERSLATE' : 'YOUR PEERSLATE';
-        document.getElementById('resume-intake-back').hidden = next === 'welcome' || next === 'finish';
+        document.getElementById('resume-intake-back').hidden = !navigationHistory.length || next === 'finish';
         document.getElementById('resume-intake-finish-unsent').hidden = !hasUnsavedInput();
         receiptBox.hidden = true;
         updateReveal();
+        refreshDraftLabel();
+        scheduleDraft();
         if (focus !== false && root.open) {
             root.querySelector('.resume-intake__surface').scrollTop = 0;
             document.getElementById('resume-intake-title').focus({preventScroll: true});
@@ -708,7 +800,9 @@
         }
         return typeof value === 'string' && CHOICES[name] ? value.replace(/_/g, ' ') : String(value);
     }
-    function renderProposals(rows, preserveScreen) {
+    function renderProposals(rows, preserveScreen, recoveredMode) {
+        var previousFrame = navigationFrame();
+        if (!preserveScreen && window.PeerSlateResumeFieldVoice) window.PeerSlateResumeFieldVoice.stop();
         proposals = rows.slice().sort(function (a, b) {
             return (a.record_type === 'accomplishment' ? 1 : 0) - (b.record_type === 'accomplishment' ? 1 : 0);
         });
@@ -727,7 +821,7 @@
         selectedProposalKey = proposal.proposal_key;
         var proposed = Object.assign({}, proposal.proposed_values || {});
         var known = ownerCatalog.find(function (row) { return row.record_key === proposal.target_key; });
-        if (known) proposed = Object.assign({}, known.has_draft ? known.proposed_values : known.values, proposed);
+        if (known) proposed = Object.assign({}, known.values || {}, known.proposed_values || {}, proposed);
         var fixedType = FIELDS[proposal.record_type] ? proposal.record_type : null;
         var draft = proposalDrafts[proposal.proposal_key];
         var type = fixedType || (draft && draft.type) ||
@@ -740,12 +834,22 @@
         var initial = {};
         var typeField = null;
         var parentField = null;
-        var correcting = !fixedType || Boolean(draft);
+        var correcting = !fixedType || (recoveredMode ? recoveredMode === 'correction' : Boolean(draft));
         var dirty = {};
+        function storyFields() {
+            return type === 'knowledge' && (!fixedType || proposed.classification === 'personal');
+        }
+        function fieldLabel(name) {
+            if (type === 'knowledge') {
+                if (name === 'title') return storyFields() ? 'Story title' : 'Title';
+                if (name === 'wording') return storyFields() ? 'Story text' : 'Text';
+            }
+            return FIELD_LABELS[name] || name;
+        }
         function field(name, choices) {
             var wrap = node('p');
-            var label = node('label', FIELD_LABELS[name] || name);
-            var input = node(choices ? 'select' : (name === 'summary' || name === 'wording' ? 'textarea' : 'input'));
+            var label = node('label', fieldLabel(name));
+            var input = node(choices ? 'select' : (['summary', 'wording', 'resume_credential_wording'].indexOf(name) !== -1 ? 'textarea' : 'input'));
             input.id = 'resume-proposal-' + name;
             input.setAttribute('data-proposal-field', name);
             label.htmlFor = input.id;
@@ -775,7 +879,11 @@
                 if (name === 'issue_date' || name === 'expiration_date') input.placeholder = 'YYYY, YYYY-MM or YYYY-MM-DD';
             }
             initial[name] = input.value;
-            if (draft && draft[type] && Object.prototype.hasOwnProperty.call(draft[type], name)) input.value = draft[type][name];
+            var internalClassification = type === 'knowledge' && name === 'classification';
+            if (!internalClassification && draft && draft[type] && Object.prototype.hasOwnProperty.call(draft[type], name)) input.value = draft[type][name];
+            // Classification remains part of the canonical command, rather
+            // than a content field the member needs to edit.
+            if (internalClassification) { input.type = 'hidden'; wrap.hidden = true; }
             function remember() {
                 dirty[name] = true;
                 draft = proposalDrafts[proposal.proposal_key] || {type: type};
@@ -789,6 +897,7 @@
                 wrap.appendChild(node('span', 'This suggestion removes this field. Leave the suggestion out to keep the existing value.', 'resume-intake__hint'));
             }
             wrap.append(label, input); correction.appendChild(wrap); inputs[name] = input;
+            if (input.tagName === 'TEXTAREA' && window.PeerSlateResumeFieldVoice) window.PeerSlateResumeFieldVoice.bind(input, fieldLabel(name), setStatus);
         }
         function buildFields() {
             correction.replaceChildren(); inputs = {}; initial = {}; dirty = {}; parentField = null;
@@ -805,6 +914,7 @@
                 correction.append(typeLabel, typeField);
             }
             (FIELDS[type] || []).forEach(function (name) {
+                if (name === 'resume_credential_wording' && !Object.prototype.hasOwnProperty.call(proposed, name)) return;
                 var choices = CHOICES[name];
                 if (name === 'date_precision' && type === 'education') choices = choices.concat([['approximate', 'Approximate']]);
                 field(name, choices);
@@ -833,7 +943,7 @@
                     // Suggest only a uniquely named eligible role from this
                     // source passage. The member still confirms attribution.
                     var named = ownerCatalog.filter(function (row) {
-                        var values = row.has_draft ? row.proposed_values : row.values;
+                        var values = Object.assign({}, row.values || {}, row.proposed_values || {});
                         var employer = values && values.employer_name;
                         return parentCandidates.some(function (parent) { return parent.record_key === row.record_key; }) &&
                             employer && (proposal.quote || '').toLowerCase().indexOf(employer.toLowerCase()) !== -1;
@@ -856,9 +966,10 @@
         buildFields();
         var groupedDates = type === 'role' || type === 'education';
         (FIELDS[type] || []).forEach(function (name) {
+            if (type === 'knowledge' && name === 'classification') return;
             if (groupedDates && ['start_date', 'end_date', 'date_precision', 'current_role'].indexOf(name) !== -1) return;
             if (proposed[name] === undefined || proposed[name] === null || proposed[name] === '') return;
-            var row = node('div'); row.append(node('dt', FIELD_LABELS[name]), node('dd', displayValue(name, proposed[name], proposed))); facts.appendChild(row);
+            var row = node('div'); row.append(node('dt', fieldLabel(name)), node('dd', displayValue(name, proposed[name], proposed))); facts.appendChild(row);
         });
         if (groupedDates && (proposed.start_date || proposed.end_date || typeof proposed.current_role === 'boolean')) {
             function reviewDate(name) {
@@ -871,33 +982,69 @@
             var dateRow = node('div'); dateRow.append(node('dt', 'Dates'), node('dd', dates)); facts.appendChild(dateRow);
         }
         (proposal.explicit_clears || []).forEach(function (name) {
-            var row = node('div'); row.append(node('dt', FIELD_LABELS[name]), node('dd', 'Remove the existing value')); facts.appendChild(row);
+            if (type === 'knowledge' && name === 'classification') return;
+            var row = node('div'); row.append(node('dt', fieldLabel(name)), node('dd', 'Remove the existing value')); facts.appendChild(row);
         });
         group.append(facts, correction); item.appendChild(group);
         item.appendChild(node('p', proposal.target_key ? 'Suggested change to an existing entry' : fixedType ? 'Suggested ' + labelFor(type).toLowerCase() + ' · not saved yet' : 'Your words · choose where they belong', 'resume-intake__proposal-source'));
         if (proposal.quote) item.appendChild(node('p', '“' + proposal.quote + '”', 'resume-intake__proposal-quote'));
+        var revision = proposal.resume_conversation_v1 || {};
+        if (revision.history_review) {
+            item.appendChild(node('p', 'Confirm the saved Resume choice below. Your approved entry stays unchanged.', 'resume-intake__hint'));
+            if (revision.history_review.effect === 'section') item.appendChild(node('p', 'Place this entry in ' + revision.presentation_section + '.'));
+            if (revision.history_review.effect === 'bullets') {
+                item.appendChild(node('p', 'Keep this removed-bullet history for an explicit restore:'));
+                (revision.excluded_bullets || []).forEach(function (bullet) { item.appendChild(node('p', bullet.text)); });
+                if (!(revision.excluded_bullets || []).length) item.appendChild(node('p', 'No excluded bullets.'));
+            }
+        }
+        if (revision.resume_exclusion) item.appendChild(node('p', 'This excludes the selected entry from your private Resume. Original evidence is kept. Confirm to apply this choice.', 'resume-intake__hint'));
+        if (revision.resume_restoration) item.appendChild(node('p', 'This restores the selected entry to your private Resume. Confirm to apply this choice.', 'resume-intake__hint'));
         if (proposed.suggested_category === 'project' || (draft && draft.destination === 'project')) {
             var projectHint = node('p', 'For a contribution to a role, choose Impact and confirm its role. For a standalone project, add it privately in My Data. Your original words stay here for review.', 'resume-intake__hint');
             var projectLink = node('a', 'Add a private project in My Data'); projectLink.href = '/app/my-data';
             projectHint.appendChild(projectLink); item.appendChild(projectHint);
         }
         var actions = node('div', undefined, 'resume-intake__proposal-actions');
+        if (textarea.value.trim()) {
+            var continueAnswer = node('button', 'Continue your unfinished answer', 'resume-intake__quiet');
+            continueAnswer.type = 'button';
+            continueAnswer.addEventListener('click', function () { showScreen('input'); textarea.focus(); });
+            item.appendChild(continueAnswer);
+        }
         var accept = node('button', 'Confirm details', 'resume-intake__add'); accept.type = 'button';
         var edit = node('button', 'Change something', 'resume-intake__secondary'); edit.type = 'button';
         var manualEdit = node('button', 'Edit fields manually', 'resume-intake__quiet'); manualEdit.type = 'button';
         var reject = node('button', 'Leave this out', 'resume-intake__quiet'); reject.type = 'button';
-        actions.append(accept, edit); item.append(actions, manualEdit, reject); proposalList.appendChild(item);
-        var overview = node('div', undefined, 'resume-intake__quiet-actions');
+        var quietActions = node('div', undefined, 'resume-intake__quiet-actions');
+        quietActions.append(manualEdit, reject);
+        actions.append(accept, edit); item.append(actions, quietActions); proposalList.appendChild(item);
+        var overview = node('div', undefined, 'resume-intake__suggestions');
         if (lastAcknowledgement) overview.appendChild(node('p', lastAcknowledgement, 'resume-intake__hint'));
         overview.setAttribute('aria-label', 'Choose a suggestion');
+        var sections = {};
+        function proposalLabel(row) {
+            var canonical = ownerCatalog.find(function (record) { return record.record_key === row.target_key; });
+            var values = Object.assign({}, (canonical || {}).values || {}, (canonical || {}).proposed_values || {}, row.proposed_values || {});
+            return values.role_title ? values.role_title + (values.employer_name ? ' · ' + values.employer_name : '') :
+                values.title || values.name || values.suggested_category || (values.wording || values.text || row.quote || 'Your supplied words');
+        }
         proposals.forEach(function (row) {
-            var values = row.proposed_values || {};
-            var choice = node('button', (newestProposalKeys.indexOf(row.proposal_key) !== -1 ? 'New: ' : '') +
-                (values.role_title || values.title || values.name || values.wording || values.suggested_category || 'Your words').slice(0, 80), 'resume-intake__quiet');
+            var section = (row.resume_conversation_v1 || {}).presentation_section || {role:'Experience',education:'Education',skill:'Skills',credential:'Credentials',accomplishment:'Impact',knowledge:'Summary'}[row.record_type] || 'Choose a section';
+            if (!sections[section]) {
+                var sectionGroup = node('div', undefined, 'resume-intake__suggestion-group');
+                sectionGroup.appendChild(node('h3', section)); overview.appendChild(sectionGroup); sections[section] = sectionGroup;
+            }
+            var choice = node('button', proposalLabel(row), 'resume-intake__quiet');
             choice.type = 'button'; choice.disabled = Boolean(pendingDecision);
+            choice.setAttribute('data-suggestion-key', row.proposal_key);
             choice.setAttribute('aria-pressed', String(row.proposal_key === proposal.proposal_key));
-            choice.addEventListener('click', function () { selectedProposalKey = row.proposal_key; renderProposals(proposals); });
-            overview.appendChild(choice);
+            choice.addEventListener('click', function () {
+                selectedProposalKey = row.proposal_key; renderProposals(proposals);
+                var selected = document.querySelector('[data-suggestion-key="' + row.proposal_key + '"]');
+                if (selected) selected.focus();
+            });
+            sections[section].appendChild(choice);
         });
         proposalList.before(overview);
         var oldOverview = document.getElementById('resume-intake-suggestion-overview');
@@ -907,10 +1054,13 @@
         function syncCorrection() {
             correction.hidden = !correcting; facts.hidden = correcting;
             edit.hidden = correcting;
+            manualEdit.hidden = correcting;
             correction.disabled = Boolean(pendingDecision);
             accept.textContent = pendingDecision ? 'Retry confirmation' : 'Confirm details';
             reject.disabled = Boolean(pendingDecision);
-            showScreen(correcting ? 'correction' : 'review', false);
+            if (revision.history_review) { edit.hidden = true; manualEdit.hidden = true; correction.hidden = true; facts.hidden = false; }
+            showScreen(correcting ? 'correction' : 'review', false, false, previousFrame);
+            previousFrame = null;
         }
         manualEdit.addEventListener('click', function () { correcting = true; syncCorrection(); correction.querySelector('input,textarea,select').focus(); });
         edit.addEventListener('click', function () {
@@ -930,7 +1080,8 @@
             if (!FIELDS[type]) throw new Error('Choose where these words belong before confirming.');
             var values = {};
             FIELDS[type].forEach(function (name) {
-                var input = inputs[name], raw = input.value.trim();
+                var input = inputs[name]; if (!input) return;
+                var raw = input.value.trim();
                 var changed = dirty[name] || raw !== initial[name];
                 if (input.tagName === 'SELECT' && input.selectedOptions[0] && input.selectedOptions[0].disabled) throw new Error('Choose a supported ' + FIELD_LABELS[name].toLowerCase() + '.');
                 if (raw === '') {
@@ -970,10 +1121,11 @@
         }
         function decide(decision) {
             if (decisionBusy) return;
+            if (window.PeerSlateResumeFieldVoice) window.PeerSlateResumeFieldVoice.stop();
             if (!pendingDecision) {
                 try {
                     var body = {request_id: requestId(), proposal_key: proposal.proposal_key, decision: decision};
-                    if (decision === 'accept') body.confirmed_values = confirmedValues();
+                    if (decision === 'accept' && !revision.history_review) body.confirmed_values = confirmedValues();
                     pendingDecision = {body: body, proposal: proposal};
                 } catch (error) { correcting = true; syncCorrection(); setStatus(error.message, 'error'); return; }
             }
@@ -986,10 +1138,17 @@
                     throw new Error(payload.message || 'Confirmation is not acknowledged. Retry the same decision.');
                 }
                 if (payload.success !== true || payload.request_id !== attempt.body.request_id || payload.proposal_key !== attempt.body.proposal_key ||
-                    payload.outcome !== (attempt.body.decision === 'accept' ? 'saved' : 'unresolved') || payload.publishes !== false) {
+                    (attempt.body.decision === 'accept' ? ['saved', 'excluded', 'restored', 'reviewed'].indexOf(payload.outcome) === -1 : payload.outcome !== 'unresolved') || payload.publishes !== false) {
                     throw new Error('Confirmation is not acknowledged. Retry the same decision.');
                 }
                 pendingDecision = null;
+                if (pendingConversation && pendingConversation.selected_target === 'proposal:' + proposal.proposal_key) {
+                    var retainedTurn = correctionInputs[proposal.proposal_key] || '';
+                    if (retainedTurn && textarea.value.indexOf(retainedTurn) === -1)
+                        textarea.value += (textarea.value ? '\n\n' : '') + retainedTurn;
+                    pendingConversation = null;
+                    undispatchedConversationKey = null;
+                }
                 if (pendingCorrection && pendingCorrection.proposal_key === proposal.proposal_key) {
                     var retainedCorrection = correctionInputs[proposal.proposal_key] || '';
                     if (retainedCorrection && retainedCorrection !== pendingCorrection.statement &&
@@ -1003,10 +1162,25 @@
                 if (payload.outcome === 'saved') factSaved();
                 proposals = proposals.filter(function (p) { return p.proposal_key !== proposal.proposal_key; });
                 if (proposals.length) { renderProposals(proposals); showScreen(screen); }
-                else { proposalList.replaceChildren(); showScreen(payload.outcome === 'saved' ? 'next' : 'input'); }
+                else {
+                    proposalList.replaceChildren();
+                    if (payload.outcome === 'saved') {
+                        var confirmed = Object.assign({}, (payload.item || {}).values || {}, (payload.item || {}).proposed_values || {}, proposal.proposed_values || {});
+                        var label = confirmed.role_title || confirmed.name || confirmed.title || 'this experience';
+                        var invitation = proposal.record_type === 'role' ? 'For ' + label + ', what contribution or result would you like people to understand?' :
+                            proposal.record_type === 'skill' ? 'How have you used ' + label + ' in your work?' :
+                            proposal.record_type === 'education' ? 'What did you learn from ' + label + ' that you use now?' :
+                            'Is there a useful example or detail you would like to add about ' + label + '?';
+                        document.getElementById('resume-intake-followup').textContent = invitation;
+                        seenQuestions.push(invitation);
+                        questionPrompt.textContent = invitation; questionContext.textContent = 'Optional. Use the detail you know; leave it out if it does not fit.';
+                        questionContext.hidden = false; conversationIntent = null; showScreen('next');
+                    } else showScreen('input');
+                }
                 refreshDraftLabel();
                 if (!proposals.length) { var overview = document.getElementById('resume-intake-suggestion-overview'); if (overview) overview.remove(); }
-                setStatus(payload.outcome === 'saved' ? 'Saved privately. Sharing settings are unchanged.' : 'Left out. Nothing was saved.', 'ok');
+                setStatus(payload.outcome === 'saved' ? 'Saved privately. Sharing settings are unchanged.' : (payload.message || 'Left out. Nothing was saved.'), 'ok');
+                loadParentCandidates().then(load).then(checkpointDraft);
             }).catch(function (error) {
                 setStatus(error.message || 'The response was lost. Retry the same confirmation; it will not create a duplicate.', 'error');
             }).finally(function () {
@@ -1097,6 +1271,71 @@
         });
     }
 
+    function renderCoverage(sources) {
+        var region = document.getElementById('resume-intake-source-review');
+        var content = document.getElementById('resume-intake-source-units');
+        if (!region || !content) return;
+        content.replaceChildren(); region.hidden = !sources.length;
+        sources.forEach(function (source, index) {
+            var details = node('details'), units = source.source_units || [];
+            details.appendChild(node('summary', 'Source ' + (index + 1) + ' · ' + source.kind));
+            var isScan = (source.pages || []).some(function (page) { return page.method === 'ocr' || page.ocr; });
+            if (isScan) details.appendChild(node('p', 'Scanned text can misread words. Compare with your original file and correct the suggestion before confirming.', 'resume-intake__hint'));
+            if (source.complete === false) details.appendChild(node('p', 'Some content could not be read. Keep the original and add the missing material manually.', 'resume-intake__hint'));
+            units.forEach(function (unit) {
+                var entry = node('p', unit.text, 'resume-intake__proposal-quote');
+                entry.setAttribute('data-source-unit', unit.unit_id);
+                details.append(node('span', unit.disposition || (unit.kind === 'content' ? 'Needs review' : unit.kind), 'resume-intake__hint'), entry);
+            });
+            content.appendChild(details);
+        });
+    }
+    function refreshActualPreview() {
+        var region = document.getElementById('resume-intake-document');
+        var content = document.getElementById('resume-intake-document-content');
+        var status = document.getElementById('resume-intake-document-status');
+        if (!region || !urls.review || !urls.preview) return Promise.resolve();
+        var generation = ++previewGeneration;
+        region.hidden = false; region.setAttribute('aria-busy', 'true');
+        status.textContent = 'Refreshing your actual private Resume preview.' +
+            (content.childElementCount ? ' The earlier saved preview remains below until it is updated.' : '');
+        return postJson(urls.review, {}).then(function (result) {
+            if (generation !== previewGeneration) throw new Error();
+            if (!result.response.ok || !Array.isArray(result.payload.entries)) throw new Error();
+            var entries = result.payload.entries.map(function (row) {
+                return {entry_key: row.entry_key, resume_display: true, visitor_ai: false};
+            });
+            return postJson(urls.review, {entries: entries});
+        }).then(function (result) {
+            if (generation !== previewGeneration) throw new Error();
+            if (!result.response.ok || !result.payload.candidate || !result.payload.digest) throw new Error();
+            return postJson(urls.preview, {candidate: result.payload.candidate,
+                reviewed_digest: result.payload.digest, profile_identity: result.payload.profile_identity || null});
+        }).then(function (result) {
+            if (generation !== previewGeneration) return;
+            if (!result.response.ok || !result.payload.html || result.payload.published !== false) {
+                var refused = new Error(result.payload.message || 'The private Resume preview is unavailable.');
+                refused.historyReview = result.payload.code === 'history_review_required'; throw refused;
+            }
+            var parsed = new DOMParser().parseFromString(result.payload.html, 'text/html');
+            var composition = parsed.querySelector('.resume-publication--public');
+            if (!composition) throw new Error();
+            composition.querySelectorAll('script, #visitor-ai-panel, #visitor-ai-open').forEach(function (element) { element.remove(); });
+            content.replaceChildren(document.importNode(composition, true)); region.hidden = false;
+            status.textContent = 'Your actual private Resume preview. Suggestions remain in the guide until you confirm them. Nothing is published.';
+        }).catch(function (error) {
+            if (generation !== previewGeneration) return;
+            if (error.historyReview) {
+                region.hidden = false;
+                status.textContent = error.message + (content.childElementCount ? ' The earlier preview remains below until you confirm the current choices.' : ' Choose and confirm the current choices in the guide.');
+                return;
+            }
+            content.replaceChildren(); region.hidden = false;
+            status.textContent = 'The private Resume preview is unavailable. Your information and pending suggestions are kept; manual editing remains available.';
+        }).finally(function () {
+            if (generation === previewGeneration) region.setAttribute('aria-busy', 'false');
+        });
+    }
     function load() {
         return fetch(urls.workspace, {credentials: 'same-origin'})
             .then(function (response) {
@@ -1118,22 +1357,68 @@
                 }
                 var policyText = document.getElementById('resume-intake-policy');
                 var policy = result.payload.policy || {};
+                conversationSupported = (result.payload.capabilities || {}).supports_resume_conversation === true;
                 if (policyText) policyText.textContent = policy.selected
-                    ? 'Selectable-text PDF, Word or text files up to ' + (policy.max_document_bytes / 1000000) + ' MB each. English recordings up to ' + (policy.max_recording_seconds / 60) + ' minutes; you can add more than one. ' + policy.retention_statement
+                    ? 'Text or printed English scanned PDF, Word and text files up to ' + (policy.max_document_bytes / 1000000) + ' MB each. Review scanned text for recognition errors. English recordings up to ' + (policy.max_recording_seconds / 60) + ' minutes. ' + policy.retention_statement
                     : 'Synthetic fixture policy only. Real onboarding retention is unavailable.';
                 refreshOriginals();
+                renderHistoryConflicts(result.payload.resume_decision_conflicts || []);
                 renderProposals(result.payload.pending_proposals || [], initialized);
-                renderReceipt(result.payload.last_receipt || null);
+                if (!initialized) renderReceipt(result.payload.last_receipt || null);
+                renderCoverage(result.payload.source_accounting || []);
                 return fetch(urls.guide, {credentials: 'same-origin'})
                     .then(function (response) {
                         return response.json().catch(function () { return {}; });
                     })
-                    .then(function (guide) { applyGuideState(result.payload, guide); })
+                    .then(function (guide) {
+                        var initial = !initialized;
+                        applyGuideState(result.payload, guide);
+                        return initial ? restoreDraft().then(refreshActualPreview) : refreshActualPreview();
+                    })
                     .catch(function () {
                         applyGuideState(result.payload, null);
                         setStatus('The guide question is unavailable. Your saved work is unchanged.', 'error');
                     });
             });
+    }
+
+    function renderHistoryConflicts(conflicts) {
+        var region = document.getElementById('resume-intake-history-review');
+        if (!region) return;
+        region.replaceChildren(); region.hidden = !conflicts.length;
+        if (!conflicts.length) return;
+        region.appendChild(node('h3', 'Review a saved Resume choice'));
+        region.appendChild(node('p', 'The order of these older choices is unavailable. Choose how the entry should appear now, then review and confirm it. Your approved content is kept.'));
+        conflicts.forEach(function (conflict) {
+            var item = ownerCatalog.find(function (row) { return row.record_key === conflict.record_key; });
+            var values = item ? Object.assign({}, item.values || {}, item.proposed_values || {}) : {};
+            var title = values.role_title || values.name || values.title || values.degree_name || 'Saved entry';
+            region.appendChild(node('p', title));
+            var seen = [];
+            conflict.choices.forEach(function (choice) {
+                var signature = JSON.stringify(choice.value);
+                if (seen.indexOf(signature) !== -1) return;
+                seen.push(signature);
+                var label = conflict.effect === 'inclusion' ? (choice.value ? 'Exclude this entry' : 'Include this entry') :
+                    conflict.effect === 'section' ? 'Use ' + choice.value :
+                    conflict.effect === 'bullets' ? 'Review ' + choice.value.length + ' excluded bullets' : 'Review credential details';
+                var button = node('button', label, 'resume-intake__secondary'); button.type = 'button';
+                var attempt = {request_id: requestId(), record_key: conflict.record_key,
+                    effect: conflict.effect, history_token: conflict.history_token, proposal_key: choice.proposal_key};
+                button.addEventListener('click', function () {
+                    if (decisionBusy || interviewBusy || pendingAdd) return;
+                    button.disabled = true;
+                    postJson(urls.historyReview, attempt).then(function (result) {
+                        if (!result.response.ok) throw new Error(result.payload.message || 'That choice changed. Reload the guide and review it again.');
+                        newestProposalKeys = (result.payload.proposals || []).map(function (row) { return row.proposal_key; });
+                        selectedProposalKey = newestProposalKeys[0];
+                        return loadParentCandidates().then(load).then(function () { renderProposals(proposals); });
+                    }).catch(function (error) { setStatus(error.message, 'error'); })
+                    .finally(function () { button.disabled = false; });
+                });
+                region.appendChild(button);
+            });
+        });
     }
 
     /* -- explicit Add ------------------------------------------------- */
@@ -1155,63 +1440,315 @@
             })
         };
     }
-    function submitCorrection() {
-        if (interviewBusy || pendingAdd || decisionBusy) return;
-        if (microphonePending || (recorder && recorder.state === 'recording') || heldRecording ||
-            attachments.some(function (row) { return row.kind === 'recording' && row.status !== 'cancelled' && !row.source_key; })) {
-            setStatus('Stop recording and review the transcript before continuing. Your words and audio are kept.', 'error'); return;
+    function draftContents() {
+        var fields = {};
+        Array.prototype.forEach.call(manual.querySelectorAll('input[id],select[id],textarea[id]'), function (input) {
+            fields[input.id] = input.type === 'checkbox' ? input.checked : input.value;
+        });
+        return {text: textarea.value || null,
+            items: queuedFacts.map(function (row) { return {client_key: row.client_key, record_type: row.record_type,
+                values: row.values, explicit_clears: row.explicit_clears, parent_key: row.parent_key || null}; }),
+            attachments: attachments.filter(function (row) { return row.status !== 'cancelled'; }).map(function (row) {
+                return {client_key: row.client_key, kind: row.kind, filename: row.filename || null,
+                    declared_content_type: row.declared_content_type || null, source_key: row.source_key || null,
+                    duration_seconds: row.duration_seconds || null}; }),
+            guide_state: {screen: screen, selected_proposal_key: selectedProposalKey,
+                correction_target_key: correctionTarget ? correctionTarget.proposal_key : null,
+                correction_draft: correctionDraft, correction_inputs: correctionInputs, proposal_drafts: proposalDrafts,
+                question: questionPrompt.textContent, context: questionContext.textContent,
+                guide_hidden: guideHidden, conversation_intent: conversationIntent,
+                manual_type: typeSelect.value, manual_fields: fields, pending_conversation: pendingConversation,
+                seen_questions: seenQuestions.slice(-50), navigation_history: navigationHistory}};
+    }
+    function scheduleDraft() {
+        if (!draftReady || !conversationSupported || restoringDraft) return;
+        clearTimeout(draftTimer);
+        draftTimer = setTimeout(function () { checkpointDraft().catch(function () {}); }, 1500);
+    }
+    function checkpointDraft() {
+        if (!draftReady || !conversationSupported || !urls.draft) return Promise.resolve(false);
+        if (draftBusy) return draftBusy.then(checkpointDraft);
+        if (draftRecovery || draftRecoveryBusy) return Promise.resolve(false);
+        var contents = draftContents(), signature = signatureOf(contents);
+        if (!pendingDraftSave && signature === savedDraftSignature) return Promise.resolve(true);
+        if (!pendingDraftSave) pendingDraftSave = JSON.parse(JSON.stringify(
+            Object.assign({request_id: requestId(), expected_version: draftVersion}, contents)));
+        var attempt = pendingDraftSave;
+        draftBusy = send(urls.draft, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(attempt)})
+            .then(function (result) {
+                if (!result.response.ok || !result.payload.draft) {
+                    if ([400, 409].indexOf(result.response.status) !== -1) pendingDraftSave = null;
+                    setStatus(result.payload.message || 'Your draft is kept on this page. Saving it for reentry is unavailable.', 'error');
+                    if (result.response.status === 409 && result.payload.code === 'draft_conflict') {
+                        draftRecovery = {draft: null, available: false};
+                        return readRecoveryCopy().then(function () { return false; });
+                    }
+                    return false;
+                }
+                draftVersion = result.payload.draft.version; pendingDraftSave = null;
+                var acknowledged = Object.assign({}, attempt); delete acknowledged.request_id; delete acknowledged.expected_version;
+                savedDraftSignature = signatureOf(acknowledged);
+                return true;
+            }).catch(function () { setStatus('Your draft is kept on this page. The save response did not arrive.', 'error'); return false; })
+            .finally(function () { draftBusy = null; refreshDraftLabel(); });
+        // Recovering an older lost acknowledgement must also persist the
+        // current turn key before dispatch. Only exact current contents count.
+        return draftBusy.then(function (saved) {
+            return saved && savedDraftSignature !== signatureOf(draftContents()) ? checkpointDraft() : saved;
+        });
+    }
+    function copyWords(copy) {
+        if (!copy) return 'No saved draft remains.';
+        var words = [copy.text || ''];
+        (copy.items || []).forEach(function (row) { words.push(Object.values(row.values || {}).filter(Boolean).join('\n')); });
+        Object.values((copy.guide_state || {}).manual_fields || {}).forEach(function (value) {
+            if (typeof value === 'string' && value) words.push(value);
+        });
+        (copy.attachments || []).forEach(function (row) { words.push(row.filename || 'Recording'); });
+        return words.filter(Boolean).join('\n\n') || 'This copy has no unfinished words.';
+    }
+    function renderRecoveryCopy(message) {
+        var unknown = draftRecovery && !draftRecovery.available;
+        draftRecoveryBox.hidden = false;
+        document.getElementById('resume-intake-draft-recovery-current').hidden = !draftRecovery;
+        document.getElementById('resume-intake-draft-recovery-actions').hidden = !draftRecovery;
+        document.getElementById('resume-intake-draft-recovery-message').textContent = message ||
+            (unknown ? 'The saved copy is unavailable right now. Your page copy is kept. Retry the read before choosing.' :
+                draftRecovery && draftRecovery.draft ? 'The saved draft changed. Your page copy is kept. Review both before choosing.' :
+                'The saved draft is gone. Your page copy is kept. You can save it as a new draft.');
+        document.getElementById('resume-intake-draft-recovery-saved').textContent =
+            draftRecovery && draftRecovery.available ? copyWords(draftRecovery.draft) : 'The saved copy could not be read. Retry reading it before choosing a copy.';
+        draftRecoveryKeep.textContent = unknown ? 'Retry reading the saved draft' : "Save this page's draft";
+        draftRecoveryKeep.disabled = draftRecoveryBusy;
+        draftRecoveryUse.disabled = draftRecoveryBusy || !draftRecovery || !draftRecovery.available || !draftRecovery.draft;
+        document.getElementById('resume-intake-draft-recovery-held').hidden = !heldDraftCopy;
+        document.getElementById('resume-intake-draft-recovery-earlier').textContent = heldDraftCopy ? copyWords(heldDraftCopy.contents) : '';
+    }
+    function readRecoveryCopy() {
+        var generation = ++draftRecoveryGeneration;
+        draftRecoveryBusy = true; renderRecoveryCopy('Reading the saved copy. Your page copy is kept.');
+        return send(urls.draft).then(function (result) {
+            if (generation !== draftRecoveryGeneration) return null;
+            if (!result.response.ok || !Object.prototype.hasOwnProperty.call(result.payload, 'draft')) throw new Error('Draft read unavailable');
+            return result.payload.draft;
+        }).then(function (draft) {
+            if (generation === draftRecoveryGeneration) draftRecovery = {draft: draft, available: true};
+            return draft;
+        }).catch(function () {
+            if (generation === draftRecoveryGeneration) draftRecovery = {draft: null, available: false};
+        }).finally(function () {
+            if (generation === draftRecoveryGeneration) { draftRecoveryBusy = false; renderRecoveryCopy(); }
+        });
+    }
+    function retainDraftCopy(contents, runtimeAttachments) {
+        heldDraftCopy = {contents: JSON.parse(JSON.stringify(contents)), attachments: runtimeAttachments};
+    }
+    function replacementNeedsOperationRecovery() {
+        return pendingAdd || pendingDecision || interviewBusy || decisionBusy ||
+            (pendingConversation && pendingConversation.request_id !== undispatchedConversationKey);
+    }
+    function chooseRecoveryCopy(useSaved) {
+        if (draftBusy || draftRecoveryBusy || pendingDraftSave) return;
+        if (useSaved && replacementNeedsOperationRecovery()) {
+            setStatus('Recover the unfinished operation before replacing this page copy. Your words are kept.', 'error'); return;
         }
-        if (!(textarea.value || '').trim()) { setStatus('Say or type what should change.', 'ok'); return; }
-        if (root.getAttribute('data-interview-enabled') !== 'true') {
-            setStatus('Conversational correction is unavailable. Your words are kept; use Edit fields manually.', 'error'); return;
+        var reviewed = draftRecovery && draftRecovery.available ? signatureOf(draftRecovery.draft) : null;
+        var localSignature = signatureOf(draftContents());
+        var submittedGeneration = conversationGeneration, navigationEpoch = conversationNavigationEpoch;
+        return readRecoveryCopy().then(function (fresh) {
+            if (!draftRecovery || !draftRecovery.available) return;
+            // A turn may begin or reach dispatch while this read is delayed.
+            // The earlier choice cannot replace that operation or new intent.
+            if (useSaved && replacementNeedsOperationRecovery()) {
+                setStatus('Recover the unfinished operation before replacing this page copy. Your words are kept.', 'error'); return;
+            }
+            if (reviewed === null || reviewed !== signatureOf(fresh) ||
+                (useSaved && (localSignature !== signatureOf(draftContents()) ||
+                    submittedGeneration !== conversationGeneration || navigationEpoch !== conversationNavigationEpoch))) {
+                renderRecoveryCopy('A copy changed while we checked. Review the copies again before choosing.'); return;
+            }
+            if (useSaved) {
+                if (!fresh) return;
+                retainDraftCopy(draftContents(), attachments.slice());
+                // The explicit saved-copy choice abandons only the never-sent
+                // preparation. Return restores the words for a new turn, never
+                // the abandoned request identity. Unknown dispatch is blocked.
+                if (pendingConversation) heldDraftCopy.contents.guide_state.pending_conversation = null;
+                applyDraftCopy(fresh, true);
+                draftVersion = fresh.version; savedDraftSignature = signatureOf(draftContents());
+                draftRecovery = null;
+                renderRecoveryCopy('Using the saved draft. Your earlier page copy is kept below.');
+                draftRecoveryKeep.disabled = true; draftRecoveryUse.disabled = true;
+                setStatus('Using the saved draft. Your earlier words are still available on this page.', 'ok');
+            } else {
+                // A fresh read supplies the fence; the explicit choice supplies
+                // intent. A second race still returns409, never a forced save.
+                retainDraftCopy(fresh, null);
+                draftVersion = fresh ? fresh.version : null; draftRecovery = null;
+                return checkpointDraft().then(function (saved) {
+                    if (saved) {
+                        renderRecoveryCopy('This page copy is saved. The earlier saved copy is kept below.');
+                        draftRecoveryKeep.disabled = true; draftRecoveryUse.disabled = true;
+                        setStatus('Your page copy is saved privately.', 'ok');
+                    }
+                });
+            }
+        });
+    }
+    draftRecoveryKeep.addEventListener('click', function () { chooseRecoveryCopy(false); });
+    draftRecoveryUse.addEventListener('click', function () { chooseRecoveryCopy(true); });
+    document.getElementById('resume-intake-draft-recovery-return').addEventListener('click', function () {
+        if (!heldDraftCopy || draftBusy || draftRecoveryBusy || pendingDraftSave || pendingAdd || pendingDecision || pendingConversation) return;
+        var earlier = heldDraftCopy, latest = {contents: draftContents(), attachments: attachments.slice()};
+        applyDraftCopy(earlier.contents || {}, true);
+        if (earlier.attachments) { attachments = earlier.attachments; renderAttachments(); }
+        heldDraftCopy = latest; draftRecovery = {draft: null, available: false};
+        readRecoveryCopy();
+    });
+    function applyDraftCopy(draft, replace) {
+        restoringDraft = true;
+        if (replace || !textarea.value) textarea.value = draft.text || '';
+        if (replace || !queuedFacts.length) queuedFacts = (draft.items || []).map(function (row) {
+            return Object.assign({}, row, {label: row.values.role_title || row.values.title || row.values.name || row.values.wording});
+        });
+        if (replace || !attachments.length) attachments = (draft.attachments || []).map(function (row) {
+            return Object.assign({}, row, {label: row.filename || 'Recording', status: row.source_key && !row.needs_reattach ? 'ready' : 'needs_reattach',
+                message: row.source_key && !row.needs_reattach ? 'Transcript retained privately.' : 'Choose the original file again before submitting.'});
+        });
+        if (replace) {
+            Array.prototype.forEach.call(manual.querySelectorAll('input[id],select[id],textarea[id]'), function (input) {
+                if (input.type === 'checkbox') input.checked = false; else input.value = '';
+            });
+            selectedProposalKey = null; correctionTarget = null; correctionDraft = null; correctionInputs = {};
+            proposalDrafts = {}; conversationIntent = null; pendingConversation = null;
+            undispatchedConversationKey = null; navigationHistory = []; seenQuestions = [];
+        }
+        var state = draft.guide_state;
+        if (state) {
+            selectedProposalKey = state.selected_proposal_key;
+            correctionTarget = proposals.find(function (row) { return row.proposal_key === state.correction_target_key; }) || null;
+            correctionDraft = state.correction_draft; correctionInputs = state.correction_inputs || {};
+            proposalDrafts = state.proposal_drafts || {}; conversationIntent = state.conversation_intent;
+            pendingConversation = state.pending_conversation || null;
+            undispatchedConversationKey = null;
+            seenQuestions = state.seen_questions || []; navigationHistory = state.navigation_history || [];
+            questionPrompt.textContent = state.question || 'What would you like to add or change?';
+            questionContext.textContent = state.context || ''; questionContext.hidden = !questionContext.textContent;
+            if (state.screen === 'next') document.getElementById('resume-intake-followup').textContent = state.question || '';
+            typeSelect.value = state.manual_type || '';
+            Object.keys(state.manual_fields || {}).forEach(function (id) {
+                var input = document.getElementById(id);
+                if (input && manual.contains(input)) {
+                    if (input.type === 'checkbox') input.checked = state.manual_fields[id] === true;
+                    else input.value = state.manual_fields[id];
+                }
+            });
+            syncDirectFields();
+            if ((state.screen === 'review' || state.screen === 'correction') && proposals.length) renderProposals(proposals);
+            else showScreen(['review', 'correction'].indexOf(state.screen) !== -1 ? 'input' : state.screen || 'input', false);
+            if (state.guide_hidden) hideGuide();
+        } else if (replace) { syncDirectFields(); showScreen('input', false); }
+        renderQueued(); renderAttachments(); restoringDraft = false;
+    }
+    function restoreDraft() {
+        if (!urls.draft || !conversationSupported) { draftReady = true; return Promise.resolve(); }
+        return send(urls.draft).then(function (result) {
+            if (!result.response.ok) { draftReady = false; return; }
+            var draft = result.payload.draft;
+            draftVersion = draft ? draft.version : null;
+            if (draft) applyDraftCopy(draft, false);
+            draftReady = true; savedDraftSignature = signatureOf(draftContents()); refreshDraftLabel();
+        });
+    }
+    function sendConversation(options) {
+        options = options || {};
+        if (interviewBusy || pendingAdd || decisionBusy) return Promise.resolve();
+        if (microphonePending || (recorder && recorder.state === 'recording') || heldRecording ||
+            attachments.some(function (row) { return row.kind === 'recording' && !row.source_key && row.status !== 'cancelled'; })) {
+            setStatus('Stop recording and review the transcript before continuing. Your words and audio are kept.', 'error'); return Promise.resolve();
+        }
+        var statement = options.statement || textarea.value;
+        if (!statement.trim()) { setStatus('Say or type what you would like to add or change.', 'ok'); return Promise.resolve(); }
+        if (!conversationSupported || root.getAttribute('data-interview-enabled') !== 'true') {
+            setStatus('Conversation is unavailable here. Your words are kept; you can edit the fields manually.', 'error'); return Promise.resolve();
         }
         var target = correctionTarget;
-        var statement = textarea.value;
+        var selected = options.selectedTarget || (target ? 'proposal:' + target.proposal_key : null);
+        var submittedText = options.statement ? null : (pendingConversation ? pendingConversation.statement : textarea.value);
+        var inputScreen = screen;
+        var navigationEpoch = conversationNavigationEpoch;
+        var generation = ++conversationGeneration;
         interviewBusy = true; addButton.disabled = true;
-        var prepare = pendingCorrection ? Promise.resolve(pendingCorrection) : send(editorLists.getAttribute('data-workspace-url')).then(function (result) {
-            if (!result.response.ok || !Number.isInteger(result.payload.draft_version)) throw new Error('Your private context is unavailable. Your correction is kept.');
-            pendingCorrection = {request_id: requestId(), expected_draft_version: result.payload.draft_version,
-                proposal_key: target.proposal_key, statement: statement};
-            return pendingCorrection;
+        var activity = beginActivity('add');
+        setStatus('Organizing your words with your saved information and earlier suggestions…', 'ok');
+        var prepare = pendingConversation ? Promise.resolve(pendingConversation) : send(editorLists.getAttribute('data-workspace-url')).then(function (result) {
+            if (!result.response.ok || !Number.isInteger(result.payload.draft_version)) throw new Error('Your private context is unavailable. Your words are kept.');
+            pendingConversation = {request_id: requestId(), expected_draft_version: result.payload.draft_version,
+                statement: statement, selected_target: selected,
+                source_keys: attachments.filter(function (row) { return row.kind === 'recording' && row.source_key; }).map(function (row) { return row.source_key; })};
+            undispatchedConversationKey = pendingConversation.request_id;
+            return pendingConversation;
         });
-        prepare.then(function (attempt) { return postJson(urls.interview, attempt); }).then(function (result) {
-            if (!result.response.ok) {
-                if ([400, 404, 409].indexOf(result.response.status) !== -1) pendingCorrection = null;
-                throw new Error(result.payload.message || 'Your correction could not be organized. Your words are kept.');
-            }
-            var data = result.payload, attempt = pendingCorrection;
-            if (data.success !== true || data.saved !== false || data.publishes !== false ||
-                data.base_revision !== attempt.expected_draft_version || !Array.isArray(data.candidates)) throw new Error('No valid correction arrived. Your words are kept.');
-            var candidates = data.candidates.filter(function (candidate) { return FIELDS[candidate.record_type] &&
-                (target.record_type === 'unspecified' || candidate.record_type === target.record_type); });
-            pendingCorrection = null;
-            if (candidates.length !== 1) {
-                questionPrompt.textContent = data.next_question || 'Which detail should I change?';
-                setStatus(data.response || 'I need one clearer detail before proposing a change.', 'ok'); return;
-            }
-            var candidate = candidates[0], draft = proposalDrafts[target.proposal_key] || {type: candidate.record_type};
-            draft.type = candidate.record_type;
-            draft[candidate.record_type] = Object.assign({}, draft[candidate.record_type] || {});
-            Object.keys(candidate.values).forEach(function (name) {
-                if (FIELDS[candidate.record_type].indexOf(name) !== -1 && candidate.values[name] !== null)
-                    draft[candidate.record_type][name] = CHOICES[name] ? String(candidate.values[name]) : displayValue(name, candidate.values[name], Object.assign({}, target.proposed_values, candidate.values));
+        return prepare.then(function (attempt) {
+            return checkpointDraft().then(function (saved) {
+                if (!saved) throw new Error('Your turn is kept here. Save recovery could not finish; try again before continuing.');
+                undispatchedConversationKey = null;
+                return postJson(urls.interview, attempt).then(function (result) { return {result: result, attempt: attempt}; });
             });
-            proposalDrafts[target.proposal_key] = draft;
-            selectedProposalKey = target.proposal_key;
-            correctionTarget = null;
-            if (textarea.value === attempt.statement) textarea.value = correctionDraft || '';
-            else correctionInputs[target.proposal_key] = textarea.value;
-            if (textarea.value === (correctionDraft || '')) delete correctionInputs[target.proposal_key];
-            correctionDraft = null;
-            renderProposals(proposals);
-            setStatus((data.response || 'I updated the suggestion.') + ' Review the fields and confirm when they are right. Nothing is saved yet.', 'ok');
-        }).catch(function (error) { setStatus(error.message, 'error'); })
-        .finally(function () { interviewBusy = false; addButton.disabled = false; refreshDraftLabel(); });
+        }).then(function (completed) {
+            var result = completed.result, attempt = completed.attempt;
+            if (!result.response.ok) {
+                if ([400, 404, 409].indexOf(result.response.status) !== -1) {
+                    pendingConversation = null; undispatchedConversationKey = null;
+                }
+                throw new Error(result.payload.message || 'Your words could not be organized. Your input is kept.');
+            }
+            var data = result.payload;
+            if (data.success !== true || data.request_id !== attempt.request_id || data.saved !== false || data.publishes !== false ||
+                data.base_revision !== attempt.expected_draft_version || !Array.isArray(data.proposals)) throw new Error('No valid turn arrived. Retry to recover the same turn.');
+            pendingConversation = null;
+            undispatchedConversationKey = null;
+            if (generation !== conversationGeneration) return;
+            attachments = attachments.filter(function (row) { return attempt.source_keys.indexOf(row.source_key) === -1; });
+            if (submittedText !== null && textarea.value === submittedText) textarea.value = '';
+            if (target && data.proposals.length) {
+                delete proposalDrafts[target.proposal_key]; delete correctionInputs[target.proposal_key];
+                correctionTarget = null; correctionDraft = null;
+            }
+            newestProposalKeys = data.proposals.map(function (row) { return row.proposal_key; });
+            if (newestProposalKeys.length) selectedProposalKey = newestProposalKeys[0];
+            lastAcknowledgement = data.response;
+            renderAttachments(); refreshDraftLabel();
+            return loadParentCandidates().then(load).then(function () {
+                if (generation !== conversationGeneration || navigationEpoch !== conversationNavigationEpoch || guideHidden || screen !== inputScreen) return;
+                if (textarea.value.trim()) return;
+                if (data.proposals.length) renderProposals(proposals);
+                else {
+                    if (options.question && data.next_question && seenQuestions.indexOf(data.next_question) !== -1) {
+                        showScreen('optional'); setStatus('We already covered that question. You can add another detail or continue.', 'ok'); return;
+                    }
+                    showScreen('input', false);
+                    questionPrompt.textContent = data.next_question || 'What would you like to add or change?';
+                    questionContext.textContent = data.response; questionContext.hidden = !data.response;
+                    if (data.next_question) seenQuestions.push(data.next_question);
+                }
+                setStatus(data.response + (data.proposals.length ? ' Review and confirm the changes when they are right.' : ''), 'ok');
+            }).then(checkpointDraft);
+        }).catch(function (error) { setStatus(error.message || 'The response did not arrive. Your words are kept; retry the same turn to recover it.', 'error'); })
+        .finally(function () {
+            endActivity(activity); interviewBusy = false; addButton.disabled = false;
+            document.getElementById('resume-intake-add-label').textContent = pendingConversation ? 'Recover turn' : 'Continue';
+            refreshDraftLabel(); scheduleDraft();
+        });
     }
+    function submitCorrection() { return sendConversation(); }
     function submit(event, mode) {
         if (event) event.preventDefault();
         if (mode === 'guide' && correctionTarget) { submitCorrection(); return; }
         mode = mode || 'guide';
+        if (mode === 'guide' && conversationSupported && root.getAttribute('data-interview-enabled') === 'true' && !attachments.some(function (row) { return row.kind === 'document' && row.status !== 'cancelled'; })) {
+            sendConversation(); return;
+        }
         if (addOperation) return;
         if (pendingAdd && pendingAdd.mode !== mode) {
             setStatus('An earlier submission needs its response recovered first. Return to that submission and retry it; your newer input is kept.', 'error'); return;
@@ -1224,6 +1761,9 @@
                 setStatus('Finish transcribing or cancel the recording before continuing. Your words and audio are kept.', 'error'); return;
             }
             var request = buildRequestParts(mode);
+            // Documents enter source extraction; accompanying words enter
+            // conversation after the document receipt so commands stay commands.
+            if (mode === 'guide' && conversationSupported && root.getAttribute('data-interview-enabled') === 'true') request.text = null;
             if (!request.text && !request.items.length && !request.attachments.length) {
                 setStatus('Add something before saving.', 'error'); return;
             }
@@ -1289,6 +1829,7 @@
                     else showScreen(savedCount ? 'next' : 'input');
                     receiptBox.hidden = !failure.length;
                 }
+                if (attempt.mode === 'guide' && conversationSupported && !failure.length && textarea.value.trim()) return sendConversation();
             });
         }).catch(function (error) {
             setStatus(error.name !== 'TypeError' && error.message ? error.message : 'The connection dropped before a receipt arrived. Your input is kept. Retry the same submission to find out whether it was received.', 'error');
@@ -1501,6 +2042,8 @@
     /* -- guide --------------------------------------------------------- */
 
     function hideGuide() {
+        if (window.PeerSlateResumeFieldVoice) window.PeerSlateResumeFieldVoice.stop();
+        conversationNavigationEpoch += 1;
         guideHidden = true; guideDismissed = true;
         // Leaving stops capture immediately. onstop keeps the local blob; it
         // never starts cloud transcription after the member has left.
@@ -1512,8 +2055,10 @@
         if (editorSection) editorSection.classList.remove('resume-editor--onboarding');
         renderActivity(); syncRecordingCancel();
         reopenButton.focus({preventScroll: true});
+        scheduleDraft();
     }
     function reopenGuide() {
+        if (window.PeerSlateResumeFieldVoice) window.PeerSlateResumeFieldVoice.stop();
         guideHidden = false; root.hidden = false; reopenButton.hidden = true;
         if (editorSection) editorSection.classList.add('resume-editor--onboarding');
         document.body.classList.add('resume-onboarding-open');
@@ -1521,6 +2066,7 @@
         renderActivity();
         if (heldRecording) setStatus('Your recording is kept here. Choose Transcribe recording when you’re ready.', 'ok');
         showScreen(screen);
+        refreshActualPreview();
     }
     function setGuideStatus(status) {
         if (guideBusy) return;
@@ -1545,55 +2091,20 @@
           });
     }
     function nextQuestion() {
-        if (interviewBusy) return;
-        if (correctionTarget) { setStatus('Review this correction or return to the suggestion before asking another question. Your words are kept.', 'ok'); return; }
+        if (interviewBusy || correctionTarget) return;
         showScreen('input');
-        if (root.getAttribute('data-interview-enabled') !== 'true') {
-            questionPrompt.textContent = 'What contribution are you proud of, and what changed because of it?';
-            questionContext.textContent = 'AI guidance is unavailable here. You can still add your own words or finish for now.';
-            questionContext.hidden = false; textarea.focus(); return;
+        if (root.getAttribute('data-interview-enabled') !== 'true' || !conversationSupported) {
+            questionContext.textContent = 'AI guidance is unavailable. You can keep typing or enter details manually.';
+            questionContext.hidden = false; return;
         }
-        interviewBusy = true;
-        document.getElementById('resume-intake-next-question').disabled = true;
-        document.getElementById('resume-intake-new-question').disabled = true;
-        setStatus('Preparing a question from your confirmed experience…', 'ok');
-        var prepare = pendingInterview ? Promise.resolve(pendingInterview) : send(editorLists.getAttribute('data-workspace-url')).then(function (result) {
-            if (!result.response.ok || !Number.isInteger(result.payload.draft_version)) throw new Error('Your saved context is unavailable. You can keep typing.');
-            // This is a guidance request, not an invented member statement.
-            // Full source words are submitted separately through explicit Continue.
-            pendingInterview = {request_id: requestId(), expected_draft_version: result.payload.draft_version,
-                statement: 'Help me continue my résumé interview using my saved experience. ' +
-                    (lastConfirmedKey ? 'Focus on the most recently confirmed entry ' + lastConfirmedKey + '. ' : '') +
-                    'Ask one short question about a genuine gap or a useful new example. Do not ask again for known employers, dates or relationships. I can ask another question or finish this section.'};
-            return pendingInterview;
-        });
-        prepare.then(function (attempt) { return postJson(urls.interview, attempt); }).then(function (result) {
-            if (!result.response.ok) {
-                if ([400, 409].indexOf(result.response.status) !== -1) pendingInterview = null;
-                throw new Error(result.payload.message || 'AI guidance is unavailable. Your input is kept.');
-            }
-            var data = result.payload;
-            if (data.success !== true || data.saved !== false || data.publishes !== false || data.base_revision !== pendingInterview.expected_draft_version || typeof data.next_question !== 'string') throw new Error('The guidance response was incomplete. Your input is kept.');
-            pendingInterview = null;
-            if (data.next_question && seenQuestions.indexOf(data.next_question) === -1) {
-                questionPrompt.textContent = data.next_question;
-                questionContext.textContent = typeof data.response === 'string' ? data.response : '';
-                questionContext.hidden = !questionContext.textContent;
-                seenQuestions.push(data.next_question);
-                setStatus('Use what helps. You can skip this question or finish for now.', 'ok');
-            } else {
-                showScreen('optional');
-                setStatus('We’ve already covered that question. You can add an example or finish for now.', 'ok');
-            }
-        }).catch(function (error) {
-            questionPrompt.textContent = 'What would you like to add about your work?';
-            questionContext.hidden = true;
-            setStatus(error.message || 'AI guidance is unavailable. You can keep typing or finish for now.', 'error');
-        }).finally(function () {
-            interviewBusy = false; document.getElementById('resume-intake-next-question').disabled = false;
-            document.getElementById('resume-intake-new-question').disabled = false;
-            document.getElementById('resume-intake-new-question').textContent = pendingInterview ? 'Try guidance again' : 'Ask another question';
-        });
+        var optionalTopic = conversationIntent === 'story' || conversationIntent === 'project';
+        var instruction = conversationIntent === 'story'
+            ? 'Ask one concise optional question about my personal story: a hobby, turning point, or something I care about.'
+            : conversationIntent === 'project'
+                ? 'Ask one concise optional question about a project: what I did and what changed.'
+                : 'Ask one concise optional question about a useful gap in my supplied work.';
+        return sendConversation({statement: instruction + ' Keep known facts and existing suggestions unchanged.',
+            selectedTarget: !optionalTopic && lastConfirmedKey ? 'record:' + lastConfirmedKey : null, question: true});
     }
     function on(id, action) {
         var button = document.getElementById('resume-intake-' + id);
@@ -1642,8 +2153,12 @@
         }
         var parentKey = null;
         if (type === 'accomplishment') {
+            if (!parentCatalogAvailable) {
+                setStatus(parentUnavailableMessage, 'error');
+                return;
+            }
             parentKey = parentSelect ? parentSelect.value : '';
-            if (!parentKey) {
+            if (!parentKey || !parentCandidates.some(function (candidate) { return candidate.record_key === parentKey; })) {
                 setStatus(
                     parentCandidates.length
                         ? 'Choose which entry this Impact belongs to.'
@@ -1675,6 +2190,7 @@
         renderQueued();
         refreshDraftLabel();
         setStatus('Queued. Choose Save queued details privately when you’re ready.', 'ok');
+        scheduleDraft();
     });
     typeSelect.addEventListener('change', syncDirectFields);
     var credentialStatusInput = document.getElementById('resume-intake-credential-status');
@@ -1683,9 +2199,20 @@
     }
     composer.addEventListener('submit', function (event) { submit(event, 'guide'); });
     manualSave.addEventListener('click', function () { submit(null, 'manual'); });
-    textarea.addEventListener('input', refreshDraftLabel);
+    textarea.addEventListener('input', function () { refreshDraftLabel(); scheduleDraft(); });
+    manual.addEventListener('input', scheduleDraft);
+    manual.addEventListener('change', scheduleDraft);
+    proposalList.addEventListener('input', scheduleDraft);
+    proposalList.addEventListener('change', scheduleDraft);
     fileInput.addEventListener('change', function () {
         Array.prototype.forEach.call(fileInput.files, function (file) {
+            var retained = attachments.find(function (row) {
+                return row.kind === 'document' && row.status === 'needs_reattach' && row.filename === file.name;
+            });
+            if (retained) {
+                retained.file = file; retained.status = 'selected'; retained.message = null;
+                retained.declared_content_type = file.type || 'application/octet-stream'; return;
+            }
             attachments.push({
                 client_key: requestId(),
                 kind: 'document',
@@ -1699,7 +2226,8 @@
         fileInput.value = '';
         renderAttachments();
         refreshDraftLabel();
-        setStatus('Attached. Nothing is uploaded until you press Add.', 'ok');
+        scheduleDraft();
+        setStatus('Attached. Nothing is uploaded until you choose Continue.', 'ok');
     });
     cancelRecordingButton.addEventListener('click', function () {
         recordingGeneration += 1;
@@ -1739,8 +2267,20 @@
         textarea.value = correctionDraft || ''; correctionDraft = null; correctionTarget = null;
         refreshDraftLabel(); return true;
     }
-    on('back', function () { if (leaveCorrection()) renderProposals(proposals); else showScreen(screen === 'input' ? 'welcome' : screen === 'sharing' ? 'optional' : 'input'); });
-    on('next-question', nextQuestion);
+    on('back', function () {
+        var frame = navigationHistory.pop();
+        if (!frame) return;
+        leaveCorrection();
+        selectedProposalKey = frame.selected_proposal_key;
+        conversationIntent = frame.conversation_intent;
+        if (!textarea.value.trim()) textarea.value = frame.text || '';
+        questionPrompt.textContent = frame.question; questionContext.textContent = frame.context; questionContext.hidden = !frame.context;
+        if ((frame.screen === 'review' || frame.screen === 'correction') && proposals.length) {
+            restoringDraft = true; renderProposals(proposals, false, frame.screen); restoringDraft = false;
+        } else showScreen(frame.screen === 'review' || frame.screen === 'correction' ? 'input' : frame.screen, true, true);
+        scheduleDraft();
+    });
+    on('next-question', function () { showScreen('input'); textarea.focus(); });
     on('new-question', nextQuestion);
     on('retry-guide', function () { if (pendingGuide) setGuideStatus(pendingGuide.status); });
     on('review-pending', function () { if (interviewBusy) return; leaveCorrection(); renderProposals(proposals); });
@@ -1748,10 +2288,18 @@
     on('input-finish', function () { if (interviewBusy) return; leaveCorrection(); showScreen('optional'); });
     on('next-finish', function () { showScreen('optional'); });
     on('optional-next', function () { showScreen('sharing'); });
-    on('view', function () { hideGuide(); var preview = document.getElementById('resume-editor-review'); if (preview) preview.click(); });
+    on('view', function () {
+        checkpointDraft().then(function (saved) {
+            if (conversationSupported && !saved) return;
+            hideGuide(); refreshActualPreview();
+            var documentRegion = document.getElementById('resume-intake-document');
+            if (documentRegion) documentRegion.scrollIntoView({behavior: 'smooth', block: 'start'});
+            else { var preview = document.getElementById('resume-editor-review'); if (preview) preview.click(); }
+        });
+    });
     on('keep-adding', function () { showScreen('input'); textarea.focus(); });
-    on('add-example', function () { conversationIntent = 'project'; correctionTarget = null; showScreen('input'); questionPrompt.textContent = 'Tell us about a project: what did you do, and what changed?'; questionContext.hidden = true; textarea.focus(); });
-    on('add-story', function () { conversationIntent = 'story'; correctionTarget = null; showScreen('input'); questionPrompt.textContent = 'What outside work helps people understand you?'; questionContext.textContent = 'A hobby, a turning point, or something you care about. This is optional and stays private.'; questionContext.hidden = false; textarea.focus(); });
+    on('add-example', function () { correctionTarget = null; showScreen('input'); selectedProposalKey = null; conversationIntent = 'project'; questionPrompt.textContent = 'Tell us about a project: what did you do, and what changed?'; questionContext.textContent = ''; questionContext.hidden = true; textarea.focus(); });
+    on('add-story', function () { correctionTarget = null; showScreen('input'); selectedProposalKey = null; conversationIntent = 'story'; questionPrompt.textContent = 'What outside work helps people understand you?'; questionContext.textContent = 'A hobby, a turning point, or something you care about. This is optional and stays private.'; questionContext.hidden = false; textarea.focus(); });
     on('add-photo', function () {
         hideGuide();
         var target = document.getElementById('resume-media');
@@ -1767,8 +2315,18 @@
     window.addEventListener('pagehide', function () { recordingGeneration += 1; stopRecording(); });
     protectNavigation();
     syncDirectFields();
+    if (window.PeerSlateResumeFieldVoice) document.querySelectorAll('#resume-intake-manual textarea, #resume-intake-wording').forEach(function (field) {
+        var label = document.querySelector('label[for="' + field.id + '"]');
+        window.PeerSlateResumeFieldVoice.bind(field, label ? label.textContent : 'Your words', setStatus);
+    });
     renderQueued();
     renderAttachments();
+    document.addEventListener('resume-private-draft-changed', function () {
+        // Refresh only the saved projection and target catalog. Never reload
+        // the active guide or submit its unfinished text and pending choices.
+        refreshActualPreview();
+        loadParentCandidates().then(function () { fillParentSelect(parentSelect); });
+    });
     loadParentCandidates().then(function () { fillParentSelect(parentSelect); });
     load().catch(function () { if (!initialized) showScreen('input', false); setStatus('The guide could not be loaded. You can edit manually or reopen it to try again.', 'error'); });
 })();

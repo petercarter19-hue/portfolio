@@ -499,6 +499,10 @@ class InMemoryResumeIntakeRepository:
     # them with the same owner isolation as every other intake record.
     supports_drafts = True
     supports_atomic_source_actions = True
+    # This snapshot adapter persists turn reservations, dependent source
+    # bindings and proposal revisions together. The SQL adapter has no
+    # equivalent reviewed procedure and must not inherit this capability.
+    supports_resume_conversation = True
 
     def __init__(self) -> None:
         self._owners: dict[str, dict[str, Any]] = {}
@@ -532,6 +536,14 @@ class InMemoryResumeIntakeRepository:
                 replacement["drafts"] = copy.deepcopy(
                     (current or {}).get("drafts") or {}
                 )
+                if 'draft_revision' in (current or {}):
+                    replacement['draft_revision'] = current['draft_revision']
+                if command.get('procedure') == COMMAND_PROCEDURES['purge_source']:
+                    # Redact the current acknowledged draft at commit, rather
+                    # than restoring a detached older draft. This does not
+                    # repeat the source/proposal lifecycle mutations.
+                    from services.resume_intake_proposals import redact_source_drafts
+                    redact_source_drafts(replacement, command['payload']['source_key'])
             if (
                 isinstance(command, dict)
                 and command.get("procedure") == COMMAND_PROCEDURES["transcribe_recording"]
@@ -584,7 +596,18 @@ class InMemoryResumeIntakeRepository:
                 existing = empty_intake_snapshot()
                 self._owners[owner_user_key] = existing
             existing.setdefault("drafts", {})
-            return mutator(existing)
+            # Capture legacy row versions BEFORE expiry/discard can remove the
+            # only evidence of their high-water mark. Reads do not advance it.
+            revision = max(int(existing.get('draft_revision') or 0),
+                max((int(row.get('version') or 0) for row in existing['drafts'].values()), default=0))
+            if revision:
+                existing['draft_revision'] = revision
+            result = mutator(existing)
+            revision = max(int(existing.get('draft_revision') or 0),
+                max((int(row.get('version') or 0) for row in existing['drafts'].values()),default=0))
+            if revision:
+                existing['draft_revision'] = revision
+            return result
 
     def claim_recording(self, owner_user_key, request_id, payload, *, now=None):
         moment = now or datetime.now(timezone.utc)
@@ -674,6 +697,10 @@ class InMemoryIntakeUnitOfWork:
         self._intake_state = None
         self._draft_state = None
         self._catalog_state = None
+        self._catalog_store = None
+        self._touched_owners = set()
+        self.supports_atomic_composition = False
+        self._draft_lock = None
 
     def __enter__(self):
         with self.repository._lock:
@@ -682,14 +709,29 @@ class InMemoryIntakeUnitOfWork:
             draft_repository = getattr(self.draft_service, "repository", None)
             catalog = getattr(self.draft_service, "catalog", None)
             if draft_repository is not None:
+                from services.resume_draft_repository import InMemoryResumeDraftRepository
+                if isinstance(draft_repository, InMemoryResumeDraftRepository):
+                    self._draft_lock = draft_repository._lock
+                    self._draft_lock.acquire()
                 self._draft_state = copy.deepcopy(getattr(draft_repository, "_owners", {}))
             if catalog is not None:
-                self._catalog_state = copy.deepcopy(getattr(catalog, "_owners", {}))
+                from services.resume_draft_repository import InMemoryCanonicalCatalog
+                if isinstance(catalog, InMemoryCanonicalCatalog):
+                    self._catalog_store = catalog
+                else:
+                    from services.entry_policy_repository import InMemoryEntryPolicyRepository
+                    policy_store = getattr(getattr(catalog, 'policy', None), 'repository', None)
+                    if isinstance(policy_store, InMemoryEntryPolicyRepository):
+                        self._catalog_store = policy_store
+                if self._catalog_store is not None:
+                    self._catalog_state = copy.deepcopy(self._catalog_store._owners)
+                    self.supports_atomic_composition = self._draft_lock is not None
         return self
 
     def apply_canonical(self, owner, payload, projected):
         if self.draft_service is None:
             raise ResumeIntakeStoreUnavailable("Resume drafts are unavailable.")
+        self._touched_owners.add(owner)
         result = self.draft_service.commit(owner, payload)
         return result.get("item") or projected
 
@@ -703,6 +745,7 @@ class InMemoryIntakeUnitOfWork:
         }
 
     def commit(self, owner, snapshot, *, procedure=None, request_id=None, payload=None):
+        self._touched_owners.add(owner)
         command = None
         if procedure is not None:
             command = {
@@ -715,18 +758,39 @@ class InMemoryIntakeUnitOfWork:
 
     def rollback(self) -> None:
         if self._intake_state is not None:
-            self.repository._restore(self._intake_state, preserve_live_drafts=True)
+            with self.repository._lock:
+                for owner in self._touched_owners:
+                    live_drafts = copy.deepcopy((self.repository._owners.get(owner) or {}).get('drafts') or {})
+                    live_revision = int((self.repository._owners.get(owner) or {}).get('draft_revision') or 0)
+                    if owner in self._intake_state:
+                        self.repository._owners[owner] = copy.deepcopy(self._intake_state[owner])
+                        self.repository._owners[owner]['drafts'] = live_drafts
+                        if live_revision:
+                            self.repository._owners[owner]['draft_revision'] = live_revision
+                    else:
+                        self.repository._owners.pop(owner, None)
         if self.draft_service is not None:
             draft_repository = getattr(self.draft_service, "repository", None)
             catalog = getattr(self.draft_service, "catalog", None)
             if draft_repository is not None and self._draft_state is not None:
-                draft_repository._owners = self._draft_state
-            if catalog is not None and self._catalog_state is not None:
-                catalog._owners = self._catalog_state
+                self._restore_owners(draft_repository, self._draft_state)
+            if self._catalog_store is not None and self._catalog_state is not None:
+                self._restore_owners(self._catalog_store, self._catalog_state)
+
+    def _restore_owners(self, store, before):
+        for owner in self._touched_owners:
+            if owner in before:
+                store._owners[owner] = copy.deepcopy(before[owner])
+            else:
+                store._owners.pop(owner, None)
 
     def __exit__(self, exc_type, exc, traceback):
-        if exc_type is not None:
-            self.rollback()
+        try:
+            if exc_type is not None:
+                self.rollback()
+        finally:
+            if self._draft_lock is not None:
+                self._draft_lock.release()
         return False
 
 

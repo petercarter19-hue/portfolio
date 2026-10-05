@@ -31,7 +31,12 @@
     {% if words.education_status %}<p class="resume-publication__education-status">{{ {'planned': 'Planned', 'in_progress': 'In progress', 'completed': 'Completed', 'incomplete': 'Incomplete', 'withdrawn': 'Withdrawn'}.get(words.education_status, words.education_status | replace('_', ' ') | capitalize) }}</p>{% endif %}
     {% if words.location_text %}<p>{{ words.location_text }}</p>{% endif %}
     {% if words.degree_name or words.field_of_study %}<p>{{ words.degree_name or '' }}{% if words.degree_name and words.field_of_study %} · {% endif %}{{ words.field_of_study or '' }}</p>{% endif %}
-    {% if words.summary or words.skill_summary or words.wording %}<p>{{ words.summary or words.skill_summary or words.wording }}</p>{% endif %}
+    {% if words.summary or words.skill_summary or words.wording %}
+    {% set lines = (words.summary or words.skill_summary or words.wording).split('\n') %}
+    {% if lines | length > 1 %}<ul>{% for line in lines %}{% if line.strip() %}<li>{{ line }}</li>{% endif %}{% endfor %}</ul>
+    {% else %}<p>{{ lines[0] }}</p>{% endif %}
+    {% endif %}
+    {% if item.credential_details %}<div class="resume-publication__credential-details">{% for line in item.credential_details.split('\n') %}<p>{{ line }}</p>{% endfor %}</div>{% endif %}
 </article>
 {% endmacro %}
 
@@ -84,13 +89,18 @@
     {% set entries = (public_publication.display or {}).values() | list %}
     {% set stories = entries | selectattr('presentation_section', 'equalto', 'story') | list %}
     {% set strengths = entries | selectattr('canonical_type', 'equalto', 'skill') | list %}
-    {% set experience = entries | rejectattr('presentation_section', 'equalto', 'story') | rejectattr('canonical_type', 'equalto', 'skill') | list %}
+    {% set experience = entries | selectattr('canonical_type', 'equalto', 'role') | list %}
+    {% set education = entries | selectattr('canonical_type', 'equalto', 'education') | list %}
+    {% set credentials = entries | selectattr('canonical_type', 'equalto', 'credential') | list %}
+    {% set supplements = entries | rejectattr('presentation_section', 'equalto', 'story') | rejectattr('canonical_type', 'equalto', 'skill') | rejectattr('canonical_type', 'equalto', 'role') | rejectattr('canonical_type', 'equalto', 'education') | rejectattr('canonical_type', 'equalto', 'credential') | list %}
     <div class="resume-publication__layout">
     <nav class="resume-publication__sections" aria-label="Resume sections">
         <a href="#{{ 'resume-preview-title' if is_private_preview else 'resume-publication-title' }}" aria-current="location">Overview</a>
         {% if stories %}<a href="#resume-story">My Story</a>{% endif %}
         {% if experience %}<a href="#resume-experience">Experience</a>{% endif %}
-        {% if strengths %}<a href="#resume-strengths">Strengths</a>{% endif %}
+        {% if education %}<a href="#resume-education">Education</a>{% endif %}
+        {% if credentials %}<a href="#resume-credentials">Credentials</a>{% endif %}
+        {% if strengths %}<a href="#resume-strengths">Skills</a>{% endif %}
     </nav>
     <div class="owner-app__panel resume-publication__panel">
         <header class="resume-publication__intro">
@@ -114,16 +124,25 @@
             {% endif %}
             {% if experience %}
             <section id="resume-experience" class="resume-publication__section">
-                <h2>Experience &amp; learning</h2>
+                <h2>Experience</h2>
                 <div class="resume-publication__experience{% if public_publication.media.experience_support %} resume-publication__experience--illustrated{% endif %}">
                 <div class="resume-publication__timeline">{% for item in experience %}{{ resume_entry(item) }}{% endfor %}</div>
                 {{ resume_media('experience_support') }}
                 </div>
             </section>
             {% endif %}
+            {% if education %}<section id="resume-education" class="resume-publication__section"><h2>Education</h2>{% for item in education %}{{ resume_entry(item) }}{% endfor %}</section>{% endif %}
+            {% if credentials %}<section id="resume-credentials" class="resume-publication__section"><h2>Credentials</h2>{% for item in credentials %}{{ resume_entry(item) }}{% endfor %}</section>{% endif %}
+            {% for section, heading in [('professional_summary', 'Professional summary'), ('awards', 'Awards'), ('independent_projects', 'Independent Projects'), ('contact_details', 'Contact details'), ('entry', 'Other experience')] %}
+            {% set rows = supplements | selectattr('presentation_section', 'equalto', section) | list %}
+            {% if rows %}<section class="resume-publication__section"><h2>{{ heading }}</h2>{% for item in rows %}{{ resume_entry(item) }}{% endfor %}</section>{% endif %}
+            {% endfor %}
+            {% set remaining = namespace(rows=[]) %}
+            {% for item in supplements %}{% if item.presentation_section not in ['professional_summary', 'awards', 'independent_projects', 'contact_details', 'entry'] %}{% set remaining.rows = remaining.rows + [item] %}{% endif %}{% endfor %}
+            {% if remaining.rows %}<section class="resume-publication__section"><h2>Other experience</h2>{% for item in remaining.rows %}{{ resume_entry(item) }}{% endfor %}</section>{% endif %}
             {% if strengths %}
             <section id="resume-strengths" class="resume-publication__section">
-                <h2>Strengths</h2>
+                <h2>Skills</h2>
                 <div class="resume-publication__strengths">{% for item in strengths %}{{ resume_entry(item) }}{% endfor %}</div>
             </section>
             {% endif %}
