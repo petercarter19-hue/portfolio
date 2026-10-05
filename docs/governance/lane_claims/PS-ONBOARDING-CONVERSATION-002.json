@@ -56,7 +56,8 @@
     "docs/governance/lane_claims/evidence/PS-ONBOARDING-CONVERSATION-002.md",
     "static/js/resume-media.js",
     "scripts/run_mvp1_acceptance_browser_tests.py",
-    "tests/test_my_data_drafts.py"
+    "tests/test_my_data_drafts.py",
+    "tests/test_mvp1_acceptance_browser.py"
   ],
   "domains": [
     "runtime:resume:onboarding",
