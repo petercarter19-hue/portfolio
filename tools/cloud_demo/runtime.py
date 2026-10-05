@@ -21,13 +21,24 @@ from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from werkzeug.security import check_password_hash
 from werkzeug.wrappers import Request, Response
 
-from tools.local_reviewer.persistence import SnapshotStore
+from tools.local_reviewer.persistence import SnapshotStore, atomic_write
 from tools.local_reviewer.runtime import build_fixture, offline_html, OFFLINE_CSP
 
 SESSION = '__Host-peerslate-demo'
 LOGIN = '__Host-peerslate-demo-login'
 MAX_BODY = 4_000_000
 MAX_STATE = 16_000_000
+
+
+def sync_directory(directory):
+    """Persist a new checkpoint name before its associated state is cleared."""
+    if os.name != 'posix':
+        return  # The hosted cloud demo runs on Linux; Windows only runs tests.
+    descriptor = os.open(directory, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
 
 
 @dataclass(frozen=True)
@@ -149,12 +160,15 @@ class Sessions:
 
 
 class Boundary:
-    def __init__(self, config, app, endpoints, store, *, clock=time.time):
+    def __init__(self, config, app, endpoints, store, *, fresh_state=None, clock=time.time):
         self.config = config.validate()
         self.app, self.endpoints, self.store = app, frozenset(endpoints), store
         self.lock = threading.RLock()
         self.sessions = Sessions(config, clock)
         self.signer = URLSafeTimedSerializer(config.signing_key, salt='cloud-demo-login')
+        self.reset_signer = URLSafeTimedSerializer(config.signing_key, salt='cloud-demo-reset')
+        self.fresh_state = store.state.capture() if fresh_state is None else fresh_state
+        store.state.validate(self.fresh_state)
 
     @staticmethod
     def error(message, status):
@@ -188,6 +202,56 @@ class Boundary:
         response.set_cookie(SESSION, self.sessions.create(), secure=True, httponly=True, samesite='Strict', max_age=self.config.ttl)
         response.delete_cookie(LOGIN, secure=True, httponly=True, samesite='Strict')
         return response
+
+    def reset_demo(self, environ, session_token):
+        """Confirmed, recoverable reset of this authenticated site's fixture."""
+        method = environ['REQUEST_METHOD']
+        if method == 'GET':
+            ticket = self.reset_signer.dumps({
+                'session': self.sessions.digest(session_token),
+                'namespace': self.config.namespace,
+                'generation': self.store.generation,
+            })
+            page = ('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+                    '<title>Reset fictional demo</title><main><h1>Reset this fictional demo?</h1>'
+                    '<p>This clears saved fictional content on this site after saving a recovery copy. Other sites are unaffected.</p>'
+                    '<form method="post" action="/demo/reset"><input type="hidden" name="ticket" value="' + html.escape(ticket, quote=True) + '">'
+                    '<button type="submit">Reset this demo</button></form><p><a href="/app/resume">Cancel</a></p></main></html>')
+            return Response(page, content_type='text/html; charset=utf-8')
+        if method != 'POST':
+            return self.error('Method unavailable', 405)
+        if int(environ.get('CONTENT_LENGTH') or 0) > 2000:
+            return self.error('Reset request too large', 413)
+        try:
+            ticket = Request(environ).form.get('ticket', '')
+            signed = self.reset_signer.loads(ticket, max_age=300)
+        except (BadSignature, SignatureExpired, ValueError):
+            return self.error('Open reset confirmation again', 403)
+        expected = {'session': self.sessions.digest(session_token),
+                    'namespace': self.config.namespace, 'generation': self.store.generation}
+        if signed != expected:
+            return self.error('Saved content changed. Open reset confirmation again.', 409)
+        current = self.store.state.capture()
+        saved = self.store.path.read_bytes()
+        if self.store.unpack(saved)['state'] != current:
+            raise ValueError('Saved and active demo state differ')
+        directory = self.config.data / 'checkpoints'
+        if directory.is_symlink():
+            raise ValueError('Checkpoint directory is a link')
+        directory.mkdir(exist_ok=True)
+        sync_directory(self.config.data)
+        name = time.strftime('%Y%m%dT%H%M%SZ', time.gmtime()) + '-' + secrets.token_hex(8) + '.json'
+        checkpoint = directory / name
+        if checkpoint.exists() or checkpoint.is_symlink():
+            raise ValueError('Checkpoint name collision')
+        atomic_write(checkpoint, saved)
+        sync_directory(directory)
+        self.store.state.restore(self.fresh_state)
+        environ['peerslate.reset_save'] = True
+        return Response('<!doctype html><html lang="en"><meta charset="utf-8"><title>Demo reset</title>'
+                        '<main><h1>Fictional demo reset</h1><p>A recovery copy was saved. This site is ready for a fresh test.</p>'
+                        '<a href="/app/resume">Open your fresh demo</a></main></html>',
+                        content_type='text/html; charset=utf-8')
 
     def dispatch(self, environ):
         method, path = environ.get('REQUEST_METHOD', ''), environ.get('PATH_INFO', '')
@@ -229,6 +293,8 @@ class Boundary:
             response = Response(status=303, headers={'Location': '/login'})
             response.delete_cookie(SESSION, secure=True, httponly=True, samesite='Strict')
             return response
+        if path == '/demo/reset':
+            return self.reset_demo(environ, token)
         if path == '/':
             return Response(status=303, headers={'Location': '/app/resume'})
         if path.startswith(('/__', '/auth/')):
@@ -256,7 +322,7 @@ class Boundary:
             start = body.find(b'<body')
             position = body.find(b'>', start) + 1 if start >= 0 else -1
             if position > 0:
-                banner = ('<aside role="note" style="padding:10px;background:#e8f1fb;color:#17324d"><strong>FICTIONAL CLOUD DEMO.</strong> Separate fictional content saved in this cloud demo. Files up to 4 MB. AI and speech are unavailable. Review and save deliberately; publishing stays inside your authenticated demo.</aside>').encode()
+                banner = ('<aside role="note" style="padding:10px;background:#e8f1fb;color:#17324d"><strong>FICTIONAL CLOUD DEMO.</strong> Separate fictional content saved in this cloud demo. Files up to 4 MB. AI and speech are unavailable. Review and save deliberately; publishing stays inside your authenticated demo. <a href="/demo/reset">Reset this demo</a></aside>').encode()
                 response.set_data(body[:position] + banner + body[position:])
         return response
 
@@ -268,7 +334,7 @@ class Boundary:
             try:
                 response = self.dispatch(environ)
                 current = self.store.state.capture()
-                if current != previous:
+                if current != previous or environ.get('peerslate.reset_save'):
                     if len(self.store.pack(current, self.store.generation + 1)) > MAX_STATE:
                         raise ValueError('Demo snapshot limit')
                     self.store.save(current)
@@ -307,6 +373,7 @@ def create_application(source: Path, config: Config, stack: ExitStack):
                      PEERSLATE_TRUST_EASYAUTH_HEADERS=False,
                      PEERSLATE_MEMBER_VISITOR_AI_ENABLED=False,
                      MEMBER_VISITOR_AI_SERVICE=None, MEMBER_VISITOR_AI_RUNTIME=None)
+    fresh_state = state.capture()
     store = SnapshotStore(config.data / 'state.json', state, namespace=config.namespace)
     if store.path.exists():
         if store.path.stat().st_size > MAX_STATE:
@@ -315,4 +382,4 @@ def create_application(source: Path, config: Config, stack: ExitStack):
     else:
         # New dedicated empty fixture only; never load/copy/reset the PC state.
         store.save()
-    return Boundary(config, app, endpoints, store)
+    return Boundary(config, app, endpoints, store, fresh_state=fresh_state)

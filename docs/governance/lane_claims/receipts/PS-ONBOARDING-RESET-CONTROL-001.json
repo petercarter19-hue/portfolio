@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-ONBOARDING-RESET-CONTROL-001",
+  "candidate_sha": "6db6971753add5a6d0e9906cbe1d008a64d1a185",
+  "reviewer_ref": "session:01a1090e-a4e4-7122-87cc-def75e8859c1",
+  "result": "pass",
+  "reviewed_at": "2026-10-04T22:44:47Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-ONBOARDING-RESET-CONTROL-001.md",
+  "review_type": "independent"
+}

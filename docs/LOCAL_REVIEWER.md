@@ -14,6 +14,15 @@ and opens the empty resume page. Personal data and AI allowances are preserved.
 Personal selection refuses reset before stopping the site. The PC must remain
 awake while the demo runs.
 
+You can also reset from the fictional onboarding Resume page: click **Reset
+this demo**, read the confirmation, then click **Reset this demo** again. This
+saves a recovery checkpoint before clearing only the fictional workspace. The
+personal site at port8443 and the Grok/Muse cloud demos are unaffected. If the
+confirmation is stale because saved content changed, open it again. The reset
+link does not appear in the personal workspace. An unresolved AI provider
+reservation blocks this browser reset until it is resolved under its original
+configuration.
+
 The command waits for current work to finish and refuses unresolved provider
 reservations. If an error says **Fictional reset committed**, the data was already
 cleared and its checkpoint was saved. Use `Status.cmd` to check startup, then

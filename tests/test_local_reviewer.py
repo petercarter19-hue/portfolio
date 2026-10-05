@@ -12,7 +12,7 @@ import tempfile
 import threading
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from uuid import uuid4
 import zipfile
 
@@ -1127,18 +1127,23 @@ class FixtureTests(unittest.TestCase):
         manager.write(self.install / "private-access.json", config)
         identity = PrivateIdentity.from_config(config)
         stack = ExitStack(); self.addCleanup(stack.close); identity.bind_principal(stack)
+        budget = Mock()
+        budget.profiles = {"public": {"scope": "fictional-test-scope"}}
+        budget.has_active.return_value = False
+        self.fixture.private_provider_budget = budget
         manifest = {"installation": "fictional-test", "private_profile": True}
         manager.write(self.install / "installation.json", manifest)
         def client_for(store):
             boundary = Boundary(self.fixture, self.app, self.endpoints, store, self.install,
                 {"port": 53720, "source_sha": "a" * 40, "candidate_state": "reviewed-preview"},
-                "test-control-token", threading.Event())
+                "test-control-token", threading.Event(), fresh_state=self.initial)
             return Client(boundary, Response)
         def remote(client, origin, path, method="GET", **kwargs):
+            overrides = kwargs.pop("headers", {})
             return client.open(path, method=method, base_url=origin, environ_base={"REMOTE_ADDR": "127.0.0.1"},
                 headers={"X-Forwarded-Host": origin.removeprefix("https://"), "X-Forwarded-Proto": "https",
                          "Tailscale-User-Login": identity.login, "Origin": origin,
-                         "X-PeerSlate-Request": "same-origin"}, **kwargs)
+                         "X-PeerSlate-Request": "same-origin", **overrides}, **kwargs)
         personal_client = client_for(self.store)
         response = remote(personal_client, identity.origin, "/api/resume-intake/me/draft", "PUT",
                           json={"request_id": str(uuid4()), "text": "Personal fixture content that must stay private"})
@@ -1163,6 +1168,7 @@ class FixtureTests(unittest.TestCase):
             self.assertEqual(response.status_code, 200, response.data)
         page = remote(fictional_client, context.identity.origin, "/app/resume")
         self.assertEqual(page.status_code, 200); self.assertIn(b"FICTIONAL ONBOARDING WORKSPACE", page.data)
+        self.assertIn(b'href="/demo/reset"', page.data)
         self.assertNotIn(b"Personal fixture content", page.data)
         for method in ("GET", "PUT"):
             self.assertEqual(remote(fictional_client, identity.origin, "/api/resume-intake/me/draft", method,
@@ -1175,10 +1181,69 @@ class FixtureTests(unittest.TestCase):
         self.assertNotIn(b"Personal fixture content", result.data)
         saved = context.state_path.read_bytes()
         self.assertEqual(self.store.path.read_bytes(), original)
+        confirmation = remote(restarted_client, context.identity.origin, "/demo/reset")
+        self.assertEqual(confirmation.status_code, 200)
+        self.assertIn(b"Reset this fictional demo?", confirmation.data)
+        import re
+        ticket = re.search(rb'name="ticket" value="([^"]+)"', confirmation.data).group(1).decode()
+        self.assertEqual(remote(restarted_client, context.identity.origin, "/demo/reset", "POST",
+                                headers={"Origin": "https://foreign.example.test"},
+                                data={"ticket": ticket}).status_code, 403)
+        self.assertEqual(context.state_path.read_bytes(), saved)
+        changed = remote(restarted_client, context.identity.origin, "/api/resume-intake/me/draft", "PUT",
+                         json={"request_id": str(uuid4()), "text": "Fictional after confirmation",
+                               "expected_version": 3})
+        self.assertEqual(changed.status_code, 200, changed.data)
+        self.assertEqual(remote(restarted_client, context.identity.origin, "/demo/reset", "POST",
+                                data={"ticket": ticket}).status_code, 409)
+        saved = context.state_path.read_bytes()
+        confirmation = remote(restarted_client, context.identity.origin, "/demo/reset")
+        ticket = re.search(rb'name="ticket" value="([^"]+)"', confirmation.data).group(1).decode()
+        budget.has_active.return_value = True
+        self.assertEqual(remote(restarted_client, context.identity.origin, "/demo/reset", "POST",
+                                data={"ticket": ticket}).status_code, 409)
+        budget.has_active.return_value = False
+        self.assertEqual(context.state_path.read_bytes(), saved)
+        with patch.object(restarted_client.application, "checkpoint", side_effect=OSError("disk unavailable")):
+            self.assertEqual(remote(restarted_client, context.identity.origin, "/demo/reset", "POST",
+                                    data={"ticket": ticket}).status_code, 503)
+        self.assertEqual(context.state_path.read_bytes(), saved)
+        with patch.object(restarted, "save", side_effect=OSError("disk unavailable")):
+            self.assertEqual(remote(restarted_client, context.identity.origin, "/demo/reset", "POST",
+                                    data={"ticket": ticket}).status_code, 503)
+        self.assertEqual(context.state_path.read_bytes(), saved)
+        self.assertIn(b"Fictional after confirmation",
+                      remote(restarted_client, context.identity.origin, "/api/resume-intake/me/draft").data)
+        reset = remote(restarted_client, context.identity.origin, "/demo/reset", "POST", data={"ticket": ticket})
+        self.assertEqual(reset.status_code, 200, reset.data)
+        self.assertIn(b"Fictional demo reset", reset.data)
+        self.assertEqual(len(list(context.checkpoints.glob("*.json"))), 2)
+        self.assertTrue(all(path.read_bytes() == saved for path in context.checkpoints.glob("*.json")))
+        self.assertEqual(remote(restarted_client, context.identity.origin, "/demo/reset", "POST",
+                                data={"ticket": ticket}).status_code, 409)
+        self.assertEqual(len(list(context.checkpoints.glob("*.json"))), 2)
+        empty_confirmation = remote(restarted_client, context.identity.origin, "/demo/reset")
+        empty_ticket = re.search(rb'name="ticket" value="([^"]+)"', empty_confirmation.data).group(1).decode()
+        generation = restarted.generation
+        self.assertEqual(remote(restarted_client, context.identity.origin, "/demo/reset", "POST",
+                                data={"ticket": empty_ticket}).status_code, 200)
+        self.assertEqual(restarted.generation, generation + 1)
+        self.assertEqual(remote(restarted_client, context.identity.origin, "/demo/reset", "POST",
+                                data={"ticket": empty_ticket}).status_code, 409)
+        self.assertNotIn(b"Fictional corrected draft",
+                         remote(restarted_client, context.identity.origin, "/api/resume-intake/me/draft").data)
+        self.assertEqual(self.store.path.read_bytes(), original)
+        self.state.restore(self.initial); context.store(self.state).load()
+        self.assertNotIn(b"Fictional corrected draft",
+                         remote(client_for(context.store(self.state)), context.identity.origin,
+                                "/api/resume-intake/me/draft").data)
+        saved = context.state_path.read_bytes()
         manager.write(self.install / "installation.json", {**manifest, "workspace": {**manifest["workspace"], "selected": "personal"}})
         self.state.restore(self.initial); self.store.load()
         returned = client_for(self.store)
         self.assertIn(b"Personal fixture content", remote(returned, identity.origin, "/api/resume-intake/me/draft").data)
+        self.assertEqual(remote(returned, identity.origin, "/demo/reset").status_code, 404)
+        self.assertNotIn(b'href="/demo/reset"', remote(returned, identity.origin, "/app/resume").data)
         self.assertEqual(remote(returned, context.identity.origin, "/api/resume-intake/me/draft", "PUT", json={}).status_code, 403)
         self.assertEqual(context.state_path.read_bytes(), saved)
         self.assertEqual(self.store.path.read_bytes(), original)

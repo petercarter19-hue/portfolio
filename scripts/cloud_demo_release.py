@@ -9,7 +9,6 @@ import json
 import os
 from pathlib import Path
 import re
-import secrets
 import shutil
 import subprocess
 import urllib.error
@@ -19,7 +18,8 @@ import zipfile
 SUBSCRIPTION = 'bd0ecf48-6940-4fd3-9687-3eaf72469d67'
 GROUP = 'peerslate'
 PLAN = 'peerslate-candidate-community-20260807'
-PACKAGE = 'PS-ONBOARDING-CLOUD-DEMO-001'
+PACKAGE = 'PS-ONBOARDING-RESET-CONTROL-001'
+SITE_PACKAGE = 'PS-ONBOARDING-CLOUD-DEMO-001'
 OWNER = 'session:01a0faaf-5e48-7060-990a-c28989a8d247'
 SITES = {'grok': 'peerslate-grok-demo-20261003', 'muse': 'peerslate-muse-demo-20261003'}
 MEMBERS = {'grok': 'g-member-a', 'muse': 'g-member-b'}
@@ -199,7 +199,7 @@ class Arm:
                 'candidate_state':candidate['properties']['state'], 'production_state':production['properties']['state']}
 
 def check_site(site, target):
-    if not site or site['name'] != SITES[target] or site['tags'].get('peerslatePackage') != PACKAGE or site['tags'].get('peerslateWriter') != OWNER:
+    if not site or site['name'] != SITES[target] or site['tags'].get('peerslatePackage') != SITE_PACKAGE or site['tags'].get('peerslateWriter') != OWNER:
         raise ValueError('Site ownership differs; do not adopt')
     if site['properties']['serverFarmId'].lower() != PLAN_ID.lower():
         raise ValueError('Site is on an unexpected plan')
@@ -233,7 +233,7 @@ def dpapi(raw, decrypt=False):
         free(result.pbData)
 
 def vault_path():
-    directory = Path(os.environ['LOCALAPPDATA']) / 'PeerSlate' / 'CloudDemo' / PACKAGE
+    directory = Path(os.environ['LOCALAPPDATA']) / 'PeerSlate' / 'CloudDemo' / SITE_PACKAGE
     if any(p.is_symlink() or getattr(p,'is_junction',lambda:False)() for p in (directory,*directory.parents)):
         raise ValueError('Credential destination contains a link')
     directory.mkdir(parents=True, exist_ok=True)
@@ -247,27 +247,29 @@ def vault_path():
 
 def credentials(target, site):
     path = vault_path()
-    entries = json.loads(dpapi(path.read_bytes(), True)) if path.exists() else {}
+    if not path.is_file():
+        raise ValueError('Existing demo credential vault required; this update cannot issue credentials')
+    entries = json.loads(dpapi(path.read_bytes(), True))
     origin = 'https://' + site['properties']['defaultHostName']
     if not re.fullmatch(r'https://[a-z0-9.-]+\.azurewebsites\.net', origin):
         raise ValueError('Supported platform HTTPS hostname required')
     if target not in entries:
-        from werkzeug.security import generate_password_hash
-        password = secrets.token_urlsafe(32)
-        owner = MEMBERS[target]
-        entries[target] = {'origin':origin, 'username':target+'-demo', 'password':password,
-            'password_hash':generate_password_hash(password,method='scrypt'),
-            'signing_key':secrets.token_hex(32), 'owner':owner,
-            'namespace':sha((origin+'\0'+owner).encode())}
-        temporary = path.with_suffix('.writing')
-        with temporary.open('xb') as stream:
-            stream.write(dpapi(json.dumps(entries).encode()))
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temporary,path)
-    if entries[target]['origin'] != origin:
+        raise ValueError('Existing demo credential entry required; this update cannot issue credentials')
+    if (entries[target]['origin'] != origin or entries[target]['owner'] != MEMBERS[target]
+            or entries[target]['username'] != target+'-demo'
+            or entries[target]['namespace'] != sha((origin+'\0'+MEMBERS[target]).encode())):
         raise ValueError('Credential/site binding differs')
     return entries[target]
+
+
+def check_existing_settings(settings, secure):
+    for setting, field in (('DEMO_ORIGIN', 'origin'), ('DEMO_USERNAME', 'username'),
+                           ('DEMO_PASSWORD_HASH', 'password_hash'),
+                           ('DEMO_SIGNING_KEY', 'signing_key'), ('DEMO_OWNER', 'owner'),
+                           ('DEMO_NAMESPACE', 'namespace')):
+        if settings.get(setting) != secure[field]:
+            raise ValueError('Existing site credentials differ from the owner vault; release refused')
+
 
 def deploy(manifest_path, target):
     release = load_manifest(manifest_path, accepted=True)
@@ -279,21 +281,16 @@ def deploy(manifest_path, target):
     plan = arm.verify_plan()
     site_path = RESOURCE_ROOT+'sites/'+SITES[target]
     site = arm.request(site_path)
-    if site:
-        check_site(site,target)
+    if not site:
+        raise ValueError('The existing demo site is missing; reset-control release cannot create it')
+    check_site(site,target)
+    secure = credentials(target,site)
+    existing_settings = arm.request(site_path+'/config/appsettings/list',{},'POST')['properties']
+    check_existing_settings(existing_settings,secure)
     write_new(intent,{'target':target,'site':SITES[target],'source_sha':release['source_sha'],
         'artifact_sha256':release['artifact_sha256'],'requested_at':now(),'plan':plan,
         'scope':'Restricted fictional demo only; no production/candidate/state/reset/provider action'})
-    if not site:
-        site = arm.request(site_path,{'location':'Central US','kind':'app,linux',
-            'tags':{'peerslatePackage':PACKAGE,'peerslateWriter':OWNER},
-            'properties':{'serverFarmId':PLAN_ID,'httpsOnly':True,'enabled':False,
-                'clientAffinityEnabled':False,'siteConfig':{'linuxFxVersion':'PYTHON|3.12',
-                'appCommandLine':release['startup'],'numberOfWorkers':1,'alwaysOn':False,
-                'ftpsState':'Disabled','minTlsVersion':'1.2','http20Enabled':True}}},'PUT')
-    check_site(site,target)
     arm.request(site_path+'/stop',{},'POST')
-    secure = credentials(target,site)
     settings = {'DEMO_ORIGIN':secure['origin'],'DEMO_USERNAME':secure['username'],
         'DEMO_PASSWORD_HASH':secure['password_hash'],'DEMO_SIGNING_KEY':secure['signing_key'],
         'DEMO_OWNER':secure['owner'],'DEMO_NAMESPACE':secure['namespace'],
@@ -401,6 +398,7 @@ def operate(target, action, manifest_path=None):
             settings = arm.request(path+'/config/appsettings/list',{},'POST')['properties']
             if settings.get('DEMO_SOURCE_SHA') != release['source_sha'] or settings.get('DEMO_OWNER') != MEMBERS[target]:
                 raise ValueError('Actual site source/owner binding differs')
+            check_existing_settings(settings,credentials(target,site))
         # SCM upload runs on a started Linux app. Restart after the exact build
         # so its container loads the new package rather than an earlier worker.
         arm.request(path+('/restart' if action == 'start' else '/'+action),{},'POST')

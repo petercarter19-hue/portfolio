@@ -47,6 +47,7 @@ def fake_boundary(cfg, clock=lambda: 10000):
     container = type('Box', (), {})()
     container.values = {'text': ''}
     state = State({'fixture.values': (container, 'values')}, Codec())
+    fresh_state = state.capture()
     store = SnapshotStore(cfg.data / 'state.json', state, namespace=cfg.namespace)
     if store.path.exists():
         store.load()
@@ -59,7 +60,7 @@ def fake_boundary(cfg, clock=lambda: 10000):
     def save():
         container.values['text'] = request.get_json()['text']
         return {'saved': True, 'publishes': False}
-    return Boundary(cfg, app, {'view', 'save'}, store, clock=clock)
+    return Boundary(cfg, app, {'view', 'save'}, store, fresh_state=fresh_state, clock=clock)
 
 
 class BoundaryTests(unittest.TestCase):
@@ -119,6 +120,73 @@ class BoundaryTests(unittest.TestCase):
         result = other_client.get('/app/resume', base_url=other_cfg.origin).json
         self.assertEqual(result, {'owner': 'g-member-b', 'text': ''})
         self.assertNotEqual(self.boundary.store.namespace, other.store.namespace)
+
+    def test_confirmed_reset_checkpoints_only_this_site_and_refuses_replay(self):
+        other_cfg = config(self.tmp.name, 'two', 'g-member-b')
+        other = fake_boundary(other_cfg)
+        other_client = Client(other, Response)
+        self.assertEqual(self.client.get('/demo/reset', base_url=self.cfg.origin).status_code, 401)
+        sign_in(self.client, self.cfg)
+        sign_in(other_client, other_cfg)
+        headers = {'Origin': self.cfg.origin}
+        other_headers = {'Origin': other_cfg.origin}
+        self.client.post('/api/save', base_url=self.cfg.origin, headers=headers, json={'text': 'Private Grok test'})
+        other_client.post('/api/save', base_url=other_cfg.origin, headers=other_headers, json={'text': 'Separate Muse test'})
+        before = self.boundary.store.path.read_bytes()
+        page = self.client.get('/demo/reset', base_url=self.cfg.origin)
+        self.assertEqual(page.status_code, 200)
+        self.assertIn('Reset this fictional demo?', page.text)
+        ticket = re.search(r'name="ticket" value="([^"]+)"', page.text).group(1)
+        self.assertEqual(self.client.post('/demo/reset', base_url=self.cfg.origin, data={'ticket': ticket}).status_code, 403)
+        self.assertEqual(self.client.post('/demo/reset', base_url=self.cfg.origin,
+            headers=headers, data={'ticket': ticket + 'broken'}).status_code, 403)
+        self.assertEqual(self.boundary.store.path.read_bytes(), before)
+        done = self.client.post('/demo/reset', base_url=self.cfg.origin, headers=headers, data={'ticket': ticket})
+        self.assertEqual(done.status_code, 200, done.text)
+        self.assertIn('Fictional demo reset', done.text)
+        checkpoints = list((self.cfg.data / 'checkpoints').glob('*.json'))
+        self.assertEqual(len(checkpoints), 1)
+        self.assertEqual(checkpoints[0].read_bytes(), before)
+        self.assertEqual(self.client.get('/app/resume', base_url=self.cfg.origin).json['text'], '')
+        self.assertEqual(other_client.get('/app/resume', base_url=other_cfg.origin).json['text'], 'Separate Muse test')
+        self.assertEqual(self.client.post('/demo/reset', base_url=self.cfg.origin,
+            headers=headers, data={'ticket': ticket}).status_code, 409)
+        self.assertEqual(len(list((self.cfg.data / 'checkpoints').glob('*.json'))), 1)
+        empty_ticket = re.search(r'name="ticket" value="([^"]+)"',
+            self.client.get('/demo/reset', base_url=self.cfg.origin).text).group(1)
+        generation = self.boundary.store.generation
+        self.assertEqual(self.client.post('/demo/reset', base_url=self.cfg.origin,
+            headers=headers, data={'ticket': empty_ticket}).status_code, 200)
+        self.assertEqual(self.boundary.store.generation, generation + 1)
+        self.assertEqual(self.client.post('/demo/reset', base_url=self.cfg.origin,
+            headers=headers, data={'ticket': empty_ticket}).status_code, 409)
+        restarted = fake_boundary(self.cfg)
+        self.assertEqual(restarted.store.state.validate(restarted.store.state.capture())['fixture.values']['text'], '')
+
+    def test_reset_stale_confirmation_and_checkpoint_or_save_failure_preserve_content(self):
+        sign_in(self.client, self.cfg)
+        headers = {'Origin': self.cfg.origin}
+        stale = re.search(r'name="ticket" value="([^"]+)"',
+            self.client.get('/demo/reset', base_url=self.cfg.origin).text).group(1)
+        self.client.post('/api/save', base_url=self.cfg.origin, headers=headers, json={'text': 'Keep this draft'})
+        before = self.boundary.store.path.read_bytes()
+        self.assertEqual(self.client.post('/demo/reset', base_url=self.cfg.origin,
+            headers=headers, data={'ticket': stale}).status_code, 409)
+        ticket = re.search(r'name="ticket" value="([^"]+)"',
+            self.client.get('/demo/reset', base_url=self.cfg.origin).text).group(1)
+        with patch('tools.cloud_demo.runtime.atomic_write', side_effect=OSError('checkpoint unavailable')):
+            self.assertEqual(self.client.post('/demo/reset', base_url=self.cfg.origin,
+                headers=headers, data={'ticket': ticket}).status_code, 503)
+        self.assertEqual(self.boundary.store.path.read_bytes(), before)
+        with patch('tools.cloud_demo.runtime.sync_directory', side_effect=[None, OSError('directory sync unavailable')]):
+            self.assertEqual(self.client.post('/demo/reset', base_url=self.cfg.origin,
+                headers=headers, data={'ticket': ticket}).status_code, 503)
+        self.assertEqual(self.boundary.store.path.read_bytes(), before)
+        with patch.object(self.boundary.store, 'save', side_effect=OSError('state unavailable')):
+            self.assertEqual(self.client.post('/demo/reset', base_url=self.cfg.origin,
+                headers=headers, data={'ticket': ticket}).status_code, 503)
+        self.assertEqual(self.boundary.store.path.read_bytes(), before)
+        self.assertEqual(self.client.get('/app/resume', base_url=self.cfg.origin).json['text'], 'Keep this draft')
 
     def test_failed_save_restores_memory_disk_and_restart_preserves(self):
         sign_in(self.client, self.cfg)
@@ -204,6 +272,53 @@ class BoundaryTests(unittest.TestCase):
 
 
 class ReleaseIdentityTests(unittest.TestCase):
+    def test_reset_release_refuses_missing_or_incomplete_credentials(self):
+        from scripts import cloud_demo_release as release
+        site = {'properties': {'defaultHostName': release.SITES['grok'] + '.azurewebsites.net'}}
+        with tempfile.TemporaryDirectory() as directory:
+            vault = Path(directory) / 'credentials.dpapi'
+            with patch.object(release, 'vault_path', return_value=vault):
+                with self.assertRaisesRegex(ValueError, 'Existing demo credential vault required'):
+                    release.credentials('grok', site)
+                vault.write_bytes(b'{}')
+                with patch.object(release, 'dpapi', side_effect=lambda raw, decrypt: raw):
+                    with self.assertRaisesRegex(ValueError, 'Existing demo credential entry required'):
+                        release.credentials('grok', site)
+                    self.assertEqual(vault.read_bytes(), b'{}')
+
+    def test_stale_vault_cannot_stop_or_reconfigure_existing_site(self):
+        from scripts import cloud_demo_release as release
+        with tempfile.TemporaryDirectory() as directory:
+            source = '1' * 40
+            site = {'name': release.SITES['grok'],
+                    'tags': {'peerslatePackage': release.SITE_PACKAGE, 'peerslateWriter': release.OWNER},
+                    'properties': {'serverFarmId': release.PLAN_ID,
+                                   'defaultHostName': release.SITES['grok'] + '.azurewebsites.net'}}
+            secure = {'origin': 'https://' + site['properties']['defaultHostName'],
+                      'username': 'grok-demo', 'password_hash': 'vault-hash',
+                      'signing_key': 'a' * 64, 'owner': release.MEMBERS['grok'],
+                      'namespace': 'b' * 64}
+            effects = []
+            arm = Mock()
+            arm.verify_plan.return_value = {'existing': True}
+            def request(path, body=None, method='GET'):
+                effects.append((path, method))
+                if path.endswith('/config/appsettings/list'):
+                    return {'properties': {'DEMO_ORIGIN': secure['origin'],
+                                           'DEMO_USERNAME': secure['username'],
+                                           'DEMO_PASSWORD_HASH': 'different-live-hash'}}
+                return site
+            arm.request.side_effect = request
+            with patch.object(release, 'Arm', return_value=arm), \
+                 patch.object(release, 'load_manifest', return_value={
+                     'source_sha': source, 'artifact_sha256': 'a' * 64}), \
+                 patch.object(release, 'credentials', return_value=secure):
+                with self.assertRaisesRegex(ValueError, 'Existing site credentials differ'):
+                    release.deploy(Path(directory) / 'manifest.json', 'grok')
+            self.assertFalse((Path(directory) / ('DEPLOY_INTENT_grok_' + source + '.json')).exists())
+            self.assertFalse(any(method != 'GET' and not path.endswith('/config/appsettings/list')
+                                 for path, method in effects))
+
     def test_start_requires_exact_attempt_identity_not_a_later_build(self):
         from scripts import cloud_demo_release as release
         with tempfile.TemporaryDirectory() as directory:
@@ -227,6 +342,8 @@ class ReleaseIdentityTests(unittest.TestCase):
             with patch.object(release, 'Arm', return_value=arm), \
                  patch.object(release, 'check_site', return_value=site), \
                  patch.object(release, 'load_manifest', return_value={'source_sha': source, 'artifact_sha256': artifact}), \
+                 patch.object(release, 'check_existing_settings'), \
+                 patch.object(release, 'credentials', return_value={}), \
                  patch.object(release, 'deployment_status', return_value=[unrelated]) as status, \
                  patch('builtins.print'):
                 for identity in (None, 'expected'):
@@ -256,6 +373,12 @@ class ReleaseIdentityTests(unittest.TestCase):
                 effects = []
                 def request(path, body=None, method='GET'):
                     effects.append((path, body, method))
+                    if path.endswith('/config/appsettings/list'):
+                        return {'properties': {
+                            setting: secure[field] for setting, field in (
+                                ('DEMO_ORIGIN','origin'), ('DEMO_USERNAME','username'),
+                                ('DEMO_PASSWORD_HASH','password_hash'), ('DEMO_SIGNING_KEY','signing_key'),
+                                ('DEMO_OWNER','owner'), ('DEMO_NAMESPACE','namespace'))}}
                     if path.endswith('/config/web'):
                         properties = dict(body['properties'])
                         if refuse_restrictions:
@@ -341,6 +464,7 @@ class ActualFixtureTests(unittest.TestCase):
                     self.assertEqual(client.get(path, base_url=cfg.origin).status_code, 200, path)
                 page = client.get('/app/resume', base_url=cfg.origin).text
                 self.assertIn('FICTIONAL CLOUD DEMO', page)
+                self.assertIn('href="/demo/reset"', page)
                 self.assertNotIn('Welcome, Pete', page)
                 publication = boundary.store.state.validate(boundary.store.state.capture())['publication._owners']
                 saved = client.put('/api/resume-intake/me/draft', base_url=cfg.origin,
@@ -378,6 +502,14 @@ class ActualFixtureTests(unittest.TestCase):
                 self.assertIn('Fictional cloud draft retained after restart', loaded.text)
                 self.assertEqual(before, restarted.store.path.read_bytes())
                 self.assertEqual(client.get('/api/resume/me/visitor-preview/sources', base_url=cfg.origin).status_code, 404)
+                ticket = re.search(r'name="ticket" value="([^"]+)"',
+                    client.get('/demo/reset', base_url=cfg.origin).text).group(1)
+                reset = client.post('/demo/reset', base_url=cfg.origin,
+                    headers={'Origin': cfg.origin}, data={'ticket': ticket})
+                self.assertEqual(reset.status_code, 200, reset.text)
+                self.assertNotIn('Fictional cloud draft retained after restart',
+                    client.get('/api/resume-intake/me/draft', base_url=cfg.origin).text)
+                self.assertEqual(len(list((cfg.data / 'checkpoints').glob('*.json'))), 1)
 
 if __name__ == '__main__':
     unittest.main()

@@ -13,6 +13,13 @@ private preview and deliberate publication. Files are limited to 4 MB and the
 whole fictional snapshot to 16 MB for the existing small hosting plan. Private
 preview and publishing remain inside the authenticated demo.
 
+To start a fresh test, sign in and select **Reset this demo** from the fictional
+Resume page. Review the confirmation and select **Reset this demo** there. The
+site saves a recovery checkpoint before clearing its own fictional content.
+The other demo, its password and the current sign-in are unaffected. A stale
+confirmation is refused if content changed; open the reset page again. Recovery
+of a prior checkpoint is an operator task, not a browser action.
+
 Authentication uses a dedicated password hash and opaque expiring server-side
 session. Host, origin and mutation checks apply before dispatch. Client identity
 headers, fixture selector cookies and owner query selectors refuse. The wrapper
@@ -60,6 +67,11 @@ ID, unique completed successful build and actual source/owner setting. Missing
 identity refuses start and keeps the main site blocked; a timestamp alone cannot
 qualify a different build. Only a qualified `start` removes the deployment access
 restriction after restarting the Linux container to load the completed package.
+For reset-control updates, the operator requires both existing sites with their
+original ownership tags and reuses their existing owner-local credential vault.
+It cannot create a replacement site or issue new demo passwords. Before writing
+a deployment intent or stopping either site, it compares the active site's
+credential and namespace settings with that vault and refuses any mismatch.
 Verify certificate-checked HTTPS, protected
 routes, wrong/anonymous identity, two-site separation and ordinary browser paths.
 Measure actual plan memory/CPU before admitting the second site. Stop new sites on

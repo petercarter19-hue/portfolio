@@ -15,12 +15,16 @@ import logging
 import os
 from pathlib import Path
 import re
+import secrets
 import socket
 import sys
 import threading
+import time
 import warnings
 from unittest.mock import patch
 from urllib.parse import urlsplit
+
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 from .persistence import Codec, SnapshotStore, State, atomic_write, canonical
 from .private_identity import PrivateIdentity, PrivateAccessDenied
@@ -314,7 +318,7 @@ def reset_member(state: State, owner):
 
 
 class Boundary:
-    def __init__(self, fixture, app, endpoints, store, install, metadata, token, stop_event):
+    def __init__(self, fixture, app, endpoints, store, install, metadata, token, stop_event, fresh_state=None):
         self.fixture, self.app, self.endpoints = fixture, app, endpoints
         self.store, self.install, self.metadata, self.token, self.stop_event = store, install, metadata, token, stop_event
         self.lock = threading.RLock()
@@ -323,6 +327,9 @@ class Boundary:
         self.host = "127.0.0.1:" + str(metadata["port"])
         self.context = selected_context(install)
         self.private_access = self.context.identity
+        self.reset_signer = URLSafeTimedSerializer(token, salt="local-fictional-reset")
+        self.fresh_state = store.state.capture() if fresh_state is None else fresh_state
+        store.state.validate(self.fresh_state)
         if self.context.namespace and (store.path != self.context.state_path or store.namespace != self.context.namespace):
             raise ValueError("Fictional boundary and saved state binding differ")
         self.app.config["TRUSTED_HOSTS"] = ["127.0.0.1"] + ([urlsplit(self.private_access.origin).hostname] if self.private_access else [])
@@ -353,6 +360,52 @@ class Boundary:
         name = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:8] + ".json"
         atomic_write(ordinary_path(self.context.checkpoints / name), self.store.pack(self.store.state.capture()))
         return name
+
+    def reset_demo(self, environ):
+        """Confirmed in-browser reset for the selected fictional workspace only."""
+        from werkzeug.wrappers import Request, Response
+
+        if not self.private_access or self.context.key != WORKSPACE_ID or not self.context.namespace:
+            return self.response({"error": "Fictional reset is unavailable"}, 404)
+        method = environ["REQUEST_METHOD"]
+        if method == "GET":
+            ticket = self.reset_signer.dumps({
+                "namespace": self.context.namespace,
+                "owner": self.private_access.owner,
+                "generation": self.store.generation,
+            })
+            return Response('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+                            '<title>Reset fictional demo</title><main><h1>Reset this fictional demo?</h1>'
+                            '<p>This clears saved fictional content in this workspace after saving a recovery copy. Your personal workspace and the cloud demos are unaffected.</p>'
+                            '<form method="post" action="/demo/reset"><input type="hidden" name="ticket" value="' + html.escape(ticket, quote=True) + '">'
+                            '<button type="submit">Reset this demo</button></form><p><a href="/app/resume">Cancel</a></p></main></html>',
+                            content_type="text/html; charset=utf-8")
+        if method != "POST":
+            return self.response({"error": "Method unavailable"}, 405)
+        if int(environ.get("CONTENT_LENGTH") or 0) > 2000:
+            return self.response({"error": "Reset request too large"}, 413)
+        try:
+            ticket = Request(environ).form.get("ticket", "")
+            signed = self.reset_signer.loads(ticket, max_age=300)
+        except (BadSignature, SignatureExpired, ValueError):
+            return self.response({"error": "Open reset confirmation again"}, 403)
+        expected = {"namespace": self.context.namespace, "owner": self.private_access.owner,
+                    "generation": self.store.generation}
+        if signed != expected:
+            return self.response({"error": "Saved content changed. Open reset confirmation again."}, 409)
+        budget = getattr(self.fixture, "private_provider_budget", None)
+        if budget is None or budget.has_active([profile["scope"] for profile in budget.profiles.values()]):
+            return self.response({"error": "Resolve active provider reservations before resetting this demo"}, 409)
+        current = self.store.state.capture()
+        if self.store.unpack(self.store.path.read_bytes())["state"] != current:
+            raise ValueError("Saved and active fictional state differ")
+        self.checkpoint()
+        self.store.state.restore(self.fresh_state)
+        environ["peerslate.reset_save"] = True
+        return Response('<!doctype html><html lang="en"><meta charset="utf-8"><title>Demo reset</title>'
+                        '<main><h1>Fictional demo reset</h1><p>A recovery copy was saved. This workspace is ready for a fresh test.</p>'
+                        '<a href="/app/resume">Open your fresh demo</a></main></html>',
+                        content_type="text/html; charset=utf-8")
 
     def control(self, environ):
         supplied = environ.get("HTTP_X_REVIEWER_TOKEN", "")
@@ -439,6 +492,8 @@ class Boundary:
         environ["HTTP_COOKIE"] = "; ".join(k + "=" + v.coded_value for k, v in cookies.items())
         if method not in {"GET", "HEAD", "OPTIONS"} and origin != expected_origin:
             return self.response({"error": "Same-origin mutation required"}, 403)
+        if path == "/demo/reset":
+            return self.reset_demo(environ)
         if path == "/":
             return Response(status=303, headers={"Location": "/app/resume" if access else "/__mvp1_fixture__/"})
         if access and path.startswith("/__mvp1_fixture__/"):
@@ -480,7 +535,7 @@ class Boundary:
                 if access:
                     banner = '<aside role="note" style="padding:10px;background:#e8f1fb;color:#17324d"><strong>PRIVATE TEST SITE.</strong> Saved on your PC. Live AI is connected; selected content is sent to Azure AI when you use it. Test publishing stays inside this private site.</aside>'
                     if self.context.namespace:
-                        banner = '<aside role="note" style="padding:10px;background:#e8f1fb;color:#17324d"><strong>FICTIONAL ONBOARDING WORKSPACE.</strong> Separate fictional content saved on your PC. Authenticated with your existing development account. Live AI retains the same limits; content is sent to Azure AI only when you use it. Test publishing stays inside this private site.</aside>'
+                        banner = '<aside role="note" style="padding:10px;background:#e8f1fb;color:#17324d"><strong>FICTIONAL ONBOARDING WORKSPACE.</strong> Separate fictional content saved on your PC. Authenticated with your existing development account. Live AI retains the same limits; content is sent to Azure AI only when you use it. Test publishing stays inside this private site. <a href="/demo/reset">Reset this demo</a></aside>'
                 response.set_data(body[:position] + banner.encode() + body[position:])
         return response
 
@@ -542,7 +597,7 @@ class Boundary:
             try:
                 response = self.dispatch(environ)
                 current = self.store.state.capture()
-                if current != previous:
+                if current != previous or environ.get("peerslate.reset_save"):
                     self.store.save(current)
             except Exception as error:
                 self.store.state.restore(previous)
@@ -573,6 +628,7 @@ def serve(install: Path, release: Path, metadata, token):
         context = selected_context(install)
         identity = context.identity
         fixture, app, endpoints, state = build_fixture(release / "source", stack, live_ai=bool(identity))
+        fresh_state = state.capture()
         if identity:
             from .providers import load_configuration, configure_private_providers
             configuration = load_configuration(install, identity, release / "source")
@@ -588,7 +644,8 @@ def serve(install: Path, release: Path, metadata, token):
         else:
             store.save()
         stop_event = threading.Event()
-        boundary = Boundary(fixture, app, endpoints, store, install, metadata, token, stop_event)
+        boundary = Boundary(fixture, app, endpoints, store, install, metadata, token, stop_event,
+                            fresh_state=fresh_state)
         server = create_server(boundary, host="127.0.0.1", port=metadata["port"], threads=WORKER_THREADS,
                                max_request_body_size=51_000_000, expose_tracebacks=False,
                                clear_untrusted_proxy_headers=False)
