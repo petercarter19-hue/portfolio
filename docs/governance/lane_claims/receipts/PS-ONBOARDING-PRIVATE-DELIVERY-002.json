@@ -1,28 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-ONBOARDING-PRIVATE-DELIVERY-002",
-  "candidate_sha": "f1ab99226152a745f2499d9b05302a82a09d7547",
+  "candidate_sha": "9bc9e751fd671e3f44c570fa65df2d1c69759f52",
   "review_type": "independent",
   "reviewer_ref": "session:01a10a55-c6ca-75e3-9300-82cb1f0a5eab",
   "result": "pass",
-  "reviewed_at": "2026-10-05T15:15:30Z",
-  "findings": [
-    {
-      "id": "PD-R01",
-      "status": "resolved"
-    },
-    {
-      "id": "PD-R02",
-      "status": "resolved"
-    },
-    {
-      "id": "PD-R03",
-      "status": "resolved"
-    },
-    {
-      "id": "PD-R04",
-      "status": "resolved"
-    }
-  ],
-  "evidence_ref": "X:/PeerSlate/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002/independent-review/SOURCE_PASS_F1AB9922.md (source/fixture PASS only; required CI and installed PD06/A01-A15 separate)"
+  "reviewed_at": "2026-10-05T21:40:44Z",
+  "findings": [],
+  "evidence_ref": "X:/PeerSlate/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002/independent-review/DIAGNOSTIC_FACTORY_9BC9_SOURCE_PASS_REVIEW.md (fixed factory source/fixture only; installed acceptance pending)"
 }

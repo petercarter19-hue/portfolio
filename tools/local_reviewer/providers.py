@@ -573,7 +573,7 @@ def bound_document(path, expected):
 
 def bound_factory(data, *, for_promotion=False):
     allowed = (SUCCESSOR_FACTORY_SHA256, ONBOARDING_FACTORY_SHA256, CONVERSATION_FACTORY_SHA256,
-               PRIVATE_DELIVERY_FACTORY_SHA256)
+               PRIVATE_DELIVERY_FACTORY_SHA256, PRIVATE_DIAGNOSTIC_DELIVERY_FACTORY_SHA256)
     if not for_promotion:
         allowed += (FACTORY_SHA256,)
     if not isinstance(data, bytes) or hashlib.sha256(data).hexdigest() not in allowed:
@@ -582,6 +582,7 @@ def bound_factory(data, *, for_promotion=False):
 
 
 PRIVATE_DELIVERY_FACTORY_SHA256 = "e64b1454dfc7bddb1c86a149c5914a47191e69ffceb2c9eeede07d7332edb64e"
+PRIVATE_DIAGNOSTIC_DELIVERY_FACTORY_SHA256 = "02da9db67c221ec6a0a80f31d9859c2b4e5f8f4b6686c4658f65c3cb9246fdf4"
 PRIVATE_ONBOARDING_QUALIFICATION = {
     "schema": 1,
     "reviewed_source_sha": "4f699d76077d1b8698e1e2c46f959d9b0251cc5a",
@@ -595,11 +596,19 @@ PRIVATE_ONBOARDING_QUALIFICATION = {
 }
 
 
+PRIVATE_DIAGNOSTIC_ONBOARDING_QUALIFICATION = {
+    **PRIVATE_ONBOARDING_QUALIFICATION,
+    "reviewed_source_sha": "a3285353bbe8e5fab634086c833e14c5fbef58f5",
+    "accepted_source_sha": "3207460df1738e71486e92db338787bce53fea29",
+    "source_review_receipt_sha256": "aa6c670bab60fe4487ea1097b05acfb4f52a413c7089d0bb40d6f3651eb0c086",
+}
+
+
 def onboarding_qualification(interface):
     proof = interface.get("private_onboarding_qualification")
     if proof is None:
         return None
-    if proof != PRIVATE_ONBOARDING_QUALIFICATION:
+    if proof not in (PRIVATE_ONBOARDING_QUALIFICATION, PRIVATE_DIAGNOSTIC_ONBOARDING_QUALIFICATION):
         raise ValueError("Reviewed private onboarding qualification changed")
     return proof
 
