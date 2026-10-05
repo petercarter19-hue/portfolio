@@ -13,20 +13,15 @@
   "owner_outcome_ref": "session:01a1049e-233e-7191-ab7e-07d1febe732e/user:reset-all-three-and-add-on-page-control",
   "surfaces": [
     "tools/cloud_demo/runtime.py",
-    "tools/local_reviewer/runtime.py",
-    "tools/local_reviewer/manager.py",
     "scripts/cloud_demo_release.py",
     "tests/test_cloud_demo.py",
-    "tests/test_local_reviewer.py",
     "docs/CLOUD_DEMO.md",
-    "docs/LOCAL_REVIEWER.md",
     "docs/governance/lane_claims/PS-ONBOARDING-RESET-CONTROL-001.json",
     "docs/governance/lane_claims/receipts/PS-ONBOARDING-RESET-CONTROL-001.json",
     "docs/governance/lane_claims/evidence/PS-ONBOARDING-RESET-CONTROL-001.md"
   ],
   "domains": [
-    "tooling:cloud-demo:onboarding-reset",
-    "tooling:local-reviewer:fictional-reset-ui"
+    "tooling:cloud-demo:onboarding-reset"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-ONBOARDING-RESET-CONTROL-001.md"
@@ -35,5 +30,92 @@
   "handoff": null,
   "checkpoint_sha": null,
   "merged_sha": null,
-  "closed_at": null
+  "closed_at": null,
+  "scope_release": {
+    "checkpoint_sha": "df91218c7a0443ebf4e3f901175d801436503117",
+    "control_branch": "work/2026-10-05-delivery-release-surfaces-onboarding-reset-001",
+    "control_lease_sha256": "a7bb01cabde084e32a5f75c3aca532802aeffee5cf7ffe2d41b07029e1840cbd",
+    "fixed_evidence_ref": "docs/governance/lane_claims/evidence/PS-ONBOARDING-RESET-CONTROL-001.md",
+    "index_schema": 4,
+    "new_domains": [
+      "tooling:cloud-demo:onboarding-reset"
+    ],
+    "operation_id": "1b4da0efae6a5e1972fc82bdbae909264a4193bea4de2e75c938e2cb5cffe7f7",
+    "prepared_from_main": "7b42199aefbdb0bb37fc9739d73ef350e8c3ae6d",
+    "prior_claim_sha256": "d79c677c16af5d1b4e877b46b810d8a005642007df0e27156e1bfaceb1382715",
+    "prior_domains": [
+      "tooling:cloud-demo:onboarding-reset",
+      "tooling:local-reviewer:fictional-reset-ui"
+    ],
+    "quiescence_ref": "session:01a1049e-233e-7191-ab7e-07d1febe732e/scope-release-quiescent-20261005",
+    "reduction_sha256": "17292aabee1f2258aa9174965cf610b4da4a3ff09cbea3d2b5b43eed562db28a",
+    "registry_schema": 2,
+    "release_rationale": "Release four local reviewer paths to the onboarding private-delivery package for persistence, OCR/source qualification, and installation work. Three paths carry exact reviewed-candidate and accepted-main introduction proofs; the fourth has no branch delta. Existing reset behavior remains accepted and live. Keep cloud reset ownership and the historical missing-acceptance closeout obligation; no runtime data, credentials, provider budget, or production change.",
+    "released_file_proofs": [
+      {
+        "accepted_introduction": {
+          "candidate_sha": "6db6971753add5a6d0e9906cbe1d008a64d1a185",
+          "merged_sha": "baf37403a1027f62d20359d7e8deb24f9d327b74",
+          "package": "PS-ONBOARDING-RESET-CONTROL-001",
+          "receipt_ref": "docs/governance/lane_claims/receipts/PS-ONBOARDING-RESET-CONTROL-001.json"
+        },
+        "checkpoint_blob": "d7a44d1b0e2862f9cd2c525574d7bb740d037040",
+        "checkpoint_mode": "100644",
+        "main_blob": "d7a44d1b0e2862f9cd2c525574d7bb740d037040",
+        "main_mode": "100644",
+        "path": "tools/local_reviewer/runtime.py",
+        "unpublished_delta": true
+      },
+      {
+        "accepted_introduction": null,
+        "checkpoint_blob": "dec9905ead94792c94da642061c018fb44e9662e",
+        "checkpoint_mode": "100644",
+        "main_blob": "dec9905ead94792c94da642061c018fb44e9662e",
+        "main_mode": "100644",
+        "path": "tools/local_reviewer/manager.py",
+        "unpublished_delta": false
+      },
+      {
+        "accepted_introduction": {
+          "candidate_sha": "6db6971753add5a6d0e9906cbe1d008a64d1a185",
+          "merged_sha": "baf37403a1027f62d20359d7e8deb24f9d327b74",
+          "package": "PS-ONBOARDING-RESET-CONTROL-001",
+          "receipt_ref": "docs/governance/lane_claims/receipts/PS-ONBOARDING-RESET-CONTROL-001.json"
+        },
+        "checkpoint_blob": "533ad4acb1d0719c0e6223cf4189499061017878",
+        "checkpoint_mode": "100644",
+        "main_blob": "533ad4acb1d0719c0e6223cf4189499061017878",
+        "main_mode": "100644",
+        "path": "tests/test_local_reviewer.py",
+        "unpublished_delta": true
+      },
+      {
+        "accepted_introduction": {
+          "candidate_sha": "6db6971753add5a6d0e9906cbe1d008a64d1a185",
+          "merged_sha": "baf37403a1027f62d20359d7e8deb24f9d327b74",
+          "package": "PS-ONBOARDING-RESET-CONTROL-001",
+          "receipt_ref": "docs/governance/lane_claims/receipts/PS-ONBOARDING-RESET-CONTROL-001.json"
+        },
+        "checkpoint_blob": "d74948278725d3fd0a813dabcc82b6ac25a87176",
+        "checkpoint_mode": "100644",
+        "main_blob": "d74948278725d3fd0a813dabcc82b6ac25a87176",
+        "main_mode": "100644",
+        "path": "docs/LOCAL_REVIEWER.md",
+        "unpublished_delta": true
+      }
+    ],
+    "released_surfaces": [
+      "tools/local_reviewer/runtime.py",
+      "tools/local_reviewer/manager.py",
+      "tests/test_local_reviewer.py",
+      "docs/LOCAL_REVIEWER.md"
+    ],
+    "retained_responsibilities": [
+      {
+        "domain": "tooling:cloud-demo:onboarding-reset",
+        "responsibility": "Maintain the existing Grok and Muse fictional cloud reset route, isolation, recovery checkpoints, and nonproduction release tooling; retain the package evidence and unresolved formal acceptance obligation."
+      }
+    ],
+    "schema_version": 1
+  }
 }
