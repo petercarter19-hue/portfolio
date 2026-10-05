@@ -610,4 +610,134 @@ class ConversationTests(unittest.TestCase):
         self.assertEqual(database.mock_calls,[])
 
 
+    def _assert_failed_diagnostic(self, command, stage, reason, code='invalid_output'):
+        from services.resume_intake_runtime import conversation_failure_diagnostic
+        before = copy.deepcopy(self.intake.draft_service.catalog.list_items(self.owner))
+        with self.assertRaises(SynthesisError) as caught:
+            self.intake.converse(self.owner, command, assistance=self.assistance)
+        self.assertEqual(caught.exception.code, code)
+        expected = {'schema_version': 1, 'stage': stage, 'reason': reason}
+        self.assertEqual(conversation_failure_diagnostic(caught.exception), expected)
+        snapshot = self.intake.repository.load_owner(self.owner)
+        source = next(row for row in snapshot['sources'].values()
+            if (row.get('structured_values') or {}).get('resume_conversation_v1', {}).get('request_id') == command['request_id'])
+        meta = source['structured_values']['resume_conversation_v1']
+        self.assertEqual(meta['turn_state'], 'failed')
+        self.assertEqual(meta['failure_diagnostic'], expected)
+        self.assertEqual(source['text'], command['statement'])
+        self.assertEqual(meta['source_units'][0]['text'], command['statement'])
+        self.assertNotIn('response', meta)
+        self.assertNotIn('next_question', meta)
+        self.assertNotIn('proposal_keys', meta)
+        self.assertEqual(snapshot['proposals'], {})
+        self.assertEqual(self.intake.draft_service.catalog.list_items(self.owner), before)
+        self.assertEqual(len(self.calls), 1)
+        with self.assertRaises(SynthesisError) as replay:
+            self.intake.converse(self.owner, command, assistance=self.assistance)
+        self.assertEqual(replay.exception.code, 'unavailable')
+        self.assertEqual(len(self.calls), 1)
+        self.assertEqual(self.intake.repository.load_owner(self.owner), snapshot)
+        return meta
+
+    def test_diagnostics_distinguish_response_rules_without_retaining_output(self):
+        cases = [('shape', {'response': 'MODEL_PRIVATE_MARKER'}, 'invalid_output'),
+            ('operations_type', {'response':'MODEL_PRIVATE_MARKER','next_question':'','operations':{}}, 'invalid_output'),
+            ('operation_count', {'response':'MODEL_PRIVATE_MARKER','next_question':'','operations':[{}]*25}, 'invalid_output'),
+            ('response_text_type', {'response':None,'next_question':'','operations':[]}, 'invalid'),
+            ('response_text_empty', {'response':' ','next_question':'','operations':[]}, 'invalid'),
+            ('question_text_type', {'response':'MODEL_PRIVATE_MARKER','next_question':None,'operations':[]}, 'invalid')]
+        for reason, output, code in cases:
+            with self.subTest(reason=reason):
+                self.setUp(); self.seed()
+                self.behavior = lambda ctx, output=output: output
+                meta = self._assert_failed_diagnostic(self.command('Engineer at Example Labs. OWNER_PRIVATE_MARKER.'),
+                    'response_contract', reason, code)
+                encoded = json.dumps(meta['failure_diagnostic'])
+                self.assertNotIn('MODEL_PRIVATE_MARKER', encoded)
+                self.assertNotIn('OWNER_PRIVATE_MARKER', encoded)
+
+    def test_diagnostics_distinguish_operation_rules_and_keep_canonical_truth(self):
+        def invalid(ctx, case):
+            row = operation(ctx, op='add_content', values={'role_title':'Engineer'})
+            if case == 'value_field': row['values'] = [{'field':'PRIVATE_FIELD_MARKER','value':'MODEL_PRIVATE_MARKER'}]
+            elif case == 'value_null': row['values'][0]['value'] = None
+            elif case == 'value_duplicate': row['values'].append(copy.deepcopy(row['values'][0]))
+            elif case == 'source_refs_required': row['source_refs'] = []
+            elif case == 'source_ref_binding': row['source_refs'][0]['unit_id'] = 'MODEL_PRIVATE_MARKER'
+            elif case == 'presentation_section': row['presentation_section'] = 'MODEL_PRIVATE_MARKER'
+            elif case == 'identity_not_literal': row['values'][0]['value'] = 'MODEL_PRIVATE_MARKER'
+            elif case == 'operation_shape': row['private_payload'] = 'MODEL_PRIVATE_MARKER'
+            return {'response':'MODEL_PRIVATE_MARKER','next_question':'','operations':[row]}
+        for reason in ('value_field','value_null','value_duplicate','source_refs_required',
+                'source_ref_binding','presentation_section','identity_not_literal','operation_shape'):
+            with self.subTest(reason=reason):
+                self.setUp(); self.seed()
+                self.behavior = lambda ctx, reason=reason: invalid(ctx, reason)
+                meta = self._assert_failed_diagnostic(self.command('Engineer at Example Labs. OWNER_PRIVATE_MARKER.'),
+                    'operation_contract', reason)
+                self.assertNotIn('PRIVATE_MARKER', json.dumps(meta['failure_diagnostic']))
+                self.assertNotIn('private_payload', meta)
+
+    def test_diagnostic_failure_after_one_valid_operation_keeps_all_unapproved(self):
+        self.seed()
+        def output(ctx):
+            good = operation(ctx, op='add_content', values={'role_title':'Engineer'})
+            bad = operation(ctx, op='add_content', values={'PRIVATE_FIELD_MARKER':'MODEL_PRIVATE_MARKER'})
+            return {'response':'MODEL_PRIVATE_MARKER','next_question':'','operations':[good,bad]}
+        self.behavior = output
+        meta = self._assert_failed_diagnostic(self.command('Engineer at Example Labs.'),
+            'operation_contract', 'value_field')
+        self.assertEqual(meta['source_units'][0]['disposition'], 'unresolved')
+
+    def test_diagnostics_distinguish_canonical_and_authorized_context_changes(self):
+        for reason in ('canonical_after_response', 'authorized_context_changed'):
+            with self.subTest(reason=reason):
+                self.setUp(); key = self.seed()
+                def output(ctx):
+                    if reason == 'canonical_after_response': self.ports.excluded.add(key)
+                    else:
+                        snapshot = self.intake.repository.load_owner(self.owner)
+                        snapshot['lifecycle_epoch'] += 1
+                        self.intake.repository.save_owner(self.owner, snapshot)
+                    return {'response':'MODEL_PRIVATE_MARKER','next_question':'','operations':[]}
+                self.behavior = output
+                self._assert_failed_diagnostic(self.command('Engineer at Example Labs.'),
+                    'context_revalidation', reason, 'changed')
+
+    def test_arbitrary_exception_diagnostics_are_not_retained_or_returned(self):
+        error = SynthesisError('invalid_output')
+        error.conversation_diagnostic = {'schema_version':1,'stage':'operation_contract',
+            'reason':'MODEL_PRIVATE_MARKER','raw_response':'MODEL_PRIVATE_MARKER'}
+        self.behavior = lambda ctx: (_ for _ in ()).throw(error)
+        meta = self._assert_failed_diagnostic(self.command('OWNER_PRIVATE_MARKER'),
+            'turn_execution', 'unclassified')
+        self.assertNotIn('MODEL_PRIVATE_MARKER', json.dumps(meta))
+
+    def test_successful_turn_and_replay_have_no_failure_diagnostic(self):
+        command = self.command('What can I add?')
+        first = self.intake.converse(self.owner, command, assistance=self.assistance)
+        replay = self.intake.converse(self.owner, command, assistance=self.assistance)
+        self.assertEqual(replay['source_key'], first['source_key'])
+        self.assertTrue(replay['replayed'])
+        self.assertEqual(len(self.calls), 1)
+        source = self.intake.repository.load_owner(self.owner)['sources'][first['source_key']]
+        self.assertNotIn('failure_diagnostic', source['structured_values']['resume_conversation_v1'])
+
+    def test_failed_diagnostic_source_purge_removes_words_and_still_refuses_replay(self):
+        self.behavior = lambda ctx: {'response':'MODEL_PRIVATE_MARKER','next_question':'','operations':{}}
+        command = self.command('OWNER_PRIVATE_MARKER')
+        self._assert_failed_diagnostic(command, 'response_contract', 'operations_type')
+        snapshot = self.intake.repository.load_owner(self.owner)
+        source_key = next(key for key, row in snapshot['sources'].items()
+            if (row.get('structured_values') or {}).get('resume_conversation_v1', {}).get('request_id') == command['request_id'])
+        self.intake.purge_source(self.owner, {'request_id':str(uuid4()), 'source_key':source_key})
+        purged = self.intake.repository.load_owner(self.owner)
+        self.assertNotIn('OWNER_PRIVATE_MARKER', json.dumps(purged))
+        self.assertNotIn('MODEL_PRIVATE_MARKER', json.dumps(purged))
+        with self.assertRaises(SynthesisError):
+            self.intake.converse(self.owner, command, assistance=self.assistance)
+        self.assertEqual(len(self.calls), 1)
+        self.assertEqual(self.intake.repository.load_owner(self.owner), purged)
+
+
 if __name__ == '__main__': unittest.main()

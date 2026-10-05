@@ -347,6 +347,56 @@ class SynthesisError(ValueError):
         super().__init__(code)
 
 
+_CONVERSATION_DIAGNOSTIC_REASONS = {
+    'response_contract': frozenset({'shape', 'output_size', 'operations_type',
+        'operation_count', 'response_text_type', 'response_text_size',
+        'response_text_empty', 'question_text_type', 'question_text_size'}),
+    'operation_contract': frozenset({'operation_shape', 'operation_name',
+        'list_field_type', 'control_operation_payload', 'target_binding',
+        'record_type_or_duplicate_target', 'unsupported_record_type',
+        'value_pair_shape', 'value_field', 'value_duplicate', 'value_null',
+        'value_type', 'value_size', 'clear_fields', 'source_refs_required',
+        'source_ref_binding', 'bullet_edit_shape', 'bullet_include',
+        'bullet_expected_text', 'bullet_exclude_replacement',
+        'bullet_revision_replacement', 'source_unit_kind', 'command_as_new_content',
+        'control_as_new_content', 'identity_not_literal', 'literal_size',
+        'presentation_section', 'knowledge_classification'}),
+    'context_revalidation': frozenset({'canonical_before_dispatch',
+        'canonical_after_response', 'authorized_context_changed',
+        'canonical_target_changed', 'credential_supplement_changed'}),
+    'turn_execution': frozenset({'unclassified'}),
+}
+
+
+def conversation_failure_diagnostic(error):
+    """Copy only closed server-defined enums, never exception/payload content."""
+    value = getattr(error, 'conversation_diagnostic', None)
+    if (not isinstance(value, dict) or set(value) != {'schema_version', 'stage', 'reason'}
+            or type(value['schema_version']) is not int or value['schema_version'] != 1
+            or not isinstance(value['stage'], str) or not isinstance(value['reason'], str)
+            or value['reason'] not in _CONVERSATION_DIAGNOSTIC_REASONS.get(value['stage'], ())):
+        return None
+    return {key: value[key] for key in ('schema_version', 'stage', 'reason')}
+
+
+def conversation_rejection(code, stage, reason):
+    error = SynthesisError(code)
+    error.conversation_diagnostic = {'schema_version': 1, 'stage': stage, 'reason': reason}
+    if conversation_failure_diagnostic(error) is None:
+        raise ValueError('Unsupported conversation diagnostic enum')
+    return error
+
+
+def _conversation_response_text(value, limit, name, *, blank=False):
+    if not isinstance(value, str):
+        raise conversation_rejection('invalid', 'response_contract', name + '_text_type')
+    if len(value.encode('utf-8')) > limit:
+        raise conversation_rejection('invalid', 'response_contract', name + '_text_size')
+    if not blank and not value.strip():
+        raise conversation_rejection('invalid', 'response_contract', name + '_text_empty')
+    return value
+
+
 WRITABLE_FIELDS = {
     "role": frozenset({"summary"}),
     "education": frozenset({"summary"}),
@@ -905,19 +955,23 @@ class PrivateResumeAssistanceService:
         canonical = self._context(owner, [], allow_empty=True)
         if (payload['expected_draft_version'] != canonical['draft_version']
                 or digest(canonical) != digest(context.get('canonical'))):
-            raise SynthesisError('changed')
+            raise conversation_rejection('changed', 'context_revalidation', 'canonical_before_dispatch')
         if len(json.dumps(context, ensure_ascii=False).encode('utf-8')) > self.limits['maximum_input_bytes']:
             raise SynthesisError('input_too_large')
         result = provider(owner=owner, request_id=request_id, instructions=CONVERSATION_PROMPT,
             task=statement, context=context, response_schema=CONVERSATION_SCHEMA)
-        if (not isinstance(result, dict) or set(result) != {'response', 'next_question', 'operations'}
-                or len(json.dumps(result, ensure_ascii=False).encode('utf-8')) > self.limits['maximum_output_bytes']
-                or not isinstance(result['operations'], list) or len(result['operations']) > 24):
-            raise SynthesisError('invalid_output')
-        response = _text(result['response'], 8000)
-        question = _text(result['next_question'], 2000, blank=True)
+        if not isinstance(result, dict) or set(result) != {'response', 'next_question', 'operations'}:
+            raise conversation_rejection('invalid_output', 'response_contract', 'shape')
+        if len(json.dumps(result, ensure_ascii=False).encode('utf-8')) > self.limits['maximum_output_bytes']:
+            raise conversation_rejection('invalid_output', 'response_contract', 'output_size')
+        if not isinstance(result['operations'], list):
+            raise conversation_rejection('invalid_output', 'response_contract', 'operations_type')
+        if len(result['operations']) > 24:
+            raise conversation_rejection('invalid_output', 'response_contract', 'operation_count')
+        response = _conversation_response_text(result['response'], 8000, 'response')
+        question = _conversation_response_text(result['next_question'], 2000, 'question', blank=True)
         if digest(self._context(owner, [], allow_empty=True)) != digest(canonical):
-            raise SynthesisError('changed')
+            raise conversation_rejection('changed', 'context_revalidation', 'canonical_after_response')
         return {'response': response, 'next_question': question,
                 'operations': copy.deepcopy(result['operations'])}
 

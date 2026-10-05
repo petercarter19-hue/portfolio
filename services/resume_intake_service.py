@@ -943,7 +943,8 @@ class ResumeIntakeService:
                 new_canonical = assistance._context(owner, [], allow_empty=True)
                 if (not current or current.get('state') != 'active'
                         or _json_digest(self._conversation_view(fresh, new_canonical, exclude_source=source_key)) != original_view_digest):
-                    raise SynthesisError('changed')
+                    from services.resume_intake_runtime import conversation_rejection
+                    raise conversation_rejection('changed', 'context_revalidation', 'authorized_context_changed')
                 proposals = self._conversation_proposals(owner, fresh, current, command, context, result, policy)
                 meta = current['structured_values']['resume_conversation_v1']
                 meta.update({'turn_state': 'completed', 'response': result['response'],
@@ -953,7 +954,12 @@ class ResumeIntakeService:
                         'sources': [{'source_key': row['source_key'], 'version': row['version']} for row in context['materials']]}})
                 self.repository.save_owner(owner, fresh)
                 return self._conversation_response(fresh, current)
-        except Exception:
+        except Exception as error:
+            from services.resume_intake_runtime import conversation_failure_diagnostic
+            diagnostic = conversation_failure_diagnostic(error) or {
+                'schema_version': 1, 'stage': 'turn_execution', 'reason': 'unclassified'}
+            if isinstance(error, SynthesisError):
+                error.conversation_diagnostic = diagnostic
             with self.repository.owner_guard(owner):
                 fresh = self._load(owner)
                 current = fresh['sources'].get(source_key)
@@ -961,58 +967,69 @@ class ResumeIntakeService:
                     meta = (current.get('structured_values') or {}).get('resume_conversation_v1') or {}
                     if meta.get('turn_state') == 'reserved':
                         meta['turn_state'] = 'failed'
+                        meta['failure_diagnostic'] = diagnostic
                         self.repository.save_owner(owner, fresh)
             raise
 
     def _conversation_proposals(self, owner, snapshot, source, command, context, result, policy):
-        from services.resume_intake_runtime import SynthesisError, CONVERSATION_OPERATION_FIELDS, CONVERSATION_OPERATIONS
+        from services.resume_intake_runtime import (
+            SynthesisError, CONVERSATION_OPERATION_FIELDS, CONVERSATION_OPERATIONS,
+            conversation_rejection,
+        )
         from services.my_data_extraction_adapter import RESUME_SECTIONS
         target_map = {row['target_ref']: row for row in context['targets']}
         unit_map = {(row['source_key'], u['unit_id']): u for row in context['materials'] for u in row['units']}
         unit_map.update({(source['source_key'], u['unit_id']): u for u in context['current_turn']['units']})
         proposals, changed_targets = [], set()
         for operation in result['operations']:
-            if (not isinstance(operation, dict) or set(operation) != CONVERSATION_OPERATION_FIELDS
-                    or operation['operation'] not in CONVERSATION_OPERATIONS):
-                raise SynthesisError('invalid_output')
+            if not isinstance(operation, dict) or set(operation) != CONVERSATION_OPERATION_FIELDS:
+                raise conversation_rejection('invalid_output', 'operation_contract', 'operation_shape')
+            if operation['operation'] not in CONVERSATION_OPERATIONS:
+                raise conversation_rejection('invalid_output', 'operation_contract', 'operation_name')
             op, ref, record_type = operation['operation'], operation['target_ref'], operation['record_type']
             if not all(isinstance(operation[name], list) for name in ('values', 'explicit_clears', 'bullet_edits', 'source_refs')):
-                raise SynthesisError('invalid_output')
+                raise conversation_rejection('invalid_output', 'operation_contract', 'list_field_type')
             if op in {'clarify', 'answer_question', 'skip_topic'}:
                 if ref is not None or any(operation[name] for name in ('values', 'explicit_clears', 'bullet_edits', 'source_refs')):
-                    raise SynthesisError('invalid_output')
+                    raise conversation_rejection('invalid_output', 'operation_contract', 'control_operation_payload')
                 continue
             target = target_map.get(ref) if ref is not None else None
             if (op != 'add_content' and target is None) or (op == 'add_content' and ref is not None):
-                raise SynthesisError('invalid_output')
+                raise conversation_rejection('invalid_output', 'operation_contract', 'target_binding')
             if ref and (ref in changed_targets or target['record_type'] != record_type):
-                raise SynthesisError('invalid_output')
+                raise conversation_rejection('invalid_output', 'operation_contract', 'record_type_or_duplicate_target')
             fields = ({'title', 'wording', 'classification'} if record_type == 'knowledge' else
                       EDITOR_FIELDS.get(record_type))
             if record_type == 'credential':
                 fields = fields | {'resume_credential_wording'}
             if fields is None:
-                raise SynthesisError('invalid_output')
+                raise conversation_rejection('invalid_output', 'operation_contract', 'unsupported_record_type')
             patch = {}
             for pair in operation['values']:
-                if (not isinstance(pair, dict) or set(pair) != {'field', 'value'} or pair['field'] not in fields
-                        or pair['field'] in patch or pair['value'] is None
-                        or not isinstance(pair['value'], (str, int, float, bool))):
-                    raise SynthesisError('invalid_output')
+                if not isinstance(pair, dict) or set(pair) != {'field', 'value'}:
+                    raise conversation_rejection('invalid_output', 'operation_contract', 'value_pair_shape')
+                if pair['field'] not in fields:
+                    raise conversation_rejection('invalid_output', 'operation_contract', 'value_field')
+                if pair['field'] in patch:
+                    raise conversation_rejection('invalid_output', 'operation_contract', 'value_duplicate')
+                if pair['value'] is None:
+                    raise conversation_rejection('invalid_output', 'operation_contract', 'value_null')
+                if not isinstance(pair['value'], (str, int, float, bool)):
+                    raise conversation_rejection('invalid_output', 'operation_contract', 'value_type')
                 if isinstance(pair['value'], str) and len(pair['value'].encode('utf-8')) > 8000:
-                    raise SynthesisError('invalid_output')
+                    raise conversation_rejection('invalid_output', 'operation_contract', 'value_size')
                 patch[pair['field']] = pair['value']
             clears = operation['explicit_clears']
             if (any(not isinstance(name, str) or name not in fields for name in clears)
                     or len(set(clears)) != len(clears) or set(clears) & set(patch)):
-                raise SynthesisError('invalid_output')
+                raise conversation_rejection('invalid_output', 'operation_contract', 'clear_fields')
             source_refs = operation['source_refs']
             if not source_refs or len(source_refs) > 100:
-                raise SynthesisError('invalid_output')
+                raise conversation_rejection('invalid_output', 'operation_contract', 'source_refs_required')
             for binding in source_refs:
                 if (not isinstance(binding, dict) or set(binding) != {'source_key', 'unit_id'}
                         or (binding['source_key'], binding['unit_id']) not in unit_map):
-                    raise SynthesisError('invalid_output')
+                    raise conversation_rejection('invalid_output', 'operation_contract', 'source_ref_binding')
             old = None
             values = copy.deepcopy(target['values']) if target else {}
             if ref and ref.startswith('proposal:'):
@@ -1028,24 +1045,24 @@ class ResumeIntakeService:
                         or edit['action'] not in {'include', 'exclude', 'revise'} or edit['field'] not in {'summary', 'wording', 'resume_credential_wording'}
                         or edit['field'] not in fields or edit['field'] in patch or edit['field'] in clears
                         or type(edit['index']) is not int or edit['index'] < 0):
-                    raise SynthesisError('invalid_output')
+                    raise conversation_rejection('invalid_output', 'operation_contract', 'bullet_edit_shape')
                 name, index = edit['field'], edit['index']
                 lines = (values.get(name) or '').splitlines()
                 if edit['action'] == 'include':
                     match = next((b for b in excluded if b['field'] == name and b['text'] == edit['expected_text']), None)
                     if match is None or edit['replacement'] is not None or index > len(lines):
-                        raise SynthesisError('invalid_output')
+                        raise conversation_rejection('invalid_output', 'operation_contract', 'bullet_include')
                     lines.insert(index, match['text']); excluded.remove(match)
                 else:
                     if index >= len(lines) or lines[index] != edit['expected_text']:
-                        raise SynthesisError('invalid_output')
+                        raise conversation_rejection('invalid_output', 'operation_contract', 'bullet_expected_text')
                     if edit['action'] == 'exclude':
                         if edit['replacement'] is not None:
-                            raise SynthesisError('invalid_output')
+                            raise conversation_rejection('invalid_output', 'operation_contract', 'bullet_exclude_replacement')
                         excluded.append({'field': name, 'index': index, 'text': lines.pop(index)})
                     else:
                         if not isinstance(edit['replacement'], str) or not edit['replacement'].strip() or len(edit['replacement'].encode('utf-8')) > 8000:
-                            raise SynthesisError('invalid_output')
+                            raise conversation_rejection('invalid_output', 'operation_contract', 'bullet_revision_replacement')
                         lines[index] = edit['replacement']
                 values[name] = '\n'.join(lines); edited_fields.add(name)
             values.update(patch)
@@ -1056,34 +1073,34 @@ class ResumeIntakeService:
                 # fields organize it but never substitute a shorter summary.
                 literal = '\n'.join(unit_map[(b['source_key'], b['unit_id'])]['text'] for b in source_refs)
                 if any(unit_map[(b['source_key'], b['unit_id'])]['kind'] != 'content' for b in source_refs):
-                    raise SynthesisError('invalid_output')
+                    raise conversation_rejection('invalid_output', 'operation_contract', 'source_unit_kind')
                 import re
                 if (any(b['source_key'] == source['source_key'] for b in source_refs)
                         and re.match(r'^\s*(?:stop|skip|remove|exclude|delete|undo|restore|include|change|revise|update|correct|replace|ask|what|which|how|why|when|where|can you|could you|help me)\b', command['statement'], re.I)):
-                    raise SynthesisError('invalid_output')
+                    raise conversation_rejection('invalid_output', 'operation_contract', 'command_as_new_content')
                 if command['statement'].strip().lower().rstrip('.!') in {
                         'remove that', 'stop', 'stop here', 'skip', 'skip this', 'undo that', 'never mind'}:
-                    raise SynthesisError('invalid_output')
+                    raise conversation_rejection('invalid_output', 'operation_contract', 'control_as_new_content')
                 identities = {'role': ('role_title', 'employer_name'), 'education': ('degree_name', 'institution_name'),
                               'credential': ('name', 'issuer'), 'skill': ('name',)}.get(record_type, ())
                 normalized_literal = ' '.join(literal.lower().split())
                 for name in identities:
                     if values.get(name) and ' '.join(str(values[name]).lower().split()) not in normalized_literal:
-                        raise SynthesisError('invalid_output')
+                        raise conversation_rejection('invalid_output', 'operation_contract', 'identity_not_literal')
                 body_field = {'role': 'summary', 'education': 'summary', 'skill': 'summary',
                               'knowledge': 'wording', 'accomplishment': 'wording',
                               'credential': 'resume_credential_wording'}.get(record_type)
                 if body_field:
                     values[body_field] = literal
                 if len(literal.encode('utf-8')) > 8000:
-                    raise SynthesisError('invalid_output')
+                    raise conversation_rejection('invalid_output', 'operation_contract', 'literal_size')
             section = operation['presentation_section'] or (target or {}).get('presentation_section')
             if section not in RESUME_SECTIONS:
-                raise SynthesisError('invalid_output')
+                raise conversation_rejection('invalid_output', 'operation_contract', 'presentation_section')
             if record_type == 'knowledge':
                 expected_class = 'personal' if section == 'My Story' else 'work'
                 if values.get('classification', expected_class) != expected_class:
-                    raise SynthesisError('invalid_output')
+                    raise conversation_rejection('invalid_output', 'operation_contract', 'knowledge_classification')
                 values['classification'] = expected_class
             if op != 'add_content' and values == target['values'] and op not in {'exclude_content', 'restore_content'}:
                 continue
@@ -1097,7 +1114,7 @@ class ResumeIntakeService:
                         or canonical_target['access_revision'] != old.get('target_access_revision')
                         or baseline and baseline != _json_digest({**canonical_target['values'],
                             **(canonical_target.get('proposed_values') or {})})):
-                    raise SynthesisError('changed')
+                    raise conversation_rejection('changed', 'context_revalidation', 'canonical_target_changed')
                 previous_note = (old.get('resume_conversation_v1') or {}).get('credential_binding')
                 if previous_note:
                     note = self._find_item(owner, previous_note['supplement_key'])
@@ -1105,7 +1122,7 @@ class ResumeIntakeService:
                             or note['content_token'] != previous_note['supplement_content_token']
                             or note['access_revision'] != previous_note['supplement_access_revision']
                             or _json_digest({**note['values'], **(note.get('proposed_values') or {})}) != previous_note['supplement_values_digest']):
-                        raise SynthesisError('changed')
+                        raise conversation_rejection('changed', 'context_revalidation', 'credential_supplement_changed')
             new_values = values if old or op == 'add_content' else {name: values[name] for name in set(patch) | edited_fields}
             new_values = {name: value for name, value in new_values.items() if name not in clears}
             plan = _ItemPlan(client_key='conversation', kind='text', record_type=record_type,

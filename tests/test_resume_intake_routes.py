@@ -970,6 +970,42 @@ if __name__ == "__main__":
 
 # Selected model/private assistance integration regressions; fixtures only.
 class RouteBoundaryTests(unittest.TestCase):
+    def test_actual_rejected_conversation_returns_only_closed_private_diagnostic(self):
+        from tests.test_resume_onboarding_conversation import ConversationTests, operation
+        from unittest.mock import patch
+        fixture = ConversationTests(); fixture.setUp(); fixture.owner = 'fiction-owner'
+        fixture.behavior = lambda ctx: {'response':'MODEL_PRIVATE_MARKER','next_question':'',
+            'operations':[operation(ctx, op='add_content', values={'PRIVATE_FIELD_MARKER':'MODEL_PRIVATE_MARKER'})]}
+        self.app.config['RESUME_PRIVATE_ASSISTANCE_SERVICE'] = fixture.assistance
+        command = fixture.command('Engineer at Example Labs. OWNER_PRIVATE_MARKER.')
+        with patch.object(self.routes, '_service', return_value=fixture.intake):
+            response = self.client.post('/api/resume-interview/me/turn', json=command,
+                headers={'X-PeerSlate-Request':'same-origin'})
+        self.assertEqual(response.status_code, 400)
+        body = response.get_json()
+        self.assertEqual(body['code'], 'invalid_output')
+        self.assertEqual(body['message'], 'Private assistance could not complete. Your words and manual editor remain available.')
+        self.assertEqual(body['diagnostic'], {'schema_version':1,'stage':'operation_contract','reason':'value_field'})
+        self.assertNotIn('PRIVATE_MARKER', response.get_data(as_text=True))
+        self.assertEqual(response.headers['Cache-Control'], 'private, no-store')
+        meta = fixture.intake.get_workspace(fixture.owner)['source_accounting'][0]
+        self.assertEqual(meta['request_id'], command['request_id'])
+        self.assertEqual(meta['failure_diagnostic'], body['diagnostic'])
+        self.assertEqual(meta['text'], command['statement'])
+        self.assertEqual(len(fixture.calls), 1)
+
+    def test_untrusted_diagnostic_attributes_do_not_escape_other_assistance_errors(self):
+        from services.resume_intake_runtime import SynthesisError
+        error = SynthesisError('invalid_output')
+        error.conversation_diagnostic = {'schema_version':1,'stage':'operation_contract',
+            'reason':'PRIVATE_MARKER','raw_response':'PRIVATE_MARKER'}
+        self.service.generate.side_effect = error
+        response = self.client.post('/api/resume-synthesis/me/proposals',
+            json={'request_id':str(uuid4())}, headers={'X-PeerSlate-Request':'same-origin'})
+        self.assertEqual(response.status_code, 400)
+        self.assertNotIn('diagnostic', response.get_json())
+        self.assertNotIn('PRIVATE_MARKER', response.get_data(as_text=True))
+
     def test_actual_conversation_timeout_is_unavailable_and_same_key_never_redispatches(self):
         from tests.test_resume_onboarding_conversation import ConversationTests
         from unittest.mock import patch

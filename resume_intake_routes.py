@@ -533,7 +533,7 @@ def _private_assistance(kind, method):
     raw = request.stream.read(100001)
     if len(raw) > 100000:
         return jsonify({'success': False, 'code': 'invalid', 'message': 'Request too large.'}), 413
-    from services.resume_intake_runtime import SynthesisError
+    from services.resume_intake_runtime import SynthesisError, conversation_failure_diagnostic
     from services.ai_foundation.errors import ProviderUnavailableError, ExecutionLimitError
     from services.resume_draft_service import (
         ResumeDraftConflictError, ResumeDraftValidationError, ResumeDraftUnavailableError,
@@ -578,8 +578,12 @@ def _private_assistance(kind, method):
     except SynthesisError as error:
         code = error.code
         status = 404 if code == 'not_found' else 409 if code == 'changed' else 503 if code == 'unavailable' else 400
-        return jsonify({'success': False, 'code': code,
-            'message': 'Private assistance could not complete. Your words and manual editor remain available.'}), status
+        body = {'success': False, 'code': code,
+            'message': 'Private assistance could not complete. Your words and manual editor remain available.'}
+        diagnostic = conversation_failure_diagnostic(error)
+        if diagnostic is not None:
+            body['diagnostic'] = diagnostic
+        return jsonify(body), status
     except (ProviderUnavailableError, ExecutionLimitError, TimeoutError, ResumeDraftUnavailableError,
             ResumeIntakeUnavailableError):
         return jsonify({'success': False, 'code': 'unavailable',
