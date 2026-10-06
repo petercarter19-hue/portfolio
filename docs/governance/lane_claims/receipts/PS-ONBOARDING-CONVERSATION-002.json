@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-ONBOARDING-CONVERSATION-002",
-  "candidate_sha": "3a1df028d1ca49b74a227c3fbe9ce1b5726cfbc6",
+  "candidate_sha": "2d2b4f6356a31a0f1d7e89705b42c63d7c647fde",
   "review_type": "independent",
   "reviewer_ref": "session:01a10a55-c6ca-75e3-9300-82cb1f0a5eab",
   "result": "pass",
-  "reviewed_at": "2026-10-06T01:05:36Z",
+  "reviewed_at": "2026-10-06T02:31:36Z",
   "findings": [],
-  "evidence_ref": "X:/PeerSlate/evidence/PS-ONBOARDING-CONVERSATION-002/independent-review/d01-binding-3a1df028/SOURCE_PASS_REVIEW.md (source/fixture only; original D01 and installed acceptance remain separate)"
+  "evidence_ref": "X:/PeerSlate/evidence/PS-ONBOARDING-CONVERSATION-002/independent-review/ci4186-preview-2d2b4f63/SOURCE_PASS_REVIEW.md (test synchronization source/fixture only; installed acceptance pending)"
 }

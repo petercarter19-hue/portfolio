@@ -2269,12 +2269,27 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         page.locator('#resume-intake-next-finish').click();page.locator('#resume-intake-optional-next').click()
         page.locator('#resume-intake-complete').click()
         page.locator('#resume-intake-view').click()
-        page.locator('#resume-intake-document-content .resume-publication__guest').wait_for()
+        # View keeps the earlier composition until its checkpoint and refresh
+        # complete. Sample both visible boxes from that completed DOM together.
+        geometry=page.wait_for_function("""() => {
+            const guide=document.querySelector('#resume-intake');
+            const region=document.querySelector('#resume-intake-document');
+            const guest=region.querySelector('.resume-publication__guest');
+            const status=document.querySelector('#resume-intake-document-status');
+            if (guide.open || !guide.hidden || region.hidden ||
+                region.getAttribute('aria-busy')!=='false' || !guest ||
+                !status.textContent.startsWith('Your actual private Resume preview.') ||
+                !region.getClientRects().length || !guest.getClientRects().length ||
+                getComputedStyle(region).visibility!=='visible' ||
+                getComputedStyle(guest).visibility!=='visible') return null;
+            return {document_width:region.getBoundingClientRect().width,
+                guest_width:guest.getBoundingClientRect().width};
+        }""").json_value()
         content=page.locator('#resume-intake-document-content').inner_text()
         self.assertIn('Issued 2022-06',content);self.assertIn('Expires 2027-06',content)
         self.assertNotIn('2022-06-01',content);self.assertNotIn('2027-06-01',content)
-        self.assertGreater(page.locator('#resume-intake-document').bounding_box()['width'],850)
-        self.assertGreater(page.locator('#resume-intake-document-content .resume-publication__guest').bounding_box()['width'],500)
+        self.assertGreater(geometry['document_width'],850)
+        self.assertGreater(geometry['guest_width'],500)
         for width,height in [(390,844),(320,700),(640,500)]:
             page.set_viewport_size({'width':width,'height':height})
             self.assertLessEqual(page.evaluate('document.documentElement.scrollWidth-innerWidth'),1)
