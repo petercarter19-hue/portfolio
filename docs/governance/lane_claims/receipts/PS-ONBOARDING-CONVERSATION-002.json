@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-ONBOARDING-CONVERSATION-002",
-  "candidate_sha": "11934962e3b52f5096bd9084478001a0ab8df9b0",
+  "candidate_sha": "3a1df028d1ca49b74a227c3fbe9ce1b5726cfbc6",
   "review_type": "independent",
   "reviewer_ref": "session:01a10a55-c6ca-75e3-9300-82cb1f0a5eab",
   "result": "pass",
-  "reviewed_at": "2026-10-05T22:20:17Z",
+  "reviewed_at": "2026-10-06T01:05:36Z",
   "findings": [],
-  "evidence_ref": "X:/PeerSlate/evidence/PS-ONBOARDING-CONVERSATION-002/independent-review/FIELD_CONTRACT_11934962_SOURCE_PASS_REVIEW.md (field-contract source/fixture only; LIVE-01 and installed acceptance pending)"
+  "evidence_ref": "X:/PeerSlate/evidence/PS-ONBOARDING-CONVERSATION-002/independent-review/d01-binding-3a1df028/SOURCE_PASS_REVIEW.md (source/fixture only; original D01 and installed acceptance remain separate)"
 }
