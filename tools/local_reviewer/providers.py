@@ -574,7 +574,8 @@ def bound_document(path, expected):
 def bound_factory(data, *, for_promotion=False):
     allowed = (SUCCESSOR_FACTORY_SHA256, ONBOARDING_FACTORY_SHA256, CONVERSATION_FACTORY_SHA256,
                PRIVATE_DELIVERY_FACTORY_SHA256, PRIVATE_DIAGNOSTIC_DELIVERY_FACTORY_SHA256,
-               PRIVATE_FIELD_CONTRACT_DELIVERY_FACTORY_SHA256)
+               PRIVATE_FIELD_CONTRACT_DELIVERY_FACTORY_SHA256, PRIVATE_D01_BINDING_DELIVERY_FACTORY_SHA256,
+               PRIVATE_PREVIEW_FENCE_DELIVERY_FACTORY_SHA256, PRIVATE_CORRECTED_DELIVERY_FACTORY_SHA256)
     if not for_promotion:
         allowed += (FACTORY_SHA256,)
     if not isinstance(data, bytes) or hashlib.sha256(data).hexdigest() not in allowed:
@@ -585,6 +586,9 @@ def bound_factory(data, *, for_promotion=False):
 PRIVATE_DELIVERY_FACTORY_SHA256 = "e64b1454dfc7bddb1c86a149c5914a47191e69ffceb2c9eeede07d7332edb64e"
 PRIVATE_DIAGNOSTIC_DELIVERY_FACTORY_SHA256 = "02da9db67c221ec6a0a80f31d9859c2b4e5f8f4b6686c4658f65c3cb9246fdf4"
 PRIVATE_FIELD_CONTRACT_DELIVERY_FACTORY_SHA256 = "88432919501a4d6e1a3abc2270464cc5c221aa3a4c1708ebe554aa4c3b4c0042"
+PRIVATE_D01_BINDING_DELIVERY_FACTORY_SHA256 = "0c583fa6cd6ad4891c2426de5ec648f1d5ef0418b88a210eaaffda062cf2bf37"
+PRIVATE_PREVIEW_FENCE_DELIVERY_FACTORY_SHA256 = "1936626c77d1df8fcfd10c5a24ad1a84294e268a2fe755757ca16401324b27ac"
+PRIVATE_CORRECTED_DELIVERY_FACTORY_SHA256 = "4dcaa73704388596c6aa6f7614bc6756fb6b8b26ff934ec05b07bfc96abd523d"
 PRIVATE_ONBOARDING_QUALIFICATION = {
     "schema": 1,
     "reviewed_source_sha": "4f699d76077d1b8698e1e2c46f959d9b0251cc5a",
@@ -614,12 +618,38 @@ PRIVATE_FIELD_CONTRACT_ONBOARDING_QUALIFICATION = {
 }
 
 
+PRIVATE_D01_BINDING_ONBOARDING_QUALIFICATION = {
+    **PRIVATE_ONBOARDING_QUALIFICATION,
+    "reviewed_source_sha": "3a1df028d1ca49b74a227c3fbe9ce1b5726cfbc6",
+    "accepted_source_sha": "a473701ac57fe182107ec74584396c7b28b94757",
+    "source_review_receipt_sha256": "e33e7abc1c00ac6f7abe15a83cfd6b14398f27552a35dc5fa72dd0f5e42b4149",
+}
+
+
+PRIVATE_PREVIEW_FENCE_ONBOARDING_QUALIFICATION = {
+    **PRIVATE_ONBOARDING_QUALIFICATION,
+    "reviewed_source_sha": "2d2b4f6356a31a0f1d7e89705b42c63d7c647fde",
+    "accepted_source_sha": "34157f292b106a6cb7c75d4081d6ae8fa1874806",
+    "source_review_receipt_sha256": "d62140c001c505a1bd7d217ca0471f3d669228008851484002d86573b97ffdf8",
+}
+
+
+PRIVATE_CORRECTED_ONBOARDING_QUALIFICATION = {
+    **PRIVATE_ONBOARDING_QUALIFICATION,
+    "reviewed_source_sha": "5185ffb931dce9676516e8ded28334ff1b8ba05c",
+    "accepted_source_sha": "7e7905c1d972fb842b697aa4884051005f6a206c",
+    "source_review_receipt_sha256": "670c8bdf1bfb46b634000f1c4a0fb02c212a8ee55cc315626bec978468a92461",
+    "behaviors": ["bound_credential_details", "monotonic_composer_lifecycle", "contextual_exclusion_recovery"],
+}
+
+
 def onboarding_qualification(interface):
     proof = interface.get("private_onboarding_qualification")
     if proof is None:
         return None
     if proof not in (PRIVATE_ONBOARDING_QUALIFICATION, PRIVATE_DIAGNOSTIC_ONBOARDING_QUALIFICATION,
-                     PRIVATE_FIELD_CONTRACT_ONBOARDING_QUALIFICATION):
+                     PRIVATE_FIELD_CONTRACT_ONBOARDING_QUALIFICATION, PRIVATE_D01_BINDING_ONBOARDING_QUALIFICATION,
+                     PRIVATE_PREVIEW_FENCE_ONBOARDING_QUALIFICATION, PRIVATE_CORRECTED_ONBOARDING_QUALIFICATION):
         raise ValueError("Reviewed private onboarding qualification changed")
     return proof
 

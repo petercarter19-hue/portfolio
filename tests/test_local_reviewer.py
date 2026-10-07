@@ -1014,6 +1014,54 @@ class WorkspaceOperatorTests(unittest.TestCase):
                 selected_context(self.root)
 
 
+class RecoveryBehaviorAdmissionTests(unittest.TestCase):
+    def test_retained_recovery_and_exclusion_shapes_require_behavior_even_after_decision(self):
+        from tools.local_reviewer.manager import RECOVERY_BEHAVIOR, required_onboarding_behaviors
+        shapes = [
+            {"recovery_review": {"as_shown": True, "token": "a" * 64}},
+            {"recovery_review": {"as_shown": False, "token": "b" * 64}},
+            {"resume_exclusion": True, "revision_of": "prior"},
+            {"bullet_edits": [{"action": "exclude"}], "revision_of": "prior"},
+            {"excluded_bullets": [{"text": "Retained literal detail."}]},
+            {"resume_restoration": True},
+        ]
+        for namespace in (None, "a" * 64):
+            for metadata in shapes:
+                with self.subTest(namespace=namespace, metadata=metadata):
+                    obj = SimpleNamespace(owners={"synthetic-owner": {"proposals": {
+                        "proposal": {"state": "accepted", "target_key": "saved-record",
+                                     "resume_conversation_v1": metadata}}}})
+                    state = State({"intake._owners": (obj, "owners")}, Codec())
+                    with tempfile.TemporaryDirectory() as directory:
+                        store = SnapshotStore(Path(directory) / "state.json", state, namespace=namespace)
+                        store.save(); store.load()
+                        self.assertIn(RECOVERY_BEHAVIOR, required_onboarding_behaviors(state))
+
+    def test_retained_validated_stop_without_exclusions_requires_executed_behavior(self):
+        from tools.local_reviewer.manager import RECOVERY_BEHAVIOR, required_onboarding_behaviors
+        for namespace in (None, "a" * 64):
+            for marker, required in ((True, True), (False, False), (None, False), ("true", False)):
+                with self.subTest(namespace=namespace, marker=marker):
+                    obj = SimpleNamespace(owners={"synthetic-owner": {"proposals": {}, "sources": {
+                        "retained-control": {"structured_values": {"resume_conversation_v1": {
+                            "request_id": "retained-request", "topic_skipped": marker}}}}}})
+                    state = State({"intake._owners": (obj, "owners")}, Codec())
+                    with tempfile.TemporaryDirectory() as directory:
+                        store = SnapshotStore(Path(directory) / "state.json", state, namespace=namespace)
+                        store.save(); store.load()
+                        self.assertEqual(RECOVERY_BEHAVIOR in required_onboarding_behaviors(state), required)
+
+    def test_declared_label_and_decoder_success_do_not_replace_executed_recovery_proof(self):
+        from tools.local_reviewer.manager import RECOVERY_BEHAVIOR, require_onboarding_behavior_coverage
+        legacy = ["bound_credential_details", "monotonic_composer_lifecycle"]
+        required = {RECOVERY_BEHAVIOR}
+        with self.assertRaisesRegex(ValueError, "lacks reviewed behavior"):
+            require_onboarding_behavior_coverage(required, legacy)
+        with self.assertRaisesRegex(ValueError, "execution does not qualify"):
+            require_onboarding_behavior_coverage(required, legacy + [RECOVERY_BEHAVIOR], legacy)
+        require_onboarding_behavior_coverage(required, legacy + [RECOVERY_BEHAVIOR], legacy + [RECOVERY_BEHAVIOR])
+
+
 class FixtureTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -1073,6 +1121,23 @@ class FixtureTests(unittest.TestCase):
             self.assertEqual(entries[0]["values"]["skill_name"], label)
             self.assertFalse(entries[0]["resume_display"])
             self.assertFalse(entries[0]["visitor_ai"])
+
+    def test_target_recovery_qualification_executes_routes_preserving_original_binding_entries_and_disk(self):
+        from tools.local_reviewer.manager import qualify_recovery_behavior
+        disk = self.store.path.read_bytes()
+        original = self.state.validate(self.state.capture())
+        qualify_recovery_behavior(self.fixture, self.app)
+        after = self.state.validate(self.state.capture())
+        for binding, value in original.items():
+            if type(value) is dict:
+                self.assertTrue(all(key in after[binding] and after[binding][key] == row for key, row in value.items()), binding)
+            elif type(value) is list:
+                self.assertEqual(after[binding][:len(value)], value, binding)
+            elif type(value) in (set, frozenset):
+                self.assertTrue(value <= after[binding], binding)
+            else:
+                self.assertEqual(after[binding], value, binding)
+        self.assertEqual(self.store.path.read_bytes(), disk)
 
     def test_failed_disk_publish_refuses_success_and_restores_memory(self):
         self.select("member-a")

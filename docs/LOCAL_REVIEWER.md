@@ -190,6 +190,23 @@ dispatch no providers and do not write the installation's snapshots or ledger.
 They establish processing and behavior compatibility; actual installed
 AI/Speech/OCR/browser acceptance remains a separate requirement.
 
+Retained exclusion, recovery history, and validated stop control also require the reviewed
+`contextual_exclusion_recovery` behavior. The target must execute its own
+authenticated recovery and decision routes with assistance disabled: pending
+Undo returns the exact prior review, saved restoration requires explicit
+confirmation as shown, and stale source/history/target tokens refuse before and
+inside the commit boundary. Duplicate literal bullets retain their exact history
+ordinal. Failed commits and retries cannot partially save or duplicate content.
+Even without exclusions, retained stop metadata requires the target's actual
+validated skip response and identical replay to preserve pending review and
+saved facts without another dispatch or question. An older target with recovery
+routes and the same capability label cannot pass without these stop semantics.
+Qualification compares retained requirements with both the reviewed declaration
+and executed behavior; a successful decoder or declared label alone is
+insufficient. An older app lacking this behavior is refused before rollback
+changes a pointer or snapshot. Current content is preserved for a reviewed
+forward correction.
+
 Private rollback preserves current content. It probes the exact preserved target
 pair in a fresh child; `--original-provider-configuration` explicitly selects the
 root pair when a prior manifest predates immutable pair selection. Current

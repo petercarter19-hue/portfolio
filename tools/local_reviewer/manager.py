@@ -520,6 +520,9 @@ def rollback_stopped(root, previous, old):
     return {"rolled_back": old["release"], "displaced_checkpoint": checkpoint}
 
 
+RECOVERY_BEHAVIOR = "contextual_exclusion_recovery"
+
+
 def required_onboarding_behaviors(state):
     required = set()
     owners = state.validate(state.capture()).get("intake._owners", {})
@@ -529,12 +532,30 @@ def required_onboarding_behaviors(state):
         if (owner.get("draft_revision", 0) or (owner.get("drafts") or {}).get("composer")):
             required.add("monotonic_composer_lifecycle")
         for proposal in (owner.get("proposals") or {}).values():
-            if (proposal.get("resume_conversation_v1") or {}).get("approved_credential_binding"):
+            metadata = proposal.get("resume_conversation_v1") or {}
+            if metadata.get("approved_credential_binding"):
                 required.add("bound_credential_details")
+            if ("recovery_review" in metadata or metadata.get("resume_exclusion")
+                    or metadata.get("resume_restoration") or metadata.get("excluded_bullets")
+                    or any(edit.get("action") in {"exclude", "include"}
+                           for edit in metadata.get("bullet_edits") or [])):
+                required.add(RECOVERY_BEHAVIOR)
+        for source in (owner.get("sources") or {}).values():
+            metadata = (source.get("structured_values") or {}).get("resume_conversation_v1") or {}
+            if metadata.get("topic_skipped") is True:
+                required.add(RECOVERY_BEHAVIOR)
     return required
 
 
-def qualify_onboarding_behavior(fixture, app):
+def require_onboarding_behavior_coverage(required, declared, qualified=None):
+    """A retained decision contract needs both reviewed and executed proof."""
+    if not set(required) <= set(declared):
+        raise ValueError("Target lacks reviewed behavior required by retained onboarding decisions; preserve content and use a reviewed forward correction")
+    if qualified is not None and not (set(required) | set(declared)) <= set(qualified):
+        raise ValueError("Target execution does not qualify the retained onboarding decision behavior")
+
+
+def qualify_onboarding_behavior(fixture, app, *, behaviors=()):
     """Actual zero-provider synthetic routes/renderer, not capability labels."""
     from datetime import datetime, timedelta, timezone
     from unittest.mock import patch
@@ -628,7 +649,258 @@ def qualify_onboarding_behavior(fixture, app):
                     or after["drafts"]["composer"]["text"] != next_command["text"]
                     or after["proposals"] != approved_owner["proposals"]):
                 raise ValueError("Target accepts stale composer input or loses acknowledged approval")
-    return ["bound_credential_details", "monotonic_composer_lifecycle"]
+    qualified = ["bound_credential_details", "monotonic_composer_lifecycle"]
+    if RECOVERY_BEHAVIOR in behaviors:
+        qualify_recovery_behavior(fixture, app)
+        qualified.append(RECOVERY_BEHAVIOR)
+    return qualified
+
+
+def qualify_recovery_behavior(fixture, app):
+    """Execute the selected target's real decision routes on isolated owners.
+
+    The fixture, services and test schema helpers come from the target source
+    selected by build_fixture. No installed namespace or provider is written.
+    """
+    from unittest.mock import patch
+    from uuid import uuid4
+    from itsdangerous import URLSafeTimedSerializer
+    from identity import PeerSlatePrincipal
+    from services.resume_intake_repository import InMemoryIntakeUnitOfWork, ResumeIntakeStoreUnavailable
+    from services.resume_intake_runtime import PrivateResumeAssistanceService
+    from services.resume_guide_service import ResumeGuideService
+    from tests.test_my_data_intake_ai import add_request
+    from tests.test_resume_onboarding_conversation import (
+        ContextPorts, DeterministicFakeExtractionAdapter, FakeUpload, extracted_pipeline, operation,
+    )
+
+    def check(condition, reason):
+        if not condition:
+            raise ValueError("Target recovery behavior failed: " + reason)
+
+    check(callable(getattr(fixture.intake, "review_excluded_details", None)), "contextual target interface unavailable")
+
+    @contextmanager
+    def case():
+        owner = str(uuid4())
+        intake = type(fixture.intake)(repository=fixture.intake.repository, draft_service=fixture.shared.draft,
+            policy=fixture.intake.policy(), original_files=fixture.intake.original_files,
+            interpreter=lambda text, kind: [{"kind": "inferred_wording", "record_type": "role",
+                "confidence": "certain", "values": {"role_title": "Engineer", "employer_name": "Example Labs"}}])
+        ports = ContextPorts(fixture.shared.canonical)
+        action, calls = [], []
+        def provider(**kwargs):
+            calls.append(kwargs["context"])
+            return {"response": "Review these details.", "next_question": "",
+                    "operations": [action[0](kwargs["context"])]}
+        assistance = PrivateResumeAssistanceService(draft_service=fixture.shared.draft, catalog=ports,
+            policy_repository=ports, providers={"interview": provider},
+            signer=URLSafeTimedSerializer("isolated-recovery-probe-" + str(uuid4())),
+            limits={"maximum_task_bytes": 20000, "maximum_input_bytes": 65536,
+                    "maximum_output_bytes": 100000, "maximum_field_bytes": 8000, "proof_max_age_seconds": 900})
+        principal = PeerSlatePrincipal("development", "private-recovery-behavior-probe", owner,
+                                      display_name="Synthetic recovery owner", is_development=True)
+        with ExitStack() as stack:
+            stack.enter_context(patch.dict(app.config, {"RESUME_INTAKE_SERVICE": intake,
+                "RESUME_DRAFT_SERVICE": fixture.shared.draft, "ENTRY_POLICY_SERVICE": fixture.shared.policy,
+                "RESUME_GUIDE_SERVICE": ResumeGuideService(repository=intake.repository),
+                "PEERSLATE_RESUME_INTAKE_ENABLED": True, "PEERSLATE_RESUME_EDITOR_ENABLED": True,
+                "PEERSLATE_RESUME_INTERVIEW_ENABLED": False, "RESUME_PRIVATE_ASSISTANCE_SERVICE": None}))
+            stack.enter_context(patch("identity.get_current_principal", return_value=principal))
+            stack.enter_context(patch("auth_routes.get_current_principal", return_value=principal))
+            client = app.test_client()
+            def request(path, payload):
+                return client.post("/api/resume-intake/me/" + path, json=payload,
+                                   base_url="http://127.0.0.1:53720",
+                                   headers={"X-PeerSlate-Request": "same-origin"})
+            def turn(ref, make_operation, *, command=None, full_response=False):
+                action[:] = [make_operation]
+                result = intake.converse(owner, command or {"request_id": str(uuid4()),
+                    "expected_draft_version": fixture.shared.draft.get_workspace(owner)["draft_version"],
+                    "statement": "Synthetic review instruction.", "selected_target": ref, "source_keys": []},
+                    assistance=assistance)
+                return result if full_response else result["proposals"][0]
+            def seed(summary="Keep my contribution.\nRetain this limitation."):
+                return intake.submit(owner, add_request(items=[{"client_key": "role", "record_type": "role",
+                    "values": {"role_title": "Engineer", "employer_name": "Example Labs", "location_text": "Denver",
+                               "summary": summary}, "explicit_clears": []}]))["results"][0]["record_key"]
+            def decide(proposal, decision="accept", **extra):
+                command = {"request_id": str(uuid4()), "proposal_key": proposal["proposal_key"],
+                           "decision": decision, **extra}
+                response = request("proposals/decision", command)
+                check(response.status_code == 200, "explicit decision " + str(response.status_code) + ": " + response.get_data(as_text=True))
+                return response.json
+            def review_command(row):
+                return {"request_id": str(uuid4()), "recovery_key": row["recovery_key"],
+                        "recovery_token": row["recovery_token"]}
+            yield owner, intake, calls, request, turn, seed, decide, review_command
+
+    # Retained stop control has the same compatibility requirement even when
+    # no exclusion exists. Execute the target's validator, response and replay.
+    with case() as (owner, intake, calls, request, turn, seed, decide, review_command):
+        key = seed()
+        pending = turn("record:" + key, lambda ctx: operation(ctx, ref="record:" + key,
+                       values={"location_text": "Chicago"}))
+        command = {"request_id": str(uuid4()),
+            "expected_draft_version": fixture.shared.draft.get_workspace(owner)["draft_version"],
+            "statement": "Don't worry about it.", "selected_target": "proposal:" + pending["proposal_key"],
+            "source_keys": []}
+        before_pending = intake.get_workspace(owner)["pending_proposals"]
+        before_draft = fixture.shared.draft.get_workspace(owner)
+        stop = lambda ctx: {**operation(ctx, op="skip_topic"), "source_refs": []}
+        response = turn(command["selected_target"], stop, command=command, full_response=True)
+        check(response.get("topic_skipped") is True, "validated stop control absent")
+        check(response.get("next_question") == "" and response["proposals"] == [], "stop starts another exchange")
+        replay = turn(command["selected_target"], stop, command=command, full_response=True)
+        check(replay.get("replayed") is True and replay.get("topic_skipped") is True
+              and replay.get("next_question") == "" and replay["proposals"] == [] and len(calls) == 2,
+              "stop replay changes control or dispatches again")
+        check(intake.get_workspace(owner)["pending_proposals"] == before_pending
+              and fixture.shared.draft.get_workspace(owner) == before_draft, "stop changes retained review or facts")
+        sources = intake.repository.load_owner(owner)["sources"].values()
+        check(any(((source.get("structured_values") or {}).get("resume_conversation_v1") or {}).get("topic_skipped")
+                  is True for source in sources), "stop control not retained")
+
+    # Rejected imports are returned to review through the actual disabled-AI
+    # HTTP route; failed publication and replay do not create a second item.
+    with case() as (owner, intake, calls, request, turn, seed, decide, review_command):
+        original_text = "Experience\nEngineer, Example Labs.\nCoordinated eight people; not their manager."
+        intake._document_pipeline = extracted_pipeline(original_text)
+        intake._extraction_adapter = DeterministicFakeExtractionAdapter([{"record_type": "role",
+            "values": {"role_title": "Engineer", "employer_name": "Example Labs"},
+            "quote": original_text.split("\n", 1)[1], "outcome": "new", "confidence": "certain"}])
+        intake.submit(owner, add_request(attachments=[{"client_key": "doc", "kind": "document",
+            "declared_content_type": "text/plain", "filename": "resume.txt"}]),
+            files={"doc": FakeUpload("text/plain", original_text.encode())})
+        original = intake.get_workspace(owner)["pending_proposals"][0]
+        decide(original, "reject")
+        command = review_command(intake.get_workspace(owner)["resume_recoverable_details"][0])
+        before = intake.repository.load_owner(owner)
+        forged = request("excluded-details/review", {**command, "recovery_token": "0" * 64})
+        check(forged.status_code == 409 and intake.repository.load_owner(owner) == before, "forged recovery token")
+        with patch.object(InMemoryIntakeUnitOfWork, "commit", side_effect=ResumeIntakeStoreUnavailable("probe failure")):
+            check(request("excluded-details/review", command).status_code == 503, "failed review commit")
+        check(intake.repository.load_owner(owner) == before and not fixture.shared.canonical.list_items(owner), "atomic review rollback")
+        reviewed = request("excluded-details/review", command)
+        check(reviewed.status_code == 200 and not fixture.shared.canonical.list_items(owner), "review without saving")
+        proposal = reviewed.json["proposals"][0]
+        replay = request("excluded-details/review", command)
+        check(replay.status_code == 200 and replay.json["replayed"]
+              and replay.json["proposals"][0]["proposal_key"] == proposal["proposal_key"], "review replay")
+        check(request("excluded-details/review", {**command, "recovery_token": "0" * 64}).status_code == 409, "changed-payload replay")
+        decide(proposal)
+        check(len(fixture.shared.canonical.list_items(owner)) == 1 and not calls, "import confirmation without AI")
+
+    # Both exact direct saved targets and prior pending amendments must work
+    # for whole-record and literal-bullet Undo, including explicit clears.
+    for pending in (False, True):
+        for bullet in (False, True):
+            with case() as (owner, intake, calls, request, turn, seed, decide, review_command):
+                key = seed(); canonical = fixture.shared.draft.get_workspace(owner)
+                ref = "record:" + key; prior = None
+                summary = "Keep my contribution.\nRetain this limitation.\nI wrote a review checklist."
+                if pending:
+                    prior = turn(ref, lambda ctx: operation(ctx, ref=ref,
+                        values={"summary": summary}, clears=["location_text"]))
+                    ref = "proposal:" + prior["proposal_key"]
+                edits = [{"action": "exclude", "field": "summary", "index": 1,
+                          "expected_text": "Retain this limitation.", "replacement": None}] if bullet else []
+                exclusion = turn(ref, lambda ctx: operation(ctx,
+                    op="revise_content" if bullet else "exclude_content", ref=ref, bullets=edits))
+                row = intake.get_workspace(owner)["pending_proposals"][0]
+                check(bool(row.get("undo_exclusion_token")), "bound Undo token")
+                command = {"request_id": str(uuid4()), "proposal_key": exclusion["proposal_key"],
+                           "decision": "reject", "undo_exclusion_token": row["undo_exclusion_token"]}
+                before = intake.repository.load_owner(owner)
+                with patch.object(InMemoryIntakeUnitOfWork, "commit", side_effect=ResumeIntakeStoreUnavailable("probe failure")):
+                    check(request("proposals/decision", command).status_code == 503, "failed Undo commit")
+                check(intake.repository.load_owner(owner) == before, "atomic Undo rollback")
+                undone = request("proposals/decision", command)
+                check(undone.status_code == 200 and fixture.shared.draft.get_workspace(owner) == canonical, "Undo without canonical write")
+                replay = request("proposals/decision", command)
+                check(replay.status_code == 200 and replay.json["replayed"], "Undo replay")
+                if pending:
+                    restored = undone.json["restored_proposal"]
+                    check(restored["target_key"] == key and restored["proposed_values"] == prior["proposed_values"]
+                          and restored["explicit_clears"] == prior["explicit_clears"]
+                          and restored["provided_fields"] == prior["provided_fields"]
+                          and not restored["resume_conversation_v1"]["recovery_review"]["as_shown"]
+                          and replay.json["restored_proposal"]["proposal_key"] == restored["proposal_key"], "exact pending lineage")
+                    decide(restored)
+                    item = fixture.shared.draft.get_workspace(owner)["items"][0]
+                    check(item["proposed_values"]["summary"] == summary and item["proposed_values"]["location_text"] is None,
+                          "explicit pending confirmation")
+                else:
+                    check("restored_proposal" not in undone.json and not intake.get_workspace(owner)["pending_proposals"], "saved Undo rejects only")
+                check(len(calls) == 1 + int(pending), "Undo does not dispatch AI")
+
+    # Saved restoration stays exact-as-shown. Duplicate equal text is bound
+    # to retained proposal/edit identity, and other exclusions remain intact.
+    for bullet in (False, True):
+        with case() as (owner, intake, calls, request, turn, seed, decide, review_command):
+            key = seed("Same literal detail.\nSame literal detail.\nKeep this limitation.")
+            ref = "record:" + key
+            edits = [{"action": "exclude", "field": "summary", "index": index,
+                      "expected_text": "Same literal detail.", "replacement": None} for index in (1, 0)] if bullet else []
+            exclusion = turn(ref, lambda ctx: operation(ctx,
+                op="revise_content" if bullet else "exclude_content", ref=ref, bullets=edits))
+            decide(exclusion)
+            for ordinal in range(2 if bullet else 1):
+                rows = intake.get_workspace(owner)["resume_recoverable_details"]
+                command = review_command(rows[-1] if bullet else rows[0])
+                before = fixture.shared.draft.get_workspace(owner)
+                reviewed = request("excluded-details/review", command)
+                check(reviewed.status_code == 200 and fixture.shared.draft.get_workspace(owner) == before, "saved review does not restore")
+                proposal = reviewed.json["proposals"][0]
+                check(proposal["resume_conversation_v1"]["recovery_review"]["as_shown"], "saved exact-as-shown marker")
+                snapshot = intake.repository.load_owner(owner)
+                altered = {**proposal["proposed_values"], "summary": "Forged restored wording."}
+                response = request("proposals/decision", {"request_id": str(uuid4()), "proposal_key": proposal["proposal_key"],
+                    "decision": "edit", "confirmed_values": altered})
+                check(response.status_code == 400 and intake.repository.load_owner(owner) == snapshot, "saved restoration cannot be edited")
+                if bullet:
+                    meta = proposal["resume_conversation_v1"]
+                    check(meta["recovery_bullet_identity"] == [exclusion["proposal_key"], 1 - ordinal]
+                          and meta["bullet_edits"][0]["index"] == ordinal, "duplicate ordinal identity")
+                decide(proposal)
+                check(len(intake.get_workspace(owner)["resume_recoverable_details"]) == (1 - ordinal if bullet else 0), "other exclusions preserved")
+            check(len(fixture.shared.canonical.list_items(owner)) == 1 and len(calls) == 1, "saved restoration without duplication or AI")
+
+    # Revalidate the current retained state before and under the actual commit
+    # lock. Changed target is an independent synthetic canonical edit.
+    for change in ("history", "source", "purge", "target", "commit_lock"):
+        with case() as (owner, intake, calls, request, turn, seed, decide, review_command):
+            key = seed(); ref = "record:" + key
+            exclusion = turn(ref, lambda ctx: operation(ctx, op="exclude_content", ref=ref))
+            decide(exclusion)
+            command = review_command(intake.get_workspace(owner)["resume_recoverable_details"][0])
+            reviewed = request("excluded-details/review", command)
+            check(reviewed.status_code == 200, "stale-case initial review")
+            proposal = reviewed.json["proposals"][0]
+            def changed_target():
+                snapshot = fixture.shared.policy.repository.load_owner(owner)
+                snapshot["entries"][key]["content_version"] += 1
+                fixture.shared.policy.repository.save_owner(owner, snapshot)
+            if change in {"history", "source"}:
+                snapshot = intake.repository.load_owner(owner)
+                if change == "history": snapshot["proposals"][exclusion["proposal_key"]]["command_digest"] = "0" * 64
+                else: snapshot["sources"][exclusion["provenance"]["source_key"]]["version"] += 1
+                intake.repository.save_owner(owner, snapshot)
+            elif change == "purge":
+                intake.purge_source(owner, {"request_id": str(uuid4()),
+                    "source_key": exclusion["provenance"]["source_key"]})
+            elif change == "target": changed_target()
+            before = intake.repository.load_owner(owner)
+            original_enter = InMemoryIntakeUnitOfWork.__enter__
+            def interleave(unit):
+                changed_target()
+                return original_enter(unit)
+            with patch.object(InMemoryIntakeUnitOfWork, "__enter__", interleave if change == "commit_lock" else original_enter):
+                response = request("proposals/decision", {"request_id": str(uuid4()),
+                    "proposal_key": proposal["proposal_key"], "decision": "accept"})
+            check(response.status_code == 409 and (not response.json.get("proposed_values")
+                  or change == "purge" and "Keep my contribution." not in json.dumps(response.json))
+                  and intake.repository.load_owner(owner) == before, "stale " + change + " confirmation")
 
 
 def private_permissions(root, *, apply=False):
@@ -1091,6 +1363,8 @@ def main(argv=None):
             proof = onboarding_qualification(interface) if interface is not None else None
             if required and proof is None:
                 raise ValueError("Target lacks exact reviewed factory/source proof for current approved credential/composer behavior")
+            declared = proof["behaviors"] if proof is not None else []
+            require_onboarding_behavior_coverage(required, declared)
             if required and target is not None:
                 for relative in ("tools/local_reviewer/runtime.py", "tools/local_reviewer/manager.py"):
                     if target.get("controller_files", {}).get(relative) != digest(Path(__file__).resolve().parents[2] / relative):
@@ -1098,7 +1372,8 @@ def main(argv=None):
             behaviors = []
             if proof is not None:
                 state.restore(fresh)
-                behaviors = qualify_onboarding_behavior(fixture, app)
+                behaviors = qualify_onboarding_behavior(fixture, app, behaviors=declared)
+            require_onboarding_behavior_coverage(required, declared, behaviors)
             print(json.dumps({"compatible": True, "contract": state.contract, "bindings": len(state.bindings),
                               "record_constructors": len(state.codec.classes),
                               "namespaces": namespaces, "required_behaviors": sorted(required),

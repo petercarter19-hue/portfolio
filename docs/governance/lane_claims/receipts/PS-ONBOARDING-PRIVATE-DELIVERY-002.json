@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-ONBOARDING-PRIVATE-DELIVERY-002",
-  "candidate_sha": "05a34f44be15ae89325993ed17f2ca23732ebad8",
+  "candidate_sha": "16370dc7ef8410ff3ea8e1c28f8697f73091326a",
   "review_type": "independent",
-  "reviewer_ref": "session:01a10a55-c6ca-75e3-9300-82cb1f0a5eab",
+  "reviewer_ref": "session:01a112b3-11a5-7440-9a60-5397c5472376",
   "result": "pass",
-  "reviewed_at": "2026-10-05T23:05:51Z",
+  "reviewed_at": "2026-10-07T00:31:53Z",
   "findings": [],
-  "evidence_ref": "X:/PeerSlate/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002/independent-review/FIELD_FACTORY_05A34F44_SOURCE_PASS_REVIEW.md (fixed factory source/fixture only; installed acceptance pending)"
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002.md"
 }
