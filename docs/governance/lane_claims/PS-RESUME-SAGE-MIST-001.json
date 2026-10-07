@@ -31,10 +31,15 @@
     "tests/ask_pete_direct/test_companion.py",
     "docs/governance/lane_claims/PS-RESUME-SAGE-MIST-001.json",
     "docs/governance/lane_claims/receipts/PS-RESUME-SAGE-MIST-001.json",
+    "docs/governance/lane_claims/evidence/PS-RESUME-SAGE-MIST-001.md",
+    "tests/test_living_resume_preview.py"
+  ],
+  "domains": [
+    "runtime:resume:public:sage-mist-composition"
+  ],
+  "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-RESUME-SAGE-MIST-001.md"
   ],
-  "domains": ["runtime:resume:public:sage-mist-composition"],
-  "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-RESUME-SAGE-MIST-001.md"],
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
