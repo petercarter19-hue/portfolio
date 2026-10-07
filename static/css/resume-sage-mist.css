@@ -1,0 +1,341 @@
+/* Pete-approved R12 Sage Mist. Scope the composition to the public resume. */
+body:has([data-sage-mist]) {
+    background: #fff !important;
+    color: #284f3b;
+    --ape-ink: #284f3b;
+    --ape-ink-soft: #3e5b48;
+    --ape-muted: #5d7062;
+    --ape-ivory: #fffdf8;
+    --ape-forest: #07513a;
+    --ape-gold: #a8690a;
+    --ape-line: #c8d5bd;
+}
+body:has([data-sage-mist]) .site-sky { display: none; }
+#living-resume-page[data-sage-mist] {
+    --overview-ink: #284f3b;
+    --overview-muted: #5d7062;
+    --overview-indigo: #284f3b;
+    --overview-blue: #507c64;
+    --sage-surface: #eef3e9;
+    --sage-soft: #f4f6ee;
+    --sage-edge: #c8d5bd;
+    --sage-ink: #284f3b;
+    --sage-top: 132px;
+    --sage-rail-height: calc(100dvh - 148px);
+    --r2-ink: #284f3b;
+    --r2-muted: #3e5b48;
+    --r2-indigo: #07513a;
+    --r2-azure: #507c64;
+    --r2-line: #ddd5c6;
+    font: 400 12px/1.5 Inter, Arial, sans-serif;
+    background: #fff;
+}
+#living-resume-page[data-sage-mist] .r2-page-grid {
+    width: min(calc(100% - 32px), 1240px);
+    grid-template-columns: minmax(0, 1fr) 240px;
+    gap: 18px;
+    align-items: start;
+    margin-inline: auto;
+}
+#living-resume-page[data-sage-mist] .r2-content { grid-column: 1; grid-row: 1; min-width: 0; padding: 0; }
+#living-resume-page[data-sage-mist] .r2-overview-mobile-style-picker { display: none; }
+#living-resume-page[data-sage-mist] :is(.member-overview, .r2-section, .r2-story-transition) {
+    background: #faf8f2;
+    border: 1px solid #e6dfd1;
+    box-shadow: 0 5px 20px #315e4109;
+    color: #284f3b;
+}
+#living-resume-page[data-sage-mist] .member-overview { border-radius: 10px; overflow: visible; }
+#living-resume-page[data-sage-mist] .overview-opening {
+    grid-template-columns: minmax(0, 1fr) minmax(150px, 22%);
+    background: #fffdf9;
+    border-radius: 10px 10px 0 0;
+    align-items: stretch;
+}
+#living-resume-page[data-sage-mist] .overview-opening--without-proof { grid-template-columns: 1fr; }
+#living-resume-page[data-sage-mist] .overview-hero { padding: 12px; min-width: 0; }
+#living-resume-page[data-sage-mist] .overview-hero--with-media {
+    display: grid;
+    grid-template-columns: minmax(150px, 39%) minmax(0, 1fr);
+    gap: 20px;
+}
+#living-resume-page[data-sage-mist] .overview-hero-copy { padding: 0; min-height: 0; height: auto; gap: 0; }
+#living-resume-page[data-sage-mist] .overview-hero-copy h1 { font-size: 27px; line-height: 1.15; color: #214e3c; }
+#living-resume-page[data-sage-mist] .overview-headline { font: 700 11px/1.45 Inter, Arial, sans-serif; color: #8b5505; margin-top: 5px; }
+#living-resume-page[data-sage-mist] .overview-intro {
+    font: 400 12px/1.5 Inter, Arial, sans-serif;
+    margin: 12px 0 24px;
+    max-height: none;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+    color: #3e5b48;
+}
+#living-resume-page[data-sage-mist] .overview-hero-media {
+    margin: 0;
+    min-height: 0;
+    height: auto;
+    aspect-ratio: 1 / 1.07;
+    border-radius: 4px;
+    overflow: hidden;
+}
+#living-resume-page[data-sage-mist] .overview-hero-media img { height: 100%; width: 100%; object-fit: cover; }
+#living-resume-page[data-sage-mist] .overview-hero-actions { gap: 7px; margin-top: auto; padding-top: 12px; }
+#living-resume-page[data-sage-mist] :is(.overview-button, .overview-inline-action, .r2-button, .overview-text-link) {
+    font: 700 11px/1.35 Inter, Arial, sans-serif;
+    padding: 7px 11px;
+    min-height: 28px;
+    border: 1px solid #d6b968;
+    border-radius: 4px;
+    background: #f4dfa6;
+    color: #214e3c;
+    box-shadow: 0 2px 6px #76531612;
+    width: max-content;
+    max-width: 100%;
+    text-decoration: none;
+}
+#living-resume-page[data-sage-mist] :is(.overview-button--primary, .r2-button--primary) { background: #07513a; color: #fff; border-color: #558268; }
+#living-resume-page[data-sage-mist] :is(.overview-button, .overview-inline-action, .r2-button, .overview-text-link):hover { background: #e1ead8; color: #214e3c; }
+#living-resume-page[data-sage-mist] .overview-proof {
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #e6dfd1;
+    border-top: 0;
+    padding: 0 12px;
+    background: #fffdf9;
+    gap: 0;
+}
+#living-resume-page[data-sage-mist] .overview-proof-item {
+    flex: 1 1 auto;
+    padding: 0;
+    border: 0;
+    border-bottom: 1px solid #e6dfd1;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+#living-resume-page[data-sage-mist] .overview-proof-item:last-child { border-bottom: 0; }
+#living-resume-page[data-sage-mist] .overview-proof-icon { display: none; }
+#living-resume-page[data-sage-mist] .sage-impact-flip {
+    display: block; width: 100%; padding: 7px 0; min-height: 72px;
+    text-align: left; color: #284f3b; background: transparent; border: 0; cursor: pointer;
+    font: 400 12px/1.45 Inter, Arial, sans-serif;
+}
+#living-resume-page[data-sage-mist] .sage-impact-flip span { margin: 0; text-transform: none; font: inherit; letter-spacing: normal; }
+#living-resume-page[data-sage-mist] .sage-impact-front strong { font: 400 27px/1.06 Georgia, serif; }
+#living-resume-page[data-sage-mist] .sage-impact-front small span { display: inline; margin: 0; font: inherit; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-companion__promise { display: none; }
+#living-resume-page[data-sage-mist] .sage-impact-front strong { font: 500 27px/1 Newsreader, Georgia, serif; color: #a8690a; }
+#living-resume-page[data-sage-mist] .overview-proof-item .sage-impact-front > span { font: 500 11px/1.35 Inter, Arial, sans-serif; text-transform: none; letter-spacing: normal; margin-top: 4px; }
+#living-resume-page[data-sage-mist] .sage-impact-flip small { display: block; margin-top: 4px; font: 400 11px/1.35 Inter, Arial, sans-serif; color: #5d7062; }
+#living-resume-page[data-sage-mist] .sage-impact-back { font: 400 12px/1.45 Inter, Arial, sans-serif !important; text-transform: none !important; letter-spacing: normal !important; margin: 0 !important; }
+#living-resume-page[data-sage-mist] .sage-impact-flip.is-flipping { animation: sage-impact-turn 320ms ease; }
+@keyframes sage-impact-turn { from { transform: rotateY(85deg); } to { transform: rotateY(0); } }
+#living-resume-page[data-sage-mist] :is(.overview-section-kicker, .r2-section-heading > span, .r2-section-heading > div > span) { font: 700 11px/1.4 Inter, Arial, sans-serif; letter-spacing: .055em; color: #284f3b; }
+#living-resume-page[data-sage-mist] .overview-story { margin: 16px 12px; min-height: 144px; height: auto; background: #f6f2e4; border-color: #ddd5c6; }
+#living-resume-page[data-sage-mist] .overview-story-copy { padding: 16px; height: auto; min-height: 0; }
+#living-resume-page[data-sage-mist] .overview-story-copy h2 { font-size: 20px; line-height: 1.2; color: #284f3b; }
+#living-resume-page[data-sage-mist] :is(.overview-story-copy > p:not(.overview-section-kicker), .overview-philosophy p, .overview-future p) { font: 400 12px/1.5 Inter, Arial, sans-serif; color: #3e5b48; }
+#living-resume-page[data-sage-mist] .overview-story-media { min-height: 144px; }
+#living-resume-page[data-sage-mist] .overview-career { height: auto; max-height: none; padding: 18px 16px; }
+#living-resume-page[data-sage-mist] .overview-timeline h3 { font-size: 12px; line-height: 1.35; font-weight: 700; display: block; max-height: none; height: auto; overflow: visible; -webkit-line-clamp: unset; }
+#living-resume-page[data-sage-mist] .overview-timeline p:not(.overview-record-org) { font: 400 12px/1.45 Inter, Arial, sans-serif; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; color: #3e5b48; }
+#living-resume-page[data-sage-mist] .overview-record-org { font: 700 11px/1.4 Inter, Arial, sans-serif; text-transform: none; letter-spacing: normal; color: #284f3b; }
+#living-resume-page[data-sage-mist] .overview-record-period { font: 500 11px/1.4 Inter, Arial, sans-serif; color: #5d7062; }
+#living-resume-page[data-sage-mist] .overview-career-quote blockquote { font-size: 13px; line-height: 1.45; color: #284f3b; }
+#living-resume-page[data-sage-mist] .overview-career-quote figcaption { font-size: 11px; color: #8b5505; }
+#living-resume-page[data-sage-mist] :is(.overview-story-skills, .overview-credentials) { display: flex; flex-wrap: wrap; gap: 0; }
+#living-resume-page[data-sage-mist] .overview-story-skills > section { flex: 1 1 280px; min-width: 0; width: auto; max-width: none; grid-column: auto; grid-row: auto; }
+#living-resume-page[data-sage-mist] .overview-credentials > section { flex: 1 1 220px; min-width: 0; width: auto; padding: 16px; }
+#living-resume-page[data-sage-mist] .overview-credentials > section:only-child .overview-record-list { display: flex; flex-wrap: wrap; gap: 12px 30px; }
+#living-resume-page[data-sage-mist] .overview-credentials > section:only-child .overview-record-list > li { flex: 1 1 210px; }
+#living-resume-page[data-sage-mist] .overview-chapters ol { grid-template-rows: none; align-content: start; gap: 12px; }
+#living-resume-page[data-sage-mist] .overview-chapters li { align-items: start; }
+#living-resume-page[data-sage-mist] .overview-chapter-copy { font: 400 12px/1.5 Inter, Arial, sans-serif; }
+#living-resume-page[data-sage-mist] .overview-chapter-copy strong { font: 600 12px/1.45 Inter, Arial, sans-serif; text-transform: none; letter-spacing: normal; color: #284f3b; }
+#living-resume-page[data-sage-mist] .overview-chapter-copy > span { font: 400 12px/1.5 Inter, Arial, sans-serif; color: #3e5b48; margin-top: 3px; }
+#living-resume-page[data-sage-mist] .overview-skills li { font: 400 12px/1.45 Inter, Arial, sans-serif; color: #3e5b48; }
+#living-resume-page[data-sage-mist] .overview-record-list strong { font-size: 12px; line-height: 1.45; }
+#living-resume-page[data-sage-mist] .overview-record-list :is(span, small) { font-size: 11px; line-height: 1.45; }
+#living-resume-page[data-sage-mist] :is(.overview-philosophy, .overview-future) { height: auto; max-height: none; min-height: 0; background: #f6f2e4; }
+#living-resume-page[data-sage-mist] :is(.overview-philosophy, .overview-future) h2 { font-size: 18px; line-height: 1.25; color: #284f3b; }
+#living-resume-page[data-sage-mist] .r2-section { padding: 22px 18px; margin-top: 18px; border-radius: 10px; }
+#living-resume-page[data-sage-mist] .r2-section h2 { font-size: 28px; line-height: 1.15; color: #284f3b; }
+#living-resume-page[data-sage-mist] .r2-section-heading p { font: 400 12px/1.5 Inter, Arial, sans-serif; color: #3e5b48; }
+#living-resume-page[data-sage-mist] :is(.r2-impact__panel, .r2-skill-groups, .r2-credential-overview) { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+#living-resume-page[data-sage-mist] .sage-balanced-row { display: flex; gap: 8px; width: 100%; min-width: 0; }
+#living-resume-page[data-sage-mist] .sage-balanced-row > * { flex: 1 1 0; min-width: 0; width: auto; }
+#living-resume-page[data-sage-mist] .r2-impact__item { flex: 1 1 140px; padding: 12px; min-height: 108px; border-color: #c8d5bd; background: #eef3e9; color: #284f3b; box-shadow: none; }
+#living-resume-page[data-sage-mist] .r2-impact__item strong { font-size: 27px; color: #a8690a; }
+#living-resume-page[data-sage-mist] .r2-impact__item > span { font: 500 12px/1.45 Inter, Arial, sans-serif; }
+#living-resume-page[data-sage-mist] .r2-impact__item small { font-size: 11px; color: #5d7062; }
+#living-resume-page[data-sage-mist] #impact { padding: 22px 18px; }
+#living-resume-page[data-sage-mist] #impact .r2-section-heading h2 { font-size: 28px; line-height: 1.15; }
+#living-resume-page[data-sage-mist] #impact .r2-section-heading p { font: 400 12px/1.5 Inter, Arial, sans-serif; }
+#living-resume-page[data-sage-mist] #impact .r2-impact__panel { display: flex; gap: 8px; padding: 0; border: 0; background: transparent; overflow: visible; }
+#living-resume-page[data-sage-mist] #impact .r2-impact__item { border: 1px solid #c8d5bd; border-radius: 8px; padding: 12px; background: #eef3e9; }
+#living-resume-page[data-sage-mist] #impact .r2-impact__item > span { color: #284f3b; }
+#living-resume-page[data-sage-mist] .r2-skill-card { flex: 1 1 150px; padding: 11px; min-height: 76px; gap: 7px; background: #f4f6ee; color: #284f3b; border-color: #c8d5bd; box-shadow: none; }
+#living-resume-page[data-sage-mist] .r2-skill-card { display: grid; grid-template-columns: 24px minmax(0, 1fr) 12px; align-items: center; align-content: center; }
+#living-resume-page[data-sage-mist] .r2-skill-card__icon { width: 24px; height: 24px; }
+#living-resume-page[data-sage-mist] .r2-skill-card__arrow { color: #a8690a; align-self: center; }
+#living-resume-page[data-sage-mist] .r2-exp-card__visual { min-height: 104px; padding: 18px; }
+#living-resume-page[data-sage-mist] .r2-exp-card__marker { min-width: 42px; height: 42px; font-size: 12px; background: #fffdf8; color: #284f3b; border-color: #c8d5bd; box-shadow: none; border-radius: 8px; }
+#living-resume-page[data-sage-mist] .r2-exp-card__number { color: #ffffff35; }
+#living-resume-page[data-sage-mist] .r2-skill-card__copy strong { font: 600 13px/1.35 Inter, Arial, sans-serif; color: #284f3b; }
+#living-resume-page[data-sage-mist] .r2-skill-card__copy small { font-size: 11px; line-height: 1.35; color: #5d7062; }
+#living-resume-page[data-sage-mist] :is(.r2-skill-card__icon, .r2-credential-card__icon, .r2-evidence-badge) { color: #507c64; background: #eef3e9; box-shadow: none; }
+#living-resume-page[data-sage-mist] :is(.r2-skill-panel, .r2-credential-panel, .r2-credential-card) { background: #fffdf8; color: #284f3b; border-color: #c8d5bd; box-shadow: none; }
+#living-resume-page[data-sage-mist] .r2-credential-card { flex: 1 1 220px; padding: 16px; min-height: 0; }
+#living-resume-page[data-sage-mist] .r2-credential-card h3 { font-size: 20px; color: #284f3b; }
+#living-resume-page[data-sage-mist] .r2-credential-card > p { font: 400 12px/1.5 Inter, Arial, sans-serif; }
+#living-resume-page[data-sage-mist] .r2-credential-card li strong { font-size: 13px; }
+#living-resume-page[data-sage-mist] .r2-credential-card :is(small, footer, footer button) { font-size: 11px; line-height: 1.4; }
+#living-resume-page[data-sage-mist] .r2-exp-stage { gap: 10px; }
+#living-resume-page[data-sage-mist] .r2-experience-card { background: #507c64; border-color: #819578; box-shadow: 0 4px 14px #315e4114; }
+#living-resume-page[data-sage-mist] .r2-exp-card__visual { background: linear-gradient(120deg, #68846a, #55785f); }
+#living-resume-page[data-sage-mist] .r2-exp-card__head h3 { font-size: 22px; line-height: 1.2; font-weight: 700; color: #f4d17b; text-transform: none; }
+#living-resume-page[data-sage-mist] .r2-exp-card__head > p { font: 700 12px/1.5 Inter, Arial, sans-serif; color: #252822; background: #f6f2e4; border-radius: 4px; padding: 6px 8px; margin-top: 9px; }
+#living-resume-page[data-sage-mist] .r2-experience-card :is(.r2-exp-card__preview > p, .r2-exp-card__full p, li) { font-size: 12px !important; font-weight: 400; line-height: 1.5; color: #fff; }
+#living-resume-page[data-sage-mist] .r2-experience-card :is(small, h4, .r2-exp-card__footer) { font-size: 11px; line-height: 1.4; color: #fff9e8; }
+#living-resume-page[data-sage-mist] .r2-exp-card__footer > span { color: #fff9e8; }
+#living-resume-page[data-sage-mist] .r2-experience-card :is(.r2-exp-card__impacts strong, .r2-exp-key-impact strong) { color: #fff9e8; }
+#living-resume-page[data-sage-mist] .r2-experience-card :is(.r2-exp-card__impacts > span, .r2-exp-key-impact > span) { background: transparent; }
+#living-resume-page[data-sage-mist] :is(.r2-exp-toggle, .r2-exp-ask, .r2-credential-card footer button, .r2-panel-close) { color: #214e3c; background: #f4dfa6; border: 1px solid #d6b968; font: 700 11px/1.4 Inter, Arial, sans-serif; min-height: 28px; border-radius: 4px; }
+#living-resume-page[data-sage-mist] .sage-resume-rail { grid-column: 2; grid-row: 1; position: sticky; top: var(--sage-top); display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+#living-resume-page[data-sage-mist][data-sage-ai-away="true"] .sage-resume-rail { height: var(--sage-rail-height); }
+#living-resume-page[data-sage-mist] .sage-rail-navigation { padding: 12px 11px 8px; background: #f4f6ee; border: 1px solid #c8d5bd; border-top-color: #c09a51; border-radius: 12px; box-shadow: 0 3px 12px #315e4109; }
+#living-resume-page[data-sage-mist] .sage-rail-navigation h2 { font: 700 11px/1.4 Inter, Arial, sans-serif; letter-spacing: .055em; text-transform: uppercase; margin: 0 0 8px; color: #284f3b; }
+#living-resume-page[data-sage-mist] .sage-rail-navigation nav { display: grid; gap: 2px; }
+#living-resume-page[data-sage-mist] .sage-rail-navigation a { display: flex; align-items: center; gap: 9px; padding: 6px 8px; min-height: 32px; font: 600 12px/1.4 Inter, Arial, sans-serif; color: #284f3b; text-decoration: none; border: 1px solid transparent; border-radius: 5px; }
+#living-resume-page[data-sage-mist] .sage-rail-navigation svg { width: 15px; height: 15px; flex: 0 0 15px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+#living-resume-page[data-sage-mist] .sage-rail-navigation a:is(.is-current, :hover) { background: #dfe9d8; border-color: #c8d5bd; box-shadow: inset 2px 0 #6a8c6d; }
+#living-resume-page[data-sage-mist] .sage-nav-compact { display: none; font: 600 11px/1.4 Inter, Arial, sans-serif; color: #284f3b; }
+#living-resume-page[data-sage-mist] .sage-nav-compact select { width: 100%; min-width: 0; font: 600 12px/1.4 Inter, Arial, sans-serif; color: #284f3b; background: #fffdf8; border: 1px solid #c8d5bd; border-radius: 5px; margin-top: 5px; padding: 6px; }
+#living-resume-page[data-sage-mist][data-sage-ai-away="true"] .sage-rail-navigation :is(h2, nav) { display: none; }
+#living-resume-page[data-sage-mist][data-sage-ai-away="true"] .sage-nav-compact { display: block; }
+#living-resume-page[data-sage-mist] .sage-contact { position: relative; order: 4; min-width: 0; border: 1px solid #c8d5bd; border-radius: 12px; background: #fffdf8; color: #284f3b; font: 400 11px/1.45 Inter, Arial, sans-serif; }
+#living-resume-page[data-sage-mist] .sage-contact summary { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px; font: 600 12px/1.4 Inter, Arial, sans-serif; cursor: pointer; list-style: none; }
+#living-resume-page[data-sage-mist] .sage-contact summary::-webkit-details-marker { display: none; }
+#living-resume-page[data-sage-mist] .sage-contact[open] summary > span { transform: rotate(180deg); }
+#living-resume-page[data-sage-mist] .sage-contact-body { padding: 0 12px 12px; }
+#living-resume-page[data-sage-mist] .sage-contact .overview-location { font: 400 11px/1.45 Inter, Arial, sans-serif; margin: 0 0 8px; color: #284f3b; text-transform: none; }
+#living-resume-page[data-sage-mist] .sage-contact :is(.overview-contact-list, .work-impact-contact-list) { display: grid; gap: 8px; margin: 0; }
+#living-resume-page[data-sage-mist] .sage-contact a { display: flex; align-items: start; gap: 6px; min-width: 0; font: 400 11px/1.45 Inter, Arial, sans-serif; color: #284f3b; text-decoration: none; }
+#living-resume-page[data-sage-mist] .sage-contact a span { min-width: 0; overflow-wrap: anywhere; }
+#living-resume-page[data-sage-mist] .sage-contact svg { width: 13px; height: 13px; flex: 0 0 13px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+#living-resume-page[data-sage-mist] .sage-resume-rail > .sage-contact { order: -1; flex: none; }
+#living-resume-page[data-sage-mist][data-sage-hero-away="true"] .sage-resume-rail > .sage-contact { z-index: 5; }
+#living-resume-page[data-sage-mist][data-sage-hero-away="true"] .sage-resume-rail > .sage-contact summary { padding: 8px 12px; }
+#living-resume-page[data-sage-mist][data-sage-hero-away="true"] .sage-resume-rail > .sage-contact .sage-contact-body { position: absolute; top: 100%; left: -1px; right: -1px; padding: 12px; border: 1px solid #c8d5bd; border-radius: 0 0 12px 12px; background: #fffdf8; box-shadow: 0 8px 18px #315e4120; }
+#living-resume-page[data-sage-mist] .sage-ai-home { margin: 14px 12px 16px; min-width: 0; }
+#living-resume-page[data-sage-mist] .sage-ai-home .r2-overview-ai-rail { position: static; grid-column: auto; width: 100%; max-width: none; background: #eef3e9; border: 1px solid #c8d5bd; color: #284f3b; margin: 0; }
+#living-resume-page[data-sage-mist] .sage-rail-ai-mount { flex: 1 1 auto; min-height: 0; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion { position: static; display: flex; border: 1px solid #c8d5bd; border-top-color: #bf9950; border-radius: 12px; background: #eef3e9; box-shadow: 0 6px 22px #315e4118; width: 100%; min-width: 0; color: #284f3b; max-height: none; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion__scroll { padding: 20px; gap: 14px; scrollbar-width: thin; scrollbar-color: #90a58c transparent; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion__header { padding: 0; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion__header h2 { font: 600 27px/1.12 Newsreader, Georgia, serif; color: #284f3b; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion__kicker { font: 700 11px/1.4 Inter, Arial, sans-serif; letter-spacing: .055em; color: #07513a; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion__promise { font: 400 12px/1.5 Inter, Arial, sans-serif; color: #3e5b48; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion__starters { display: grid; gap: 8px; margin: 0; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion__starter { padding: 10px 12px; font: 500 11.5px/1.45 Inter, Arial, sans-serif; color: #284f3b; background: #fffef8; border: 1px solid #c8d5bd; border-radius: 6px; box-shadow: none; min-height: 40px; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion__starter:hover { background: #e1ead8; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion__dock { padding: 10px 18px 5px; background: #fffdf8; box-shadow: none; gap: 4px; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion__status { font: 400 11px/1.45 Inter, Arial, sans-serif; color: #3e5b48; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion__status { padding: 3px 0; border: 0; background: transparent; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion__status:empty { display: none; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-composer label { font: 600 12px/1.45 Inter, Arial, sans-serif; color: #284f3b; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-composer label { white-space: normal; overflow: visible; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-composer__field { grid-template-columns: minmax(0, 1fr) auto; gap: 7px; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-composer textarea { font: 400 13px/1.45 Inter, Arial, sans-serif; padding: 9px 8px; height: 64px; min-height: 64px; max-height: 140px; scrollbar-width: thin; overflow-y: auto; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-composer button[type="submit"] { font: 700 12px/1.4 Inter, Arial, sans-serif; min-width: 54px; background: #07513a; color: #fff; box-shadow: none; border-radius: 6px; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-composer__meta { font: 400 11px/1.45 Inter, Arial, sans-serif; padding-bottom: 0; margin-bottom: 0; gap: 6px; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion[aria-busy="true"] textarea { border-color: #6c976e; box-shadow: 0 0 0 2px #d8e8cc, 0 0 15px #769a6940; animation: sage-working 1.5s ease-in-out infinite; }
+@keyframes sage-working { 50% { box-shadow: 0 0 0 3px #d8e8cc, 0 0 19px #769a6950; } }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion[data-sage-placement="inline"]:not(.is-answer-first) .ask-pete-evidence-companion__scroll { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion[data-sage-placement="inline"] textarea { min-height: 40px; height: 40px; }
+#living-resume-page[data-sage-mist] .sage-ai-rail-title { display: none; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-companion__scroll { max-height: 420px; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-companion__header h2 { font-size: 23px; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-answer :is(p, li) { font: 400 13px/1.55 Inter, Arial, sans-serif; color: #284f3b; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-answer__heading { font: 600 17px/1.25 Newsreader, Georgia, serif; color: #284f3b; }
+#living-resume-page[data-sage-mist] .sage-ai-turn { padding-top: 14px; border-top: 1px solid #c8d5bd; }
+#living-resume-page[data-sage-mist] .sage-ai-turn:first-child { padding-top: 0; border-top: 0; }
+#living-resume-page[data-sage-mist] .sage-ai-question { font: 600 12px/1.45 Inter, Arial, sans-serif; color: #284f3b; margin: 0 0 10px; }
+#living-resume-page[data-sage-mist] .ask-pete-evidence-fold :is(p, button, span) { font-size: 11px; line-height: 1.45; }
+#living-resume-page[data-sage-mist] .sage-rail-ai-mount .ask-pete-evidence-companion { height: 100%; max-height: 100%; }
+#living-resume-page[data-sage-mist] .sage-rail-ai-mount .ask-pete-evidence-companion:not(.is-answer-first) { height: auto; }
+#living-resume-page[data-sage-mist] .overview-record-list span { color: #5d7062; font: 400 11px/1.45 Inter, Arial, sans-serif; }
+#living-resume-page[data-sage-mist] .sage-rail-ai-mount .ask-pete-evidence-companion__scroll { padding: 12px; max-height: none; }
+#living-resume-page[data-sage-mist] .sage-rail-ai-mount .ask-pete-evidence-companion__dock { padding: 10px 12px 5px; }
+#living-resume-page[data-sage-mist] .sage-rail-ai-mount .sage-ai-central-title { display: none; }
+#living-resume-page[data-sage-mist] .sage-rail-ai-mount .sage-ai-rail-title { display: inline; }
+#living-resume-page[data-sage-mist] .sage-rail-ai-mount .ask-pete-evidence-companion__header h2 { font-size: 23px; }
+#living-resume-page[data-sage-mist] .sage-ai-bubble { display: none; }
+#living-resume-page[data-sage-mist][data-sage-tight="true"][data-sage-ai-away="true"] .sage-nav-compact { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 6px; align-items: center; }
+#living-resume-page[data-sage-mist][data-sage-tight="true"] .sage-nav-compact select { margin: 0; }
+#living-resume-page[data-sage-mist][data-sage-tight="true"] .sage-rail-ai-mount .ask-pete-evidence-companion__header h2 { display: none; }
+#living-resume-page[data-sage-mist][data-sage-tight="true"] .sage-rail-ai-mount .ask-pete-evidence-companion__scroll { padding: 8px 12px; gap: 8px; }
+#living-resume-page[data-sage-mist][data-sage-tight="true"] .sage-rail-ai-mount .ask-pete-evidence-companion__starter { padding: 6px 8px; min-height: 32px; }
+#living-resume-page[data-sage-mist][data-sage-tight="true"] .sage-rail-ai-mount .ask-pete-evidence-companion__promise { display: none; }
+#living-resume-page[data-sage-mist] :focus-visible { outline: 2px solid #a8690a; outline-offset: 3px; }
+#living-resume-page[data-sage-mist] [hidden] { display: none !important; }
+@media (max-width: 1050px) {
+    #living-resume-page[data-sage-mist] .r2-page-grid { grid-template-columns: minmax(0, 1fr) 225px; gap: 14px; }
+}
+@media (max-width: 900px) {
+    #living-resume-page[data-sage-mist] .r2-page-grid { display: flex; flex-direction: column; width: min(calc(100% - 24px), 982px); }
+    #living-resume-page[data-sage-mist] .r2-content { width: 100%; }
+    #living-resume-page[data-sage-mist] .sage-resume-rail { position: static; width: 100%; }
+    #living-resume-page[data-sage-mist][data-sage-ready] .sage-resume-rail { display: none; }
+    #living-resume-page[data-sage-mist] :is(.member-overview, .r2-content) > .sage-rail-navigation { border-radius: 0; border-inline: 0; padding: 8px 12px; }
+    #living-resume-page[data-sage-mist] :is(.member-overview, .r2-content) > .sage-rail-navigation :is(h2, svg) { display: none; }
+    #living-resume-page[data-sage-mist] :is(.member-overview, .r2-content) > .sage-rail-navigation nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; }
+    #living-resume-page[data-sage-mist] :is(.member-overview, .r2-content) > .sage-rail-navigation a { font-size: 11px; padding: 6px; }
+    #living-resume-page[data-sage-mist][data-sage-hero-away="true"] :is(.member-overview, .r2-content) > .sage-rail-navigation { position: fixed; z-index: 39; inset: auto 12px 10px; border: 1px solid #c8d5bd; border-radius: 8px; box-shadow: 0 3px 12px #315e4120; }
+    #living-resume-page[data-sage-mist][data-sage-hero-away="true"] :is(.member-overview, .r2-content) > .sage-rail-navigation nav { display: none; }
+    #living-resume-page[data-sage-mist][data-sage-hero-away="true"] :is(.member-overview, .r2-content) > .sage-rail-navigation .sage-nav-compact { display: grid; grid-template-columns: 86px minmax(0, 1fr); align-items: center; gap: 6px; }
+    #living-resume-page[data-sage-mist][data-sage-hero-away="true"] .sage-nav-compact select { margin: 0; }
+    #living-resume-page[data-sage-mist] .overview-hero-copy > .sage-contact { margin-bottom: 18px; }
+    #living-resume-page[data-sage-mist][data-sage-ai-away="true"] .sage-ai-bubble { display: flex; position: fixed; bottom: 76px; right: 16px; z-index: 40; padding: 10px 14px; border: 1px solid #c8d5bd; border-radius: 999px; background: #07513a; color: #fff; font: 600 12px/1.4 Inter, Arial, sans-serif; box-shadow: 0 4px 18px #315e4130; gap: 7px; }
+    #living-resume-page[data-sage-mist] .sage-ai-bubble svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+    #living-resume-page[data-sage-mist] .ask-pete-evidence-companion[data-sage-placement="inline"] { position: static; inset: auto; transform: none; max-height: none; width: 100%; }
+    #living-resume-page[data-sage-mist] .ask-pete-evidence-companion[data-sage-placement="inline"] .ask-pete-evidence-companion__close { display: none; }
+    #living-resume-page[data-sage-mist] .ask-pete-evidence-companion[data-sage-placement="sheet"] { position: fixed; z-index: 80; inset: auto 8px 8px; width: calc(100% - 16px); height: min(560px, calc(100dvh - 32px)); max-height: calc(100dvh - 32px); transform: none; }
+    #living-resume-page[data-sage-mist] .ask-pete-evidence-companion[data-sage-placement="sheet"] .ask-pete-evidence-companion__scroll { max-height: none; }
+    #living-resume-page[data-sage-mist] .ask-pete-evidence-companion[data-sage-placement="sheet"] .sage-ai-central-title { display: none; }
+    #living-resume-page[data-sage-mist] .ask-pete-evidence-companion[data-sage-placement="sheet"] .sage-ai-rail-title { display: inline; }
+}
+@media (max-width: 640px) {
+    #living-resume-page[data-sage-mist] .overview-timeline li { grid-template-columns: 1fr; gap: 5px; }
+    #living-resume-page[data-sage-mist] .overview-record-period { display: flex; flex-wrap: wrap; gap: 6px; }
+    #living-resume-page[data-sage-mist] .ask-pete-evidence-companion[data-sage-placement="inline"]:not(.is-answer-first) .ask-pete-evidence-companion__scroll { grid-template-columns: 1fr; gap: 10px; }
+    #living-resume-page[data-sage-mist] .overview-opening { grid-template-columns: 1fr; }
+    #living-resume-page[data-sage-mist] .overview-hero--with-media { grid-template-columns: 120px minmax(0, 1fr); gap: 12px; }
+    #living-resume-page[data-sage-mist] .overview-hero-media { aspect-ratio: 1 / 1.15; align-self: start; }
+    #living-resume-page[data-sage-mist] .overview-proof { flex-direction: row; flex-wrap: wrap; border-left: 0; border-top: 1px solid #e6dfd1; gap: 0 12px; }
+    #living-resume-page[data-sage-mist] .overview-proof-item { flex: 1 1 calc(50% - 12px); }
+    #living-resume-page[data-sage-mist] .overview-proof-item:nth-last-child(-n+2) { border-bottom: 0; }
+    #living-resume-page[data-sage-mist] .r2-section { padding: 18px 12px; }
+    #living-resume-page[data-sage-mist] .r2-section h2 { font-size: 25px; }
+    #living-resume-page[data-sage-mist] .r2-skill-card { padding: 9px; min-height: 60px; }
+    #living-resume-page[data-sage-mist] .r2-skill-card__copy strong { font-size: 12px; }
+    #living-resume-page[data-sage-mist] .r2-skill-card__copy small { display: none; }
+    #living-resume-page[data-sage-mist] .r2-evidence-badge { display: none; }
+    #living-resume-page[data-sage-mist] .ask-pete-evidence-composer textarea { font-size: 16px; }
+    #living-resume-page[data-sage-mist] .ask-pete-evidence-companion__scroll { padding: 16px; }
+    #living-resume-page[data-sage-mist] .ask-pete-evidence-companion__header h2 { font-size: 25px; }
+}
+@media (max-width: 420px) {
+    #living-resume-page[data-sage-mist] .overview-hero--with-media { grid-template-columns: 1fr; }
+    #living-resume-page[data-sage-mist] .overview-hero-media { width: 150px; aspect-ratio: 1 / 1.07; }
+}
+@media (pointer: coarse) {
+    #living-resume-page[data-sage-mist] :is(.sage-contact summary, .sage-rail-navigation a, .overview-button, .overview-inline-action, .r2-button, .overview-text-link, .r2-exp-toggle, .r2-exp-ask, .r2-panel-close, .sage-ai-bubble) { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    #living-resume-page[data-sage-mist] :is(.sage-impact-flip, .ask-pete-evidence-composer textarea) { animation: none !important; transition: none !important; }
+}
+@media (forced-colors: active) {
+    #living-resume-page[data-sage-mist] :is(.r2-experience-card, .ask-pete-evidence-companion, .sage-rail-navigation, .sage-contact) { background: Canvas; color: CanvasText; border-color: CanvasText; }
+}

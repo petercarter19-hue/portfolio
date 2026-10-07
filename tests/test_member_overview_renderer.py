@@ -143,7 +143,7 @@ class MemberOverviewRendererTests(unittest.TestCase):
             b'id="experience"',
             b'id="credentials"',
             b'data-chat-open',
-            b'files/pete-carter-resume.pdf',
+            b'data-sage-rail',
         ):
             self.assertIn(current_marker, response.data)
         for internal_marker in (

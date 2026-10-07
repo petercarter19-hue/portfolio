@@ -132,7 +132,7 @@ class BackToPreviousAnswerTests(unittest.TestCase):
     def test_exactly_one_prior_answer_is_retained(self):
         self.assertIn("answer: null, previousAnswer: null,", self.source)
         self.assertIn(
-            "if (state.answer) state.previousAnswer = state.answer;", self.source
+            "if (!sageMist && state.answer) state.previousAnswer = state.answer;", self.source
         )
         # One retained answer, not a stack.
         for forbidden in ("history", "answers.push", "state.answers"):
@@ -140,7 +140,7 @@ class BackToPreviousAnswerTests(unittest.TestCase):
                 self.assertNotIn(forbidden, self.restore)
 
     def test_the_control_appears_only_when_there_is_somewhere_to_go(self):
-        self.assertIn("if (state.previousAnswer) meta.insertBefore(", self.render)
+        self.assertIn("if (!sageMist && state.previousAnswer) meta.insertBefore(", self.render)
 
     def test_the_control_is_prepended_before_the_one_trust_line(self):
         """Since the 2026-08-09 redesign the meta row holds exactly the back

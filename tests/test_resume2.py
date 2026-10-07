@@ -70,35 +70,18 @@ class Resume2Tests(unittest.TestCase):
                 with self.subTest(base_url=base_url, path=path):
                     self.assert_direct_redirect(path, base_url, expected)
 
-    def test_desktop_rail_and_mobile_sections_offer_the_same_versioned_pdf(self):
+    def test_section_navigation_has_six_real_destinations_and_no_pdf(self):
         response = self.client.get('/petec/resume', base_url='https://peerslate.com')
         self.assertEqual(response.status_code, 200)
         body = response.get_data(as_text=True)
-        pdf = (
-            Path(__file__).resolve().parents[1]
-            / 'static/files/pete-carter-resume.pdf'
-        ).read_bytes()
-        pdf_url = (
-            '/static/files/pete-carter-resume.pdf?v='
-            + hashlib.sha256(pdf).hexdigest()[:12]
-        )
-
-        desktop_rail = body.split(
-            '<div class="overview-rail-tool r2-context-actions">', 1
-        )[1].split('</div>', 1)[0]
-        mobile_sections = body.split(
-            '<nav aria-label="Résumé sections and tools">', 1
-        )[1].split('</nav>', 1)[0]
-        for surface in (desktop_rail, mobile_sections):
-            with self.subTest(surface=surface[:40]):
-                self.assertIn(f'href="{pdf_url}"', surface)
-                self.assertIn('target="_blank" rel="noopener noreferrer"', surface)
-                self.assertIn('<span>Résumé PDF</span>', surface)
-
-        # The mobile affordance is actual server-rendered markup, so it is
-        # available before scripts load and when JavaScript is disabled.
-        self.assertIn('<a href="#impact" data-resume-nav>', mobile_sections)
-        self.assertIn('<a href="#credentials" data-resume-nav>', mobile_sections)
+        navigation = body.split('<nav aria-label="Résumé sections"', 1)[1].split('</nav>', 1)[0]
+        for section in ('overview', 'impact', 'experience', 'skills', 'credentials', 'overview-career'):
+            with self.subTest(section=section):
+                self.assertIn(f'href="#{section}"', navigation)
+                self.assertIn(f'id="{section}"', body)
+                self.assertIn(f'<option value="{section}">', body)
+        self.assertNotIn('files/pete-carter-resume.pdf', body)
+        self.assertIn('>View résumé</a>', body)
 
     def test_old_profile_host_redirects_directly_to_canonical_resume(self):
         for path, expected in (
@@ -458,17 +441,18 @@ class Resume2Tests(unittest.TestCase):
         self.assertNotIn(b'class="r2-summary', response.data)
         self.assertNotIn(b'Maya Chen', response.data)
 
-    def test_career_impact_renders_the_five_approved_metrics_in_order(self):
+    def test_career_impact_displays_four_approved_metrics_without_changing_content(self):
         response = self.client.get('/petec/resume', base_url='http://localhost')
         response_text = response.get_data(as_text=True)
         impact_start = response_text.index('id="impact"')
         impact_end = response_text.index('id="skills"', impact_start)
         impact_html = response_text[impact_start:impact_end]
 
-        values = ('30+', '9 / $19.2M', '$36M+', '35%', '70%')
+        values = ('30+', '9 / $19.2M', '$36M+', '35%')
         positions = [impact_html.index(value) for value in values]
         self.assertEqual(positions, sorted(positions))
-        self.assertEqual(impact_html.count('class="r2-impact__item"'), 5)
+        self.assertEqual(impact_html.count('class="r2-impact__item"'), 4)
+        self.assertIn('70%', response_text)
         self.assertNotIn('micap', impact_html.lower())
 
     def test_experience_uses_vertical_cards_and_inline_full_chapters(self):

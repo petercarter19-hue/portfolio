@@ -107,7 +107,7 @@
     }
 
     function readablePurpose(purpose) {
-        if (purpose === 'recruiter_brief') return "Pete's 60-second recruiter brief";
+        if (purpose === 'recruiter_brief') return "Pete's recruiter brief";
         if (purpose === 'evidence_finder') return "Evidence from Pete's approved public information";
         if (purpose === 'interview_preparation') return 'Useful interview questions for Pete';
         return 'Ask Pete AI answer';
@@ -214,6 +214,9 @@
            guard above must never be able to disable the whole companion over a
            scrolling nicety. */
         const scroller = companion.querySelector('.ask-pete-evidence-companion__scroll');
+        const sageMist = page.hasAttribute('data-sage-mist');
+        const turnPayloads = new WeakMap();
+        let latestTurn = null;
 
         const state = {
             layout: 'wide_rail', open: false, phase: 'idle', draft: '',
@@ -227,24 +230,26 @@
         };
 
         function currentLayout() {
+            if (sageMist) return window.matchMedia('(max-width: 900px)').matches ? 'mobile_sheet' : 'wide_rail';
             if (window.matchMedia('(max-width: 60rem)').matches) return 'mobile_sheet';
             return 'wide_rail';
         }
 
         function isWide() { return state.layout === 'wide_rail'; }
+        function isInline() { return sageMist && companion.dataset.sagePlacement === 'inline'; }
         function hasStableContent() { return Boolean(state.answer || elements.input.value.trim() || state.explicitContext); }
 
         function updateOpeners() {
             document.querySelectorAll('[data-ask-pete-open], [data-ask-pete-context-action]').forEach((opener) => {
-                opener.setAttribute('aria-expanded', String(isWide() || state.open));
+                opener.setAttribute('aria-expanded', String(isWide() || state.open || isInline()));
             });
         }
 
         function syncLayout() {
             const previousLayout = state.layout;
             state.layout = currentLayout();
-            if (previousLayout === 'wide_rail' && !isWide() && hasStableContent()) state.open = true;
-            const visible = isWide() || state.open;
+            if (previousLayout === 'wide_rail' && !isWide() && !isInline() && hasStableContent()) state.open = true;
+            const visible = isWide() || state.open || isInline();
             companion.hidden = !visible;
             companion.inert = !visible;
             companion.classList.toggle('is-open', visible);
@@ -298,7 +303,7 @@
 
         function openCompanion(invoker, focusInput = true) {
             if (invoker instanceof HTMLElement && !companion.contains(invoker)) state.lastInvoker = invoker;
-            if (!isWide()) state.open = true;
+            if (!isWide() && !isInline()) state.open = true;
             syncLayout();
             renderContext();
             if (focusInput) window.requestAnimationFrame(() => {
@@ -307,7 +312,7 @@
         }
 
         function closeCompanion({ restoreFocus = true } = {}) {
-            if (isWide()) return;
+            if (isWide() || isInline()) return;
             state.open = false;
             syncLayout();
             const invoker = state.lastInvoker;
@@ -457,12 +462,19 @@
                     }
                     /* Retain exactly one prior answer before replacing it, so
                        "Back to previous answer" has something to return to. */
-                    if (state.answer) state.previousAnswer = state.answer;
+                    if (!sageMist && state.answer) state.previousAnswer = state.answer;
                     state.answer = payload;
                     setPhase('answered');
                     setRequestControls(false);
                     setStatus('Answer ready. The claims and evidence behind it expand below the summary.');
-                    renderAnswer(payload);
+                    renderAnswer(payload, message);
+                    if (sageMist) {
+                        if (elements.input.value.trim() === message) elements.input.value = '';
+                        state.draft = elements.input.value;
+                        state.requestedAction = null;
+                        const label = elements.form.querySelector('label');
+                        if (label) label.textContent = 'Ask a follow-up or another question';
+                    }
                 })
                 .catch((error) => {
                     if (sequence !== state.requestSequence) return;
@@ -877,7 +889,8 @@
            résumé behind the rail as a side effect. */
         function revealAnswerTop() {
             if (!scroller || elements.answer.hidden) return;
-            const offset = elements.answer.getBoundingClientRect().top
+            const revealTarget = sageMist && latestTurn ? latestTurn : elements.answer;
+            const offset = revealTarget.getBoundingClientRect().top
                 - scroller.getBoundingClientRect().top;
             if (Math.abs(offset) < 2) return;
             const top = Math.max(0, scroller.scrollTop + offset);
@@ -902,7 +915,7 @@
             return button;
         }
 
-        function renderAnswer(payload) {
+        function renderAnswer(payload, question = '') {
             const fragment = document.createDocumentFragment();
             const heading = makeElement('h3', 'ask-pete-evidence-answer__heading', readablePurpose(payload.purpose));
             heading.id = `ask-pete-answer-heading-${state.requestSequence}`;
@@ -913,7 +926,7 @@
                the answer at most — this badge is it. The old machinery caption
                beside it is gone with the per-card badges it described. */
             meta.appendChild(makeSupportBadge(payload.state, payload.support_label));
-            if (state.previousAnswer) meta.insertBefore(makeBackButton(), meta.firstChild);
+            if (!sageMist && state.previousAnswer) meta.insertBefore(makeBackButton(), meta.firstChild);
             fragment.appendChild(meta);
             payload.summary.split(/\n\s*\n/).filter((part) => part.trim()).forEach((paragraph) => {
                 appendText(fragment, 'p', 'ask-pete-evidence-answer__summary', paragraph.trim());
@@ -940,7 +953,18 @@
             }
             const handoff = renderHandoff(payload);
             if (handoff) fragment.appendChild(handoff);
-            elements.answer.replaceChildren(fragment);
+            if (sageMist) {
+                const turn = makeElement('section', 'sage-ai-turn');
+                turn.setAttribute('aria-labelledby', heading.id);
+                if (question) appendText(turn, 'p', 'sage-ai-question', question);
+                turn.appendChild(fragment);
+                turnPayloads.set(turn, payload);
+                elements.answer.removeAttribute('aria-labelledby');
+                elements.answer.appendChild(turn);
+                latestTurn = turn;
+            } else {
+                elements.answer.replaceChildren(fragment);
+            }
             elements.answer.hidden = false;
             revealAnswerTop();
         }
@@ -1095,10 +1119,12 @@
             }));
         }
 
-        function showAllOnResume() {
-            if (!state.answer) return;
+        function showAllOnResume(invoker) {
+            const turn = invoker instanceof HTMLElement ? invoker.closest('.sage-ai-turn') : null;
+            const answer = turn && turnPayloads.has(turn) ? turnPayloads.get(turn) : state.answer;
+            if (!answer) return;
             if (!isWide()) closeCompanion({ restoreFocus: false });
-            const locators = state.answer.sources_used
+            const locators = answer.sources_used
                 .map((source) => normalizeLocator(source.locator))
                 .filter(Boolean);
             const targets = [];
@@ -1210,7 +1236,7 @@
             }
             const showAll = event.target.closest('[data-ask-pete-show-all]');
             if (showAll && companion.contains(showAll)) {
-                showAllOnResume();
+                showAllOnResume(showAll);
                 return;
             }
             const starter = event.target.closest('[data-ask-pete-starter]');
@@ -1260,6 +1286,10 @@
             }
         });
         window.addEventListener('resize', () => syncLayout());
+        page.addEventListener('resume:sage-placement', (event) => {
+            if (event.detail && event.detail.placement === 'sheet' && event.detail.focused) state.open = true;
+            syncLayout();
+        });
 
         syncLayout();
         setPhase('idle');

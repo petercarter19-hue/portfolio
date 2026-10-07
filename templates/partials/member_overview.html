@@ -3,6 +3,7 @@
 {% else %}
 {% set blocks = projection.block_by_definition %}
 {% set hero = blocks["identity_hero"] %}
+{% set sage_has_contact = projection.profile.location or (resume is defined and (resume.profile.email_url or resume.profile.linkedin_url or resume.profile.phone)) %}
 <article
   class="member-overview {{ projection.style.css_class }} density-{{ projection.density }}"
   id="overview"
@@ -38,6 +39,11 @@
         <h1 id="overview-name">{{ projection.profile.display_name }}</h1>
         <p class="overview-headline">{{ projection.profile.headline }}</p>
         <p class="overview-intro">{{ projection.profile.intro }}</p>
+{% if overview_public_embed and sage_has_contact %}
+          <details class="sage-contact" data-sage-contact open>
+            <summary>Details &amp; Contact <span aria-hidden="true">⌄</span></summary>
+            <div class="sage-contact-body">
+        {% endif %}
         {% if projection.profile.location %}
           <p class="overview-location">
             <span aria-hidden="true">⌖</span>
@@ -58,8 +64,12 @@
                 <span>{{ resume.profile.linkedin_url|replace("https://www.", "")|replace("https://", "") }}</span>
               </a>
             {% endif %}
+            {% if resume.profile.phone %}
+              <a href="tel:{{ resume.profile.phone|replace(' ', '') }}"><span aria-hidden="true">☎</span><span>{{ resume.profile.phone }}</span></a>
+            {% endif %}
           </div>
         {% endif %}
+        {% if overview_public_embed and sage_has_contact %}</div></details>{% endif %}
         <div class="overview-hero-actions">
           <a
             class="overview-button overview-button--primary"
@@ -93,9 +103,20 @@
       >
         <h2 class="visually-hidden" id="overview-proof-heading">Selected proof</h2>
         {% for claim in proof.content.claims if claim.visible %}
+          {% set supporting_metric = namespace(record=none) %}
+          {% if overview_public_embed and resume is defined %}
+            {% for metric in resume.metrics if metric.value == claim.value and metric.label == claim.label %}
+              {% set supporting_metric.record = metric %}
+            {% endfor %}
+          {% endif %}
           <article class="overview-proof-item">
             {% if claim.icon %}<span class="overview-proof-icon" aria-hidden="true">{{ claim.icon }}</span>{% endif %}
-            {% if claim.destination %}
+            {% if supporting_metric.record and supporting_metric.record.context %}
+              <button class="sage-impact-flip" type="button" data-sage-impact-flip aria-expanded="false" aria-controls="sage-proof-detail-{{ loop.index }}" aria-label="{{ claim.value }} {{ claim.label }}. Show supporting impact.">
+                <span class="sage-impact-front" data-sage-impact-front><strong>{{ claim.value }}</strong><span>{{ claim.label }}</span><small>View impact <span aria-hidden="true">↻</span></small></span>
+                <span class="sage-impact-back" id="sage-proof-detail-{{ loop.index }}" hidden>{{ supporting_metric.record.context }}<small>Back <span aria-hidden="true">↻</span></small></span>
+              </button>
+            {% elif claim.destination %}
               <a href="{{ claim.destination.value }}">
                 <strong>{{ claim.value }}</strong>
                 <span>{{ claim.label }}</span>
@@ -110,6 +131,12 @@
     {% endif %}
   </div>
 
+  {% if overview_public_embed %}
+    <div class="sage-ai-home" data-sage-ai-home>
+      {% if ask_pete_evidence_companion_enabled %}{% include "partials/ask_pete_evidence_companion.html" %}{% else %}{{ sage_legacy_ai() }}{% endif %}
+    </div>
+  {% endif %}
+
   {% if "story_spotlight" in blocks %}
     {% set story = blocks["story_spotlight"] %}
     <section class="overview-story{% if story.media %} overview-story--with-media{% endif %}" id="{% if overview_public_embed %}overview-story{% else %}story{% endif %}" aria-labelledby="overview-story-heading">
@@ -119,7 +146,7 @@
         <span class="overview-accent-rule" aria-hidden="true"></span>
         <p>{{ story.content.body }}</p>
         {% if story.destination and story.content.action %}
-          <a class="overview-text-link" href="{{ story.destination.value }}">{{ story.content.action }} <span aria-hidden="true">→</span></a>
+          <a class="overview-text-link" href="{{ story.destination.value }}">{% if overview_public_embed %}My story{% else %}{{ story.content.action }}{% endif %} <span aria-hidden="true">→</span></a>
         {% endif %}
       </div>
       {% if story.media %}
@@ -137,7 +164,7 @@
 
   {% if "career" in blocks %}
     {% set career = blocks["career"] %}
-    <section class="overview-career{% if career.media %} overview-career--with-media{% endif %} overview-ruled" id="{% if overview_public_embed %}overview-career{% else %}experience{% endif %}" aria-labelledby="overview-career-heading">
+    <section class="overview-career{% if career.media %} overview-career--with-media{% endif %} overview-ruled" id="{% if overview_public_embed %}overview-career{% else %}experience{% endif %}"{% if overview_public_embed %} data-sage-timeline data-resume-section-target="overview-career"{% endif %} aria-labelledby="overview-career-heading">
       <div class="overview-career-copy">
         {% set career_heading = "Experience Timeline" if projection.style.id == "story-career" and projection.layout.career_count > 1 else projection.layout.career_heading %}
         <p class="overview-section-kicker">{{ career_heading }}</p>
@@ -205,7 +232,7 @@
     </section>
   {% endif %}
 
-  {% if "impact" in blocks %}
+  {% if "impact" in blocks and not overview_public_embed %}
     {% set impact = blocks["impact"] %}
     <section class="overview-impact{% if impact.media %} overview-impact--with-media{% endif %} overview-ruled" id="{% if overview_public_embed %}overview-impact{% else %}impact{% endif %}" aria-labelledby="overview-impact-heading">
       <p class="overview-section-kicker">{{ impact.content.heading }}</p>
@@ -291,7 +318,7 @@
             </ol>
             {% if "story_spotlight" in blocks and blocks["story_spotlight"].destination %}
               <a class="overview-inline-action overview-chapters-action" href="{{ blocks["story_spotlight"].destination.value }}">
-                View the full story <span aria-hidden="true">&rarr;</span>
+                {% if overview_public_embed %}Full story{% else %}View the full story{% endif %} <span aria-hidden="true">&rarr;</span>
               </a>
             {% endif %}
           </div>

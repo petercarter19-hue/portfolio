@@ -16,7 +16,7 @@ class LivingResumePreviewTests(unittest.TestCase):
         self.assertIn(b'Living R\xc3\xa9sum\xc3\xa9', response.data)
         self.assertIn(b'Department of Defense / U.S. Air Force', response.data)
         self.assertIn(b'See how the work became the story.', response.data)
-        self.assertIn(b'files/pete-carter-resume.pdf', response.data)
+        self.assertNotIn(b'files/pete-carter-resume.pdf', response.data)
 
     def test_preview_remains_hidden_from_nonlocal_hosts(self):
         response = self.client.get('/_internal/living-resume-v2', base_url='https://peerslate.com')

@@ -27,6 +27,7 @@
 {% if ask_pete_evidence_companion_enabled %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/ask-pete-resume-evidence.css') }}">
 {% endif %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resume-sage-mist.css') }}">
 {% endblock %}
 
 {% block body_class %} living-resume-v2-page resume-v2-page resume-consolidated-page{% if public_overview_projection %} resume-overview-public-page{% endif %}{% if ask_pete_evidence_companion_enabled %} ask-pete-evidence-enabled{% endif %}{% endblock %}
@@ -34,128 +35,76 @@
 {% block profile_band %}{% endblock %}
 
 {% block content %}
-<div class="lr-page resume-v2 resume-consolidated" id="living-resume-page"{% if public_overview_projection %} data-public-overview{% endif %}{% if ask_pete_evidence_companion_enabled %} data-ask-pete-evidence-active{% endif %}>
+{% macro sage_legacy_ai() %}
+        <aside class="overview-ai-rail r2-ai-card r2-overview-ai-rail resume-ai-panel" aria-labelledby="r2-ai-title" data-hero-ai-takeover>
+            <header class="r2-ai-rail-header">
+                <img
+                    src="{{ url_for('static', filename=resume.profile.image_path) }}"
+                    alt=""
+                    width="2000"
+                    height="1934"
+                >
+                <div>
+                    <h2 id="r2-ai-title">Ask {{ profile_first_name }} AI</h2>
+                    <p>Public profile assistant</p>
+                </div>
+            </header>
+            <div class="r2-ai-rail-intro">
+                <span class="overview-ai-icon" aria-hidden="true">
+                    <svg><use href="#lr-icon-message"></use></svg>
+                </span>
+                <h3>Ask about {{ profile_first_name }}'s work, experience, skills, or professional story.</h3>
+            </div>
+            <div class="r2-ai-context">
+                <span>Viewing: <strong data-r2-ai-context>{% if public_overview_projection %}Overview{% else %}Summary{% endif %}</strong></span>
+                <small>Questions can follow the résumé section you are currently exploring.</small>
+            </div>
+            <p class="r2-ai-quick-label">Quick questions</p>
+            <div class="r2-ai-suggestions" role="group" aria-label="Suggested questions">
+                {% for question in resume.suggested_ai_questions.default[:3] %}
+                <button type="button" class="r2-ai-chip" data-r2-ai-suggestion>{{ question }}</button>
+                {% endfor %}
+            </div>
+            {% set ai_owner_name = profile_first_name %}
+            {% set ai_input_id = 'resume-overview-ai-input' %}
+            {% include "partials/portfolio_ai_search.html" %}
+            <div class="overview-ai-truth">
+                <strong>Approved public context only</strong>
+                <span>Ask {{ profile_first_name }} AI cannot access private Slate information.</span>
+            </div>
+        </aside>
+{% endmacro %}
+<div class="lr-page resume-v2 resume-consolidated" id="living-resume-page" data-sage-mist{% if public_overview_projection %} data-public-overview{% endif %}{% if ask_pete_evidence_companion_enabled %} data-ask-pete-evidence-active{% endif %}>
     {% include "partials/living_resume_icon_sprite.html" %}
 
     <div class="r2-page-grid">
-        <aside class="overview-context-rail r2-overview-context-rail" aria-label="Résumé context">
-            <div class="overview-context-person">
-                <img
-                    class="overview-avatar r2-overview-avatar"
-                    src="{{ url_for('static', filename=resume.profile.image_path) }}"
-                    alt=""
-                    width="2000"
-                    height="1934"
-                >
-                <strong>{{ resume.profile.name }}</strong>
-                <small>{{ resume.profile.positioning.split('|')[:2]|map('trim')|join(' · ') }}</small>
-            </div>
-            <nav class="r2-overview-style-picker" aria-label="Choose Overview style">
-                <span>Overview style</span>
-                {% for style in overview_style_options %}
-                <a
-                    href="{{ overview_style_urls[style.id] }}#overview"
-                    class="{% if selected_overview_style == style.id %}is-current{% endif %}"
-                    {% if selected_overview_style == style.id %}aria-current="page"{% endif %}
-                >{{ style.label }}</a>
-                {% endfor %}
-            </nav>
-            <p class="overview-rail-label">Résumé sections</p>
-            <nav aria-label="Résumé sections" data-r2-ribbon>
-                <a class="is-current" href="#{% if public_overview_projection %}overview{% else %}summary{% endif %}" data-resume-nav aria-current="location">
-                    <svg aria-hidden="true"><use href="#lr-icon-layout"></use></svg>
-                    <span>{% if public_overview_projection %}Overview{% else %}Summary{% endif %}</span>
-                </a>
-                <a href="#impact" data-resume-nav>
-                    <svg aria-hidden="true"><use href="#lr-icon-chart"></use></svg>
-                    <span>Impact</span>
-                </a>
-                <a href="#skills" data-resume-nav>
-                    <svg aria-hidden="true"><use href="#lr-icon-grid"></use></svg>
-                    <span>Skills</span>
-                </a>
-                <a href="#experience" data-resume-nav>
-                    <svg aria-hidden="true"><use href="#lr-icon-briefcase"></use></svg>
-                    <span>Experience</span>
-                </a>
-                <a href="#credentials" data-resume-nav>
-                    <svg aria-hidden="true"><use href="#lr-icon-award"></use></svg>
-                    <span>Credentials</span>
-                </a>
-            </nav>
-            <div class="overview-rail-tool r2-context-actions">
-                <a href="{{ url_for('static', filename=resume.profile.pdf_path) }}" target="_blank" rel="noopener noreferrer">
-                    <svg aria-hidden="true"><use href="#lr-icon-file"></use></svg>
-                    <span>Résumé PDF</span>
-                </a>
-            </div>
-        </aside>
-
-        <div class="r2-overview-mobile-nav">
-            <div class="r2-overview-mobile-person">
-                <img
-                    src="{{ url_for('static', filename=resume.profile.image_path) }}"
-                    alt=""
-                    width="2000"
-                    height="1934"
-                >
-                <strong>{{ resume.profile.name }}</strong>
-            </div>
-            <a class="is-current" href="#{% if public_overview_projection %}overview{% else %}summary{% endif %}" data-resume-nav aria-current="location">
-                <svg aria-hidden="true"><use href="#lr-icon-layout"></use></svg>
-                <span>{% if public_overview_projection %}Overview{% else %}Summary{% endif %}</span>
-            </a>
-            <details class="r2-overview-mobile-sections">
-                <summary>
-                    <svg aria-hidden="true"><use href="#lr-icon-grid"></use></svg>
-                    <span>Sections</span>
-                    <span aria-hidden="true">⌄</span>
-                </summary>
-                <nav aria-label="Résumé sections and tools">
-                    <a href="#impact" data-resume-nav>
-                        <svg aria-hidden="true"><use href="#lr-icon-chart"></use></svg>
-                        <span>Impact</span>
-                    </a>
-                    <a href="#skills" data-resume-nav>
-                        <svg aria-hidden="true"><use href="#lr-icon-grid"></use></svg>
-                        <span>Skills</span>
-                    </a>
-                    <a href="#experience" data-resume-nav>
-                        <svg aria-hidden="true"><use href="#lr-icon-briefcase"></use></svg>
-                        <span>Experience</span>
-                    </a>
-                    <a href="#credentials" data-resume-nav>
-                        <svg aria-hidden="true"><use href="#lr-icon-award"></use></svg>
-                        <span>Credentials</span>
-                    </a>
-                    <a href="{{ url_for('static', filename=resume.profile.pdf_path) }}" target="_blank" rel="noopener noreferrer">
-                        <svg aria-hidden="true"><use href="#lr-icon-file"></use></svg>
-                        <span>Résumé PDF</span>
-                    </a>
-                    {% if ask_pete_evidence_companion_enabled %}
-                    <button type="button" data-ask-pete-open aria-controls="ask-pete-evidence-companion" aria-expanded="false">
-                        <svg aria-hidden="true"><use href="#lr-icon-message"></use></svg>
-                        <span>Ask {{ profile_first_name }} AI</span>
-                    </button>
-                    {% else %}
-                    <button type="button" data-chat-open>
-                        <svg aria-hidden="true"><use href="#lr-icon-message"></use></svg>
-                        <span>Ask {{ profile_first_name }} AI</span>
-                    </button>
-                    {% endif %}
+        <aside class="sage-resume-rail" data-sage-rail aria-label="Resume navigation and companion">
+            <section class="sage-rail-navigation" aria-labelledby="sage-navigation-title">
+                <h2 id="sage-navigation-title">On this résumé</h2>
+                <nav aria-label="Résumé sections" data-r2-ribbon>
+                    <a class="is-current" href="#{% if public_overview_projection %}overview{% else %}summary{% endif %}" data-resume-nav aria-current="location"><svg aria-hidden="true"><use href="#lr-icon-layout"></use></svg><span>Overview</span></a>
+                    <a href="#impact" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-chart"></use></svg><span>Impact</span></a>
+                    <a href="#experience" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-briefcase"></use></svg><span>Experience</span></a>
+                    <a href="#skills" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-grid"></use></svg><span>Skills</span></a>
+                    <a href="#credentials" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-award"></use></svg><span>Credentials</span></a>
+                    <a href="#{% if public_overview_projection and selected_overview_style == 'story-career' and 'career' in public_overview_projection.block_by_definition %}overview-career{% else %}ledger-timeline{% endif %}" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-direction"></use></svg><span>Experience timeline</span></a>
                 </nav>
-            </details>
-            {% if ask_pete_evidence_companion_enabled %}
-            <button
-                class="r2-overview-mobile-ask-pete"
-                type="button"
-                data-ask-pete-open
-                aria-controls="ask-pete-evidence-companion"
-                aria-expanded="false"
-                aria-label="Ask Pete AI"
-            ><svg aria-hidden="true"><use href="#lr-icon-message"></use></svg><span>Ask Pete</span></button>
-            {% endif %}
-        </div>
+                <label class="sage-nav-compact">On this résumé
+                    <select data-sage-section-select aria-label="On this résumé">
+                        <option value="{% if public_overview_projection %}overview{% else %}summary{% endif %}">Overview</option>
+                        <option value="impact">Impact</option>
+                        <option value="experience">Experience</option>
+                        <option value="skills">Skills</option>
+                        <option value="credentials">Credentials</option>
+                        <option value="{% if public_overview_projection and selected_overview_style == 'story-career' and 'career' in public_overview_projection.block_by_definition %}overview-career{% else %}ledger-timeline{% endif %}">Experience timeline</option>
+                    </select>
+                </label>
+            </section>
+            <div class="sage-rail-ai-mount" data-sage-rail-ai></div>
+        </aside>
+        {% if ask_pete_evidence_companion_enabled %}
+        <button class="r2-overview-mobile-ask-pete sage-ai-bubble" type="button" data-ask-pete-open aria-controls="ask-pete-evidence-companion" aria-expanded="false"><svg aria-hidden="true"><use href="#lr-icon-message"></use></svg><span>Ask {{ profile_first_name }} AI</span></button>
+        {% endif %}
 
         <div class="r2-content">
             <nav class="r2-overview-mobile-style-picker" aria-label="Choose Overview style">
@@ -212,6 +161,11 @@
                 </div>
             </section>
             {% endif %}
+            {% if not public_overview_projection %}
+            <div class="sage-ai-home" data-sage-ai-home>
+                {% if ask_pete_evidence_companion_enabled %}{% include "partials/ask_pete_evidence_companion.html" %}{% else %}{{ sage_legacy_ai() }}{% endif %}
+            </div>
+            {% endif %}
 
             <section class="r2-section r2-impact" id="impact" data-resume-section data-reveal aria-labelledby="impact-title">
                 <header class="r2-section-heading">
@@ -220,7 +174,7 @@
                     <p>Approved public outcomes connected to the experience that produced them.</p>
                 </header>
                 <div class="r2-impact__panel">
-                    {% for metric in resume2_impact_metrics %}
+                    {% for metric in resume2_impact_metrics[:4] %}
                     <button
                         class="r2-impact__item"
                         type="button"
@@ -253,9 +207,6 @@
                 <p class="r2-visually-hidden" data-r2-skill-status role="status" aria-live="polite" aria-atomic="true"></p>
                 <div class="r2-skill-groups" data-r2-skill-overview>
                     {% for group in resume2_skill_groups %}
-                    <section class="r2-skill-group" aria-labelledby="skill-group-{{ group.id }}">
-                        <h3 id="skill-group-{{ group.id }}">{{ group.label }}</h3>
-                        <div class="r2-skill-group__cards">
                             {% for skill in group.skills %}
                             <button
                                 class="r2-skill-card"
@@ -272,8 +223,6 @@
                                 <span class="r2-skill-card__arrow" aria-hidden="true">→</span>
                             </button>
                             {% endfor %}
-                        </div>
-                    </section>
                     {% endfor %}
                 </div>
 
@@ -447,7 +396,7 @@
                 <p class="r2-visually-hidden" data-r2-credential-status role="status" aria-live="polite" aria-atomic="true"></p>
 
                 <div class="r2-credential-overview" data-r2-credential-overview>
-                    {% for category in resume2_credential_categories %}
+                    {% for category in resume2_credential_categories if category['items'] %}
                     <article class="r2-credential-card">
                         <span class="r2-credential-card__icon"><svg aria-hidden="true"><use href="#lr-icon-{{ category.icon }}"></use></svg></span>
                         <h3>{{ category.title }}</h3>
@@ -522,47 +471,7 @@
             </section>
         </div>
 
-        {% if ask_pete_evidence_companion_enabled %}
-        {% include "partials/ask_pete_evidence_companion.html" %}
-        {% else %}
-        <aside class="overview-ai-rail r2-ai-card r2-overview-ai-rail resume-ai-panel" aria-labelledby="r2-ai-title" data-hero-ai-takeover>
-            <header class="r2-ai-rail-header">
-                <img
-                    src="{{ url_for('static', filename=resume.profile.image_path) }}"
-                    alt=""
-                    width="2000"
-                    height="1934"
-                >
-                <div>
-                    <h2 id="r2-ai-title">Ask {{ profile_first_name }} AI</h2>
-                    <p>Public profile assistant</p>
-                </div>
-            </header>
-            <div class="r2-ai-rail-intro">
-                <span class="overview-ai-icon" aria-hidden="true">
-                    <svg><use href="#lr-icon-message"></use></svg>
-                </span>
-                <h3>Ask about {{ profile_first_name }}'s work, experience, skills, or professional story.</h3>
-            </div>
-            <div class="r2-ai-context">
-                <span>Viewing: <strong data-r2-ai-context>{% if public_overview_projection %}Overview{% else %}Summary{% endif %}</strong></span>
-                <small>Questions can follow the résumé section you are currently exploring.</small>
-            </div>
-            <p class="r2-ai-quick-label">Quick questions</p>
-            <div class="r2-ai-suggestions" role="group" aria-label="Suggested questions">
-                {% for question in resume.suggested_ai_questions.default[:3] %}
-                <button type="button" class="r2-ai-chip" data-r2-ai-suggestion>{{ question }}</button>
-                {% endfor %}
-            </div>
-            {% set ai_owner_name = profile_first_name %}
-            {% set ai_input_id = 'resume-overview-ai-input' %}
-            {% include "partials/portfolio_ai_search.html" %}
-            <div class="overview-ai-truth">
-                <strong>Approved public context only</strong>
-                <span>Ask {{ profile_first_name }} AI cannot access private Slate information.</span>
-            </div>
-        </aside>
-        {% endif %}
+
     </div>
 
     <div class="lr-chapter-transition" aria-hidden="true"><span></span></div>
@@ -583,4 +492,5 @@
 {% if ask_pete_evidence_companion_enabled %}
 <script src="{{ url_for('static', filename='js/ask-pete-evidence-companion.js') }}"></script>
 {% endif %}
+<script src="{{ url_for('static', filename='js/resume-sage-mist.js') }}"></script>
 {% endblock %}

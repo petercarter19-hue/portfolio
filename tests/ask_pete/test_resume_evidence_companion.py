@@ -85,7 +85,7 @@ class RecruiterEvidenceCompanionTemplateTests(TestCase):
         self.assertNotIn("sessionStorage", controller)
         self.assertNotIn("document.cookie", controller)
 
-    def test_preview_citation_is_derived_from_the_approved_manifest(self) -> None:
+    def test_opening_is_compact_and_preserves_manifest_evidence_destinations(self) -> None:
         root = Path(__file__).resolve().parents[2]
         catalog = load_public_source_catalog(
             manifest_path=root / "data" / "ai_sources" / "ask_pete_public_v1.json",
@@ -106,21 +106,14 @@ class RecruiterEvidenceCompanionTemplateTests(TestCase):
             root / "templates" / "partials" / "ask_pete_evidence_companion.html"
         ).read_text(encoding="utf-8")
 
-        self.assertIn(preview_record.source.title, html)
-        self.assertIn(preview_excerpt, html)
-        self.assertIn("ask_pete_evidence_preview.excerpt", partial)
+        self.assertNotIn("ask_pete_evidence_preview.excerpt", partial)
+        self.assertNotIn('class="ask-pete-evidence-preview"', html)
+        self.assertEqual(html.count('data-ask-pete-starter='), 2)
         self.assertNotIn(
             "A citation identifies the approved record used for an Ask Pete answer.",
             partial,
         )
-        self.assertIn(
-            f'data-ask-pete-anchor="{preview_record.locator.anchor}"',
-            html,
-        )
-        self.assertIn(
-            f'data-ask-pete-record-id="{preview_record.locator.record_id}"',
-            html,
-        )
+        self.assertIn(f'id="{preview_record.locator.anchor}"', html)
         self.assertNotIn("more than 30 engineers", partial)
         self.assertNotIn("r2-exp-card-dod", partial)
 

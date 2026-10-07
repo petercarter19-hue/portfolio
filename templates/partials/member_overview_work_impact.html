@@ -1,6 +1,7 @@
 {% set blocks = projection.block_by_definition %}
 {% set hero_block = blocks["identity_hero"] %}
 {% set work = projection.work_impact %}
+{% set sage_has_contact = projection.profile.location or (resume is defined and (resume.profile.email_url or resume.profile.linkedin_url or resume.profile.phone)) %}
 <article
   class="member-overview member-overview--work member-overview-work density-{{ projection.density }}"
   id="overview"
@@ -24,6 +25,11 @@
       <h1 id="work-impact-name">{{ work.hero.heading }}</h1>
       <p class="work-impact-discipline">{{ work.hero.discipline }}</p>
       <p class="work-impact-intro">{{ work.hero.intro }}</p>
+{% if overview_public_embed and sage_has_contact %}
+          <details class="sage-contact" data-sage-contact open>
+            <summary>Details &amp; Contact <span aria-hidden="true">⌄</span></summary>
+            <div class="sage-contact-body">
+        {% endif %}
       {% if projection.profile.location %}
         <p class="work-impact-location">
           <svg aria-hidden="true"><use href="#lr-icon-map"></use></svg>
@@ -44,8 +50,12 @@
               <span>{{ resume.profile.linkedin_url|replace("https://www.", "")|replace("https://", "") }}</span>
             </a>
           {% endif %}
+          {% if resume.profile.phone %}
+            <a href="tel:{{ resume.profile.phone|replace(' ', '') }}"><span aria-hidden="true">☎</span><span>{{ resume.profile.phone }}</span></a>
+          {% endif %}
         </div>
       {% endif %}
+        {% if overview_public_embed and sage_has_contact %}</div></details>{% endif %}
       <div class="work-impact-hero__actions">
         <a class="work-impact-button work-impact-button--primary" href="{{ projection.profile.contact_destination.value }}">
           {{ projection.profile.contact_label }}
@@ -94,6 +104,12 @@
         </article>
       {% endfor %}
     </section>
+  {% endif %}
+
+  {% if overview_public_embed %}
+    <div class="sage-ai-home" data-sage-ai-home>
+      {% if ask_pete_evidence_companion_enabled %}{% include "partials/ask_pete_evidence_companion.html" %}{% else %}{{ sage_legacy_ai() }}{% endif %}
+    </div>
   {% endif %}
 
   <div class="work-impact-body">

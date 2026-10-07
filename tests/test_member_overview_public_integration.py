@@ -129,13 +129,13 @@ class MemberOverviewPublicIntegrationTests(unittest.TestCase):
         resume_start = page_html.index('id="resume-start"', overview_start)
         overview_html = page_html[overview_start:resume_start]
 
-        self.assertEqual(page_html.count("r2-overview-context-rail"), 1)
+        self.assertEqual(page_html.count("data-sage-rail "), 1)
         self.assertEqual(page_html.count("r2-overview-ai-rail"), 1)
         self.assertEqual(page_html.count("data-hero-ai-search"), 1)
         self.assertNotIn("r2-context-ask-primary", page_html)
         self.assertEqual(
             page_html.count("/static/files/pete-carter-resume.pdf"),
-            2,
+            0,
         )
         self.assertEqual(overview_html.count(">Connect</a>"), 1)
         self.assertEqual(overview_html.count(">View résumé</a>"), 1)

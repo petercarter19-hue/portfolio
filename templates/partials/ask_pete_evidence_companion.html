@@ -11,6 +11,7 @@
     class="ask-pete-evidence-companion"
     id="ask-pete-evidence-companion"
     data-ask-pete-companion
+    data-sage-placement="inline"
     data-ask-pete-contact-url="{{ portfolio_contact_url }}"
     aria-labelledby="ask-pete-evidence-title"
 >
@@ -19,9 +20,10 @@
             <div>
                 <p class="ask-pete-evidence-companion__kicker">
                     <span aria-hidden="true">&#10022;</span>
-                    Ask Pete AI
+                    Ask {{ profile_first_name }} AI
                 </p>
-                <h2 id="ask-pete-evidence-title">A resume you can question.</h2>
+                <h2 id="ask-pete-evidence-title"><span class="sage-ai-central-title">The person behind the experience.</span><span class="sage-ai-rail-title">A resume you can question.</span></h2>
+                <p class="ask-pete-evidence-companion__promise">Explore the work, the leadership, and the person behind {{ profile_first_name }}'s résumé.</p>
             </div>
             <button
                 class="ask-pete-evidence-companion__close"
@@ -35,58 +37,24 @@
         </header>
 
         <section class="ask-pete-evidence-companion__capability" data-ask-pete-capability>
-            <p class="ask-pete-evidence-companion__promise">
-                Recruiter-ready answers grounded in information Pete approved for Ask Pete.
-            </p>
-
             <div class="ask-pete-evidence-companion__starters" role="group" aria-label="Ask Pete AI starters">
                 <button
                     class="ask-pete-evidence-companion__starter ask-pete-evidence-companion__starter--primary"
                     type="button"
                     data-ask-pete-starter="recruiter_brief"
-                    data-ask-pete-question="Give me Pete's 60-second recruiter brief."
+                    data-ask-pete-question="Give me {{ profile_first_name }}'s 30-second recruiter brief."
                 >
-                    <span>Give me Pete's 60-second recruiter brief</span>
+                    <span>Give me the 30-second brief</span>
                     <span aria-hidden="true">&rarr;</span>
                 </button>
                 <button
                     class="ask-pete-evidence-companion__starter"
                     type="button"
                     data-ask-pete-starter="evidence_finder"
-                    data-ask-pete-question="Show the strongest evidence of Pete's systems leadership."
-                >Show the strongest evidence of systems leadership</button>
-                <button
-                    class="ask-pete-evidence-companion__starter"
-                    type="button"
-                    data-ask-pete-starter="interview_preparation"
-                    data-ask-pete-question="What should I ask Pete in a first interview?"
-                >What should I ask Pete in a first interview?</button>
+                    data-ask-pete-question="Show the strongest evidence of {{ profile_first_name }}'s systems leadership."
+                >Show {{ profile_first_name }}'s leadership in practice</button>
             </div>
 
-            {% if ask_pete_evidence_preview %}
-            {#
-                Owner direction (Pete, 2026-08-09): no repeated "supported"
-                badges — "it's clear that there's evidence."
-            #}
-            <article class="ask-pete-evidence-preview" aria-label="Citation preview">
-                <header>
-                    <span>Evidence preview</span>
-                </header>
-                <p>&ldquo;{{ ask_pete_evidence_preview.excerpt }}&rdquo;</p>
-                <footer>
-                    <span>{{ ask_pete_evidence_preview.source_title }}</span>
-                    <button
-                        type="button"
-                        data-ask-pete-source
-                        data-ask-pete-section="{{ ask_pete_evidence_preview.section }}"
-                        data-ask-pete-anchor="{{ ask_pete_evidence_preview.anchor }}"
-                        data-ask-pete-record-kind="{{ ask_pete_evidence_preview.record_kind }}"
-                        data-ask-pete-record-id="{{ ask_pete_evidence_preview.record_id }}"
-                        data-ask-pete-highlight-key="{{ ask_pete_evidence_preview.highlight_key }}"
-                    >Open on resume <span aria-hidden="true">&rarr;</span></button>
-                </footer>
-            </article>
-            {% endif %}
         </section>
 
         <section class="ask-pete-evidence-context" data-ask-pete-context hidden aria-live="polite">
@@ -137,7 +105,6 @@
             <p data-ask-pete-recovery-message></p>
             <div class="ask-pete-evidence-recovery__actions">
                 <a href="{{ portfolio_resume_url }}#resume-start">Continue reviewing the resume</a>
-                <a href="{{ url_for('static', filename='files/pete-carter-resume.pdf') }}">Open resume PDF</a>
                 <a href="{{ portfolio_contact_url }}">Contact Pete directly</a>
             </div>
         </section>
@@ -160,7 +127,7 @@
         ></p>
 
         <form class="ask-pete-evidence-composer" data-ask-pete-form novalidate>
-            <label for="ask-pete-evidence-input">Ask about Pete's experience</label>
+            <label for="ask-pete-evidence-input">Ask about {{ profile_first_name }}'s experience</label>
             <div class="ask-pete-evidence-composer__field">
                 <textarea
                     id="ask-pete-evidence-input"
@@ -168,7 +135,7 @@
                     rows="2"
                     maxlength="1000"
                     aria-describedby="ask-pete-evidence-help"
-                    placeholder="Ask about Pete's experience..."
+                    placeholder="Ask a question..."
                 ></textarea>
                 <button type="submit" data-ask-pete-submit>
                     <span>Ask</span>
@@ -176,7 +143,7 @@
                 </button>
             </div>
             <div class="ask-pete-evidence-composer__meta">
-                <span id="ask-pete-evidence-help">Public sources only - Third-person answers</span>
+                <span id="ask-pete-evidence-help">Answers from {{ profile_first_name }}'s approved public information.</span>
                 <button type="button" data-ask-pete-cancel hidden>Cancel</button>
             </div>
         </form>
