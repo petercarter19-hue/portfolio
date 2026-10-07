@@ -120,6 +120,19 @@ INTAKE_METHODS = (
     'test_asked_question_history_survives_reload_and_suppresses_an_exact_repeat',
     'test_reload_recovers_manual_fields_and_file_descriptor_with_truthful_reattachment',
     'test_legacy_resume_choice_has_visible_review_confirmation_and_actual_preview_after_reload',
+    'test_answering_optional_story_detail_revises_same_pending_story_before_confirmation',
+    'test_career_answer_offers_grounded_optional_detail_before_direct_confirmation',
+    'test_existing_story_amendment_without_returned_question_offers_optional_detail_before_confirm',
+    'test_optional_detail_skip_keeps_unfinished_answer_and_pending_story_without_ai',
+    'test_pending_exclusion_undo_restores_original_review_without_extra_ai_or_canonical_write',
+    'test_pending_saved_role_bullet_exclusion_undo_retains_checklist_and_manual_review_without_extra_ai',
+    'test_rejected_suggestion_review_returns_pending_then_saves_once_without_provider',
+    'test_saved_bullet_review_restores_exact_literal_at_320_after_confirmation',
+    'test_saved_record_review_restores_same_projection_only_after_confirmation',
+    'test_story_invitation_precedes_confirmation_and_decline_survives_reentry_without_ai',
+    'test_stop_correction_preserves_restoration_and_releases_target_after_reload',
+    'test_lost_stop_response_replays_once_and_preserves_newer_words_without_target',
+    'test_old_stop_retry_preserves_new_correction_target_prompt_and_reload',
 )
 
 

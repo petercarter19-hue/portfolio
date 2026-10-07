@@ -168,6 +168,58 @@ class GateTests(unittest.TestCase):
 
 
 class ComposerHttpTests(IntakeRoutesTestCase):
+    def test_recovery_and_confirmation_work_when_actual_interview_feature_is_disabled(self):
+        from tests.test_my_data_intake_ai import add_request
+        from unittest.mock import Mock
+        keys = ('PEERSLATE_RESUME_EDITOR_ENABLED', 'PEERSLATE_RESUME_INTERVIEW_ENABLED', 'RESUME_PRIVATE_ASSISTANCE_SERVICE')
+        old = {key: app.config.get(key) for key in keys}
+        self.addCleanup(app.config.update, old)
+        forbidden_assistance = Mock(side_effect=AssertionError('No provider or reservation may be used by recovery'))
+        app.config.update(PEERSLATE_RESUME_EDITOR_ENABLED=True, PEERSLATE_RESUME_INTERVIEW_ENABLED=False,
+            RESUME_PRIVATE_ASSISTANCE_SERVICE=forbidden_assistance)
+        self.service._interpreter = lambda text, kind: [{'kind': 'inferred_wording', 'record_type': 'role',
+            'confidence': 'certain', 'values': {'role_title': 'Engineer', 'employer_name': 'Example Labs'}}]
+        original = self.service.submit('member-a', add_request(text='Engineer at Example Labs.'))['proposals'][0]
+        self.service.decide('member-a', {'request_id': str(uuid4()), 'proposal_key': original['proposal_key'], 'decision': 'reject'})
+        client = self.client(); headers = {'X-PeerSlate-Request': 'same-origin'}
+        self.assertEqual(client.post('/api/resume-intake/me/interview', json={}, headers=headers).status_code, 404)
+        row = client.get('/api/resume-intake/me').get_json()['resume_recoverable_details'][0]
+        review = client.post('/api/resume-intake/me/excluded-details/review', headers=headers, json={
+            'request_id': str(uuid4()), 'recovery_key': row['recovery_key'], 'recovery_token': row['recovery_token']})
+        self.assertEqual(review.status_code, 200)
+        pending = review.get_json()['proposals'][0]
+        response = client.post('/api/resume-intake/me/proposals/decision', headers=headers, json={
+            'request_id': str(uuid4()), 'proposal_key': pending['proposal_key'], 'decision': 'accept',
+            'confirmed_values': pending['proposed_values']})
+        self.assertEqual(response.status_code, 200); self.assertEqual(len(self.catalog.list_items('member-a')), 1)
+        forbidden_assistance.assert_not_called()
+
+    def test_excluded_detail_review_enforces_identity_origin_closed_payload_and_explicit_confirm(self):
+        from tests.test_my_data_intake_ai import add_request
+        endpoint = '/api/resume-intake/me/excluded-details/review'
+        client = self.client(); headers = {'X-PeerSlate-Request': 'same-origin'}
+        self.assertEqual(client.post(endpoint, json={}).status_code, 403)
+        self.assertEqual(client.post(endpoint, json={}, headers={**headers, 'Origin': 'https://elsewhere.invalid'}).status_code, 403)
+        self.assertEqual(client.post(endpoint, json={'owner': 'forged'}, headers=headers).status_code, 400)
+        self.service._interpreter = lambda text, kind: [{'kind': 'inferred_wording', 'record_type': 'role',
+            'confidence': 'certain', 'values': {'role_title': 'Engineer', 'employer_name': 'Example Labs'}}]
+        original = self.service.submit('member-a', add_request(text='Engineer at Example Labs.'))['proposals'][0]
+        self.service.decide('member-a', {'request_id': str(uuid4()), 'proposal_key': original['proposal_key'], 'decision': 'reject'})
+        row = client.get('/api/resume-intake/me').get_json()['resume_recoverable_details'][0]
+        request = {'request_id': str(uuid4()), 'recovery_key': row['recovery_key'], 'recovery_token': row['recovery_token']}
+        response = client.post(endpoint, json=request, headers=headers)
+        self.assertEqual(response.status_code, 200)
+        pending = response.get_json()['proposals'][0]
+        self.assertFalse(response.get_json()['saved']); self.assertEqual(self.catalog.list_items('member-a'), [])
+        self.assertEqual(client.post(endpoint, json=request, headers=headers).get_json()['proposals'][0]['proposal_key'], pending['proposal_key'])
+        confirm = client.post('/api/resume-intake/me/proposals/decision', json={
+            'request_id': str(uuid4()), 'proposal_key': pending['proposal_key'], 'decision': 'accept',
+            'confirmed_values': pending['proposed_values']}, headers=headers)
+        self.assertEqual(confirm.status_code, 200); self.assertEqual(len(self.catalog.list_items('member-a')), 1)
+        app.config.update(PEERSLATE_ALLOW_DEV_IDENTITY=False, PEERSLATE_DEV_USER_KEY=None)
+        response = client.post(endpoint, json=request, headers=headers)
+        self.assertEqual(response.status_code, 404); self.assertIn('no-store', response.headers['Cache-Control'])
+
     def test_saved_choice_review_enforces_private_identity_origin_and_closed_request(self):
         endpoint='/api/resume-intake/me/saved-choices/review'
         client=self.client()

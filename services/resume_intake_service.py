@@ -83,6 +83,7 @@ from services.resume_intake_proposals import (
     ProposalError,
     ProposalSpec,
     create as create_proposal,
+    binding_is_current,
     decide as decide_proposal_record,
     invalidate_for_source as invalidate_proposals_for_source,
     invalidate_for_target as invalidate_proposals_for_target,
@@ -481,6 +482,11 @@ class ResumeIntakeService:
             if row["state"] == "pending"
         ]
         pending.sort(key=lambda row: row["created_at"] or "")
+        recovery = self._recovery_inventory(owner, snapshot)
+        for row in pending:
+            undo = recovery.get('undo:' + row['proposal_key'])
+            if undo:
+                row['undo_exclusion_token'] = undo['token']
         return {
             "entrance": policy.entrance,
             "policy": policy.as_document(),
@@ -492,6 +498,10 @@ class ResumeIntakeService:
             "pending_proposals": pending,
             "resume_section_bindings": history['section'],
             "resume_excluded_records": list(history['inclusion'].items()),
+            "resume_recoverable_details": [
+                {'recovery_key': key, 'recovery_token': value['token'],
+                 'label': value['label'], 'text': value['text']}
+                for key, value in recovery.items() if not key.startswith('undo:')],
             "resume_credential_bindings": list(history['credential'].values()),
             "resume_decision_conflicts": history['conflicts'],
             "conversation_turns": [self._conversation_response(snapshot, source)
@@ -694,7 +704,7 @@ class ResumeIntakeService:
         for row in snapshot['proposals'].values():
             excluded_pending = (row['state'] == 'accepted' and not row.get('saved_record_key')
                 and (row.get('resume_conversation_v1') or {}).get('resume_exclusion'))
-            if (row['state'] != 'pending' and not excluded_pending) or row.get('source_purged'):
+            if (row['state'] != 'pending' and not excluded_pending) or row.get('source_purged') or row.get('superseded_by'):
                 continue
             if row.get('target_key') and row['target_key'] not in eligible:
                 continue
@@ -787,7 +797,283 @@ class ResumeIntakeService:
             'request_id': meta.get('request_id'), 'base_revision': meta.get('base_revision'),
             'response': meta.get('response') or 'This turn is no longer available.',
             'next_question': meta.get('next_question') or '', 'proposals': rows,
+            'topic_skipped': meta.get('topic_skipped') is True,
             'saved': False, 'publishes': False, 'confirmation_required': bool(rows), 'replayed': replayed}
+
+    @staticmethod
+    def _recovery_row_token(row):
+        # Supersession is retained separately: one pending recovery may be the
+        # row's successor, but changes to the original decision are not allowed.
+        return _json_digest({key: value for key, value in row.items() if key != 'superseded_by'})
+
+    def _bullet_recovery_positions(self, rows, field, current, excluded):
+        """Reconstruct literal ordinals; equal wording never identifies a bullet.
+
+        Replay retained, sequenced edits over individual line identities. A
+        later free-form field rewrite or unknowable legacy order refuses this
+        route rather than inventing an insertion position.
+        """
+        relevant = [row for row in rows if field in (row.get('confirmed_values') or {})
+            or any(edit['field'] == field for edit in (row.get('resume_conversation_v1') or {}).get('bullet_edits') or [])]
+        if not relevant:
+            return []
+        nodes, ledger = None, []
+        for row in relevant:
+            meta = row['resume_conversation_v1']
+            edits = [(i, edit) for i, edit in enumerate(meta.get('bullet_edits') or []) if edit['field'] == field]
+            after = (row.get('confirmed_values') or {}).get(field)
+            if not isinstance(after, str):
+                return []
+            lines = after.splitlines()
+            if nodes is None:
+                before = list(lines)
+                for _, edit in reversed(edits):
+                    index = edit['index']
+                    if edit['action'] == 'exclude':
+                        if index > len(before): return []
+                        before.insert(index, edit['expected_text'])
+                    else:
+                        expected = edit['replacement'] if edit['action'] == 'revise' else edit['expected_text']
+                        if index >= len(before) or before[index] != expected: return []
+                        if edit['action'] == 'include': before.pop(index)
+                        else: before[index] = edit['expected_text']
+                nodes = [{'text': text, 'hidden': False, 'identity': None} for text in before]
+            if not edits:
+                visible = [node['text'] for node in nodes if not node['hidden']]
+                if visible != lines:
+                    if ledger: return []
+                    nodes = [{'text': text, 'hidden': False, 'identity': None} for text in lines]
+            for ordinal, edit in edits:
+                visible = [node for node in nodes if not node['hidden']]
+                index = edit['index']
+                if edit['action'] == 'include':
+                    identity = meta.get('recovery_bullet_identity')
+                    node = next((node for node in ledger if node['text'] == edit['expected_text']
+                        and (not identity or node['identity'] == identity)), None)
+                    if node is None or sum(not n['hidden'] for n in nodes[:nodes.index(node)]) != index: return []
+                    node['hidden'] = False; ledger.remove(node)
+                else:
+                    if index >= len(visible) or visible[index]['text'] != edit['expected_text']: return []
+                    node = visible[index]
+                    if edit['action'] == 'revise': node['text'] = edit['replacement']
+                    else:
+                        node.update(hidden=True, identity=[row['proposal_key'], ordinal],
+                            retained={'field': field, 'index': index, 'text': edit['expected_text']})
+                        ledger.append(node)
+            if [node['text'] for node in nodes if not node['hidden']] != lines:
+                return []
+            expected = [bullet for bullet in meta.get('excluded_bullets') or [] if bullet['field'] == field]
+            if [node['retained'] for node in ledger] != expected:
+                return []
+        if [node['text'] for node in nodes if not node['hidden']] != current.splitlines(): return []
+        if [node['retained'] for node in ledger] != excluded: return []
+        return [{'identity': node['identity'], 'index': sum(not n['hidden'] for n in nodes[:nodes.index(node)])}
+            for node in ledger]
+
+    def _recovery_inventory(self, owner, snapshot, *, allow_child=None):
+        if not getattr(self.repository, 'supports_resume_conversation', False):
+            return {}
+        history, result = self._resume_history(snapshot), {}
+        conflicted = {row['record_key'] for row in history['conflicts']}
+        def current(row):
+            if row.get('source_purged') or not binding_is_current(snapshot, row): return False
+            linked = (row.get('resume_conversation_v1') or {}).get('credential_binding')
+            if linked:
+                note = self._find_item(owner, linked.get('supplement_key'))
+                if (not note or linked.get('owner_user_key') != owner
+                        or note['content_token'] != linked.get('supplement_content_token')
+                        or note['access_revision'] != linked.get('supplement_access_revision')
+                        or _json_digest({**note['values'], **(note.get('proposed_values') or {})}) != linked.get('supplement_values_digest')):
+                    return False
+            return True
+        def leaf(row):
+            return not row.get('superseded_by') or row.get('superseded_by') == allow_child
+        def target_for(row):
+            target = self._find_item(owner, row['target_key']) if row.get('target_key') else None
+            if (target and target['content_token'] == row.get('target_content_token')
+                    and target['access_revision'] == row.get('target_access_revision')
+                    and (row.get('resume_conversation_v1') or {}).get('target_values_digest') ==
+                        _json_digest({**target['values'], **(target.get('proposed_values') or {})})):
+                return target
+            return None
+        def add(key, original, values, metadata, target=None, *, label, text, proof=None, template=None):
+            if not current(original): return
+            if target and any(row['state'] == 'pending' and row.get('target_key') == target['record_key']
+                    and row['proposal_key'] not in {original['proposal_key'], allow_child}
+                    for row in snapshot['proposals'].values()): return
+            descriptor = {'original_key': original['proposal_key'], 'values': copy.deepcopy(values),
+                'metadata': copy.deepcopy(metadata), 'target': copy.deepcopy(target),
+                'label': label, 'text': text, 'template_key': (template or original)['proposal_key']}
+            descriptor['token'] = _json_digest({'owner': owner, 'key': key,
+                'original': self._recovery_row_token(original), 'lifecycle_epoch': snapshot['lifecycle_epoch'],
+                'source': snapshot['sources'][original['binding']['source_key']]['version'],
+                'values': values, 'metadata': metadata, 'target': target, 'proof': proof})
+            result[key] = descriptor
+        for row in snapshot['proposals'].values():
+            meta = row.get('resume_conversation_v1') or {}
+            if not leaf(row) or not current(row): continue
+            exclusion = meta.get('resume_exclusion') or any(
+                edit.get('action') == 'exclude' for edit in meta.get('bullet_edits') or [])
+            prior = snapshot['proposals'].get(meta.get('revision_of')) if exclusion else None
+            pending_lineage = bool(prior and prior['state'] == 'invalidated' and current(prior)
+                and prior.get('superseded_by') == row['proposal_key']
+                and prior.get('target_key') == row.get('target_key'))
+            target = target_for(row)
+            if row.get('target_key') and not target: continue
+            if pending_lineage and prior.get('target_key') and target_for(prior) != target: continue
+            if exclusion and row['state'] == 'pending':
+                if pending_lineage:
+                    add('undo:' + row['proposal_key'], row, prior['proposed_values'],
+                        prior.get('resume_conversation_v1') or {}, target, label='Undo exclusion',
+                        text='Return the original suggestion to review.', proof=self._recovery_row_token(prior), template=prior)
+                elif target:
+                    add('undo:' + row['proposal_key'], row, {}, {}, target,
+                        label='Undo exclusion', text='Keep the current saved entry.')
+            if row['state'] not in {'accepted', 'rejected'}: continue
+            if pending_lineage:
+                # Accepted saved exclusions are recovered through their saved
+                # history below, rather than replaying the earlier revision.
+                if target and row['state'] != 'rejected': continue
+            elif row['state'] == 'rejected' and not row.get('target_key') and not row.get('saved_record_key') and not exclusion:
+                prior = row
+            else: continue
+            values = prior['proposed_values']
+            title = values.get('role_title') or values.get('name') or values.get('title') or 'Imported suggestion'
+            add('proposal:' + row['proposal_key'], row, values, prior.get('resume_conversation_v1') or {}, target,
+                label='Review original details: ' + str(title), text=prior.get('quote') or '',
+                proof=self._recovery_row_token(prior), template=prior)
+        for record_key in set(history['inclusion']) | set(history['bullets']):
+            if record_key in conflicted: continue
+            target = self._find_item(owner, record_key)
+            if not target: continue
+            values = {**target['values'], **(target.get('proposed_values') or {})}
+            title = values.get('role_title') or values.get('name') or values.get('title') or 'Saved entry'
+            rows = [row for row in snapshot['proposals'].values() if row['state'] == 'accepted'
+                and (row.get('saved_record_key') or row.get('target_key')) == record_key]
+            if history['inclusion'].get(record_key):
+                choices = [row for row in rows if (row.get('resume_conversation_v1') or {}).get('resume_exclusion')
+                    or (row.get('resume_conversation_v1') or {}).get('resume_restoration')]
+                latest = self._latest_resume_decision(snapshot, choices,
+                    lambda row: bool(row['resume_conversation_v1'].get('resume_exclusion')))
+                if latest and current(latest):
+                    meta = copy.deepcopy(latest['resume_conversation_v1'])
+                    meta.update(resume_exclusion=False, resume_restoration=True, operation='restore_content',
+                        target_values_digest=_json_digest(values))
+                    add('record:' + latest['proposal_key'], latest, values, meta, target,
+                        label='Review restoration: ' + str(title), text='Restore this same entry to your private Resume.')
+            excluded = history['bullets'].get(record_key) or []
+            choices = [row for row in rows if 'excluded_bullets' in (row.get('resume_conversation_v1') or {})]
+            if not excluded or not choices or any(not current(row) for row in choices): continue
+            orders = [(row['resume_conversation_v1'].get('decision_order'), row) for row in choices]
+            if any(type(n) is not int or n < 1 for n, _ in orders) or len({n for n, _ in orders}) != len(orders): continue
+            choices = [row for _, row in sorted(orders, key=lambda pair: pair[0])]
+            latest = choices[-1]
+            proof = [self._recovery_row_token(row) for row in choices]
+            for field in {bullet['field'] for bullet in excluded}:
+                retained = [bullet for bullet in excluded if bullet['field'] == field]
+                positions = self._bullet_recovery_positions(choices, field, values.get(field) or '', retained)
+                if not positions: continue
+                ordinals = [i for i, bullet in enumerate(excluded) if bullet['field'] == field]
+                for ordinal, bullet, position in zip(ordinals, retained, positions):
+                    lines = (values.get(field) or '').splitlines()
+                    lines.insert(position['index'], bullet['text'])
+                    restored = {field: '\n'.join(lines)}
+                    meta = copy.deepcopy(latest['resume_conversation_v1'])
+                    meta.update(resume_exclusion=False, resume_restoration=False, operation='revise_content',
+                        recovery_bullet_identity=position['identity'],
+                        excluded_bullets=[b for i, b in enumerate(excluded) if i != ordinal],
+                        bullet_edits=[{'action': 'include', 'field': field, 'index': position['index'],
+                            'expected_text': bullet['text'], 'replacement': None}], target_values_digest=_json_digest(values))
+                    add('bullet:' + latest['proposal_key'] + ':' + str(ordinal), latest, restored, meta, target,
+                        label='Review excluded detail: ' + str(title), text=bullet['text'], proof=[proof, position['identity']])
+        return result
+
+    def _stage_recovery(self, snapshot, descriptor, key, digest):
+        original = snapshot['proposals'][descriptor['original_key']]
+        restores_pending = descriptor['template_key'] != descriptor['original_key']
+        proposal = copy.deepcopy(snapshot['proposals'][descriptor['template_key']])
+        proposal.update(proposal_key=str(uuid4()), state='pending', decision=None, decided_at=None,
+            confirmed_values=None, created_at=_utc(None).isoformat(), command_digest=digest,
+            proposed_values=copy.deepcopy(descriptor['values']))
+        for field in ('superseded_by', 'request_digest', 'saved_record_key'):
+            proposal.pop(field, None)
+        target = descriptor['target']
+        if target:
+            proposal.update(target_key=target['record_key'], target_content_token=target['content_token'],
+                target_access_revision=target['access_revision'])
+            if not restores_pending:
+                proposal.update(provided_fields=list(descriptor['values']), explicit_clears=[], requires_member_wording=False)
+        proposal['resume_conversation_v1'] = copy.deepcopy(descriptor['metadata'])
+        proposal['resume_conversation_v1'].pop('decision_order', None)
+        proposal['resume_conversation_v1'].update(revision_of=original['proposal_key'],
+            recovery_review={'key': key, 'token': descriptor['token'], 'as_shown': bool(target) and not restores_pending})
+        dependencies = proposal['resume_conversation_v1'].setdefault('source_bindings', [])
+        dependency = {'source_key': original['binding']['source_key'], 'version': original['binding']['source_version']}
+        if dependency not in dependencies: dependencies.append(dependency)
+        snapshot['proposals'][proposal['proposal_key']] = proposal
+        if not target or restores_pending: original['superseded_by'] = proposal['proposal_key']
+        return proposal
+
+    @staticmethod
+    def _refresh_source_accounting(snapshot):
+        for source in snapshot['sources'].values():
+            for unit in ((source.get('structured_values') or {}).get('resume_conversation_v1') or {}).get('source_units') or []:
+                cohort = ResumeIntakeService._source_unit_proposals(snapshot, source['source_key'], unit)
+                if not cohort: continue
+                unit['proposal_keys'] = sorted(row['proposal_key'] for row in cohort)
+                approved = [row for row in cohort if row['state'] == 'accepted'
+                    and not (row.get('resume_conversation_v1') or {}).get('resume_exclusion')]
+                unit['disposition'] = 'pending' if any(row['state'] == 'pending' for row in cohort) else (
+                    'approved' if len(approved) == len(cohort) else 'partially approved' if approved else 'excluded')
+                records = sorted({row.get('saved_record_key') or row.get('target_key') for row in cohort
+                    if row.get('saved_record_key') or row.get('target_key')})
+                unit['record_keys'] = records
+                unit['record_key'] = records[0] if len(records) == 1 else None
+
+    def review_excluded_details(self, owner, payload, *, allow_fixture_policy=False):
+        if (not isinstance(payload, dict) or set(payload) != {'request_id', 'recovery_key', 'recovery_token'}
+                or not isinstance(payload.get('recovery_key'), str) or len(payload['recovery_key']) > 128
+                or not isinstance(payload.get('recovery_token'), str) or len(payload['recovery_token']) != 64
+                or payload['recovery_key'].startswith('undo:')):
+            raise ResumeIntakeValidationError('Invalid excluded-detail review.')
+        command = {**payload, 'request_id': _as_uuid(payload['request_id'], field='request_id')}
+        digest = _json_digest({'type': 'review_excluded_details', **command})
+        if not getattr(self.repository, 'supports_resume_conversation', False):
+            raise ResumeIntakeUnavailableError()
+        self._require_usable_policy(allow_fixture=allow_fixture_policy)
+        with self.repository.owner_guard(owner), self._unit_of_work() as unit:
+            if not getattr(unit, 'supports_atomic_composition', False):
+                raise ResumeIntakeUnavailableError()
+            snapshot = self._load(owner)
+            receipt = snapshot['receipts'].get(command['request_id'])
+            if receipt:
+                if receipt['request_digest'] != digest:
+                    raise ResumeIntakeConflictError('idempotency_conflict', [], 'That request key was used for another review.')
+                keys = [row['proposal_key'] for row in receipt['result'].get('proposals') or []]
+                if any(key not in snapshot['proposals'] or snapshot['proposals'][key].get('source_purged')
+                        or not binding_is_current(snapshot, snapshot['proposals'][key]) for key in keys):
+                    return {**receipt['result'], 'proposals': [], 'replayed': True,
+                        'message': 'Those original details are no longer available. Your current content is kept.'}
+                return {**self._hydrate_replay(owner, snapshot, receipt['result']), 'replayed': True}
+            key, token = command['recovery_key'], command['recovery_token']
+            existing = next((row for row in snapshot['proposals'].values() if row['state'] == 'pending'
+                and (row.get('resume_conversation_v1') or {}).get('recovery_review', {}).get('key') == key
+                and row['resume_conversation_v1']['recovery_review']['token'] == token), None)
+            descriptor = self._recovery_inventory(owner, snapshot, allow_child=(existing or {}).get('proposal_key')).get(key)
+            if not descriptor or descriptor['token'] != token:
+                raise ResumeIntakeConflictError('changed', [], 'Those excluded details changed or are no longer retained. Review the current list.')
+            proposal = existing or self._stage_recovery(snapshot, descriptor, key, digest)
+            self._refresh_source_accounting(snapshot)
+            result = {'success': True, 'request_id': command['request_id'], 'proposals': [present_proposal(proposal)],
+                'saved': False, 'publishes': False, 'replayed': bool(existing),
+                'message': 'Review the original details before confirming. Nothing was saved.'}
+            snapshot['receipts'][command['request_id']] = {'request_digest': digest, 'submission_key': None,
+                'result': receipt_for_storage(result)}
+            try:
+                unit.commit(owner, snapshot)
+            except ResumeIntakeStoreUnavailable as error:
+                raise ResumeIntakeUnavailableError() from error
+            return result
 
     def review_resume_history(self, owner, payload, *, allow_fixture_policy=False):
         """Propose an explicit current choice when legacy chronology is absent."""
@@ -969,9 +1255,11 @@ class ResumeIntakeService:
                     from services.resume_intake_runtime import conversation_rejection
                     raise conversation_rejection('changed', 'context_revalidation', 'authorized_context_changed')
                 proposals = self._conversation_proposals(owner, fresh, current, command, context, result, policy)
+                topic_skipped = any(operation['operation'] == 'skip_topic' for operation in result['operations'])
                 meta = current['structured_values']['resume_conversation_v1']
                 meta.update({'turn_state': 'completed', 'response': result['response'],
-                    'next_question': result['next_question'], 'proposal_keys': [p['proposal_key'] for p in proposals],
+                    'next_question': '' if topic_skipped else result['next_question'],
+                    'topic_skipped': topic_skipped, 'proposal_keys': [p['proposal_key'] for p in proposals],
                     'control_bindings': {'record_keys': sorted({target['target_ref'].split(':', 1)[1]
                         for target in context['targets'] if target['target_ref'].startswith('record:')}),
                         'sources': [{'source_key': row['source_key'], 'version': row['version']} for row in context['materials']]}})
@@ -1583,6 +1871,9 @@ class ResumeIntakeService:
         decision = payload.get("decision")
         if decision not in {"accept", "reject", "edit"}:
             raise ResumeIntakeValidationError("Invalid decision.")
+        undo_token = payload.get('undo_exclusion_token')
+        if undo_token is not None and (decision != 'reject' or not isinstance(undo_token, str) or len(undo_token) != 64):
+            raise ResumeIntakeValidationError('Invalid exclusion Undo.')
         confirmed = payload.get("confirmed_values")
         if confirmed is not None and not isinstance(confirmed, dict):
             raise ResumeIntakeValidationError("Invalid confirmed values.")
@@ -1593,7 +1884,8 @@ class ResumeIntakeService:
             policy = self._require_usable_policy(allow_fixture=allow_fixture_policy)
         digest = _json_digest(
             {"type": "decide_proposal", "proposal_key": proposal_key,
-             "decision": decision, "confirmed_values": confirmed}
+             "decision": decision, "confirmed_values": confirmed,
+             **({'undo_exclusion_token': undo_token} if undo_token is not None else {})}
         )
         snapshot = self._load(owner)
         if policy is not None:
@@ -1609,6 +1901,17 @@ class ResumeIntakeService:
         proposal = snapshot["proposals"].get(proposal_key)
         if proposal is None:
             raise ResumeIntakeNotFoundError()
+        recovery = (proposal.get('resume_conversation_v1') or {}).get('recovery_review')
+        if decision in {'accept', 'edit'} and recovery:
+            if recovery.get('as_shown') and (decision != 'accept' or confirmed is not None and confirmed != proposal['proposed_values']):
+                raise ResumeIntakeValidationError('Confirm this restoration as shown, or dismiss it and review again.')
+            descriptor = self._recovery_inventory(owner, snapshot, allow_child=proposal_key).get(recovery['key'])
+            if not descriptor or descriptor['token'] != recovery['token']:
+                raise ResumeIntakeConflictError('changed', [], 'Those retained details changed. Review the current list again.')
+        if undo_token is not None:
+            descriptor = self._recovery_inventory(owner, snapshot).get('undo:' + proposal_key)
+            if not descriptor or descriptor['token'] != undo_token:
+                raise ResumeIntakeConflictError('changed', [], 'That exclusion changed. Your current content is kept.')
         if decision in {'accept', 'edit'} and (proposal.get('resume_conversation_v1') or {}).get('history_review'):
             if decision != 'accept' or confirmed is not None and confirmed != proposal['proposed_values']:
                 raise ResumeIntakeValidationError('Confirm this saved choice as shown, or dismiss it and review again.')
@@ -1656,8 +1959,24 @@ class ResumeIntakeService:
         item = None
         procedure = COMMAND_PROCEDURES["decide_proposal"]
         commit_result = None
+        restored_proposal = None
         try:
             with self._unit_of_work() as unit:
+                if recovery and decision in {'accept', 'edit'} or undo_token is not None:
+                    if not getattr(unit, 'supports_atomic_composition', False):
+                        raise ResumeIntakeUnavailableError()
+                    fresh = self._load(owner)
+                    key = recovery['key'] if recovery and decision in {'accept', 'edit'} else 'undo:' + proposal_key
+                    token = recovery['token'] if recovery and decision in {'accept', 'edit'} else undo_token
+                    descriptor = self._recovery_inventory(owner, fresh, allow_child=proposal_key if recovery else None).get(key)
+                    if not descriptor or descriptor['token'] != token:
+                        raise ResumeIntakeConflictError('changed', [], 'Those retained details changed. Your current content is kept.')
+                if undo_token is not None and descriptor['template_key'] != descriptor['original_key']:
+                    key = 'proposal:' + proposal_key
+                    descriptor = self._recovery_inventory(owner, snapshot).get(key)
+                    if not descriptor:
+                        raise ResumeIntakeConflictError('changed', [], 'The original suggestion is no longer available. Nothing changed.')
+                    restored_proposal = self._stage_recovery(snapshot, descriptor, key, digest)
                 if decided["state"] == "accepted":
                     metadata = decided.get('resume_conversation_v1') or {}
                     if metadata:
@@ -1706,18 +2025,7 @@ class ResumeIntakeService:
                         item = self._apply_decision(owner, snapshot, unit, decided, confirmed)
                         outcome = "saved"
                     decided["saved_record_key"] = (item or {}).get("record_key") or decided.get("target_key")
-                for source in snapshot['sources'].values():
-                    source_context = (source.get('structured_values') or {}).get('resume_conversation_v1') or {}
-                    for source_unit in source_context.get('source_units') or []:
-                        cohort = self._source_unit_proposals(snapshot, source['source_key'], source_unit)
-                        if any(row['proposal_key'] == proposal_key for row in cohort):
-                            source_unit['proposal_keys'] = sorted(row['proposal_key'] for row in cohort)
-                            source_unit['disposition'] = 'pending' if any(row['state'] == 'pending' for row in cohort) else (
-                                'approved' if all(row['state'] == 'accepted' and not (row.get('resume_conversation_v1') or {}).get('resume_exclusion') for row in cohort)
-                                else 'partially approved' if any(row['state'] == 'accepted' and not (row.get('resume_conversation_v1') or {}).get('resume_exclusion') for row in cohort) else 'excluded')
-                            source_unit['record_key'] = (item or {}).get('record_key') or decided.get('target_key')
-                            source_unit['record_keys'] = sorted(set(source_unit.get('record_keys') or []) |
-                                set(filter(None, [source_unit['record_key']])))
+                self._refresh_source_accounting(snapshot)
                 result = {
                     "success": True,
                     "outcome": outcome,
@@ -1726,6 +2034,7 @@ class ResumeIntakeService:
                     "replayed": False,
                     "proposal_key": proposal_key,
                     "proposal": present_proposal(snapshot["proposals"][proposal_key]),
+                    **({'restored_proposal': present_proposal(restored_proposal)} if restored_proposal else {}),
                     "item": item,
                     "publishes": False,
                     "message": {
@@ -2587,6 +2896,12 @@ class ResumeIntakeService:
         single = result.get("proposal_key")
         if single and single in rows:
             result["proposal"] = present_proposal(rows[single])
+        restored = (result.get('restored_proposal') or {}).get('proposal_key')
+        if restored:
+            if restored in rows and not rows[restored].get('source_purged') and binding_is_current(snapshot, rows[restored]):
+                result['restored_proposal'] = present_proposal(rows[restored])
+            else:
+                result.pop('restored_proposal', None)
 
         # Saved member values never live in the immutable receipt. Re-read them
         # through the owner-qualified canonical catalog. An unchanged version is

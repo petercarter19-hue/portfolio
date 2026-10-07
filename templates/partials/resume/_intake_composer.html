@@ -6,6 +6,7 @@
     data-intake-recording-url="{{ url_for('resume_intake.post_recording') }}"
     data-intake-decision-url="{{ url_for('resume_intake.post_proposal_decision') }}"
     data-history-review-url="{{ url_for('resume_intake.post_saved_choice_review') }}"
+    data-excluded-review-url="{{ url_for('resume_intake.post_excluded_detail_review') }}"
     data-intake-originals-url="{{ url_for('resume_intake.get_original_files') }}"
     data-intake-purge-url="{{ url_for('resume_intake.post_source_purge') }}"
     data-guide-url="{{ url_for('resume_intake.get_guide_state') }}"
@@ -25,6 +26,10 @@
       <h2 id="resume-intake-title" class="resume-intake__title" tabindex="-1">The more PeerSlate knows you, the more it can do for you.</h2>
       <p id="resume-intake-description" class="resume-intake__description" hidden></p>
       <section id="resume-intake-history-review" class="resume-intake__inset" aria-label="Review saved Resume choices" hidden></section>
+      <details id="resume-intake-excluded-review" class="resume-intake__inset" hidden>
+        <summary>Review excluded details</summary>
+        <div id="resume-intake-excluded-details"></div>
+      </details>
       <section id="resume-intake-welcome" aria-label="How PeerSlate helps you">
         <div class="resume-intake__inset resume-intake__benefits">
           <div class="resume-intake__benefit">

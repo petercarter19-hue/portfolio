@@ -37,6 +37,7 @@
         recording: root.getAttribute('data-intake-recording-url'),
         decision: root.getAttribute('data-intake-decision-url'),
         historyReview: root.getAttribute('data-history-review-url'),
+        excludedReview: root.getAttribute('data-excluded-review-url'),
         purge: root.getAttribute('data-intake-purge-url'),
         originals: root.getAttribute('data-intake-originals-url'),
         guide: root.getAttribute('data-guide-url'),
@@ -72,6 +73,7 @@
     var proposalList = document.getElementById('resume-intake-proposals');
     var questionPrompt = document.getElementById('resume-intake-question');
     var questionContext = document.getElementById('resume-intake-context');
+    var proposalInvitations = {};
     var typeSelect = document.getElementById('resume-intake-type');
     var addFactButton = document.getElementById('resume-intake-add-fact');
     var clearsBox = document.getElementById('resume-intake-clears');
@@ -986,6 +988,47 @@
             var row = node('div'); row.append(node('dt', fieldLabel(name)), node('dd', 'Remove the existing value')); facts.appendChild(row);
         });
         group.append(facts, correction); item.appendChild(group);
+        var invitation = proposalInvitations[proposal.proposal_key];
+        var invitationRevision = proposal.resume_conversation_v1 || {};
+        var substantiveRevision = invitationRevision.operation === 'revise_content' &&
+            ['wording', 'summary'].some(function (name) { return !!proposal.proposed_values[name]; }) &&
+            !(invitationRevision.bullet_edits || []).length;
+        if (!invitation && (invitationRevision.operation === 'add_content' || substantiveRevision) &&
+                !invitationRevision.recovery_review && !invitationRevision.history_review && !invitationRevision.resume_exclusion) {
+            var subject = proposed.role_title || proposed.name || proposed.title;
+            if (subject) invitation = proposal.record_type === 'role' ? 'For ' + subject + ', what contribution or result would you like people to understand?' :
+                proposal.record_type === 'skill' ? 'How have you used ' + subject + ' in your work?' :
+                invitationRevision.presentation_section === 'My Story' ? 'What do you enjoy or care about in ' + subject + '?' : null;
+            if (invitation) proposalInvitations[proposal.proposal_key] = invitation;
+        }
+        if (invitation && seenQuestions.indexOf(invitation) === -1) {
+            var optionalDetail = node('div', undefined, 'resume-intake__inset');
+            optionalDetail.setAttribute('data-optional-invitation', '');
+            optionalDetail.append(node('h3', 'An optional next detail'), node('p', invitation),
+                node('p', 'You can keep these details without adding more.', 'resume-intake__hint'));
+            var detailActions = node('div', undefined, 'resume-intake__quiet-actions');
+            var addDetail = node('button', 'Add a detail', 'resume-intake__secondary'); addDetail.type = 'button';
+            var keepDetails = node('button', 'Keep these details', 'resume-intake__quiet'); keepDetails.type = 'button';
+            addDetail.addEventListener('click', function () {
+                if (decisionBusy || interviewBusy || pendingConversation) return;
+                if (textarea.value.trim()) {
+                    setStatus('Your unfinished answer is kept. Finish it first, or confirm these details as they are.', 'ok'); return;
+                }
+                seenQuestions.push(invitation);
+                correctionTarget = proposal; correctionDraft = textarea.value;
+                textarea.value = correctionInputs[proposal.proposal_key] || '';
+                showScreen('input'); questionPrompt.textContent = invitation;
+                questionContext.textContent = 'Optional. Add only the detail you want to keep. Your earlier suggestion is still waiting for confirmation.';
+                questionContext.hidden = false; textarea.focus(); refreshDraftLabel(); scheduleDraft();
+            });
+            keepDetails.addEventListener('click', function () {
+                if (decisionBusy || interviewBusy) return;
+                seenQuestions.push(invitation); renderProposals(proposals);
+                setStatus('Your details are still waiting for your confirmation. Nothing was saved.', 'ok'); scheduleDraft();
+            });
+            detailActions.append(addDetail, keepDetails); optionalDetail.appendChild(detailActions);
+            group.before(optionalDetail);
+        }
         item.appendChild(node('p', proposal.target_key ? 'Suggested change to an existing entry' : fixedType ? 'Suggested ' + labelFor(type).toLowerCase() + ' · not saved yet' : 'Your words · choose where they belong', 'resume-intake__proposal-source'));
         if (proposal.quote) item.appendChild(node('p', '“' + proposal.quote + '”', 'resume-intake__proposal-quote'));
         var revision = proposal.resume_conversation_v1 || {};
@@ -1016,6 +1059,7 @@
         var edit = node('button', 'Change something', 'resume-intake__secondary'); edit.type = 'button';
         var manualEdit = node('button', 'Edit fields manually', 'resume-intake__quiet'); manualEdit.type = 'button';
         var reject = node('button', 'Leave this out', 'resume-intake__quiet'); reject.type = 'button';
+        if (proposal.undo_exclusion_token) reject.textContent = 'Undo exclusion';
         var quietActions = node('div', undefined, 'resume-intake__quiet-actions');
         quietActions.append(manualEdit, reject);
         actions.append(accept, edit); item.append(actions, quietActions); proposalList.appendChild(item);
@@ -1058,7 +1102,7 @@
             correction.disabled = Boolean(pendingDecision);
             accept.textContent = pendingDecision ? 'Retry confirmation' : 'Confirm details';
             reject.disabled = Boolean(pendingDecision);
-            if (revision.history_review) { edit.hidden = true; manualEdit.hidden = true; correction.hidden = true; facts.hidden = false; }
+            if (revision.history_review || (revision.recovery_review || {}).as_shown) { edit.hidden = true; manualEdit.hidden = true; correction.hidden = true; facts.hidden = false; }
             showScreen(correcting ? 'correction' : 'review', false, false, previousFrame);
             previousFrame = null;
         }
@@ -1125,7 +1169,8 @@
             if (!pendingDecision) {
                 try {
                     var body = {request_id: requestId(), proposal_key: proposal.proposal_key, decision: decision};
-                    if (decision === 'accept' && !revision.history_review) body.confirmed_values = confirmedValues();
+                    if (decision === 'accept' && !revision.history_review && !(revision.recovery_review || {}).as_shown) body.confirmed_values = confirmedValues();
+                    if (decision === 'reject' && proposal.undo_exclusion_token) body.undo_exclusion_token = proposal.undo_exclusion_token;
                     pendingDecision = {body: body, proposal: proposal};
                 } catch (error) { correcting = true; syncCorrection(); setStatus(error.message, 'error'); return; }
             }
@@ -1142,6 +1187,10 @@
                     throw new Error('Confirmation is not acknowledged. Retry the same decision.');
                 }
                 pendingDecision = null;
+                if (payload.restored_proposal) {
+                    newestProposalKeys = [payload.restored_proposal.proposal_key];
+                    selectedProposalKey = payload.restored_proposal.proposal_key;
+                }
                 if (pendingConversation && pendingConversation.selected_target === 'proposal:' + proposal.proposal_key) {
                     var retainedTurn = correctionInputs[proposal.proposal_key] || '';
                     if (retainedTurn && textarea.value.indexOf(retainedTurn) === -1)
@@ -1164,7 +1213,10 @@
                 if (proposals.length) { renderProposals(proposals); showScreen(screen); }
                 else {
                     proposalList.replaceChildren();
-                    if (payload.outcome === 'saved') {
+                    if (payload.outcome === 'saved' && proposalInvitations[proposal.proposal_key] &&
+                            seenQuestions.indexOf(proposalInvitations[proposal.proposal_key]) !== -1) {
+                        showScreen('optional');
+                    } else if (payload.outcome === 'saved') {
                         var confirmed = Object.assign({}, (payload.item || {}).values || {}, (payload.item || {}).proposed_values || {}, proposal.proposed_values || {});
                         var label = confirmed.role_title || confirmed.name || confirmed.title || 'this experience';
                         var invitation = proposal.record_type === 'role' ? 'For ' + label + ', what contribution or result would you like people to understand?' :
@@ -1180,7 +1232,13 @@
                 refreshDraftLabel();
                 if (!proposals.length) { var overview = document.getElementById('resume-intake-suggestion-overview'); if (overview) overview.remove(); }
                 setStatus(payload.outcome === 'saved' ? 'Saved privately. Sharing settings are unchanged.' : (payload.message || 'Left out. Nothing was saved.'), 'ok');
-                loadParentCandidates().then(load).then(checkpointDraft);
+                loadParentCandidates().then(load).then(function () {
+                    if (payload.restored_proposal) {
+                        renderProposals(proposals);
+                        setStatus('Exclusion undone. The original details are waiting for your confirmation. Nothing was saved.', 'ok');
+                    }
+                    return checkpointDraft();
+                });
             }).catch(function (error) {
                 setStatus(error.message || 'The response was lost. Retry the same confirmation; it will not create a duplicate.', 'error');
             }).finally(function () {
@@ -1363,6 +1421,12 @@
                     : 'Synthetic fixture policy only. Real onboarding retention is unavailable.';
                 refreshOriginals();
                 renderHistoryConflicts(result.payload.resume_decision_conflicts || []);
+                renderRecoverableDetails(result.payload.resume_recoverable_details || []);
+                proposalInvitations = {};
+                (result.payload.conversation_turns || []).forEach(function (turn) {
+                    if (!turn.next_question) return;
+                    (turn.proposals || []).forEach(function (row) { proposalInvitations[row.proposal_key] = turn.next_question; });
+                });
                 renderProposals(result.payload.pending_proposals || [], initialized);
                 if (!initialized) renderReceipt(result.payload.last_receipt || null);
                 renderCoverage(result.payload.source_accounting || []);
@@ -1418,6 +1482,35 @@
                 });
                 region.appendChild(button);
             });
+        });
+    }
+
+    function renderRecoverableDetails(rows) {
+        var region = document.getElementById('resume-intake-excluded-review');
+        var content = document.getElementById('resume-intake-excluded-details');
+        if (!region || !content) return;
+        region.hidden = !rows.length; content.replaceChildren();
+        rows.forEach(function (row) {
+            var item = node('div', undefined, 'resume-intake__inset');
+            item.append(node('p', row.label), node('p', row.text),
+                node('p', 'Review first. Confirm only the details you want to keep.', 'resume-intake__hint'));
+            var button = node('button', 'Review these details', 'resume-intake__secondary'); button.type = 'button';
+            button.setAttribute('data-recovery-key', row.recovery_key);
+            var attempt = {request_id: requestId(), recovery_key: row.recovery_key, recovery_token: row.recovery_token};
+            button.addEventListener('click', function () {
+                if (decisionBusy || interviewBusy || pendingAdd || pendingDecision || pendingConversation) return;
+                button.disabled = true;
+                postJson(urls.excludedReview, attempt).then(function (result) {
+                    if (!result.response.ok) throw new Error(result.payload.message || 'Those details changed. Review the current list again.');
+                    newestProposalKeys = (result.payload.proposals || []).map(function (p) { return p.proposal_key; });
+                    selectedProposalKey = newestProposalKeys[0];
+                    return loadParentCandidates().then(load).then(function () {
+                        renderProposals(proposals); setStatus('The original details are waiting for your review. Nothing was saved.', 'ok'); scheduleDraft();
+                    });
+                }).catch(function (error) { setStatus(error.message, 'error'); })
+                .finally(function () { button.disabled = false; });
+            });
+            item.appendChild(button); content.appendChild(item);
         });
     }
 
@@ -1705,13 +1798,20 @@
             }
             var data = result.payload;
             if (data.success !== true || data.request_id !== attempt.request_id || data.saved !== false || data.publishes !== false ||
-                data.base_revision !== attempt.expected_draft_version || !Array.isArray(data.proposals)) throw new Error('No valid turn arrived. Retry to recover the same turn.');
+                data.base_revision !== attempt.expected_draft_version || !Array.isArray(data.proposals) ||
+                (data.topic_skipped !== undefined && typeof data.topic_skipped !== 'boolean')) throw new Error('No valid turn arrived. Retry to recover the same turn.');
             pendingConversation = null;
             undispatchedConversationKey = null;
             if (generation !== conversationGeneration) return;
             attachments = attachments.filter(function (row) { return attempt.source_keys.indexOf(row.source_key) === -1; });
-            if (submittedText !== null && textarea.value === submittedText) textarea.value = '';
-            if (target && data.proposals.length) {
+            var currentCorrection = correctionTarget ? 'proposal:' + correctionTarget.proposal_key : null;
+            var stoppedCurrent = data.topic_skipped === true && attempt.selected_target === currentCorrection;
+            if (submittedText !== null && textarea.value === submittedText) textarea.value = stoppedCurrent && target ? (correctionDraft || '') : '';
+            if (stoppedCurrent) {
+                correctionTarget = null; correctionDraft = null; conversationIntent = null;
+                questionPrompt.textContent = 'What would you like to add or change?';
+                questionContext.textContent = data.response; questionContext.hidden = !data.response;
+            } else if (target && data.proposals.length) {
                 delete proposalDrafts[target.proposal_key]; delete correctionInputs[target.proposal_key];
                 correctionTarget = null; correctionDraft = null;
             }
@@ -1721,6 +1821,8 @@
             renderAttachments(); refreshDraftLabel();
             return loadParentCandidates().then(load).then(function () {
                 if (generation !== conversationGeneration || navigationEpoch !== conversationNavigationEpoch || guideHidden || screen !== inputScreen) return;
+                if (data.topic_skipped === true && !stoppedCurrent) return;
+                if (stoppedCurrent) showScreen('input', false);
                 if (textarea.value.trim()) return;
                 if (data.proposals.length) renderProposals(proposals);
                 else {
@@ -2284,7 +2386,15 @@
     on('new-question', nextQuestion);
     on('retry-guide', function () { if (pendingGuide) setGuideStatus(pendingGuide.status); });
     on('review-pending', function () { if (interviewBusy) return; leaveCorrection(); renderProposals(proposals); });
-    on('skip-question', function () { seenQuestions.push(questionPrompt.textContent); nextQuestion(); });
+    on('skip-question', function () {
+        seenQuestions.push(questionPrompt.textContent);
+        if (correctionTarget && proposalInvitations[correctionTarget.proposal_key] === questionPrompt.textContent) {
+            leaveCorrection(); renderProposals(proposals);
+            setStatus('Your earlier details and any unfinished answer are kept. Review and confirm when they are right.', 'ok');
+            scheduleDraft(); return;
+        }
+        nextQuestion();
+    });
     on('input-finish', function () { if (interviewBusy) return; leaveCorrection(); showScreen('optional'); });
     on('next-finish', function () { showScreen('optional'); });
     on('optional-next', function () { showScreen('sharing'); });

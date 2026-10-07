@@ -441,6 +441,33 @@ class ConversationTests(unittest.TestCase):
         self.assertEqual(self.intake.draft_service.get_workspace(self.owner)['items'], [])
         self.assertEqual(len(self.intake.get_workspace(self.owner)['conversation_turns']), 3)
 
+    def test_validated_skip_exposes_replayable_control_and_preserves_pending_review(self):
+        key = self.seed()
+        self.behavior = lambda ctx: {'response': 'Review this location.', 'next_question': '',
+            'operations': [operation(ctx, ref='record:' + key, values={'location_text': 'Boulder'})]}
+        proposal = self.turn('Change my location to Boulder.')['proposals'][0]
+        pending = self.intake.get_workspace(self.owner)['pending_proposals']
+        draft = self.intake.draft_service.get_workspace(self.owner)
+        def stop(ctx):
+            control = operation(ctx, op='skip_topic'); control['source_refs'] = []
+            return {'response': 'This exchange can end; your earlier work is kept.',
+                'next_question': 'This question must not restart the stopped exchange.', 'operations': [control]}
+        self.behavior = stop
+        command = self.command("Don't worry about it.", 'proposal:' + proposal['proposal_key'])
+        result = self.intake.converse(self.owner, command, assistance=self.assistance)
+        self.assertIs(result.get('topic_skipped'), True)
+        self.assertEqual(result['next_question'], '')
+        self.assertEqual(result['proposals'], [])
+        self.assertEqual(self.intake.get_workspace(self.owner)['pending_proposals'], pending)
+        self.assertEqual(self.intake.draft_service.get_workspace(self.owner), draft)
+        replay = self.intake.converse(self.owner, command, assistance=self.assistance)
+        self.assertTrue(replay['replayed']); self.assertIs(replay['topic_skipped'], True)
+        self.assertEqual(len(self.calls), 2)
+        source = self.intake.repository.load_owner(self.owner)['sources'][result['source_key']]
+        self.assertIs(source['structured_values']['resume_conversation_v1']['topic_skipped'], True)
+        self.behavior = lambda ctx: {'response': 'Which detail?', 'next_question': '', 'operations': []}
+        self.assertIs(self.turn('Which detail can I add?')['topic_skipped'], False)
+
     def test_replay_hydrates_current_revision_and_never_redispatches(self):
         key = self.seed()
         self.behavior = lambda ctx: {'response': 'Changed location.', 'next_question': '',
@@ -970,6 +997,286 @@ class ConversationTests(unittest.TestCase):
             self.intake.converse(self.owner, command, assistance=self.assistance)
         self.assertEqual(len(self.calls), 1)
         self.assertEqual(self.intake.repository.load_owner(self.owner), purged)
+
+
+    def recovery_request(self, row):
+        return {'request_id': str(uuid4()), 'recovery_key': row['recovery_key'], 'recovery_token': row['recovery_token']}
+
+    def imported_recovery_proposal(self):
+        text = 'Experience\nEngineer, Example Labs.\nCoordinated eight people; not their manager.'
+        self.intake._document_pipeline = extracted_pipeline(text)
+        self.intake._extraction_adapter = DeterministicFakeExtractionAdapter([{'record_type': 'role',
+            'values': {'role_title': 'Engineer', 'employer_name': 'Example Labs'}, 'quote': text.split('\n', 1)[1],
+            'outcome': 'new', 'confidence': 'certain'}])
+        self.intake.submit(self.owner, add_request(attachments=[{'client_key': 'doc', 'kind': 'document',
+            'declared_content_type': 'text/plain', 'filename': 'resume.txt'}]), files={'doc': FakeUpload('text/plain', text.encode())})
+        return self.intake.get_workspace(self.owner)['pending_proposals'][0]
+
+    def test_rejected_import_review_replays_without_ai_and_accounts_effective_approved_successor(self):
+        original = self.imported_recovery_proposal()
+        self.confirm(original, 'reject')
+        request = self.recovery_request(self.intake.get_workspace(self.owner)['resume_recoverable_details'][0])
+        first = self.intake.review_excluded_details(self.owner, request)
+        self.assertEqual(self.intake.draft_service.catalog.list_items(self.owner), [])
+        self.assertEqual(first['proposals'][0]['quote'], original['quote'])
+        self.assertEqual(self.intake.review_excluded_details(self.owner, request)['proposals'], first['proposals'])
+        parallel = self.intake.review_excluded_details(self.owner, {**request, 'request_id': str(uuid4())})
+        self.assertEqual(parallel['proposals'][0]['proposal_key'], first['proposals'][0]['proposal_key'])
+        with self.assertRaises(ResumeIntakeConflictError):
+            self.intake.review_excluded_details(self.owner, {**request, 'recovery_token': '0' * 64})
+        with self.assertRaises(ResumeIntakeConflictError): self.intake.review_excluded_details('another-owner', request)
+        self.confirm(first['proposals'][0])
+        replay = self.intake.review_excluded_details(self.owner, request)
+        self.assertEqual(replay['proposals'][0]['state'], 'accepted')
+        self.assertEqual(len(self.intake.draft_service.catalog.list_items(self.owner)), 1)
+        snapshot = self.intake.repository.load_owner(self.owner)
+        self.assertEqual(snapshot['proposals'][original['proposal_key']]['state'], 'rejected')
+        units = self.intake.get_workspace(self.owner)['source_accounting'][0]['source_units']
+        accounted = [unit for unit in units if self.intake._source_unit_proposals(snapshot,
+            original['provenance']['source_key'], unit)]
+        self.assertTrue(accounted)
+        self.assertTrue(all(unit['disposition'] == 'approved' for unit in accounted))
+        self.assertEqual(self.calls, [])
+
+    def test_pending_unsaved_exclusion_undo_atomically_returns_original_to_pending(self):
+        original = self.imported_recovery_proposal()
+        self.behavior = lambda ctx: {'response': 'Review exclusion.', 'next_question': '', 'operations': [
+            operation(ctx, op='exclude_content', ref='proposal:' + original['proposal_key'])]}
+        exclusion = self.turn('Exclude this imported role.')['proposals'][0]
+        visible = self.intake.get_workspace(self.owner)['pending_proposals'][0]
+        command = {'request_id': str(uuid4()), 'proposal_key': exclusion['proposal_key'], 'decision': 'reject',
+            'undo_exclusion_token': visible['undo_exclusion_token']}
+        before = self.intake.repository.load_owner(self.owner)
+        from services.resume_intake_repository import InMemoryIntakeUnitOfWork, ResumeIntakeStoreUnavailable
+        from services.resume_intake_service import ResumeIntakeUnavailableError
+        with patch.object(InMemoryIntakeUnitOfWork, 'commit', side_effect=ResumeIntakeStoreUnavailable('fixture failure')):
+            with self.assertRaises(ResumeIntakeUnavailableError): self.intake.decide(self.owner, command)
+        self.assertEqual(self.intake.repository.load_owner(self.owner), before)
+        result = self.intake.decide(self.owner, command)
+        restored = result['restored_proposal']
+        self.assertEqual(restored['proposed_values'], original['proposed_values'])
+        self.assertEqual(restored['quote'], original['quote'])
+        self.assertEqual(self.intake.decide(self.owner, command)['restored_proposal']['proposal_key'], restored['proposal_key'])
+        self.assertEqual(self.intake.draft_service.catalog.list_items(self.owner), [])
+        self.assertEqual(len(self.intake.get_workspace(self.owner)['pending_proposals']), 1)
+        self.confirm(restored)
+        self.assertEqual(len(self.intake.draft_service.catalog.list_items(self.owner)), 1)
+        self.assertEqual(len(self.calls), 1)
+
+    def test_saved_exclusion_review_is_projection_only_and_requires_unchanged_explicit_confirmation(self):
+        key = self.seed()
+        self.behavior = lambda ctx: {'response': 'Review exclusion.', 'next_question': '', 'operations': [
+            operation(ctx, op='exclude_content', ref='record:' + key)]}
+        self.confirm(self.turn('Exclude the Engineer role.')['proposals'][0])
+        before = self.intake.draft_service.get_workspace(self.owner)
+        row = self.intake.get_workspace(self.owner)['resume_recoverable_details'][0]
+        pending = self.intake.review_excluded_details(self.owner, self.recovery_request(row))['proposals'][0]
+        self.assertTrue(dict(self.intake.get_workspace(self.owner)['resume_excluded_records'])[key])
+        self.assertEqual(self.intake.draft_service.get_workspace(self.owner), before)
+        self.confirm(pending)
+        self.assertFalse(dict(self.intake.get_workspace(self.owner)['resume_excluded_records'])[key])
+        self.assertEqual(self.intake.draft_service.get_workspace(self.owner), before)
+        self.assertEqual(len(self.calls), 1)
+
+    def test_direct_saved_whole_and_bullet_pending_undo_only_rejects_exclusion(self):
+        for bullet in (False, True):
+            with self.subTest(bullet=bullet):
+                self.setUp(); key = self.seed()
+                before = self.intake.draft_service.get_workspace(self.owner)
+                edits = [{'action': 'exclude', 'field': 'summary', 'index': 1,
+                    'expected_text': 'A pilot reduced time 32%; not independently verified.', 'replacement': None}] if bullet else []
+                self.behavior = lambda ctx: {'response': 'Review exclusion.', 'next_question': '', 'operations': [
+                    operation(ctx, op='revise_content' if bullet else 'exclude_content', ref='record:' + key, bullets=edits)]}
+                exclusion = self.turn('Exclude this detail.')['proposals'][0]
+                row = self.intake.get_workspace(self.owner)['pending_proposals'][0]
+                command = {'request_id': str(uuid4()), 'proposal_key': exclusion['proposal_key'], 'decision': 'reject',
+                    'undo_exclusion_token': row['undo_exclusion_token']}
+                result = self.intake.decide(self.owner, command)
+                self.assertNotIn('restored_proposal', result)
+                self.assertEqual(self.intake.draft_service.get_workspace(self.owner), before)
+                self.assertEqual(self.intake.get_workspace(self.owner)['pending_proposals'], [])
+                self.assertEqual(self.intake.decide(self.owner, command)['proposal_key'], exclusion['proposal_key'])
+                self.assertEqual(len(self.calls), 1)
+
+    def test_pending_saved_target_revision_whole_and_bullet_undo_returns_exact_pending_lineage(self):
+        for bullet in (False, True):
+            with self.subTest(bullet=bullet):
+                self.setUp(); key = self.seed()
+                before = self.intake.draft_service.get_workspace(self.owner)
+                summary = 'Coordinated ten people; I was not their manager.\nA pilot reduced time 32%; not independently verified.\nI wrote a review checklist.'
+                self.behavior = lambda ctx: {'response': 'Review checklist and clear.', 'next_question': '', 'operations': [
+                    operation(ctx, ref='record:' + key, values={'summary': summary}, clears=['location_text'])]}
+                original = self.turn('Add the checklist and clear the location.')['proposals'][0]
+                edits = [{'action': 'exclude', 'field': 'summary', 'index': 1,
+                    'expected_text': 'A pilot reduced time 32%; not independently verified.', 'replacement': None}] if bullet else []
+                self.behavior = lambda ctx: {'response': 'Review exclusion.', 'next_question': '', 'operations': [
+                    operation(ctx, op='revise_content' if bullet else 'exclude_content', ref='proposal:' + original['proposal_key'], bullets=edits)]}
+                exclusion = self.turn('Exclude this detail.')['proposals'][0]
+                row = self.intake.get_workspace(self.owner)['pending_proposals'][0]
+                command = {'request_id': str(uuid4()), 'proposal_key': exclusion['proposal_key'], 'decision': 'reject',
+                    'undo_exclusion_token': row['undo_exclusion_token']}
+                snapshot_before = self.intake.repository.load_owner(self.owner)
+                from services.resume_intake_repository import InMemoryIntakeUnitOfWork, ResumeIntakeStoreUnavailable
+                from services.resume_intake_service import ResumeIntakeUnavailableError
+                with patch.object(InMemoryIntakeUnitOfWork, 'commit', side_effect=ResumeIntakeStoreUnavailable('fixture failure')):
+                    with self.assertRaises(ResumeIntakeUnavailableError): self.intake.decide(self.owner, command)
+                self.assertEqual(self.intake.repository.load_owner(self.owner), snapshot_before)
+                restored = self.intake.decide(self.owner, command)['restored_proposal']
+                self.assertEqual(restored['target_key'], key)
+                self.assertEqual(restored['proposed_values'], original['proposed_values'])
+                self.assertEqual(restored['explicit_clears'], original['explicit_clears'])
+                self.assertFalse(restored['resume_conversation_v1']['recovery_review']['as_shown'])
+                self.assertEqual(self.intake.draft_service.get_workspace(self.owner), before)
+                self.assertEqual(self.intake.decide(self.owner, command)['restored_proposal']['proposal_key'], restored['proposal_key'])
+                self.assertEqual(len(self.intake.get_workspace(self.owner)['pending_proposals']), 1)
+                snapshot = self.intake.repository.load_owner(self.owner)
+                self.assertEqual(snapshot['proposals'][original['proposal_key']]['state'], 'invalidated')
+                self.assertEqual(snapshot['proposals'][exclusion['proposal_key']]['state'], 'rejected')
+                self.assertEqual(snapshot['proposals'][exclusion['proposal_key']]['superseded_by'], restored['proposal_key'])
+                self.confirm(restored)
+                saved = self.intake.draft_service.get_workspace(self.owner)['items']
+                self.assertEqual(len(saved), 1)
+                effective = {**saved[0]['values'], **(saved[0].get('proposed_values') or {})}
+                self.assertEqual(effective['summary'], summary)
+                self.assertIsNone(effective['location_text'])
+                self.assertEqual(len(self.calls), 2)
+
+    def test_pending_target_undo_refuses_changed_source_target_and_interleaved_commit_without_staging(self):
+        from services.resume_intake_repository import InMemoryIntakeUnitOfWork
+        for change in ('content', 'access', 'source', 'purge', 'commit_lock'):
+            with self.subTest(change=change):
+                self.setUp(); key = self.seed()
+                self.behavior = lambda ctx: {'response': 'Review checklist.', 'next_question': '', 'operations': [
+                    operation(ctx, ref='record:' + key, values={'summary': 'I wrote a review checklist.'})]}
+                original = self.turn('Add my review checklist.')['proposals'][0]
+                self.behavior = lambda ctx: {'response': 'Review exclusion.', 'next_question': '', 'operations': [
+                    operation(ctx, op='exclude_content', ref='proposal:' + original['proposal_key'])]}
+                exclusion = self.turn('Exclude this role.')['proposals'][0]
+                pending = self.intake.get_workspace(self.owner)['pending_proposals'][0]
+                command = {'request_id': str(uuid4()), 'proposal_key': exclusion['proposal_key'], 'decision': 'reject',
+                    'undo_exclusion_token': pending['undo_exclusion_token']}
+                catalog = self.intake.draft_service.catalog
+                if change == 'content': catalog.bump_content(self.owner, key)
+                elif change == 'access': catalog.bump_access(self.owner, key)
+                elif change == 'source':
+                    snapshot = self.intake.repository.load_owner(self.owner)
+                    snapshot['sources'][original['provenance']['source_key']]['version'] += 1
+                    self.intake.repository.save_owner(self.owner, snapshot)
+                elif change == 'purge':
+                    self.intake.purge_source(self.owner, {'request_id': str(uuid4()),
+                        'source_key': original['provenance']['source_key']})
+                before = self.intake.repository.load_owner(self.owner)
+                original_enter = InMemoryIntakeUnitOfWork.__enter__
+                def interleave(unit):
+                    catalog.bump_content(self.owner, key)
+                    return original_enter(unit)
+                with patch.object(InMemoryIntakeUnitOfWork, '__enter__', interleave if change == 'commit_lock' else original_enter):
+                    with self.assertRaises(ResumeIntakeConflictError) as refused: self.intake.decide(self.owner, command)
+                self.assertIsNone(refused.exception.proposed)
+                self.assertEqual(self.intake.repository.load_owner(self.owner), before)
+                self.assertEqual(len(catalog.list_items(self.owner)), 1)
+                self.assertEqual(len(self.calls), 2)
+
+    def test_duplicate_bullets_restore_exact_history_ordinal_and_preserve_other_exclusions(self):
+        key = self.seed(summary='Same literal detail.\nSame literal detail.\nKeep this limitation.')
+        self.behavior = lambda ctx: {'response': 'Review two exclusions.', 'next_question': '', 'operations': [
+            operation(ctx, ref='record:' + key, bullets=[
+                {'action': 'exclude', 'field': 'summary', 'index': 1, 'expected_text': 'Same literal detail.', 'replacement': None},
+                {'action': 'exclude', 'field': 'summary', 'index': 0, 'expected_text': 'Same literal detail.', 'replacement': None}])]}
+        self.confirm(self.turn('Exclude both repeated details.')['proposals'][0])
+        rows = self.intake.get_workspace(self.owner)['resume_recoverable_details']
+        self.assertEqual(len(rows), 2)
+        # Restore the FIRST original line, which is the SECOND retained row.
+        pending = self.intake.review_excluded_details(self.owner, self.recovery_request(rows[1]))['proposals'][0]
+        self.assertEqual(pending['proposed_values']['summary'], 'Same literal detail.\nKeep this limitation.')
+        self.confirm(pending)
+        rows = self.intake.get_workspace(self.owner)['resume_recoverable_details']
+        self.assertEqual(len(rows), 1)
+        pending = self.intake.review_excluded_details(self.owner, self.recovery_request(rows[0]))['proposals'][0]
+        self.confirm(pending)
+        values = self.intake.draft_service.get_workspace(self.owner)['items'][0]['proposed_values']
+        self.assertEqual(values['summary'], 'Same literal detail.\nSame literal detail.\nKeep this limitation.')
+        self.assertEqual(self.intake.get_workspace(self.owner)['resume_recoverable_details'], [])
+        self.assertEqual(len(self.calls), 1)
+
+    def test_recovery_source_version_and_lifecycle_changes_refuse_before_review_without_text(self):
+        for change in ('version', 'epoch'):
+            with self.subTest(change=change):
+                self.setUp(); original = self.imported_recovery_proposal(); self.confirm(original, 'reject')
+                command = self.recovery_request(self.intake.get_workspace(self.owner)['resume_recoverable_details'][0])
+                snapshot = self.intake.repository.load_owner(self.owner)
+                if change == 'version': snapshot['sources'][original['provenance']['source_key']]['version'] += 1
+                else: snapshot['lifecycle_epoch'] += 1
+                self.intake.repository.save_owner(self.owner, snapshot)
+                self.assertEqual(self.intake.get_workspace(self.owner)['resume_recoverable_details'], [])
+                with self.assertRaises(ResumeIntakeConflictError) as refused:
+                    self.intake.review_excluded_details(self.owner, command)
+                self.assertIsNone(refused.exception.proposed)
+                self.assertEqual(self.intake.repository.load_owner(self.owner), snapshot)
+
+    def test_recovery_parallel_requests_create_one_candidate_and_failed_review_is_atomic(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from services.resume_intake_repository import InMemoryIntakeUnitOfWork, ResumeIntakeStoreUnavailable
+        from services.resume_intake_service import ResumeIntakeUnavailableError
+        original = self.imported_recovery_proposal(); self.confirm(original, 'reject')
+        command = self.recovery_request(self.intake.get_workspace(self.owner)['resume_recoverable_details'][0])
+        before = self.intake.repository.load_owner(self.owner)
+        with patch.object(InMemoryIntakeUnitOfWork, 'commit', side_effect=ResumeIntakeStoreUnavailable('fixture failure')):
+            with self.assertRaises(ResumeIntakeUnavailableError): self.intake.review_excluded_details(self.owner, command)
+        self.assertEqual(self.intake.repository.load_owner(self.owner), before)
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [pool.submit(self.intake.review_excluded_details, self.owner, {**command, 'request_id': str(uuid4())}) for _ in range(2)]
+            keys = [future.result()['proposals'][0]['proposal_key'] for future in futures]
+        self.assertEqual(keys[0], keys[1]); self.assertEqual(len(self.intake.get_workspace(self.owner)['pending_proposals']), 1)
+        self.assertEqual(self.intake.draft_service.catalog.list_items(self.owner), []); self.assertEqual(self.calls, [])
+
+    def test_saved_recovery_target_fences_revalidate_during_review_and_inside_confirm_lock(self):
+        from services.resume_intake_repository import InMemoryIntakeUnitOfWork
+        key = self.seed()
+        self.behavior = lambda ctx: {'response': 'Review exclusion.', 'next_question': '', 'operations': [
+            operation(ctx, op='exclude_content', ref='record:' + key)]}
+        self.confirm(self.turn('Exclude the Engineer role.')['proposals'][0])
+        command = self.recovery_request(self.intake.get_workspace(self.owner)['resume_recoverable_details'][0])
+        catalog = self.intake.draft_service.catalog
+        catalog.bump_access(self.owner, key)
+        with self.assertRaises(ResumeIntakeConflictError): self.intake.review_excluded_details(self.owner, command)
+        command = self.recovery_request(self.intake.get_workspace(self.owner)['resume_recoverable_details'][0])
+        pending = self.intake.review_excluded_details(self.owner, command)['proposals'][0]
+        original_enter = InMemoryIntakeUnitOfWork.__enter__
+        def interleave(unit):
+            catalog.bump_content(self.owner, key)
+            return original_enter(unit)
+        with patch.object(InMemoryIntakeUnitOfWork, '__enter__', interleave):
+            with self.assertRaises(ResumeIntakeConflictError): self.confirm(pending)
+        self.assertTrue(dict(self.intake.get_workspace(self.owner)['resume_excluded_records'])[key])
+        self.assertEqual(self.intake.repository.load_owner(self.owner)['proposals'][pending['proposal_key']]['state'], 'pending')
+        self.assertEqual(len(catalog.list_items(self.owner)), 1)
+
+    def test_bullet_recovery_refuses_guessed_placement_after_a_freeform_order_change(self):
+        key = self.seed(summary='First.\nSecond.\nThird.')
+        self.behavior = lambda ctx: {'response': 'Review exclusion.', 'next_question': '', 'operations': [
+            operation(ctx, ref='record:' + key, bullets=[{'action': 'exclude', 'field': 'summary',
+                'index': 1, 'expected_text': 'Second.', 'replacement': None}])]}
+        self.confirm(self.turn('Exclude Second.')['proposals'][0])
+        command = self.recovery_request(self.intake.get_workspace(self.owner)['resume_recoverable_details'][0])
+        self.behavior = lambda ctx: {'response': 'Review new order.', 'next_question': '', 'operations': [
+            operation(ctx, ref='record:' + key, values={'summary': 'Third.\nFirst.'})]}
+        self.confirm(self.turn('Put Third before First.')['proposals'][0])
+        self.assertEqual(self.intake.get_workspace(self.owner)['resume_recoverable_details'], [])
+        with self.assertRaises(ResumeIntakeConflictError): self.intake.review_excluded_details(self.owner, command)
+        self.assertEqual(self.intake.draft_service.get_workspace(self.owner)['items'][0]['proposed_values']['summary'], 'Third.\nFirst.')
+
+    def test_recovery_purge_and_version_fences_refuse_without_returning_original_text(self):
+        original = self.imported_recovery_proposal()
+        self.confirm(original, 'reject')
+        command = self.recovery_request(self.intake.get_workspace(self.owner)['resume_recoverable_details'][0])
+        pending = self.intake.review_excluded_details(self.owner, command)['proposals'][0]
+        self.intake.purge_source(self.owner, {'request_id': str(uuid4()), 'source_key': original['provenance']['source_key']})
+        self.assertEqual(self.intake.get_workspace(self.owner)['resume_recoverable_details'], [])
+        self.assertNotIn(original['quote'], json.dumps(self.intake.review_excluded_details(self.owner, command)))
+        with self.assertRaises(ResumeIntakeConflictError): self.confirm(pending)
+        self.assertEqual(self.intake.draft_service.catalog.list_items(self.owner), [])
+        self.assertEqual(self.calls, [])
 
 
 if __name__ == '__main__': unittest.main()

@@ -60,6 +60,7 @@ PLANNED_RATE_LIMITS = MappingProxyType(
         "resume_intake.post_recording": "20 per hour",
         "resume_intake.post_proposal_decision": "60 per hour",
         "resume_intake.post_saved_choice_review": "30 per hour",
+        "resume_intake.post_excluded_detail_review": "30 per hour",
         "resume_intake.post_source_purge": "30 per hour",
         "resume_intake.get_draft": "60 per minute",
         "resume_intake.put_draft": "60 per hour",
@@ -224,6 +225,28 @@ def post_saved_choice_review():
     except ResumeIntakeUnavailableError:
         return jsonify({'success': False, 'code': 'unavailable',
             'message': 'Saved-choice review is unavailable. Your approved information is kept.'}), 503
+    return jsonify({'success': True, **result})
+
+
+@resume_intake.post('/api/resume-intake/me/excluded-details/review')
+def post_excluded_detail_review():
+    identity = _identity_or_not_found()
+    if identity is None:
+        return jsonify({'success': False, 'message': 'Not found.'}), 404
+    try:
+        result = _service().review_excluded_details(identity.user_key, _json_body(),
+            allow_fixture_policy=_fixture_policy_enabled())
+    except ResumeIntakeValidationError as error:
+        return jsonify({'success': False, 'code': 'invalid', 'message': str(error)}), 400
+    except ResumeIntakePolicyError as error:
+        return _policy_response(error)
+    except ResumeIntakeNotFoundError:
+        return jsonify({'success': False, 'message': 'Not found.'}), 404
+    except ResumeIntakeConflictError as error:
+        return jsonify({'success': False, 'code': error.error_code, 'message': str(error)}), 409
+    except ResumeIntakeUnavailableError:
+        return jsonify({'success': False, 'code': 'unavailable',
+            'message': 'Excluded-detail review is unavailable. Your current information is kept.'}), 503
     return jsonify({'success': True, **result})
 
 

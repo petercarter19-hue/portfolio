@@ -914,6 +914,408 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.assertEqual(page.locator('#resume-intake-text').input_value(), 'Keep this unsubmitted guide answer.')
         self.assertEqual(self.errors, [])
 
+    def test_story_invitation_precedes_confirmation_and_decline_survives_reentry_without_ai(self):
+        from tests.test_resume_onboarding_conversation import operation
+        shared = self.shared_projection(); service = self.typed_service([]); calls = []
+        question = 'What do you enjoy about helping someone learn woodworking?'
+        def behavior(context):
+            calls.append(context)
+            return {'response': 'Review your optional Story.', 'next_question': question, 'operations': [
+                operation(context, op='add_content', record_type='knowledge', values={
+                    'title': 'Woodworking', 'classification': 'personal'}, section='My Story')]}
+        self.conversation_service(service, behavior)
+        page = self.page(); self.submit(page, 'I enjoy woodworking and informal mentoring.')
+        self.assertTrue(page.locator('[data-optional-invitation]').is_visible())
+        self.assertIn(question, page.locator('[data-optional-invitation]').inner_text())
+        self.assertTrue(page.get_by_role('button', name='Confirm details', exact=True).is_visible())
+        self.assertEqual(shared.policy.list_entries(self.owner)['entries'], [])
+        with page.expect_response(lambda response: response.request.method == 'PUT'
+                and response.url.endswith('/draft') and question in (response.request.post_data or '')):
+            page.get_by_role('button', name='Keep these details', exact=True).click()
+        page.wait_for_function("() => !document.querySelector('[data-optional-invitation]')")
+        page.reload()
+        page.wait_for_function("() => !document.querySelector('[data-optional-invitation]') && document.querySelector('#resume-intake-review').offsetParent !== null")
+        self.assertEqual(page.locator('[data-optional-invitation]').count(), 0)
+        self.confirm(page)
+        self.assertTrue(page.locator('#resume-intake-optional').is_visible())
+        entry = shared.policy.list_entries(self.owner)['entries'][0]
+        self.assertEqual(entry['values']['wording'], 'I enjoy woodworking and informal mentoring.')
+        self.assertEqual(len(calls), 1); self.assertEqual(self.errors, [])
+
+    def _stop_exchange_fixture(self):
+        from uuid import uuid4
+        from tests.test_resume_onboarding_conversation import operation
+        from tests.test_my_data_intake_ai import add_request
+        shared = self.shared_projection(); story = self.seed_story(shared)
+        service = self.typed_service([]); calls, action = [], []
+        def behavior(context):
+            calls.append(context)
+            return {'response': 'Your earlier details are kept.', 'next_question': '', 'operations': [action[0](context)]}
+        assistance = self.conversation_service(service, behavior)
+        role = service.submit(self.owner, add_request(items=[{'client_key': 'seed', 'record_type': 'role',
+            'values': {'role_title': 'Engineer', 'employer_name': 'Example Labs',
+                'summary': 'Keep my contribution.\nRetain this exact limitation.'},
+            'explicit_clears': []}]))['results'][0]['record_key']
+        def turn(statement, ref, produce):
+            action[:] = [produce]
+            return service.converse(self.owner, {'request_id': str(uuid4()),
+                'expected_draft_version': self.draft_service.get_workspace(self.owner)['draft_version'],
+                'statement': statement, 'selected_target': ref, 'source_keys': []}, assistance=assistance)['proposals'][0]
+        excluded = turn('Exclude the second bullet.', 'record:' + role, lambda ctx: operation(ctx, ref='record:' + role,
+            bullets=[{'action': 'exclude', 'field': 'summary', 'index': 1,
+                'expected_text': 'Retain this exact limitation.', 'replacement': None}]))
+        service.decide(self.owner, {'request_id': str(uuid4()), 'proposal_key': excluded['proposal_key'], 'decision': 'accept'})
+        row = service.get_workspace(self.owner)['resume_recoverable_details'][0]
+        restoration = service.review_excluded_details(self.owner, {'request_id': str(uuid4()),
+            'recovery_key': row['recovery_key'], 'recovery_token': row['recovery_token']})['proposals'][0]
+        ordinary = turn('Add that I enjoy learning techniques.', 'record:' + story, lambda ctx: operation(ctx,
+            ref='record:' + story, record_type='knowledge', values={'wording': 'I enjoy sketches and learning techniques.'}, section='My Story'))
+        def stop(ctx):
+            control = operation(ctx, op='skip_topic'); control['source_refs'] = []
+            return control
+        action[:] = [stop]
+        return service, calls, action, ordinary, restoration
+
+    def test_stop_correction_preserves_restoration_and_releases_target_after_reload(self):
+        from tests.test_resume_onboarding_conversation import operation
+        service, calls, action, ordinary, restoration = self._stop_exchange_fixture()
+        pending = service.get_workspace(self.owner)['pending_proposals']
+        draft = self.draft_service.get_workspace(self.owner)
+        page = self.page(expect_guide=False)
+        page.locator('#resume-intake[open]').wait_for()
+        if not page.locator('#resume-intake[open]').count(): page.locator('#resume-intake-reopen').click()
+        page.locator('[data-suggestion-key="' + ordinary['proposal_key'] + '"]').click()
+        page.get_by_role('button', name='Change something', exact=True).click()
+        page.locator('#resume-intake-text').fill("Don't worry about it.")
+        with page.expect_response(lambda response: response.request.method == 'PUT' and response.url.endswith('/draft')
+                and response.request.post_data_json['guide_state']['correction_target_key'] is None
+                and response.request.post_data_json['guide_state']['pending_conversation'] is None):
+            page.locator('#resume-intake-add').click()
+        self.assertEqual(service.get_workspace(self.owner)['pending_proposals'], pending)
+        self.assertEqual(self.draft_service.get_workspace(self.owner), draft)
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(calls[-1]['selected_target'], 'proposal:' + ordinary['proposal_key'])
+        self.assertIsNone(service.get_draft(self.owner)['draft']['guide_state']['correction_target_key'])
+        page.reload()
+        page.locator('#resume-intake-text').wait_for(state='visible')
+        self.assertEqual(page.locator('#resume-intake-question').inner_text(), 'What would you like to add or change?')
+        action[:] = [lambda ctx: {**operation(ctx, op='clarify'), 'source_refs': []}]
+        page.locator('#resume-intake-text').fill('Where can I add another detail?')
+        with page.expect_response(lambda response: response.request.method == 'POST' and response.url.endswith('/api/resume-interview/me/turn')):
+            page.locator('#resume-intake-add').click()
+        self.assertIsNone(calls[-1]['selected_target'])
+        self.assertEqual(service.get_workspace(self.owner)['pending_proposals'], pending)
+        page.wait_for_function("() => !document.querySelector('#resume-intake-add').disabled")
+        page.locator('#resume-intake-review-pending').click()
+        page.locator('[data-suggestion-key="' + restoration['proposal_key'] + '"]').click()
+        self.assertFalse(page.get_by_role('button', name='Change something', exact=True).is_visible())
+        self.confirm(page)
+        page.locator('[data-suggestion-key="' + ordinary['proposal_key'] + '"]').click()
+        self.confirm(page)
+        self.assertEqual(service.get_workspace(self.owner)['pending_proposals'], [])
+        self.assertEqual(len(calls), 4); self.assertEqual(self.errors, [])
+
+    def test_lost_stop_response_replays_once_and_preserves_newer_words_without_target(self):
+        service, calls, _, ordinary, _ = self._stop_exchange_fixture()
+        pending = service.get_workspace(self.owner)['pending_proposals']
+        page = self.page(expect_guide=False)
+        page.locator('#resume-intake[open]').wait_for()
+        if not page.locator('#resume-intake[open]').count(): page.locator('#resume-intake-reopen').click()
+        page.locator('[data-suggestion-key="' + ordinary['proposal_key'] + '"]').click()
+        page.get_by_role('button', name='Change something', exact=True).click()
+        commands = []
+        def lost(route):
+            commands.append(route.request.post_data_json)
+            response = route.fetch()
+            if len(commands) == 1: route.abort()
+            else: route.fulfill(response=response)
+        page.route('**/api/resume-interview/me/turn', lost)
+        page.locator('#resume-intake-text').fill("Don't worry about it.")
+        page.locator('#resume-intake-add').click()
+        page.locator('#resume-intake-status[data-kind=error]').wait_for()
+        newer = 'Newer unrelated words typed while recovering the response.'
+        page.locator('#resume-intake-text').fill(newer)
+        with page.expect_response(lambda response: response.request.method == 'PUT' and response.url.endswith('/draft')
+                and response.request.post_data_json['guide_state']['correction_target_key'] is None
+                and response.request.post_data_json['text'] == newer):
+            page.locator('#resume-intake-add').click()
+        self.assertEqual(commands[0], commands[1])
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(page.locator('#resume-intake-text').input_value(), newer)
+        self.assertEqual(service.get_workspace(self.owner)['pending_proposals'], pending)
+        self.assertIsNone(service.get_draft(self.owner)['draft']['guide_state']['correction_target_key'])
+        page.reload(); page.locator('#resume-intake-text').wait_for(state='visible')
+        self.assertEqual(page.locator('#resume-intake-text').input_value(), newer)
+        self.assertEqual(page.locator('#resume-intake-question').inner_text(), 'What would you like to add or change?')
+        self.assertEqual(self.errors, [])
+
+    def test_old_stop_retry_preserves_new_correction_target_prompt_and_reload(self):
+        from uuid import uuid4
+        from tests.test_resume_onboarding_conversation import operation
+        from tests.test_my_data_intake_ai import add_request
+        service, calls, action, ordinary, _ = self._stop_exchange_fixture()
+        role = service.submit(self.owner, add_request(items=[{'client_key': 'other-role', 'record_type': 'role',
+            'values': {'role_title': 'Designer', 'employer_name': 'Other Company'},
+            'explicit_clears': []}]))['results'][0]['record_key']
+        action[:] = [lambda ctx: operation(ctx, ref='record:' + role, values={'location_text': 'Chicago'})]
+        second = service.converse(self.owner, {'request_id': str(uuid4()),
+            'expected_draft_version': self.draft_service.get_workspace(self.owner)['draft_version'],
+            'statement': 'Change the other role location to Chicago.', 'selected_target': 'record:' + role,
+            'source_keys': []}, assistance=app.config['RESUME_PRIVATE_ASSISTANCE_SERVICE'])['proposals'][0]
+        action[:] = [lambda ctx: {**operation(ctx, op='skip_topic'), 'source_refs': []}]
+        pending = service.get_workspace(self.owner)['pending_proposals']
+        page = self.page(expect_guide=False)
+        page.locator('#resume-intake[open]').wait_for()
+        if not page.locator('#resume-intake[open]').count(): page.locator('#resume-intake-reopen').click()
+        page.locator('[data-suggestion-key="' + ordinary['proposal_key'] + '"]').click()
+        page.get_by_role('button', name='Change something', exact=True).click()
+        commands = []
+        def lost(route):
+            commands.append(route.request.post_data_json)
+            response = route.fetch()
+            if len(commands) == 1: route.abort()
+            else: route.fulfill(response=response)
+        page.route('**/api/resume-interview/me/turn', lost)
+        page.locator('#resume-intake-text').fill("Don't worry about it.")
+        page.locator('#resume-intake-add').click()
+        page.locator('#resume-intake-status[data-kind=error]').wait_for()
+        page.wait_for_function("() => !document.querySelector('#resume-intake-add').disabled")
+        page.locator('#resume-intake-review-pending').click()
+        page.locator('[data-suggestion-key="' + second['proposal_key'] + '"]').click()
+        page.get_by_role('button', name='Change something', exact=True).click()
+        prompt = page.locator('#resume-intake-question').inner_text()
+        context = page.locator('#resume-intake-context').inner_text()
+        newer = 'For this different role, keep Chicago and change the employer to Other Studio.'
+        page.locator('#resume-intake-text').fill(newer)
+        with page.expect_response(lambda response: response.request.method == 'PUT' and response.url.endswith('/draft')
+                and response.request.post_data_json['guide_state']['pending_conversation'] is None):
+            page.locator('#resume-intake-add').click()
+        state = service.get_draft(self.owner)['draft']['guide_state']
+        self.assertEqual(commands[0], commands[1]); self.assertEqual(len(calls), 4)
+        self.assertEqual(state['correction_target_key'], second['proposal_key'])
+        self.assertEqual(page.locator('#resume-intake-question').inner_text(), prompt)
+        self.assertEqual(page.locator('#resume-intake-context').inner_text(), context)
+        self.assertEqual(page.locator('#resume-intake-text').input_value(), newer)
+        self.assertEqual(service.get_workspace(self.owner)['pending_proposals'], pending)
+        page.reload(); page.locator('#resume-intake-text').wait_for(state='visible')
+        self.assertEqual(service.get_draft(self.owner)['draft']['guide_state']['correction_target_key'], second['proposal_key'])
+        self.assertEqual(page.locator('#resume-intake-question').inner_text(), prompt)
+        self.assertEqual(page.locator('#resume-intake-text').input_value(), newer)
+        action[:] = [lambda ctx: {**operation(ctx, op='clarify'), 'source_refs': []}]
+        with page.expect_response(lambda response: response.request.method == 'POST' and response.url.endswith('/api/resume-interview/me/turn')):
+            page.locator('#resume-intake-add').click()
+        self.assertEqual(calls[-1]['selected_target'], 'proposal:' + second['proposal_key'])
+        self.assertEqual(len(calls), 5); self.assertEqual(self.errors, [])
+
+    def test_optional_detail_skip_keeps_unfinished_answer_and_pending_story_without_ai(self):
+        from tests.test_resume_onboarding_conversation import operation
+        shared = self.shared_projection(); service = self.typed_service([]); calls = []
+        def behavior(context):
+            calls.append(context)
+            return {'response': 'Review your Story.', 'next_question': 'What matters to you about repairing radios?',
+                'operations': [operation(context, op='add_content', record_type='knowledge',
+                    values={'title': 'Radio repair', 'classification': 'personal'}, section='My Story')]}
+        self.conversation_service(service, behavior)
+        page = self.page(); self.submit(page, 'I repair radios outside work.')
+        page.get_by_role('button', name='Add a detail', exact=True).click()
+        page.locator('#resume-intake-text').fill('An unfinished optional answer.')
+        page.locator('#resume-intake-skip-question').click()
+        page.get_by_role('button', name='Confirm details', exact=True).wait_for()
+        page.locator('#resume-intake-hide').click(); page.locator('#resume-intake-reopen').click()
+        self.assertEqual(len(service.get_workspace(self.owner)['pending_proposals']), 1)
+        self.assertEqual(shared.policy.list_entries(self.owner)['entries'], [])
+        self.assertEqual(len(calls), 1); self.assertEqual(self.errors, [])
+
+    def test_existing_story_amendment_without_returned_question_offers_optional_detail_before_confirm(self):
+        from tests.test_resume_onboarding_conversation import operation
+        shared = self.shared_projection(); key = self.seed_story(shared)
+        service = self.typed_service([]); calls = []
+        wording = 'I enjoy woodworking and informal mentoring because explaining a new skill matters to me.'
+        def behavior(context):
+            calls.append(context)
+            return {'response': 'Review your amended Story.', 'next_question': '', 'operations': [
+                operation(context, ref='record:' + key, record_type='knowledge', values={'wording': wording}, section='My Story')]}
+        self.conversation_service(service, behavior)
+        page = self.page(expect_guide=False)
+        page.locator('#resume-intake[open]').wait_for()
+        self.submit(page, wording)
+        page.locator('[data-optional-invitation]').wait_for()
+        self.assertIn('A quiet craft', page.locator('[data-optional-invitation]').inner_text())
+        self.assertTrue(page.get_by_role('button', name='Confirm details', exact=True).is_visible())
+        self.assertEqual(shared.canonical.get_item(self.owner, key)['values']['wording'], 'I enjoy woodworking and informal mentoring.')
+        page.get_by_role('button', name='Keep these details', exact=True).click()
+        self.confirm(page)
+        self.assertEqual(shared.draft.get_workspace(self.owner)['items'][0]['proposed_values']['wording'], wording)
+        self.assertEqual(shared.canonical.get_item(self.owner, key)['values']['wording'], 'I enjoy woodworking and informal mentoring.')
+        self.assertEqual(len(shared.policy.list_entries(self.owner)['entries']), 1)
+        self.assertEqual(len(calls), 1); self.assertEqual(self.errors, [])
+
+    def test_answering_optional_story_detail_revises_same_pending_story_before_confirmation(self):
+        from tests.test_resume_onboarding_conversation import operation
+        shared = self.shared_projection(); service = self.typed_service([]); calls = []
+        first_words = 'I repair radios outside work.'
+        extra_words = 'I like learning how older circuits work.'
+        def behavior(context):
+            calls.append(context)
+            if len(calls) == 1:
+                return {'response': 'Review your Story.', 'next_question': 'What do you enjoy about repairing radios?',
+                    'operations': [operation(context, op='add_content', record_type='knowledge',
+                        values={'title': 'Radio repair', 'classification': 'personal'}, section='My Story')]}
+            return {'response': 'Review both of your details.', 'next_question': '', 'operations': [
+                operation(context, ref=context['selected_target'], record_type='knowledge',
+                    values={'wording': first_words + '\n' + extra_words}, section='My Story')]}
+        self.conversation_service(service, behavior)
+        page = self.page(); self.submit(page, first_words)
+        page.get_by_role('button', name='Add a detail', exact=True).click()
+        page.locator('#resume-intake-text').fill(extra_words); page.locator('#resume-intake-add').click()
+        page.locator('#resume-intake-review:visible').wait_for()
+        self.assertEqual(len(service.get_workspace(self.owner)['pending_proposals']), 1)
+        self.assertEqual(shared.policy.list_entries(self.owner)['entries'], [])
+        self.assertTrue(calls[-1]['selected_target'].startswith('proposal:'))
+        self.confirm(page)
+        self.assertEqual(shared.policy.list_entries(self.owner)['entries'][0]['values']['wording'], first_words + '\n' + extra_words)
+        self.assertEqual(len(calls), 2); self.assertEqual(self.errors, [])
+
+    def test_career_answer_offers_grounded_optional_detail_before_direct_confirmation(self):
+        from tests.test_resume_onboarding_conversation import operation
+        service = self.typed_service([]); calls = []
+        def behavior(context):
+            calls.append(context)
+            return {'response': 'Review your role.', 'next_question': '', 'operations': [
+                operation(context, op='add_content', values={'role_title': 'Engineer', 'employer_name': 'Example Labs'})]}
+        self.conversation_service(service, behavior)
+        page = self.page(); self.submit(page, 'I was an Engineer at Example Labs.')
+        self.assertIn('Engineer', page.locator('[data-optional-invitation]').inner_text())
+        self.confirm(page)
+        self.assertEqual(len(self.catalog.list_items(self.owner)), 1)
+        self.assertEqual(len(calls), 1); self.assertEqual(self.errors, [])
+
+    def test_rejected_suggestion_review_returns_pending_then_saves_once_without_provider(self):
+        service = self.typed_service([{'kind': 'inferred_wording', 'record_type': 'role',
+            'confidence': 'certain', 'values': {'role_title': 'Engineer', 'employer_name': 'Example Labs'}}])
+        page = self.page(); self.submit(page, 'Engineer at Example Labs. Original source words.')
+        page.get_by_role('button', name='Leave this out', exact=True).click()
+        page.locator('#resume-intake-excluded-review:visible').wait_for()
+        page.locator('#resume-intake-excluded-review > summary').click()
+        page.get_by_role('button', name='Review these details', exact=True).click()
+        page.get_by_role('button', name='Confirm details', exact=True).wait_for()
+        self.assertEqual(self.catalog.list_items(self.owner), [])
+        self.assertEqual(len(service.get_workspace(self.owner)['pending_proposals']), 1)
+        self.confirm(page)
+        self.assertEqual(len(self.catalog.list_items(self.owner)), 1)
+        self.assertEqual(service.get_workspace(self.owner)['resume_recoverable_details'], [])
+        self.assertEqual(self.errors, [])
+
+    def test_pending_exclusion_undo_restores_original_review_without_extra_ai_or_canonical_write(self):
+        from tests.test_resume_onboarding_conversation import operation
+        service = self.typed_service([{'kind': 'inferred_wording', 'record_type': 'role',
+            'confidence': 'certain', 'values': {'role_title': 'Engineer', 'employer_name': 'Example Labs'}}])
+        calls = []
+        from tests.test_my_data_intake_ai import add_request
+        service.submit(self.owner, add_request(text='Engineer at Example Labs. Original source words.'))
+        def behavior(context):
+            calls.append(context)
+            return {'response': 'Review exclusion.', 'next_question': '', 'operations': [
+                operation(context, op='exclude_content', ref=context['selected_target'])]}
+        self.conversation_service(service, behavior)
+        page = self.page()
+        page.get_by_role('button', name='Change something', exact=True).click()
+        page.locator('#resume-intake-text').fill('Exclude this role.'); page.locator('#resume-intake-add').click()
+        page.get_by_role('button', name='Undo exclusion', exact=True).click()
+        page.locator('#resume-intake-status').get_by_text('Exclusion undone.', exact=False).wait_for()
+        page.get_by_role('button', name='Confirm details', exact=True).wait_for()
+        self.assertEqual(len(service.get_workspace(self.owner)['pending_proposals']), 1)
+        self.assertEqual(self.catalog.list_items(self.owner), [])
+        self.assertEqual(len(calls), 1)
+        self.confirm(page); self.assertEqual(len(self.catalog.list_items(self.owner)), 1)
+        self.assertEqual(self.errors, [])
+
+    def test_pending_saved_role_bullet_exclusion_undo_retains_checklist_and_manual_review_without_extra_ai(self):
+        from tests.test_my_data_intake_ai import add_request
+        from tests.test_resume_onboarding_conversation import operation
+        service = self.typed_service([]); calls = []
+        baseline = 'Keep my contribution.\nRetain this exact limitation.'
+        summary = baseline + '\nI wrote a review checklist.'
+        key = service.submit(self.owner, add_request(items=[{'client_key': 'role', 'record_type': 'role',
+            'values': {'role_title': 'Engineer', 'employer_name': 'Example Labs', 'summary': baseline},
+            'explicit_clears': []}]))['results'][0]['record_key']
+        before = self.draft_service.get_workspace(self.owner)
+        def behavior(context):
+            calls.append(context)
+            edit = [{'action': 'exclude', 'field': 'summary', 'index': 1,
+                'expected_text': 'Retain this exact limitation.', 'replacement': None}]
+            return {'response': 'Review these details.', 'next_question': '', 'operations': [
+                operation(context, ref='record:' + key, values={'summary': summary}) if len(calls) == 1 else
+                operation(context, ref=context['selected_target'], bullets=edit)]}
+        self.conversation_service(service, behavior)
+        page = self.page(expect_guide=False)
+        page.locator('#resume-intake[open]').wait_for()
+        self.submit(page, 'I wrote a review checklist.')
+        page.get_by_role('button', name='Change something', exact=True).click()
+        page.locator('#resume-intake-text').fill('Exclude the limitation.'); page.locator('#resume-intake-add').click()
+        page.get_by_role('button', name='Undo exclusion', exact=True).click()
+        page.locator('#resume-intake-status').get_by_text('Exclusion undone.', exact=False).wait_for()
+        page.get_by_role('button', name='Confirm details', exact=True).wait_for()
+        self.assertTrue(page.get_by_role('button', name='Change something', exact=True).is_visible())
+        self.assertTrue(page.get_by_role('button', name='Edit fields manually', exact=True).is_visible())
+        pending = service.get_workspace(self.owner)['pending_proposals']
+        self.assertEqual(len(pending), 1); self.assertEqual(pending[0]['target_key'], key)
+        self.assertEqual(pending[0]['proposed_values']['summary'], summary)
+        self.assertEqual(self.draft_service.get_workspace(self.owner), before)
+        self.assertEqual(len(calls), 2)
+        self.confirm(page)
+        items = self.draft_service.get_workspace(self.owner)['items']
+        self.assertEqual(len(items), 1); self.assertEqual(items[0]['record_key'], key)
+        self.assertEqual(items[0]['proposed_values']['summary'], summary)
+        self.assertEqual(items[0]['values']['summary'], baseline)
+        self.assertEqual(len(calls), 2); self.assertEqual(self.errors, [])
+
+    def saved_excluded_detail_browser(self, *, bullet=False):
+        from tests.test_my_data_intake_ai import add_request
+        from tests.test_resume_onboarding_conversation import operation
+        service = self.typed_service([]); calls = []
+        key = service.submit(self.owner, add_request(items=[{'client_key': 'role', 'record_type': 'role',
+            'values': {'role_title': 'Engineer', 'employer_name': 'Example Labs',
+                'summary': 'Keep my contribution.\nRetain this exact limitation.'}, 'explicit_clears': []}]))['results'][0]['record_key']
+        def behavior(context):
+            calls.append(context)
+            edit = [{'action': 'exclude', 'field': 'summary', 'index': 1,
+                'expected_text': 'Retain this exact limitation.', 'replacement': None}] if bullet else []
+            return {'response': 'Review this exclusion.', 'next_question': '', 'operations': [
+                operation(context, op='revise_content' if bullet else 'exclude_content', ref='record:' + key, bullets=edit)]}
+        self.conversation_service(service, behavior)
+        page = self.page(320, 800, expect_guide=False)
+        page.locator('#resume-intake[open]').wait_for()
+        self.submit(page, 'Exclude the limitation.' if bullet else 'Exclude this role.')
+        with page.expect_response(lambda r: r.url.endswith('/proposals/decision') and r.request.method == 'POST'):
+            page.get_by_role('button', name='Confirm details', exact=True).click()
+        page.locator('#resume-intake-excluded-review:visible').wait_for()
+        page.locator('#resume-intake-excluded-review > summary').click()
+        page.get_by_role('button', name='Review these details', exact=True).click()
+        page.get_by_role('button', name='Confirm details', exact=True).wait_for()
+        self.assertFalse(page.get_by_role('button', name='Change something', exact=True).is_visible())
+        self.assertFalse(page.get_by_role('button', name='Edit fields manually', exact=True).is_visible())
+        self.assertEqual(len(calls), 1)
+        self.assertLessEqual(page.evaluate('document.documentElement.scrollWidth'), 320)
+        if not bullet: self.assertTrue(dict(service.get_workspace(self.owner)['resume_excluded_records'])[key])
+        before = self.draft_service.get_workspace(self.owner)
+        with page.expect_response(lambda r: r.url.endswith('/proposals/decision') and r.request.method == 'POST'):
+            page.get_by_role('button', name='Confirm details', exact=True).click()
+        page.locator('#resume-intake-excluded-review').wait_for(state='hidden')
+        after = self.draft_service.get_workspace(self.owner)
+        if bullet: self.assertEqual(after['items'][0]['proposed_values']['summary'], 'Keep my contribution.\nRetain this exact limitation.')
+        else:
+            self.assertFalse(dict(service.get_workspace(self.owner)['resume_excluded_records'])[key])
+            self.assertEqual(after, before)
+        self.assertEqual(len(self.catalog.list_items(self.owner)), 1)
+        self.assertEqual(len(calls), 1); self.assertEqual(self.errors, [])
+
+    def test_saved_record_review_restores_same_projection_only_after_confirmation(self):
+        self.saved_excluded_detail_browser()
+
+    def test_saved_bullet_review_restores_exact_literal_at_320_after_confirmation(self):
+        self.saved_excluded_detail_browser(bullet=True)
+
     def test_story_review_labels_and_hidden_classification_preserve_approved_truth(self):
         from tests.test_resume_onboarding_conversation import operation
         shared = self.shared_projection()
@@ -2156,6 +2558,9 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
                 route.fulfill(status=503,content_type='application/json',body='{"success":false}')
             else: route.fulfill(response=response)
         page.route('**/api/resume-intake/me/draft',lost_once)
+        # Drain the last autosave handler before page()'s context.close cleanup.
+        # Preserve handler exceptions rather than leaking them to the next test.
+        self.addCleanup(page.unroute_all, behavior='wait')
         page.locator('#resume-intake-text').fill('Which detail should I change?')
         page.locator('#resume-intake-status[data-kind=error]').wait_for()
         page.locator('#resume-intake-add').click()
