@@ -576,6 +576,19 @@ _ASSISTANCE_MESSAGES = {
 }
 
 
+# When the model's answer is refused by the server's own checks, say what that means and what to do next.
+_REJECTION_MESSAGES = {
+    None: 'I could not turn that message into résumé details this time. Nothing was changed and your words are kept. '
+          'Try again, say it a little differently, or use the manual editor.',
+    'literal_size': 'That message is too long for me to organize in one piece. Send it in smaller parts, for example one job '
+                    'at a time. Nothing was changed and your words are kept.',
+    'command_as_new_content': 'That read like an instruction rather than new résumé content, so I did not add it. Say what you '
+                              'would like added or changed. Nothing was changed.',
+    'control_as_new_content': 'That read like an instruction rather than new résumé content, so I did not add it. Say what you '
+                              'would like added or changed. Nothing was changed.',
+}
+
+
 def _private_assistance(kind, method):
     # Flag off is neutral before identity, parsing, signing, SQL or provider I/O.
     if (current_app.config.get('PEERSLATE_RESUME_EDITOR_ENABLED') is not True
@@ -639,9 +652,12 @@ def _private_assistance(kind, method):
     except SynthesisError as error:
         code = error.code
         status = 404 if code == 'not_found' else 409 if code == 'changed' else 503 if code == 'unavailable' else 400
-        body = {'success': False, 'code': code,
-            'message': _ASSISTANCE_MESSAGES.get(code) or 'Private assistance could not complete. Your words and manual editor remain available.'}
         diagnostic = conversation_failure_diagnostic(error)
+        message = _ASSISTANCE_MESSAGES.get(code)
+        if code == 'invalid_output':
+            message = _REJECTION_MESSAGES.get((diagnostic or {}).get('reason')) or _REJECTION_MESSAGES[None]
+        body = {'success': False, 'code': code,
+            'message': message or 'Private assistance could not complete. Your words and manual editor remain available.'}
         if diagnostic is not None:
             body['diagnostic'] = diagnostic
         return jsonify(body), status

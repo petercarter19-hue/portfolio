@@ -198,9 +198,26 @@ RESUME_EXTRACTION_RESPONSE_SCHEMA = _closed_object({"candidates": {
         {**EXTRACTION_VALUE_FIELDS, "knowledge": tuple(sorted(RESUME_KNOWLEDGE_FIELDS))}.items()
     ]}}})
 
-def _resume_content_units(source_units):
-    """The same eligibility definition serves validation and model control."""
+def _unbindable_unit(unit):
+    """A line of contact detail (email, phone, web address), or the person's name above the first section heading.
+
+    Such a line is never bound into a role, education, credential, skill, knowledge or accomplishment: it would be
+    saved into a description that can later be shared. It stays visible among the details nobody placed.
+    """
+    from services.resume_onboarding_document_reader import _CONTACT_LINE, _NAME_LINE
+    text = str(unit.get("text") or "")
+    return bool(_CONTACT_LINE.search(text)
+                or (unit.get("section") is None and _NAME_LINE.match(text.strip())))
+
+
+def _all_resume_content_units(source_units):
     return {unit["unit_id"]: unit for unit in source_units if unit["kind"] == "content"}
+
+
+def _resume_content_units(source_units):
+    """The units a candidate may bind. The same definition serves validation and model control."""
+    return {identity: unit for identity, unit in _all_resume_content_units(source_units).items()
+            if not _unbindable_unit(unit)}
 
 
 def resume_source_unit_contract(source_units):
@@ -583,6 +600,43 @@ class ResumeOrganization:
                 "rejections": [dict(row) for row in self.rejections]}
 
 
+_MONTH_WORDS = frozenset("jan feb mar apr may jun jul aug sep sept oct nov dec january february march april june july august "
+                         "september october november december".split())
+_FILLER_WORDS = frozenset("at the of and in a an for with by as to from until".split())
+_HEADER_VALUE_FIELDS = ("role_title", "employer_name", "location_text", "title", "institution_name", "degree_name",
+                        "field_of_study", "grade_text")
+
+
+def _description_units(selected, values, record_type):
+    """The units that make up the description: the leading heading lines already held in the entry's own fields
+    (title, employer, place, dates) are left out, so the description starts at the first bullet.
+
+    Only a unit whose every word is covered by those fields, by a date the entry actually holds, or by a filler
+    word is a heading line. Nothing is left out unless the fields already say it, and never every unit.
+    """
+    if record_type not in {"role", "education"}:
+        return selected
+    covered = set(re.findall(r"[a-z0-9]+", " ".join(str(values[name]) for name in _HEADER_VALUE_FIELDS if values.get(name)).casefold()))
+    dates = " ".join(str(values.get(name) or "") for name in ("start_date", "end_date"))
+    has_dates = bool(dates.strip())
+    current = values.get("current_role") is True
+
+    def covered_word(word):
+        return (word in covered or word in _FILLER_WORDS
+                or (has_dates and word in _MONTH_WORDS)
+                or (re.fullmatch(r"(?:19|20)\d\d", word) is not None and word in dates)
+                or (current and word in {"present", "current"}))
+
+    kept = list(selected)
+    while len(kept) > 1:
+        words = re.findall(r"[a-z0-9]+", kept[0]["text"].casefold())
+        if words and all(covered_word(word) for word in words):
+            kept.pop(0)
+        else:
+            break
+    return kept
+
+
 def _resume_draft(raw, ids, anchor, section, *, text, units, source_units, fields, index):
     selected = sorted((units[i] for i in ids), key=lambda u: u["span_start"])
     start, end = selected[0]["span_start"], selected[-1]["span_end"]
@@ -601,7 +655,8 @@ def _resume_draft(raw, ids, anchor, section, *, text, units, source_units, field
     # The original complete paragraph/bullet wording is the default, even if the model
     # supplied a shorter summary. An explicit later rewrite belongs to a separate
     # conversation proposal and member confirmation.
-    lossless = "\n".join(unit["text"] for unit in selected)
+    full = "\n".join(unit["text"] for unit in selected)
+    lossless = "\n".join(unit["text"] for unit in _description_units(selected, values, candidate.record_type))
     description = "wording" if candidate.record_type == "knowledge" else "summary"
     if candidate.record_type in {"role", "education", "skill", "knowledge"}:
         values[description] = lossless
@@ -616,7 +671,7 @@ def _resume_draft(raw, ids, anchor, section, *, text, units, source_units, field
     cleared, confidence = [], candidate.confidence
     for name in RESUME_IDENTITY_FIELDS.get(candidate.record_type, ()):
         value = values.get(name)
-        if value and re.sub(r"\s+", " ", value).casefold().strip(". ") not in re.sub(r"\s+", " ", lossless).casefold():
+        if value and re.sub(r"\s+", " ", value).casefold().strip(". ") not in re.sub(r"\s+", " ", full).casefold():
             del values[name]
             cleared.append(name)
             confidence = "uncertain"
@@ -640,6 +695,7 @@ def organize_resume_extraction(payload, *, text, source_units, allowed_fields, s
     if not isinstance(payload, Mapping) or set(payload) != {"candidates"} or not isinstance(payload["candidates"], list):
         raise ExtractionError("malformed_payload")
     units = _resume_content_units(source_units)
+    everything = _all_resume_content_units(source_units)
     fields = {**allowed_fields, "knowledge": RESUME_KNOWLEDGE_FIELDS}
     index = _shortlist_index(shortlist)
     rejections, bound = [], []
@@ -654,6 +710,16 @@ def organize_resume_extraction(payload, *, text, source_units, allowed_fields, s
             if set(raw) != set(expected):
                 raise ExtractionError("malformed_candidate")
             ids, anchor, section = raw.get("unit_ids"), raw.get("record_anchor"), raw.get("presentation_section")
+            if isinstance(ids, list) and any(isinstance(i, str) and i in everything and i not in units for i in ids):
+                # A contact line (or the name line) is never bound into a record. Leave that one line out, keep the rest
+                # of the candidate, and let the line stay among the details nobody placed; refuse only if nothing is left.
+                left_out = [i for i in ids if isinstance(i, str) and i in everything and i not in units]
+                ids = [i for i in ids if i not in left_out]
+                if not ids:
+                    raise ExtractionError("contact_unit_not_bindable")
+                if anchor not in ids:
+                    anchor = ids[0]
+                rejections.append({"candidate_index": position, "code": "contact_unit_left_out", "action": "unit_left_out"})
             if (not isinstance(ids, list) or not ids or any(not isinstance(i, str) or i not in units for i in ids)
                     or len(ids) != len(set(ids)) or anchor not in ids or section not in RESUME_SECTIONS):
                 raise ExtractionError("invalid_source_unit_binding")
@@ -682,10 +748,10 @@ def organize_resume_extraction(payload, *, text, source_units, allowed_fields, s
                                "field": name, "action": "field_cleared"})
         used.update(ids)
         drafts.append(draft)
-    unplaced = [identity for identity in units if identity not in used]
+    unplaced = [identity for identity in everything if identity not in used]
     organized = len(drafts)
     for identity in unplaced:
-        unit = units[identity]
+        unit = everything[identity]
         drafts.append({"record_type": "unspecified", "values": {"text": unit["text"]},
                        "outcome": "uncertain", "quote": unit["text"],
                        "span_start": unit["span_start"], "span_end": unit["span_end"],

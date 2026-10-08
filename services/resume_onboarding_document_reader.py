@@ -131,10 +131,27 @@ def load_ocr_configuration(configuration):
         raise ResumeDocumentReadError("ocr_configuration_invalid") from None
 
 
+_BULLET_GLYPHS = "\u2022\u25aa\u25e6\u25cf\u25a0\u25a1\u25ab\u25b8\u25ba\u2023\u2043\u2219\u00b7*"
+_DOUBLE_BULLET = re.compile(r"(?m)^([ \t]*)(?:[" + re.escape(_BULLET_GLYPHS) + r"][ \t]+){2,}")
+_SPACED_LETTERS = re.compile(r"^[ \t]*(?:[A-Za-z][ \t]){3,}[A-Za-z](?:[ \t]{2,}(?:[A-Za-z][ \t])*[A-Za-z])*[ \t]*$")
+
+
+def _tidy_line_marks(text):
+    """Reader normalisation that never changes the words: one bullet mark, and spaced-out headings read as words."""
+    text = _DOUBLE_BULLET.sub(lambda m: m.group(1) + "\u2022 ", text)
+    lines = []
+    for line in text.split("\n"):
+        if _SPACED_LETTERS.match(line):
+            words = re.split(r"[ \t]{2,}", line.strip())
+            line = " ".join(word.replace(" ", "").replace("\t", "") for word in words)
+        lines.append(line)
+    return "\n".join(lines)
+
+
 def _literal_text(text):
     if any(ch in _BIDI or unicodedata.category(ch) == "Cc" and ch not in "\n\r\t" for ch in text):
         raise ResumeDocumentReadError("hostile_characters")
-    return text.replace("\r\n", "\n").replace("\r", "\n").strip()
+    return _tidy_line_marks(text.replace("\r\n", "\n").replace("\r", "\n").strip())
 
 
 _SECTION_NAMES = {
@@ -147,11 +164,48 @@ _SECTION_NAMES = {
     "professional qualifications": "Qualifications", "key qualifications": "Qualifications",
     "contact details": "Contact details", "contact": "Contact details",
     "independent project": "Independent Project", "independent projects": "Independent Project",
+    "work history": "Experience", "employment history": "Experience", "career history": "Experience",
+    "relevant experience": "Experience", "volunteer experience": "Experience", "volunteer work": "Experience",
+    "training": "Education", "education and training": "Education", "training and certifications": "Credentials",
+    "certifications and training": "Credentials", "licenses and certifications": "Credentials",
+    "profile": "Professional summary", "career objective": "Professional summary", "objective": "Professional summary",
+    "core skills": "Skills", "key skills": "Skills", "skills and strengths": "Skills", "languages": "Skills",
+    "honors": "Awards", "honors and awards": "Awards", "accomplishments": "Awards", "projects": "Independent Project",
 }
 
 
 # A line that ends in a date or "Present" is a job or school heading, not a wrapped sentence.
 _HEADING_DATE_END = re.compile(r"(?:(?:19|20)\d\d|present|current)\s*$", re.I)
+# A line that starts with a date range ("2020 - present", "Mar 2017 - May 2021") is a heading line of its own.
+_HEADING_DATE_START = re.compile(
+    r"^(?:[A-Za-z]{3,9}\.?\s+)?(?:19|20)\d\d\s*[–—-]\s*(?:(?:[A-Za-z]{3,9}\.?\s+)?(?:19|20)\d\d|present|current)", re.I)
+# A line carrying an email address, a phone number or a web address is contact detail, never part of a job.
+_EMAIL_OR_WEB = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+|https?://|www\.", re.I)
+# A phone number has the shape of one: a "+" country code, an area code in parentheses, or three-three-four digits,
+# or ten plain digits. Not any run of digits: "2019-2021", "300-1200 calls", "100-1500 people", "250 1200 customers",
+# "Windows 10 2016 2019" and "Part 121-4455" are years, counts and names, not a number someone can call.
+_PHONE_SHAPE = re.compile(
+    r"(?<![\w-])\+\d{1,3}[ .-]?(?:\(\d{1,4}\)[ .-]?)?\d{1,4}[ .-]\d{3,4}[ .-]\d{3,4}(?![\w-])"
+    r"|(?<![\w-])\(\d{2,4}\)[ .-]?\d{3,4}[ .-]\d{3,4}(?![\w-])"
+    r"|(?<![\w-])\d{3}[ .-]\d{3}[ .-]\d{4}(?![\w-])"
+    r"|(?<![\w-])\+\d{7,15}(?![\w-])|(?<!\d)\d{10}(?!\d)")
+_ONLY_YEARS = re.compile(r"^(?:(?:19|20)\d\d[\s.\u2013\u2014-]*)+$")
+
+
+class _ContactLine:
+    """``search(text)`` is truthy for a line carrying an email, a web address or a phone number."""
+
+    @staticmethod
+    def search(text):
+        text = str(text or "")
+        if _EMAIL_OR_WEB.search(text):
+            return True
+        return any(not _ONLY_YEARS.match(match.group(0).strip()) for match in _PHONE_SHAPE.finditer(text))
+
+
+_CONTACT_LINE = _ContactLine()
+_NAME_LINE = re.compile(r"^[A-Z][A-Za-z'\u2019.-]+(?: [A-Z][A-Za-z'\u2019.-]+){1,3}(?:,? (?:Jr|Sr|II|III|RN|MD|CPA|PhD)\.?)?$|"
+                        r"^[A-Z][A-Z'\u2019.-]+(?: [A-Z][A-Z'\u2019.-]+){1,3}$")
 
 
 def inventory_source(text, *, pages=None, document=False):
@@ -170,7 +224,7 @@ def inventory_source(text, *, pages=None, document=False):
         offset += len(line)
         if not stripped:
             continue
-        heading = _SECTION_NAMES.get(stripped.strip(":").casefold())
+        heading = _SECTION_NAMES.get(re.sub(r"\s+", " ", stripped.strip(":")).casefold())
         if heading:
             section = heading
         # Continuations are only joined within one paragraph. A line that
@@ -181,6 +235,10 @@ def inventory_source(text, *, pages=None, document=False):
                         and not re.match(r"[•*\-]|\d+[.)]", stripped)
                         and not _HEADING_DATE_END.search(stripped)
                         and not _HEADING_DATE_END.search(rows[-1]["text"])
+                        and not _HEADING_DATE_START.match(stripped)
+                        and not _HEADING_DATE_START.match(rows[-1]["text"])
+                        and not _CONTACT_LINE.search(stripped)
+                        and not _CONTACT_LINE.search(rows[-1]["text"])
                         and not rows[-1]["text"].rstrip().endswith((".", ";", ":", "!", "?")))
         if continuation:
             row = rows[-1]
@@ -189,7 +247,7 @@ def inventory_source(text, *, pages=None, document=False):
         else:
             instruction = bool(re.search(r"(?:ignore (?:all |the |previous )?(?:instructions|rules)|^system:|^assistant:|^publish (?:everything|this)|send (?:all |the )?(?:password|credentials))", stripped, re.I))
             kind = ("heading" if heading else "untrusted_instruction" if instruction else
-                    "presentation" if document and not rows and has_resume_heading else "content")
+                    "presentation" if document and not rows and has_resume_heading and not _NAME_LINE.match(stripped) else "content")
             row = {"kind": kind, "section": section,
                    "span_start": start, "span_end": end, "text": text[start:end]}
             rows.append(row)

@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import collections
 import copy
 import threading
 from contextlib import contextmanager
@@ -835,8 +836,10 @@ class ResumeIntakeService:
     @staticmethod
     def _trim_conversation_view(view, budget, *, selected_ref, selected_source):
         """Drop the least relevant history, step by step, until the context fits the budget."""
+        from services.resume_intake_runtime import model_facing_context, _json_size
+
         def size():
-            return len(json.dumps(view, ensure_ascii=False).encode('utf-8'))
+            return _json_size(model_facing_context(view, budget=budget))
 
         def keep_turns(count):
             view['prior_turns'] = view['prior_turns'][-count:] if count else []
@@ -1280,7 +1283,7 @@ class ResumeIntakeService:
             if canonical['draft_version'] != command['expected_draft_version']:
                 raise SynthesisError('changed')
             snapshot['policy_version'] = policy.version
-            reserve = min(assistance.limits['maximum_input_bytes'] // 2, 2 * assistance.limits['maximum_task_bytes'] + 4096)
+            reserve = min(assistance.limits['maximum_input_bytes'] // 2, 2 * len(command['statement'].encode('utf-8')) + 4096)
             context = self._conversation_view(snapshot, canonical,
                 budget=assistance.limits['maximum_input_bytes'] - reserve)
             refs = {row['target_ref'] for row in context['targets']}
@@ -1307,7 +1310,8 @@ class ResumeIntakeService:
                 'dependencies': [{'source_key': row['source_key'], 'version': row['version']} for row in context['materials']]}}
             context['current_turn'] = {'source_key': source_key, 'units': copy.deepcopy(source['structured_values']['resume_conversation_v1']['source_units'])}
             context['selected_target'] = command['selected_target']
-            if len(json.dumps(context, ensure_ascii=False).encode('utf-8')) > assistance.limits['maximum_input_bytes']:
+            from services.resume_intake_runtime import model_facing_context, _json_size
+            if _json_size(model_facing_context(context, budget=assistance.limits['maximum_input_bytes'])) > assistance.limits['maximum_input_bytes']:
                 raise SynthesisError('input_too_large')
             original_view_digest = _json_digest(self._conversation_view(snapshot, canonical, exclude_source=source_key))
             self.repository.save_owner(owner, snapshot)
@@ -1359,6 +1363,13 @@ class ResumeIntakeService:
         unit_map = {(row['source_key'], u['unit_id']): u for row in context['materials'] for u in row['units']}
         unit_map.update({(source['source_key'], u['unit_id']): u for u in context['current_turn']['units']})
         proposals, changed_targets = [], set()
+        # One sentence that backs several new entries ("My skills are A, B and C", three degrees in one paragraph) is
+        # not pasted into every one of them; the words stay in the member's source, and each entry keeps its own facts.
+        shared_units = {}
+        for candidate in result['operations']:
+            if candidate.get('operation') == 'add_content':
+                key = frozenset(b['unit_id'] for b in candidate.get('source_refs') or [] if isinstance(b, dict))
+                shared_units[key] = shared_units.get(key, 0) + 1
         for operation in result['operations']:
             if not isinstance(operation, dict) or set(operation) != CONVERSATION_OPERATION_FIELDS:
                 raise conversation_rejection('invalid_output', 'operation_contract', 'operation_shape')
@@ -1458,14 +1469,48 @@ class ResumeIntakeService:
                     raise conversation_rejection('invalid_output', 'operation_contract', 'control_as_new_content')
                 identities = {'role': ('role_title', 'employer_name'), 'education': ('degree_name', 'institution_name'),
                               'credential': ('name', 'issuer'), 'skill': ('name',)}.get(record_type, ())
-                normalized_literal = ' '.join(literal.lower().split())
+                def words(text):
+                    return ' '.join(re.sub(r'[^\w]+', ' ', str(text).lower()).split())
+                normalized_literal = words(literal)
+                phrases = [words(part).split() for part in re.split(r'[,;.:\n]+', literal)]
+                filler = {'at', 'the', 'of', 'and', 'in', 'a', 'an', 'for', 'with', 'by', 'as', 'to', 'from', 'on'}
+
+                def supported(wanted_words):
+                    # The member's own words: word for word, or the same words in one short run inside one phrase with
+                    # nothing but filler words between them (a reordered "pivot tables in Excel" is "Excel pivot
+                    # tables"). Words gathered from different parts of a sentence ("senior ... director") are not a name.
+                    need = collections.Counter(wanted_words)
+                    size = len(wanted_words)
+                    for phrase in phrases:
+                        for start in range(len(phrase)):
+                            for length in range(size, size + 5):
+                                window = phrase[start:start + length]
+                                if len(window) < size:
+                                    break
+                                have = collections.Counter(window)
+                                if all(have[word] >= count for word, count in need.items()) and all(
+                                        word in need or word in filler for word in window):
+                                    return True
+                    return False
+                unsupported_identity = []
                 for name in identities:
-                    if values.get(name) and ' '.join(str(values[name]).lower().split()) not in normalized_literal:
-                        raise conversation_rejection('invalid_output', 'operation_contract', 'identity_not_literal')
+                    value = values.get(name)
+                    if not value:
+                        continue
+                    wanted = words(value)
+                    # Word for word, or every word present in the member's words, is supported. A name the model
+                    # brought in from elsewhere (an employer named in another message, a product's full name) is
+                    # not the member's wording: keep the answer, leave only that detail empty and flag it for the
+                    # member, rather than discarding everything the member said.
+                    if wanted and (wanted in normalized_literal or supported(wanted.split())):
+                        continue
+                    values.pop(name, None)
+                    patch.pop(name, None)
+                    unsupported_identity.append(name)
                 body_field = {'role': 'summary', 'education': 'summary', 'skill': 'summary',
                               'knowledge': 'wording', 'accomplishment': 'wording',
                               'credential': 'resume_credential_wording'}.get(record_type)
-                if body_field:
+                if body_field and shared_units.get(frozenset(b['unit_id'] for b in source_refs), 0) < 2:
                     values[body_field] = literal
                 if len(literal.encode('utf-8')) > 8000:
                     raise conversation_rejection('invalid_output', 'operation_contract', 'literal_size')
@@ -1521,6 +1566,8 @@ class ResumeIntakeService:
                         if old['proposal_key'] in (source_unit.get('proposal_keys') or []):
                             source_unit['proposal_keys'] = sorted((set(source_unit['proposal_keys']) - {old['proposal_key']}) | {proposal['proposal_key']})
             proposal['requires_member_wording'] = False
+            if op == 'add_content' and unsupported_identity:
+                proposal['confidence'] = 'uncertain'
             proposal['resume_conversation_v1'] = {'unit_ids': [b['unit_id'] for b in source_refs],
                 'source_refs': copy.deepcopy(source_refs), 'source_bindings': dependencies,
                 'presentation_section': section, 'operation': op, 'revision_of': (old or {}).get('proposal_key'),
@@ -1529,6 +1576,7 @@ class ResumeIntakeService:
                     if k != 'resume_credential_wording'}) if canonical_target and not old else
                     ((old or {}).get('resume_conversation_v1', {}).get('target_values_digest') or
                         (_json_digest({**canonical_target['values'], **(canonical_target.get('proposed_values') or {})}) if canonical_target else None)),
+                **({'uncertain_fields': list(unsupported_identity)} if op == 'add_content' and unsupported_identity else {}),
                 'resume_exclusion': op == 'exclude_content' and not operation['bullet_edits'],
                 'resume_restoration': bool(canonical_target) and op == 'restore_content' and not operation['bullet_edits']}
             if record_type == 'credential' and canonical_target:
@@ -3772,6 +3820,16 @@ class ResumeIntakeService:
             refreshed = self._reread_original(owner, source, policy) if mode == "retry" else None
             if refreshed:
                 text, units = refreshed[0], refreshed[1]
+            elif mode == "retry":
+                # The words are unchanged, but the lines stored with them may come from an older reader than the one
+                # the dispatch below uses. Re-derive and store them (under a new source version) so the lines the
+                # model cites are the lines the source keeps, instead of a false "not attached to any item".
+                from services.resume_onboarding_document_reader import inventory_source
+                fresh = inventory_source(text, pages=meta.get("pages"), document=True)
+                if [row["unit_id"] for row in fresh] != [row.get("unit_id") for row in units]:
+                    units = fresh
+                    refreshed = (text, fresh, list(meta.get("pages") or []), meta.get("complete"),
+                                 meta.get("ocr_configuration_sha256"))
             if mode == "retry":
                 from uuid import uuid5
                 # The same seam an upload uses, so every composition's provider scope (the private owner
@@ -3911,7 +3969,7 @@ class ResumeIntakeService:
                          "complete": meta.get("complete")},
             "organization": {"state": organization.get("state"),
                              "rejected": len([r for r in organization.get("rejections") or []
-                                              if r.get("action") != "field_cleared"])},
+                                              if r.get("action") not in ("field_cleared", "unit_left_out")])},
             "retry_available": eligibility is not None, "retry_reason": eligibility}
         overview["duplicate_source_keys"] = [row["source_key"] for row in documents
                                              if row["source_key"] != key and row.get("sha256") == batch_source.get("sha256")]
@@ -3959,7 +4017,9 @@ class ResumeIntakeService:
                        else "resume_credential_wording" if record_type == "credential" else "summary")
         effective = values.get(description) or values.get("text") or ""
         ids = list(conversation.get("unit_ids") or [])
-        selected = sorted((units[i] for i in ids if i in units), key=lambda u: u["span_start"])
+        from services.my_data_extraction_adapter import _description_units
+        selected = _description_units(sorted((units[i] for i in ids if i in units), key=lambda u: u["span_start"]),
+                                      values, record_type)
         # Lines come from the effective wording. A unit id is attached only while that wording
         # is still exactly the joined source text, so an edited or amended item never shows stale source lines.
         if selected and "\n".join(u["text"] for u in selected) == effective:

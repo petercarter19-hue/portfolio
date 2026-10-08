@@ -228,7 +228,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         page.goto(self.base_url + '/app/resume')
         if not expect_guide:
             return page
-        page.locator('#resume-intake[open]').wait_for()
+        page.locator('#resume-intake[open]').wait_for(timeout=20000)
         page.wait_for_function("() => getComputedStyle(document.querySelector('.resume-editor__panel')).filter === 'blur(8px)'")
         return page
 
@@ -2102,7 +2102,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         page.locator('#resume-intake-new-question').click()
         page.locator('#resume-intake-question').get_by_text('What changed for your customers?',exact=True).wait_for()
         self.assertEqual(len(calls),1);self.assertEqual(len(self.catalog.list_items(self.owner)),1)
-        self.assertIn('Northstar Studio',str(calls[0]['canonical']['sources']))
+        self.assertIn('Northstar Studio',str(calls[0]['targets']))
         page.locator('#resume-intake-skip-question').click()
         self.assertNotEqual(self.repository.load_owner(self.owner)['guide'].get('status'),'completed')
 
@@ -2873,10 +2873,11 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.assertNotIn('groups to review', page.locator('#resume-intake-review-position').inner_text())
         self.assertEqual(page.locator('#resume-intake-review-position').inner_text(), 'Experience · 1 of 2')
         lines = page.locator('.resume-intake__lines li')
-        lines.nth(2).wait_for()
-        self.assertEqual(lines.count(), 3)
-        self.assertIn('resume-intake__line--header', lines.nth(0).get_attribute('class'))
-        self.assertEqual(lines.nth(2).inner_text(), 'Led a team of four.')
+        lines.nth(1).wait_for()
+        self.assertEqual(lines.count(), 2)   # the heading line is held in the role's own fields, not repeated here
+        self.assertNotIn('resume-intake__line--header', lines.nth(0).get_attribute('class'))
+        self.assertEqual(lines.nth(0).inner_text(), 'Built data pipelines.')
+        self.assertEqual(lines.nth(1).inner_text(), 'Led a team of four.')
         self.assertEqual(page.get_by_role('button', name='Confirm details', exact=True).count(), 1)
         self.assertEqual(self.catalog.list_items(self.owner), [])
         self.assertEqual(len(self.calls), 1)
@@ -2902,6 +2903,12 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.assertIn('older note', page.locator('#resume-intake-proposals').inner_text())
         page.get_by_role('button', name='Back to your uploaded résumé', exact=True).click()
         page.locator('#resume-intake-batch').get_by_text('Your uploaded résumé', exact=True).wait_for()
+        # The header arrow does the same from the earlier items, not something older.
+        page.locator('[data-earlier-items]').click()
+        page.locator('#resume-intake-batch').get_by_text('Earlier unfinished items', exact=True).wait_for()
+        page.locator('#resume-intake-back').click()
+        page.locator('#resume-intake-batch').get_by_text('Your uploaded résumé', exact=True).wait_for()
+        self.assertNotIn('older note', page.locator('#resume-intake-proposals').inner_text())
         self.assertEqual(self.catalog.list_items(self.owner), [])
 
     def test_unavailable_organizer_offers_retry_and_a_retry_regroups_the_stored_source(self):
@@ -2916,8 +2923,8 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         page.get_by_role('button', name='Try organizing again', exact=True).click()
         card.get_by_text('I organized your résumé: 2 roles · 2 skills.').wait_for()
         self.assertEqual(len(self.calls), 1)
-        page.locator('.resume-intake__lines li').nth(2).wait_for()
-        self.assertEqual(page.locator('.resume-intake__lines li').count(), 3)
+        page.locator('.resume-intake__lines li').nth(1).wait_for()
+        self.assertEqual(page.locator('.resume-intake__lines li').count(), 2)
         self.assertEqual(page.get_by_role('button', name='Try organizing again').count(), 0)
         self.assertEqual(self.catalog.list_items(self.owner), [])
 
@@ -2996,7 +3003,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.errors = []
         page.on('pageerror', lambda error: self.errors.append(str(error)))
         page.goto(self.base_url + '/app/resume')
-        page.locator('#resume-intake[open]').wait_for()
+        page.locator('#resume-intake[open]').wait_for(timeout=20000)
         return page
 
     def test_pause_notice_never_covers_the_reopen_or_photo_buttons_and_retry_is_reachable(self):
@@ -3042,7 +3049,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         page.get_by_role('button', name='Pause', exact=True).click()
         page.clock.fast_forward(16000)
         failure = page.locator('#resume-intake-pause-failure')
-        failure.get_by_text('We couldn’t save your draft just now.', exact=False).wait_for()
+        failure.get_by_text('We couldn’t confirm your draft was saved just now.', exact=False).wait_for()
         # The same controls still work: let the save through, and Try again completes the pause.
         page.unroute('**/api/resume-intake/me/draft', hang)
         failure.get_by_role('button', name='Try again', exact=True).click()
@@ -3077,6 +3084,209 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
                 self.assertEqual(sent.value.status, 200)
                 self.assertTrue(seen[-1]['selected_target'].startswith('proposal:'))
                 self.assertEqual(self.errors, [])
+
+    def test_choice_values_with_a_hyphen_or_space_match_the_forms_own_choices_and_confirm(self):
+        row = self.role_proposal(); row['values'] = dict(row['values'], employment_type='Full-time')
+        self.typed_service([row])
+        page = self.page(); self.submit(page, 'My product design role source.')
+        self.assertEqual(self.field(page, 'employment_type').input_value(), 'full_time')
+        self.confirm(page)
+        self.assertEqual(self.catalog.list_items(self.owner)[0]['values']['employment_type'], 'full_time')
+
+    def test_a_missing_required_detail_opens_the_fields_and_puts_the_cursor_on_it(self):
+        self.typed_service([{'kind': 'inferred_wording', 'record_type': 'education', 'confidence': 'uncertain',
+                             'values': {'title': 'My Program', 'institution_name': 'Example College'}}])
+        page = self.page(); self.submit(page, 'My program source.')
+        page.get_by_role('button', name='Confirm details', exact=True).click()
+        page.locator('#resume-intake-status').get_by_text('education status', exact=False).wait_for()
+        self.assertEqual(page.evaluate('document.activeElement.getAttribute("data-proposal-field")'), 'education_status')
+        self.assertTrue(self.field(page, 'education_status').is_visible())
+
+    def test_a_start_year_and_an_end_month_are_saved_together_at_the_year_they_share(self):
+        self.typed_service([{'kind': 'inferred_wording', 'record_type': 'education', 'confidence': 'uncertain',
+                             'values': {'title': 'Bachelor of Science', 'institution_name': 'Example University',
+                                        'education_status': 'completed', 'start_date': '2012-01-01', 'end_date': '2016-05-01',
+                                        'date_precision': 'month'}}])
+        page = self.page(); self.submit(page, 'Studied from 2012 and graduated May 2016.')
+        page.get_by_role('button', name='Edit fields manually', exact=True).click()
+        self.field(page, 'start_date').fill('2012'); self.field(page, 'end_date').fill('2016-05')
+        page.get_by_role('button', name='Confirm details', exact=True).click()
+        page.locator('#resume-intake-status').get_by_text('same detail', exact=False).wait_for()
+        self.assertEqual(self.field(page, 'date_precision').input_value(), 'year')
+        self.assertEqual((self.field(page, 'start_date').input_value(), self.field(page, 'end_date').input_value()), ('2012', '2016'))
+        self.assertEqual(len(self.catalog.list_items(self.owner)), 0)
+        self.confirm(page)
+        saved = self.catalog.list_items(self.owner)[0]['values']
+        self.assertEqual((saved['start_date'], saved['end_date'], saved['date_precision']), ('2012-01-01', '2016-01-01', 'year'))
+
+    def test_a_role_confirmed_a_moment_ago_is_already_on_the_list_a_following_contribution_chooses_from(self):
+        self.typed_service([self.role_proposal(), {'kind': 'inferred_wording', 'record_type': 'accomplishment', 'confidence': 'uncertain',
+                                                    'values': {'wording': 'Cut onboarding time in half'}}])
+        page = self.page(); self.submit(page, 'I was a product designer and I cut onboarding time in half.')
+        page.get_by_role('button', name='Confirm details', exact=True).first.click()
+        page.locator('#resume-proposal-parent').wait_for(state='attached')
+        page.wait_for_function("() => [...document.querySelectorAll('#resume-proposal-parent option')].some(o => o.textContent.includes('Product designer'))")
+        options = page.locator('#resume-proposal-parent option').all_inner_texts()
+        self.assertTrue(any('Product designer' in text for text in options), options)
+
+    def test_a_change_keeps_the_dropdown_choice_the_member_already_made(self):
+        from tests.test_resume_onboarding_conversation import operation
+        row = {'kind': 'inferred_wording', 'record_type': 'education', 'confidence': 'uncertain',
+               'values': {'title': 'Bachelor of Science', 'institution_name': 'Example University', 'end_date': '2016-05-01',
+                          'date_precision': 'month'}}
+        service = self.typed_service([row])
+
+        def revise(ctx):
+            return {'response': 'I can add the field of study.', 'next_question': '', 'operations': [operation(
+                ctx, ref=ctx['selected_target'], record_type='education', values={'field_of_study': 'Computer Science'}, section='Education')]}
+        page = self.pending_conversation_page(service, revise)
+        page.locator('#resume-intake-review:visible').wait_for()
+        page.get_by_role('button', name='Edit fields manually', exact=True).click()
+        self.field(page, 'education_status').select_option('completed')
+        page.get_by_label('Tell me what to change about this one').fill('Please add the field of study, Computer Science.')
+        page.get_by_role('button', name='Send change', exact=True).click()
+        page.locator('#resume-intake-status').get_by_text('I can add the field of study', exact=False).wait_for()
+        self.assertEqual(self.field(page, 'field_of_study').input_value(), 'Computer Science')
+        self.assertEqual(self.field(page, 'education_status').input_value(), 'completed')
+
+    def test_a_draft_that_cannot_be_loaded_at_first_is_retried_and_pause_still_saves(self):
+        # A reload within a moment of Pause can meet a busy site. The draft load used to give up for good, which left
+        # saving, Pause and Try again unable to do anything.
+        service = self.batch_service(self.batch_counting(self.batch_payload()))
+        self.batch_upload(service)
+        state = {'refused': 0}
+
+        def busy_then_fine(route):
+            if route.request.method == 'GET' and state['refused'] < 2:
+                state['refused'] += 1
+                route.fulfill(status=503, json={'success': False, 'message': 'The test site is busy. Try again.'})
+            else:
+                route.continue_()
+        context = self.browser.new_context(viewport={'width': 1440, 'height': 1000})
+        self.addCleanup(context.close)
+        page = context.new_page(); page.set_default_timeout(15000)
+        page.route('https://fonts.**', lambda route: route.abort())
+        page.route('**/api/resume-intake/me/draft', busy_then_fine)
+        page.goto(self.base_url + '/app/resume')
+        page.locator('#resume-intake[open]').wait_for()
+        page.locator('#resume-intake-review:visible').wait_for()
+        # The load is retried in the background and the typed words are then saved, not called saved early.
+        with page.expect_response(lambda response: response.request.method == 'PUT' and response.url.endswith('/draft') and response.status == 200,
+                                  timeout=20000):
+            page.evaluate("() => { const box = document.getElementById('resume-intake-text'); box.value = 'Words typed during the busy moment.'; box.dispatchEvent(new Event('input', {bubbles: true})); }")
+        self.assertEqual(state['refused'], 2)
+        self.assertEqual(service.get_draft(self.owner)['draft']['text'], 'Words typed during the busy moment.')
+        page.get_by_role('button', name='Pause', exact=True).click()
+        page.locator('#resume-intake-pause-notice').get_by_text('Paused. Your draft is saved privately.', exact=True).wait_for()
+
+    def test_a_late_draft_load_never_overwrites_saved_words_the_member_has_not_seen(self):
+        # The first loads fail as busy, the member types, then the saved draft loads and says something else. The saved
+        # words must not be replaced by what was typed meanwhile: both are kept and the member chooses.
+        from uuid import uuid4
+        service = self.typed_service([])
+        service.save_draft(self.owner, {'request_id': str(uuid4()), 'expected_version': None,
+                                        'text': 'Saved unsent words from an earlier visit.'})
+        state = {'refused': 0}
+        puts = []
+
+        def busy_then_fine(route):
+            if route.request.method == 'PUT':
+                puts.append(route.request.post_data_json)
+            if route.request.method == 'GET' and state['refused'] < 3:
+                state['refused'] += 1
+                route.fulfill(status=503, json={'success': False, 'message': 'The test site is busy. Try again.'})
+            else:
+                route.continue_()
+        context = self.browser.new_context(viewport={'width': 1440, 'height': 1000})
+        self.addCleanup(context.close)
+        page = context.new_page(); page.set_default_timeout(20000)
+        page.route('https://fonts.**', lambda route: route.abort())
+        page.route('**/api/resume-intake/me/draft', busy_then_fine)
+        page.goto(self.base_url + '/app/resume')
+        page.locator('#resume-intake[open]').wait_for()   # the Guide opens after the page's own start-up, not at load
+        self.input(page)
+        page.locator('#resume-intake-text').fill('New words typed during the busy moment.')
+        page.locator('#resume-intake-draft-recovery').wait_for(state='visible')
+        self.assertIn('Saved unsent words from an earlier visit.', page.locator('#resume-intake-draft-recovery-saved').text_content())
+        self.assertEqual(page.locator('#resume-intake-text').input_value(), 'New words typed during the busy moment.')
+        self.assertEqual(service.get_draft(self.owner)['draft']['text'], 'Saved unsent words from an earlier visit.')
+        self.assertEqual(puts, [])   # nothing was written over the earlier copy
+        # the member chooses to keep this page's words: the earlier saved copy stays shown
+        page.locator('#resume-intake-draft-recovery-keep').click()
+        page.locator('#resume-intake-status').get_by_text('Your page copy is saved privately.', exact=True).wait_for()
+        self.assertEqual(service.get_draft(self.owner)['draft']['text'], 'New words typed during the busy moment.')
+        self.assertEqual(page.locator('#resume-intake-draft-recovery-earlier').text_content(), 'Saved unsent words from an earlier visit.')
+
+    def test_a_late_draft_with_the_same_number_of_items_but_different_content_is_not_treated_as_the_same(self):
+        # Same words, same number of queued items, but the saved draft queued Python and this page queued Go. A count is
+        # not a comparison: the saved copy must still be kept and the member must choose.
+        from uuid import uuid4
+        service = self.typed_service([])
+        service.save_draft(self.owner, {'request_id': str(uuid4()), 'expected_version': None, 'text': 'Same words.',
+            'items': [{'client_key': 'saved-fact', 'record_type': 'skill', 'values': {'name': 'Python'},
+                       'explicit_clears': [], 'parent_key': None}]})
+        state = {'busy': True, 'refused': 0}
+        puts = []
+
+        def busy_until_released(route):
+            if route.request.method == 'PUT':
+                puts.append(route.request.post_data_json)
+            if route.request.method == 'GET' and state['busy']:
+                state['refused'] += 1
+                route.fulfill(status=503, json={'success': False, 'message': 'The test site is busy. Try again.'})
+            else:
+                route.continue_()
+        context = self.browser.new_context(viewport={'width': 1440, 'height': 1000})
+        self.addCleanup(context.close)
+        page = context.new_page(); page.set_default_timeout(20000)
+        page.route('https://fonts.**', lambda route: route.abort())
+        page.route('**/api/resume-intake/me/draft', busy_until_released)
+        page.goto(self.base_url + '/app/resume')
+        page.locator('#resume-intake[open]').wait_for()
+        # Leave the Guide for the manual editor while the saved draft still cannot be read ("Close anyway" is the way out).
+        page.locator('#resume-intake-skip').click()
+        page.get_by_role('button', name='Close anyway', exact=True).click()
+        page.locator('#resume-intake').wait_for(state='hidden')
+        details = page.locator('#resume-intake-manual-details')
+        if details.get_attribute('open') is None:
+            details.locator('summary').click()
+        self.queue(page, 'skill', name='Go')
+        page.locator('#resume-intake-text').evaluate("el => { el.value = 'Same words.'; el.dispatchEvent(new Event('input', {bubbles: true})); }")
+        state['busy'] = False      # now the saved draft can be read: one queued item and the same words, but a different item
+        page.wait_for_function("() => !document.getElementById('resume-intake-draft-recovery').hidden", timeout=30000)
+        self.assertGreaterEqual(state['refused'], 1)
+        self.assertEqual(puts, [])
+        saved = service.get_draft(self.owner)['draft']
+        self.assertEqual([row['values']['name'] for row in saved['items']], ['Python'])
+
+    def test_a_recording_kept_in_the_saved_draft_is_shown_and_removable_before_anything_is_sent(self):
+        from uuid import uuid4
+        service = self.batch_service(self.batch_counting(self.batch_payload()))
+        service.save_draft(self.owner, {'request_id': str(uuid4()), 'expected_version': None, 'text': 'Words I typed earlier.'})
+        recording_key = str(uuid4())
+
+        def with_recording(route):
+            if route.request.method != 'GET':
+                route.continue_(); return
+            response = route.fetch()
+            body = response.json()
+            body['draft']['attachments'] = [{'client_key': 'old-recording', 'kind': 'recording', 'filename': 'Earlier voice note',
+                                             'declared_content_type': 'audio/webm', 'source_key': recording_key, 'duration_seconds': 12}]
+            route.fulfill(response=response, json=body)
+        context = self.browser.new_context(viewport={'width': 1440, 'height': 1000})
+        self.addCleanup(context.close)
+        page = context.new_page(); page.set_default_timeout(7000)
+        page.route('https://fonts.**', lambda route: route.abort())
+        page.route('**/api/resume-intake/me/draft', with_recording)
+        page.goto(self.base_url + '/app/resume')
+        page.locator('#resume-intake[open]').wait_for()   # the Guide opens after the page's own start-up, not at load
+        self.input(page)
+        row = page.locator('#resume-intake-attachments li')
+        row.wait_for()
+        self.assertIn('Earlier voice note', row.inner_text())
+        self.assertIn('will be added with this submission', row.inner_text())
+        row.get_by_role('button', name='Remove', exact=False).click()
+        self.assertEqual(page.locator('#resume-intake-attachments li').count(), 0)
 
     def test_only_a_fully_successful_pause_notice_clears_itself(self):
         service = self.batch_service(self.batch_counting(self.batch_payload()))

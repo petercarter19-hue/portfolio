@@ -291,6 +291,30 @@
     function signatureOf(value) {
         return JSON.stringify(value);
     }
+    // The same content gives the same text whatever order the keys were written in.
+    function canonicalJson(value) {
+        if (Array.isArray(value)) return '[' + value.map(canonicalJson).join(',') + ']';
+        if (value && typeof value === 'object') {
+            return '{' + Object.keys(value).sort().map(function (key) { return JSON.stringify(key) + ':' + canonicalJson(value[key]); }).join(',') + '}';
+        }
+        return JSON.stringify(value === undefined ? null : value);
+    }
+    // Do a saved draft and what is on this page say the same thing? Compared by content, not by how many items there are.
+    function draftSaysSameAsPage(draft) {
+        var page = draftContents();
+        var items = function (rows) {
+            return canonicalJson((rows || []).map(function (row) {
+                return [row.client_key, row.record_type, row.values || {}, row.explicit_clears || [], row.parent_key || null];
+            }));
+        };
+        var files = function (rows) {
+            return canonicalJson((rows || []).map(function (row) {
+                return [row.client_key, row.kind, row.filename || null, row.source_key || null];
+            }));
+        };
+        return (draft.text || '') === (page.text || '') && items(draft.items) === items(page.items) &&
+            files(draft.attachments) === files(page.attachments);
+    }
 
     function hasUnsavedInput() {
         return Boolean(
@@ -431,6 +455,21 @@
         });
     }
 
+    // Fields the member filled in or chose themselves stay chosen when the Guide revises the suggestion, unless the
+    // revision itself changed that field.
+    function carryMemberChoices(oldProposal, data) {
+        var old = proposalDrafts[oldProposal.proposal_key];
+        var fresh = data && data.proposals && data.proposals[0];
+        if (!old || !fresh || !old.type || !old[old.type]) return;
+        var carried = {};
+        Object.keys(old[old.type]).forEach(function (name) {
+            var before = (oldProposal.proposed_values || {})[name], after = (fresh.proposed_values || {})[name];
+            if (String(before == null ? '' : before) === String(after == null ? '' : after)) carried[name] = old[old.type][name];
+        });
+        if (!Object.keys(carried).length) return;
+        var next = {type: old.type}; next[old.type] = carried;
+        proposalDrafts[fresh.proposal_key] = next;
+    }
     function pluralLabel(count, label) {
         var text = String(label).toLowerCase(), many = {
             'role': 'roles', 'skill': 'skills', 'credential': 'credentials', 'impact': 'impacts',
@@ -613,7 +652,9 @@
     function renderAttachments() {
         attachmentList.replaceChildren();
         attachments.forEach(function (row) {
-            if (row.kind === 'recording' && row.source_key && row.status === 'ready') return;
+            // A recording the member just made is already in the words box as its transcript. One kept from an earlier
+            // saved draft is not, so it is shown and can be removed: nothing is sent that the member cannot see.
+            if (row.kind === 'recording' && row.source_key && row.status === 'ready' && !row.restored) return;
             var item = document.createElement('li');
             var tag = document.createElement('span');
             tag.className = 'resume-intake__tag';
@@ -626,14 +667,15 @@
                 pending: 'processing claim pending \u00b7 still unsent',
                 failed: 'could not be read \u00b7 still unsent',
                 cancelled: 'transcription cancelled; any uploaded audio stays private',
-                held: 'kept on this page'
+                held: 'kept on this page',
+                ready: 'kept from your earlier draft · will be added with this submission'
             }[row.status] || row.status;
             item.appendChild(document.createTextNode(' ' + row.label + ' \u00b7 ' + state));
             if (row.message) {
                 item.appendChild(document.createTextNode(' \u00b7 ' + row.message));
             }
             if ((row.kind === 'document' && ['selected', 'failed', 'needs_reattach'].indexOf(row.status) !== -1) ||
-                (row.kind === 'recording' && !row.transcribing && ['selected', 'failed', 'held', 'pending', 'needs_reattach'].indexOf(row.status) !== -1)) {
+                (row.kind === 'recording' && !row.transcribing && (['selected', 'failed', 'held', 'pending', 'needs_reattach'].indexOf(row.status) !== -1 || row.restored))) {
                 var remove = document.createElement('button');
                 remove.type = 'button';
                 remove.className = 'resume-intake__quiet';
@@ -810,6 +852,17 @@
             document.getElementById('resume-intake-title').focus({preventScroll: true});
         }
     }
+    var MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    // "2016-05" reads as "May 2016" wherever a person reads a date (the fields keep the exact YYYY-MM form).
+    function humanDate(value, precision) {
+        var match = /^(\d{4})-(\d{2})(?:-(\d{2}))?/.exec(String(value));
+        if (!match) return '';
+        var month = MONTH_NAMES[parseInt(match[2], 10) - 1];
+        if (precision === 'year') return match[1];
+        if (precision === 'month' && month) return month + ' ' + match[1];
+        if (precision === 'day' && month && match[3]) return month + ' ' + parseInt(match[3], 10) + ', ' + match[1];
+        return '';
+    }
     function displayValue(name, value, values) {
         if (value === null || value === undefined || value === '') return 'Not supplied';
         if (name === 'current_role') return value === true ? 'Current role' : 'Past role';
@@ -920,6 +973,7 @@
                 renderProposals(scopedRows(allPendingRows)); renderBatchOverview();
             });
             region.appendChild(back);
+            document.getElementById('resume-intake-back').hidden = false;   // the arrow returns to the uploaded résumé from here
             return;
         }
         region.appendChild(node('h3', 'Your uploaded résumé'));
@@ -1022,7 +1076,7 @@
         }
         box.replaceChildren();
         box.hidden = false;
-        box.appendChild(node('p', 'We couldn’t save your draft just now. Try again, or close anyway. Changes made since your last save on this page may be lost.'));
+        box.appendChild(node('p', 'We couldn’t confirm your draft was saved just now. Try again, or close anyway. Changes made since your last save on this page may be lost.'));
         var row = node('div', undefined, 'resume-intake__quiet-actions');
         var retry = node('button', 'Try again', 'resume-intake__secondary'); retry.type = 'button';
         retry.addEventListener('click', function () { pauseGuide(status); });
@@ -1136,7 +1190,7 @@
                     input.appendChild(new Option(pair[1], pair[0]));
                 });
                 if (value !== undefined && value !== null && value !== '') {
-                    var raw = String(value), normalized = raw.toLowerCase();
+                    var raw = String(value), normalized = raw.toLowerCase().trim().replace(/[\s-]+/g, '_');
                     if (Array.from(input.options).some(function (o) { return o.value === normalized; })) input.value = normalized;
                     else { var unsupported = new Option('Source: ' + raw + ' — choose a value', raw); unsupported.disabled = true; input.appendChild(unsupported); input.value = raw; }
                 }
@@ -1244,7 +1298,8 @@
             function reviewDate(name) {
                 if (!proposed[name]) return '';
                 if (!proposed.date_precision || proposed.date_precision === 'unknown') return 'Date unknown';
-                return (proposed.date_precision === 'approximate' ? 'Around ' : '') + displayValue(name, proposed[name], proposed);
+                if (proposed.date_precision === 'approximate') return 'Around ' + displayValue(name, proposed[name], proposed);
+                return humanDate(proposed[name], proposed.date_precision) || displayValue(name, proposed[name], proposed);
             }
             var start = reviewDate('start_date'), end = proposed.current_role === true ? 'Present' : reviewDate('end_date');
             var dates = start && end ? start + ' – ' + end : start ? 'From ' + start : end ? (end === 'Present' ? 'Current role' : 'Until ' + end) : 'Past role';
@@ -1374,7 +1429,7 @@
                 }
                 quickSend.disabled = true;
                 sendConversation({statement: statement, selectedTarget: 'proposal:' + proposal.proposal_key, target: proposal,
-                    onSuccess: function () { delete quickInputs[proposal.proposal_key]; }})
+                    onSuccess: function (data) { delete quickInputs[proposal.proposal_key]; carryMemberChoices(proposal, data); }})
                     .then(function () { quickSend.disabled = false; });
             });
         }
@@ -1464,9 +1519,32 @@
                 } else if (name === 'current_role') values[name] = raw === 'true';
                 else values[name] = raw;
             });
+            // The Guide never guesses these; say which one is missing and take the member straight to it.
+            function needsInput(name, message) {
+                if (!correcting) { correcting = true; syncCorrection(); }
+                if (inputs[name]) { inputs[name].focus(); if (inputs[name].scrollIntoView) inputs[name].scrollIntoView({block: 'center'}); }
+                throw new Error(message);
+            }
             if (!proposal.target_key) (REQUIRED_FIELDS[type] || []).forEach(function (name) {
-                if (!values[name]) throw new Error('Add the ' + FIELD_LABELS[name].toLowerCase() + ' before confirming.');
+                if (!values[name]) needsInput(name, 'Add the ' + FIELD_LABELS[name].toLowerCase() + ' before confirming.');
             });
+            var spans = ['start_date', 'end_date'].filter(function (name) { return values[name]; });
+            var detail = {4: 'year', 7: 'month', 10: 'day'};
+            var lengths = spans.map(function (name) { return String(values[name]).length; });
+            if (type !== 'credential' && inputs.date_precision && spans.length && lengths.every(function (n) { return detail[n]; })) {
+                var shared = Math.min.apply(null, lengths), expected = {year: 4, month: 7, day: 10}[values.date_precision];
+                if (expected && expected !== shared && lengths.some(function (n) { return n !== expected; })) {
+                    spans.forEach(function (name) {
+                        var shortened = String(values[name]).slice(0, shared);
+                        values[name] = shortened;
+                        if (inputs[name]) { inputs[name].value = shortened; inputs[name].dispatchEvent(new Event('change')); }
+                    });
+                    inputs.date_precision.value = detail[shared];
+                    inputs.date_precision.dispatchEvent(new Event('change'));
+                    throw new Error('A start and an end date need the same detail, so I set both to ' + detail[shared] +
+                        ' and invented nothing. Check them, then confirm again.');
+                }
+            }
             ['start_date', 'end_date'].forEach(function (name) {
                 if (!values[name]) return;
                 var precision = values.date_precision;
@@ -1480,7 +1558,7 @@
             if (type === 'role' && values.current_role === true && values.end_date) throw new Error('A current role has no end date. Clear it or choose Past role.');
             if (type === 'credential') {
                 encodeCredentialDates(values);
-                if (values.completion_status === 'completed' && !values.issue_date) throw new Error('Add the issue date for a completed credential.');
+                if (values.completion_status === 'completed' && !values.issue_date) needsInput('issue_date', 'Add the issue date for a completed credential.');
                 if (values.completion_status && values.completion_status !== 'completed') {
                     values.issue_date = null; values.expiration_date = null;
                     delete values.issue_date_precision; delete values.expiration_date_precision;
@@ -1563,6 +1641,9 @@
                 if (!proposals.length) { var overview = document.getElementById('resume-intake-suggestion-overview'); if (overview) overview.remove(); }
                 setStatus(payload.outcome === 'saved' ? 'Saved privately. Sharing settings are unchanged.' : (payload.message || 'Left out. Nothing was saved.'), 'ok');
                 loadParentCandidates().then(load).then(function () {
+                    // A role confirmed a moment ago must already be on the list a following contribution chooses from.
+                    var parentChoice = document.getElementById('resume-proposal-parent');
+                    if (parentChoice) { var keep = parentChoice.value; fillParentSelect(parentChoice); if (keep) parentChoice.value = keep; }
                     if (payload.restored_proposal) {
                         renderProposals(proposals);
                         setStatus('Exclusion undone. The original details are waiting for your confirmation. Nothing was saved.', 'ok');
@@ -1892,7 +1973,8 @@
         draftTimer = setTimeout(function () { checkpointDraft().catch(function () {}); }, 1500);
     }
     function checkpointDraft() {
-        if (!draftReady || !conversationSupported || !urls.draft) return Promise.resolve(false);
+        if (!conversationSupported || !urls.draft) return Promise.resolve(false);
+        if (!draftReady) return ensureDraftReady().then(function (ok) { return ok ? checkpointDraft() : false; });
         if (draftBusy) return draftBusy.then(checkpointDraft);
         if (draftRecovery || draftRecoveryBusy) return Promise.resolve(false);
         var contents = draftContents(), signature = signatureOf(contents);
@@ -2038,7 +2120,8 @@
             return Object.assign({}, row, {label: row.values.role_title || row.values.title || row.values.name || row.values.wording});
         });
         if (replace || !attachments.length) attachments = (draft.attachments || []).map(function (row) {
-            return Object.assign({}, row, {label: row.filename || 'Recording', status: row.source_key && !row.needs_reattach ? 'ready' : 'needs_reattach',
+            return Object.assign({}, row, {label: row.filename || 'Recording', restored: Boolean(row.source_key && !row.needs_reattach),
+                status: row.source_key && !row.needs_reattach ? 'ready' : 'needs_reattach',
                 message: row.source_key && !row.needs_reattach ? 'Transcript retained privately.' : 'Choose the original file again before submitting.'});
         });
         if (replace) {
@@ -2076,14 +2159,52 @@
         } else if (replace) { syncDirectFields(); showScreen('input', false); }
         renderQueued(); renderAttachments(); restoringDraft = false;
     }
-    function restoreDraft() {
-        if (!urls.draft || !conversationSupported) { draftReady = true; return Promise.resolve(); }
-        return send(urls.draft).then(function (result) {
-            if (!result.response.ok) { draftReady = false; return; }
+    // One attempt to load the saved draft. A busy site, a dropped connection or a reload within a moment of a save
+    // all end here with `false`, never with a half-loaded state.
+    function loadDraftOnce() {
+        return send(urls.draft, {timeout: SAVE_TIMEOUT}).then(function (result) {
+            if (!result.response.ok) return false;
+            var typedBefore = Boolean((textarea.value || '').trim() || queuedFacts.length || attachments.length);
             var draft = result.payload.draft;
+            var differs = Boolean(draft) && typedBefore && !draftSaysSameAsPage(draft);
+            if (differs) {
+                // The member typed on this page while the saved draft could not be read, and the saved draft says
+                // something else. Neither is merged or replaced: both are kept and the member chooses, exactly as
+                // when a second device changes the draft. Nothing is saved over the earlier copy until they do.
+                draftReady = true; savedDraftSignature = null;
+                draftRecovery = {draft: draft, available: true};
+                renderRecoveryCopy('Your saved draft finished loading after you started typing. Both copies are kept; choose which to use.');
+                refreshDraftLabel();
+                return true;
+            }
             draftVersion = draft ? draft.version : null;
             if (draft) applyDraftCopy(draft, false);
-            draftReady = true; savedDraftSignature = signatureOf(draftContents()); refreshDraftLabel();
+            // Words typed before a late load were never saved: do not call them saved.
+            draftReady = true; savedDraftSignature = typedBefore ? null : signatureOf(draftContents()); refreshDraftLabel();
+            return true;
+        }).catch(function () { return false; });
+    }
+    var draftRetryTimer = null;
+    function keepTryingDraft(attempt) {
+        window.clearTimeout(draftRetryTimer);
+        if (draftReady || attempt >= 12) return;
+        draftRetryTimer = window.setTimeout(function () {
+            loadDraftOnce().then(function (ok) {
+                if (!ok) { keepTryingDraft(attempt + 1); return; }
+                setStatus('Your saved draft is back. Saving works again.', 'ok');
+                scheduleDraft();
+            });
+        }, Math.min(400 * Math.pow(2, attempt), 6000));
+    }
+    function ensureDraftReady() { return draftReady ? Promise.resolve(true) : loadDraftOnce(); }
+    function restoreDraft() {
+        if (!urls.draft || !conversationSupported) { draftReady = true; return Promise.resolve(); }
+        return loadDraftOnce().then(function (ok) {
+            if (ok) return;
+            // Do not hold the Guide up for it: keep trying in the background, and let Pause, Try again and sending
+            // retry it too, so a busy moment can never leave closing or saving stuck.
+            draftReady = false;
+            keepTryingDraft(0);
         });
     }
     function sendConversation(options) {
@@ -2716,6 +2837,12 @@
         refreshDraftLabel(); return true;
     }
     on('back', function () {
+        // From the earlier unfinished items the arrow returns to the uploaded résumé, not to some earlier screen.
+        if (reviewScope === 'earlier' && batchOverview()) {
+            reviewScope = 'batch'; unplacedChoice = null;
+            renderProposals(scopedRows(allPendingRows)); renderBatchOverview();
+            return;
+        }
         var frame = navigationHistory.pop();
         if (!frame) return;
         leaveCorrection();

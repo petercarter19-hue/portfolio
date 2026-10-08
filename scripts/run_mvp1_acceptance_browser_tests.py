@@ -144,6 +144,15 @@ INTAKE_METHODS = (
     'test_only_a_fully_successful_pause_notice_clears_itself',
     'test_a_save_that_never_answers_never_leaves_close_and_retry_stuck',
     'test_review_keeps_the_role_in_view_with_a_change_box_at_desktop_and_phone_width',
+    'test_choice_values_with_a_hyphen_or_space_match_the_forms_own_choices_and_confirm',
+    'test_a_missing_required_detail_opens_the_fields_and_puts_the_cursor_on_it',
+    'test_a_start_year_and_an_end_month_are_saved_together_at_the_year_they_share',
+    'test_a_recording_kept_in_the_saved_draft_is_shown_and_removable_before_anything_is_sent',
+    'test_a_draft_that_cannot_be_loaded_at_first_is_retried_and_pause_still_saves',
+    'test_a_role_confirmed_a_moment_ago_is_already_on_the_list_a_following_contribution_chooses_from',
+    'test_a_change_keeps_the_dropdown_choice_the_member_already_made',
+    'test_a_late_draft_load_never_overwrites_saved_words_the_member_has_not_seen',
+    'test_a_late_draft_with_the_same_number_of_items_but_different_content_is_not_treated_as_the_same',
 )
 
 

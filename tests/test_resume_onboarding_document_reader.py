@@ -122,6 +122,62 @@ class ResumeOnboardingDocumentReaderTests(unittest.TestCase):
             'Lead a team of 24 warehouse associates across two shifts in a 180,000 square foot refrigerated\nfacility.',
             'Reduced spoilage write-offs by 18% in 2023.'])
 
+    def test_table_layout_keeps_name_contact_heading_and_first_job_in_separate_units(self):
+        # The tester's one-page table layout (dates in a left column). The contact line, with its email, must never
+        # share a unit with a job: it would be saved into a description that can later be shared.
+        from services.resume_onboarding_document_reader import inventory_source
+        rows = [(50, 731, 'Jules Okafor-Lind'),
+                (50, 717, 'Fictional test candidate · Burlington, Vermont · jules.ol@example.test'),
+                (50, 691, 'WORK HISTORY'),
+                (53, 669, '2020 – present'), (167, 668, 'Head Baker'), (233, 668, ', Maple Hollow Bakery, Burlington VT'),
+                (181, 651, 'Run a six-person early shift producing 900 loaves a day.'),
+                (181, 635, 'Introduced a sourdough line that now makes up 30% of bread sales.'),
+                (53, 612, '2015 – 2020'), (167, 611, 'Line Cook'), (225, 611, ', Lakeview Bistro, Shelburne VT'),
+                (181, 594, 'Worked grill and sauté stations for a 120-seat restaurant.'),
+                (50, 490, 'TRAINING'),
+                (53, 468, '2013'), (167, 467, 'Certificate in Baking and Pastry'), (348, 467, ', Champlain Culinary Institute, Essex'),
+                (167, 453, 'VT'), (50, 422, 'SKILLS'), (50, 397, 'Laminated doughs, sourdough fermentation.')]
+        text = self.reader.read('application/pdf', self._rows_pdf(rows), limits=self.limits)['text']
+        units = inventory_source(text, document=True)
+        content = [unit for unit in units if unit['kind'] == 'content']
+        contact = [unit for unit in content if 'example.test' in unit['text']]
+        self.assertEqual(len(contact), 1)
+        self.assertNotIn('WORK HISTORY', contact[0]['text'])
+        self.assertNotIn('Head Baker', contact[0]['text'])
+        first_job = next(unit for unit in content if 'Head Baker' in unit['text'])
+        for private in ('example.test', 'Jules', 'WORK HISTORY', 'Run a six-person'):
+            self.assertNotIn(private, first_job['text'])
+        self.assertEqual([unit['text'] for unit in units if unit['kind'] == 'heading'], ['WORK HISTORY', 'TRAINING', 'SKILLS'])
+        # the person's name is a visible unit, not silently treated as a heading
+        self.assertTrue(any(unit['text'] == 'Jules Okafor-Lind' and unit['kind'] == 'content' for unit in units))
+
+    def test_year_spans_are_not_phone_numbers_but_real_phone_numbers_and_emails_are_contact_lines(self):
+        from services.resume_onboarding_document_reader import _CONTACT_LINE, inventory_source
+        for line in ('Engineer, Alpha Labs, 2019-2021', 'Head Baker, Maple Hollow Bakery, Burlington VT, 2015 - 2020',
+                     '2015-2020', '(2018-2022)', '2019 2020 2021', '2019 2020 and 2021',
+                     'Raised accuracy from 91% to 98.5% over two years.', '05401-1234 Burlington',
+                     'Handled 300-1200 calls per day', 'Teams of 100-1500 people', 'Served 250 1200 customers',
+                     'Windows 10 2016 2019 rollout', 'Part 121-4455 certified'):
+            with self.subTest(not_contact=line):
+                self.assertFalse(_CONTACT_LINE.search(line))
+        for line in ('802-555-0142', '(802) 555-0142', '+44 20 7946 0958', 'Call 802.555.0142 any time', '802 555 0142',
+                     '8025550142', '+14155550142', 'jules.ol@example.test', 'https://example.test/portfolio', 'www.example.test'):
+            with self.subTest(contact=line):
+                self.assertTrue(_CONTACT_LINE.search(line))
+        # an ordinary job line with a year span stays one bindable unit that joins neither neighbour
+        units = inventory_source('Experience\nEngineer, Alpha Labs, 2019-2021\nBuilt data pipelines.', document=True)
+        self.assertEqual([u['text'] for u in units if u['kind'] == 'content'],
+                         ['Engineer, Alpha Labs, 2019-2021', 'Built data pipelines.'])
+
+    def test_spaced_out_headings_and_doubled_bullet_marks_are_tidied_without_changing_words(self):
+        from services.resume_onboarding_document_reader import _literal_text, inventory_source
+        text = _literal_text('P R O F E S S I O N A L  S U M M A R Y\nA short summary.\n• ▪ Led a team of four.\n• Kept one mark.')
+        self.assertEqual(text.split('\n')[0], 'PROFESSIONAL SUMMARY')
+        self.assertEqual(text.split('\n')[2:], ['• Led a team of four.', '• Kept one mark.'])
+        units = inventory_source(text, document=True)
+        self.assertEqual(units[0]['kind'], 'heading')
+        self.assertEqual(units[0]['section'], 'Professional summary')
+
     def test_equal_width_dates_are_still_not_a_second_column(self):
         # Identical-width dates do start at one x, but they are dates, not a column of text.
         rows = []

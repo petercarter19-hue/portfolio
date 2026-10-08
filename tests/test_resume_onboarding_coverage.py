@@ -12,7 +12,7 @@ from unittest.mock import patch
 from services.my_data_extraction_adapter import (
     EXTRACTION_RESPONSE_SCHEMA, RESUME_EXTRACTION_RESPONSE_SCHEMA, ExtractionError,
     MyDataExtractionAdapter, validate_extraction_payload, validate_resume_extraction_payload,
-    resume_source_unit_contract, resume_extraction_response_schema,
+    resume_source_unit_contract, resume_extraction_response_schema, organize_resume_extraction,
 )
 from services.resume_intake_service import EDITOR_FIELDS, ResumeIntakeService
 from services.resume_onboarding_document_reader import inventory_source
@@ -461,9 +461,9 @@ class ResumeOrganizationTests(unittest.TestCase):
         self.assertEqual(overview['earlier']['count'], 0)
         role = next(group for group in overview['groups'] if group['heading']['organization'] == 'Alpha Labs')
         self.assertEqual([line['text'] for line in role['lines']],
-                         ['Engineer, Alpha Labs.', 'Built data pipelines.', 'Led a team of four.'])
+                         ['Built data pipelines.', 'Led a team of four.'])   # the heading line is held in the entry's own fields
         self.assertTrue(all(line['unit_id'] for line in role['lines']))
-        self.assertEqual(role['lines'][0]['role'], 'header')
+        self.assertEqual((role['heading']['title'], role['heading']['organization']), ('Engineer', 'Alpha Labs'))
         self.assertEqual(role['record_ref'], 'proposal:' + role['proposal_key'])
 
     def test_provider_failure_keeps_the_source_and_creates_no_fragment_items(self):
@@ -501,6 +501,89 @@ class ResumeOrganizationTests(unittest.TestCase):
             self.assertEqual([line['text'] for line in group['lines']], wording.split('\n'))
             self.assertTrue(all(line['unit_id'] is None for line in group['lines']))
             self.assertNotEqual(group['version_token'], original['version_token'])
+
+    def test_heading_lines_are_left_out_of_a_description_only_when_the_entrys_own_fields_hold_them(self):
+        from services.my_data_extraction_adapter import _description_units
+        units = [{'text': 'Northwind Cold Storage Duluth, MN'}, {'text': 'Distribution Operations Manager June 2021 - Present'},
+                 {'text': 'Lead a team of 24 warehouse associates.'}, {'text': 'Cut spoilage by 18%.'}]
+        full = {'role_title': 'Distribution Operations Manager', 'employer_name': 'Northwind Cold Storage',
+                'location_text': 'Duluth, MN', 'start_date': '2021-06-01', 'current_role': True}
+        self.assertEqual([u['text'] for u in _description_units(units, full, 'role')],
+                         ['Lead a team of 24 warehouse associates.', 'Cut spoilage by 18%.'])
+        # the dates are not in the fields: that heading line is the only place they are written, so it stays
+        no_dates = {k: v for k, v in full.items() if k not in ('start_date', 'current_role')}
+        self.assertEqual([u['text'] for u in _description_units(units, no_dates, 'role')][0],
+                         'Distribution Operations Manager June 2021 - Present')
+        # a skill or credential is never trimmed, and a lone unit is never emptied
+        self.assertEqual(_description_units(units, full, 'skill'), units)
+        self.assertEqual(_description_units(units[:1], full, 'role'), units[:1])
+
+    def test_a_normal_resume_with_year_span_headings_is_organized_not_refused_as_contact_lines(self):
+        # A year span such as "2019-2021" once looked like a phone number, so every role that cited its heading line was
+        # refused and the pieces came back unplaced. They must organize.
+        text = ('Experience\nEngineer, Alpha Labs, 2019-2021\nBuilt data pipelines.\nAnalyst, Beta Corp, 2015 - 2019\n'
+                'Wrote weekly reports.\nSkills\nSQL.')
+        units = inventory_source(text, document=True)
+        content = [u for u in units if u['kind'] == 'content']
+        self.assertEqual(len(resume_source_unit_contract(units)['bindable_unit_ids']), len(content))
+        organization = organize_resume_extraction({'candidates': [
+            complete_resume_candidate('role', {'role_title': 'Engineer', 'employer_name': 'Alpha Labs'}, content[0]['text'], content[:2], 'Experience'),
+            complete_resume_candidate('role', {'role_title': 'Analyst', 'employer_name': 'Beta Corp'}, content[2]['text'], content[2:4], 'Experience'),
+            complete_resume_candidate('skill', {'name': 'SQL'}, 'SQL.', content[4:], 'Skills')]},
+            text=text, source_units=units, allowed_fields={n: EDITOR_FIELDS[n] for n in EDITOR_FIELDS})
+        self.assertEqual((organization.state, organization.rejections, organization.unplaced_unit_ids), ("organized", [], []))
+
+    def test_contact_and_name_lines_are_never_bound_into_a_record_and_stay_visible_as_unplaced(self):
+        text = ('Jules Okafor-Lind\nFictional test candidate · Burlington, Vermont · jules.ol@example.test\n'
+                'WORK HISTORY\n2020 - present Head Baker, Maple Hollow Bakery, Burlington VT\n'
+                'Run a six-person early shift producing 900 loaves a day.\nSKILLS\nSourdough.')
+        units = inventory_source(text, document=True)
+        content = [u for u in units if u['kind'] == 'content']
+        name, contact = content[0], content[1]
+        job = [u for u in content if u['section'] == 'Experience']
+        self.assertEqual((name['text'], 'example.test' in contact['text']), ('Jules Okafor-Lind', True))
+        # the model is not even offered those units
+        offered = resume_source_unit_contract(units)['bindable_unit_ids']
+        self.assertNotIn(name['unit_id'], offered)
+        self.assertNotIn(contact['unit_id'], offered)
+        # A candidate that binds the contact line (or the name) together with the job keeps the job and leaves that one
+        # line out: the email never lands in the role, the role is not lost, and the line stays among the unplaced.
+        for risky in ([contact] + job, [name] + job, job + [contact]):
+            organization = organize_resume_extraction({'candidates': [
+                complete_resume_candidate('role', {'role_title': 'Head Baker', 'employer_name': 'Maple Hollow Bakery'},
+                                          job[0]['text'], risky, 'Experience')]},
+                text=text, source_units=units, allowed_fields={n: EDITOR_FIELDS[n] for n in EDITOR_FIELDS})
+            self.assertEqual([r['code'] for r in organization.rejections], ['contact_unit_left_out'])
+            roles = [d for d in organization.drafts if d['record_type'] == 'role']
+            self.assertEqual(len(roles), 1)
+            self.assertEqual(roles[0]['unit_ids'], [u['unit_id'] for u in job])
+            self.assertIn(roles[0]['record_anchor'], roles[0]['unit_ids'])   # the anchor was left out, so another was chosen
+            for draft in organization.drafts:
+                if draft['record_type'] != 'unspecified':   # a real record never holds the email; the unplaced item is the visible line
+                    self.assertNotIn('example.test', json.dumps(draft['values']))
+            unplaced_text = [d['values']['text'] for d in organization.drafts if d['record_type'] == 'unspecified']
+            self.assertIn(contact['text'], unplaced_text)
+            self.assertIn('Jules Okafor-Lind', unplaced_text)
+        # a candidate made only of such a line has nothing left and is refused for that reason
+        only = organize_resume_extraction({'candidates': [
+            complete_resume_candidate('knowledge', {'title': 'Contact', 'classification': 'work'}, contact['text'], [contact], 'Awards')]},
+            text=text, source_units=units, allowed_fields={n: EDITOR_FIELDS[n] for n in EDITOR_FIELDS})
+        self.assertEqual([r['code'] for r in only.rejections], ['contact_unit_not_bindable'])
+        self.assertNotIn('example.test', json.dumps([d['values'] for d in only.drafts if d['record_type'] != 'unspecified']))
+
+    def test_ordinary_number_ranges_do_not_cost_a_role(self):
+        # "300-1200 calls" is a count, not a phone number: the role stays organized (the F5 case).
+        text = ('Experience\nEngineer, Alpha Labs, 2019-2021\nHandled 300-1200 calls per day.\nAnalyst, Beta Corp, 2015-2019\n'
+                'Wrote weekly reports.\nSkills\nSQL')
+        units = inventory_source(text, document=True)
+        content = [u for u in units if u['kind'] == 'content']
+        organization = organize_resume_extraction({'candidates': [
+            complete_resume_candidate('role', {'role_title': 'Engineer', 'employer_name': 'Alpha Labs'}, content[0]['text'], content[0:2], 'Experience'),
+            complete_resume_candidate('role', {'role_title': 'Analyst', 'employer_name': 'Beta Corp'}, content[2]['text'], content[2:4], 'Experience'),
+            complete_resume_candidate('skill', {'name': 'SQL'}, 'SQL', content[4:5], 'Skills')]},
+            text=text, source_units=units, allowed_fields={n: EDITOR_FIELDS[n] for n in EDITOR_FIELDS})
+        self.assertEqual((organization.state, organization.rejections, organization.unplaced_unit_ids), ('organized', [], []))
+        self.assertEqual(sum(d['record_type'] == 'role' for d in organization.drafts), 2)
 
     def test_older_pending_work_is_counted_apart_from_the_new_upload(self):
         first, calls, text = self.service_with(self.payload('a', 'b', 'sql', 'python'))
@@ -549,6 +632,15 @@ class ResumeOrganizationTests(unittest.TestCase):
                                extraction_adapter=MyDataExtractionAdapter(provider=lambda request, **options: payload))
         self.upload(second, owner, other, name='second.txt')
         snapshot = second.repository.load_owner(owner)
+        # Two uploads in one test can land inside a single clock tick (a coarse Windows clock); real uploads are seconds
+        # apart. Make the earlier upload really earlier so the test depends on stored time, not on tick luck.
+        latest = second.get_workspace(owner)['review_overview']['batch']['source_key']
+        for source in snapshot['sources'].values():
+            if source['source_key'] != latest:
+                source['created_at'] = '2020-01-01T00:00:00+00:00'
+        for proposal in snapshot['proposals'].values():
+            if proposal['binding']['source_key'] != latest:
+                proposal['created_at'] = '2020-01-01T00:00:00+00:00'
         snapshot['proposals'] = dict(sorted(snapshot['proposals'].items(), key=lambda item: item[1]['created_at'], reverse=True))
         second.repository.save_owner(owner, snapshot)
         overview = second.get_workspace(owner)['review_overview']
@@ -691,6 +783,34 @@ class ResumeOrganizationTests(unittest.TestCase):
                 raw.update(outcome=outcome, match_reference=keys[name])
             payload.append(raw)
         return {'candidates': payload}
+
+    def test_a_retry_on_unchanged_words_refreshes_lines_stored_by_an_older_reader(self):
+        # The stored lines can come from an older reader than the one the dispatch uses. The retry re-derives them under a
+        # new source version, so the lines the model cites are the lines kept: no false "not attached to any item".
+        text = self.TEXT
+        service = build_service(document_pipeline=extracted_pipeline(text), extraction_adapter=MyDataExtractionAdapter())
+        owner = 'synthetic-older-reader-owner'
+        self.upload(service, owner, text)
+        key = service.get_workspace(owner)['source_accounting'][0]['source_key']
+        service.organize_source(owner, self.organize_command(key, 'sort_myself'))
+        snapshot = service.repository.load_owner(owner)
+        meta = snapshot['sources'][key]['structured_values']['resume_conversation_v1']
+        del meta['organization']
+        for unit in meta['source_units']:
+            unit['unit_id'] = 'unit-old-' + unit['unit_id'][5:]   # what an older reader's ids would look like
+        service.repository.save_owner(owner, snapshot)
+        before = snapshot['sources'][key]['version']
+
+        def provider(request, **options):
+            return self.payload('a', 'b', 'sql', 'python')(text)
+        service._extraction_adapter = MyDataExtractionAdapter(provider=provider)
+        result = service.organize_source(owner, self.organize_command(key))
+        self.assertEqual(result['outcome'], 'organized')
+        stored = service.repository.load_owner(owner)['sources'][key]
+        self.assertEqual(stored['version'], before + 1)
+        fresh_ids = [u['unit_id'] for u in inventory_source(text, document=True)]
+        self.assertEqual([u['unit_id'] for u in stored['structured_values']['resume_conversation_v1']['source_units']], fresh_ids)
+        self.assertEqual(service.get_workspace(owner)['review_overview']['batch']['uncovered'], [])
 
     def test_retry_keeps_the_saved_record_a_role_was_matched_to_exactly_as_an_upload_does(self):
         text = self.TEXT
@@ -1031,7 +1151,9 @@ class ResumeSourceBindingContractTests(unittest.TestCase):
             self.assertEqual(actual['record_type'], record_type)
             self.assertEqual(actual['presentation_section'], section)
             description = 'resume_credential_wording' if record_type == 'credential' else 'wording' if record_type == 'knowledge' else 'summary'
-            self.assertEqual(actual['values'][description], wording)
+            # A leading heading line already held in the entry's own fields is not repeated in the description.
+            expected = wording.split('\n', 1)[1] if record_type in ('role', 'education') else wording
+            self.assertEqual(actual['values'][description], expected)
             self.assertEqual(actual['record_anchor'], actual['unit_ids'][0])
         self.assertEqual(len({identity for row in result for identity in row['unit_ids']}),
                          len([u for u in units if u['kind'] == 'content']))

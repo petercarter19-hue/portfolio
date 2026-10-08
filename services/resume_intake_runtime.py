@@ -549,6 +549,55 @@ def build_context(workspace, excluded_keys, selected_targets, *, catalog_rows, m
     return context
 
 
+BULLET_TEXT_FIELDS = ('summary', 'wording', 'text', 'resume_credential_wording')
+
+
+def _json_size(value):
+    return len(json.dumps(value, ensure_ascii=False).encode('utf-8'))
+
+
+def model_facing_context(context, *, budget=None):
+    """The context the model reads: every saved item packed once, chosen by byte budget and priority.
+
+    The selected record is sent in full (its values and its numbered lines). Every other record is sent once:
+    its values without the long text, plus the numbered lines that carry that text. If the whole still exceeds
+    ``budget``, the records furthest from the selection are reduced to their identifying facts, in reverse
+    order, until it fits. The duplicate canonical copy the server keeps for its own checks is not sent.
+    """
+    targets = list(context.get('targets') or [])
+    selected = context.get('selected_target') or (context.get('guide_control') or {}).get('selected_target')
+    base = {key: value for key, value in context.items() if key not in ('canonical', 'targets')}
+    base['canonical'] = {'draft_version': (context.get('canonical') or {}).get('draft_version')}
+
+    def once(target):
+        return {**target, 'values': {key: value for key, value in (target.get('values') or {}).items()
+                                     if key not in BULLET_TEXT_FIELDS}}
+
+    def brief(target):
+        item = once(target)
+        item.pop('bullets', None)
+        item.pop('excluded_bullets', None)
+        item['brief'] = True
+        return item
+
+    modes = ['full' if target.get('target_ref') == selected else 'once' for target in targets]
+
+    def build():
+        packed = [target if mode == 'full' else once(target) if mode == 'once' else brief(target)
+                  for mode, target in zip(modes, targets)]
+        return {**base, 'targets': packed}
+
+    result = build()
+    if budget is not None:
+        for index in range(len(targets) - 1, -1, -1):
+            if _json_size(result) <= budget:
+                break
+            if modes[index] == 'once':
+                modes[index] = 'brief'
+                result = build()
+    return result
+
+
 def validate_proposal(payload, context, *, maximum_output_bytes):
     if not isinstance(payload, dict) or set(payload) != set(SYNTHESIS_SCHEMA["required"]):
         raise SynthesisError("invalid_output")
@@ -773,6 +822,15 @@ unknown dates. New or changed facts require source_refs from supplied literal un
 (including the current member turn); do not cite generated prose as evidence.
 For new content preserve every substantive supplied unit in its intended record,
 full bullets and limitations. Never shorten complete source material into a summary.
+The identity fields (role_title, employer_name, degree_name, institution_name, and a credential's name and
+issuer, and a skill's name) must use the member's own words exactly as written in the cited units: do not add
+a name the member did not write in these units (an employer or school mentioned in another message, a
+full product name), do not expand or correct abbreviations, and if the units do not name the employer, school
+or issuer, omit that field instead of guessing it.
+Set education_status completed only when the member says they finished, earned or graduated; set a credential's
+completion_status completed only when the member says they hold or earned it; leave both out otherwise.
+For a degree or certificate the member says they finished, a single year is the completion (end_date), never the
+start_date.
 Genuine credentials belong in Credentials; courses belong in Education. Ask when
 that distinction is unclear. For credentials resume_credential_wording holds the
 complete private qualification and limitations shown under that exact credential.
@@ -968,10 +1026,13 @@ class PrivateResumeAssistanceService:
         if (payload['expected_draft_version'] != canonical['draft_version']
                 or digest(canonical) != digest(context.get('canonical'))):
             raise conversation_rejection('changed', 'context_revalidation', 'canonical_before_dispatch')
-        if len(json.dumps(context, ensure_ascii=False).encode('utf-8')) > self.limits['maximum_input_bytes']:
+        # The model reads each saved item once, the selected record first and in full; the server keeps
+        # the complete context for its own checks. Only the model-facing size counts against the limit.
+        model_context = model_facing_context(context, budget=self.limits['maximum_input_bytes'])
+        if _json_size(model_context) > self.limits['maximum_input_bytes']:
             raise SynthesisError('input_too_large')
         result = provider(owner=owner, request_id=request_id, instructions=CONVERSATION_PROMPT,
-            task=statement, context=context, response_schema=CONVERSATION_SCHEMA)
+            task=statement, context=model_context, response_schema=CONVERSATION_SCHEMA)
         if not isinstance(result, dict) or set(result) != {'response', 'next_question', 'operations'}:
             raise conversation_rejection('invalid_output', 'response_contract', 'shape')
         if len(json.dumps(result, ensure_ascii=False).encode('utf-8')) > self.limits['maximum_output_bytes']:

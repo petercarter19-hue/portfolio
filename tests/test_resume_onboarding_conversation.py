@@ -423,7 +423,7 @@ class ConversationTests(unittest.TestCase):
         old = self.intake.get_workspace(self.owner)['pending_proposals'][0]
         self.behavior = lambda ctx: {'response': 'Updated the first role.', 'next_question': '', 'operations': [
             operation(ctx, ref='proposal:' + old['proposal_key'], bullets=[{'action': 'revise', 'field': 'summary',
-                'index': 1, 'expected_text': 'Coordinated ten people; not their manager.',
+                'index': 0, 'expected_text': 'Coordinated ten people; not their manager.',
                 'replacement': 'Coordinated eight people; not their manager.'}])]}
         result = self.turn('Change the first role to eight people.')
         self.assertIn('A pilot reduced time 32%; not independently verified.', str(self.calls[-1]['context']))
@@ -441,6 +441,53 @@ class ConversationTests(unittest.TestCase):
             'outcome': 'new', 'confidence': 'certain'}])
         self.intake.submit(self.owner, add_request(attachments=[{'client_key': 'doc', 'kind': 'document',
             'declared_content_type': 'text/plain', 'filename': 'resume.txt'}]), files={'doc': FakeUpload('text/plain', text.encode())})
+
+    def test_a_twenty_year_history_of_thirty_saved_items_still_gets_a_turn_with_each_item_read_once(self):
+        # The saved items used to be packed about six times over (canonical copy, targets, text twice), so a long career
+        # stopped the Guide at about 25 items. Each is now sent once, the selected record first and in full.
+        from services.resume_intake_runtime import _json_size
+        sentence = 'Led the unit through a staffing change and kept every patient and family informed and safe. '
+        keys = []
+        for index in range(6):
+            keys.append(self.seed('role', role_title='Nurse role %d' % index, employer_name='Hospital %d' % index, location_text='City',
+                                  summary='Marker%dStart. ' % index + sentence * 8 + 'Marker%dEnd.' % index,
+                                  start_date='2004-01-01', end_date='2008-01-01', date_precision='month', current_role=False))
+        for index in range(4):
+            self.seed('education', title='Degree %d' % index, institution_name='School %d' % index, education_status='completed',
+                      summary='Education text %d. ' % index + sentence * 2, end_date='2011-01-01', date_precision='year')
+        for index in range(20):
+            self.seed('skill', name='Skill %d' % index, summary='Skill text %d. ' % index + sentence * 2)
+        snapshot = self.intake._load(self.owner)
+        canonical = self.assistance._context(self.owner, [], allow_empty=True)
+        whole = self.intake._conversation_view(snapshot, canonical)
+        self.assertGreater(_json_size(whole), self.assistance.limits['maximum_input_bytes'] // 2)
+        self.behavior = lambda ctx: {'response': 'Which detail should change?', 'next_question': '', 'operations': []}
+        self.turn('Please add the location Portland to this role.', 'record:' + keys[5])
+        sent = self.calls[-1]['context']
+        text = json.dumps(sent, ensure_ascii=False)
+        self.assertLess(len(text.encode('utf-8')), self.assistance.limits['maximum_input_bytes'])
+        self.assertEqual(len([t for t in sent['targets'] if t['target_ref'].startswith('record:')]), 30)
+        for index in range(5):
+            self.assertEqual(text.count('Marker%dStart' % index), 1, index)   # sent once, not once per copy
+        self.assertEqual(text.count('Marker5Start'), 2)                       # the selected record: its values and its numbered lines
+        self.assertNotIn('sources', sent['canonical'])
+
+    def test_when_the_budget_is_tight_the_selected_record_stays_full_and_the_rest_shrink_to_identity(self):
+        from services.resume_intake_runtime import model_facing_context, _json_size
+        long_text = 'word ' * 400
+        targets = [{'target_ref': 'record:%d' % n, 'record_type': 'role',
+                    'values': {'role_title': 'Role %d' % n, 'employer_name': 'Employer %d' % n, 'summary': long_text},
+                    'bullets': {'summary': [{'index': 0, 'text': long_text}]}, 'excluded_bullets': []} for n in range(30)]
+        context = {'canonical': {'draft_version': 3, 'sources': ['x' * 5000]}, 'targets': targets,
+                   'selected_target': 'record:3', 'materials': [], 'prior_turns': []}
+        packed = model_facing_context(context, budget=12000)
+        self.assertLessEqual(_json_size(packed), 12000)
+        by_ref = {t['target_ref']: t for t in packed['targets']}
+        self.assertIn('summary', by_ref['record:3']['values'])
+        self.assertTrue(by_ref['record:3']['bullets']['summary'])
+        self.assertTrue(by_ref['record:29'].get('brief'))
+        self.assertEqual(by_ref['record:29']['values']['role_title'], 'Role 29')
+        self.assertNotIn('summary', by_ref['record:29']['values'])
 
     def test_a_turn_reads_the_latest_upload_not_the_whole_workspace(self):
         # A workspace with many earlier unfinished uploads must not make every turn too large:
@@ -650,7 +697,7 @@ class ConversationTests(unittest.TestCase):
         self.ports.excluded.add(key)
         self.turn('What could I add?')
         self.assertNotIn('Coordinated ten people', str(self.calls[-1]['context']))
-        self.assertEqual(self.calls[-1]['context']['canonical']['sources'], [])
+        self.assertEqual([t for t in self.calls[-1]['context']['targets'] if t['target_ref'].startswith('record:')], [])
 
     def test_excluded_credential_limitation_blocks_parent_edit_before_dispatch(self):
         from tests.test_resume_onboarding_coverage import ResumeOnboardingCoverageTests
@@ -956,11 +1003,10 @@ class ConversationTests(unittest.TestCase):
             elif case == 'source_refs_required': row['source_refs'] = []
             elif case == 'source_ref_binding': row['source_refs'][0]['unit_id'] = 'MODEL_PRIVATE_MARKER'
             elif case == 'presentation_section': row['presentation_section'] = 'MODEL_PRIVATE_MARKER'
-            elif case == 'identity_not_literal': row['values'][0]['value'] = 'MODEL_PRIVATE_MARKER'
             elif case == 'operation_shape': row['private_payload'] = 'MODEL_PRIVATE_MARKER'
             return {'response':'MODEL_PRIVATE_MARKER','next_question':'','operations':[row]}
         for reason in ('value_field','value_null','value_duplicate','source_refs_required',
-                'source_ref_binding','presentation_section','identity_not_literal','operation_shape'):
+                'source_ref_binding','presentation_section','operation_shape'):
             with self.subTest(reason=reason):
                 self.setUp(); self.seed()
                 self.behavior = lambda ctx, reason=reason: invalid(ctx, reason)
@@ -968,6 +1014,79 @@ class ConversationTests(unittest.TestCase):
                     'operation_contract', reason)
                 self.assertNotIn('PRIVATE_MARKER', json.dumps(meta['failure_diagnostic']))
                 self.assertNotIn('private_payload', meta)
+
+    def test_one_sentence_backing_several_new_skills_is_not_pasted_into_each_of_them(self):
+        text = 'My main skills are Go, Python and Kafka.'
+        def add(ctx):
+            return {'response': 'Review the skills.', 'next_question': '', 'operations': [
+                operation(ctx, op='add_content', record_type='skill', section='Skills', values={'name': name})
+                for name in ('Go', 'Python', 'Kafka')]}
+        self.behavior = add
+        proposals = self.turn(text)['proposals']
+        self.assertEqual([p['proposed_values']['name'] for p in proposals], ['Go', 'Python', 'Kafka'])
+        self.assertTrue(all('summary' not in p['proposed_values'] for p in proposals))
+        # a single skill from its own sentence still keeps the member's exact words
+        self.setUp()
+        self.behavior = lambda ctx: {'response': 'Review the skill.', 'next_question': '', 'operations': [
+            operation(ctx, op='add_content', record_type='skill', section='Skills', values={'name': 'Go'})]}
+        single = self.turn('I use Go every day for services.')['proposals'][0]
+        self.assertEqual(single['proposed_values']['summary'], 'I use Go every day for services.')
+
+    def test_a_name_the_member_did_not_write_is_left_empty_and_flagged_not_a_reason_to_discard_the_answer(self):
+        # The model brought "Northfield University" in from another message. The member's words only say "the university
+        # tutoring center": the answer is kept, that one detail is left for the member, and nothing is invented.
+        text = 'From 2024 to 2025 I tutored first-year students in introductory accounting through the university tutoring center.'
+        def add(ctx):
+            return {'response': 'Review the tutoring role.', 'next_question': '', 'operations': [operation(
+                ctx, op='add_content', record_type='role', section='Experience',
+                values={'role_title': 'Tutor', 'employer_name': 'Northfield University Tutoring Center'})]}
+        self.behavior = add
+        result = self.turn(text)
+        proposal = result['proposals'][0]
+        self.assertEqual(proposal['proposed_values']['role_title'], 'Tutor')
+        self.assertNotIn('employer_name', proposal['proposed_values'])
+        self.assertEqual(proposal['proposed_values']['summary'], text)
+        stored = self.intake.repository.load_owner(self.owner)['proposals'][proposal['proposal_key']]
+        self.assertEqual(stored['resume_conversation_v1']['uncertain_fields'], ['employer_name'])
+
+    def test_a_name_assembled_from_scattered_words_is_not_supported(self):
+        # "senior" and "director" are both in the sentence, but they are not a title the member wrote.
+        text = 'Every week I prepared reports for the senior team and sent them to the director of the bank.'
+        def add(ctx):
+            return {'response': 'Review the role.', 'next_question': '', 'operations': [operation(
+                ctx, op='add_content', record_type='role', section='Experience',
+                values={'role_title': 'Senior Director', 'employer_name': 'Senior Bank'})]}
+        self.behavior = add
+        proposal = self.turn(text)['proposals'][0]
+        self.assertNotIn('role_title', proposal['proposed_values'])
+        self.assertNotIn('employer_name', proposal['proposed_values'])
+        stored = self.intake.repository.load_owner(self.owner)['proposals'][proposal['proposal_key']]
+        self.assertEqual(sorted(stored['resume_conversation_v1']['uncertain_fields']), ['employer_name', 'role_title'])
+
+    def test_filler_words_between_the_members_words_and_a_reorder_inside_one_phrase_are_supported(self):
+        cases = [('I worked as head of the kitchen at Lakeview Bistro.', 'Head of the Kitchen'),   # in order, filler between
+                 ('My skills are pivot tables in Excel, and QuickBooks.', 'Excel pivot tables'),    # reordered inside one phrase
+                 ('I was the director of the bank branch for six years.', 'Director of the Bank')]
+        for text, name in cases:
+            with self.subTest(name=name):
+                self.setUp()
+                def add(ctx, name=name):
+                    return {'response': 'Review.', 'next_question': '', 'operations': [operation(
+                        ctx, op='add_content', record_type='skill', section='Skills', values={'name': name})]}
+                self.behavior = add
+                proposal = self.turn(text)['proposals'][0]
+                self.assertEqual(proposal['proposed_values']['name'], name)
+
+    def test_a_name_whose_words_are_all_in_the_members_words_is_accepted(self):
+        text = 'My skills are pivot tables in Excel, and QuickBooks.'
+        def add(ctx):
+            return {'response': 'Review the skill.', 'next_question': '', 'operations': [operation(
+                ctx, op='add_content', record_type='skill', section='Skills', values={'name': 'Excel pivot tables'})]}
+        self.behavior = add
+        proposal = self.turn(text)['proposals'][0]
+        self.assertEqual(proposal['proposed_values']['name'], 'Excel pivot tables')
+        stored = self.intake.repository.load_owner(self.owner)['proposals'][proposal['proposal_key']]
+        self.assertNotIn('uncertain_fields', stored['resume_conversation_v1'])
 
     def test_diagnostic_failure_after_one_valid_operation_keeps_all_unapproved(self):
         self.seed()
