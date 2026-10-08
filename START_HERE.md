@@ -126,14 +126,9 @@ sparse control singleton for a clean
 `work/YYYY-MM-DD-delivery-activation-<slug>` branch, then add exactly one
 `docs/governance/lane_claims/<PACKAGE-ID>.json` file:
 
-The unrevoked standing bounded Workshop completion decision in
-`docs/governance/DECISIONS.md` also satisfies this selection gate for only a
-concrete minimum repository follow-up needed to complete the already accepted
-Workshop use-disclosure outcome while its parent claim is active or paused.
-Each child claim must cite the exact standing reference and failed gate. The
-decision expires at parent close or Pete's revocation and grants none of the
-separately gated production, schema, destructive, identity/privacy-policy,
-credential, spending, external-operation, or material-visual authorities.
+The 2026-08-27 standing bounded Workshop completion decision in
+`docs/governance/DECISIONS.md` expired when its parent claim closed on
+2026-08-27. It no longer satisfies this selection gate.
 
 ```bash
 python scripts/worktree_lifecycle.py control --package <PACKAGE-ID> --task-ref <WRITER-REF> --branch work/YYYY-MM-DD-delivery-activation-<slug> --base origin/main --execute
@@ -217,17 +212,15 @@ Merge that control PR before implementation merge.
   unproved or directory-like additions, any removal/replacement/reorder or
   other field/file change, same-claim overlap, and exact/parent/child collisions
   in the full current claim set.
-- Release surfaces: this dormant Protected operation is available only after
-  accepted `CURRENT_LANES.json` schema 4 and machine-local registry schema 2.
-  Candidate A does not perform that cutover. At a later authorized boundary,
-  qualify every active durable writer as quiescent and use
-  `migrate-registry-v2` once; it binds the actual caller to `--task-ref`, refuses
-  candidate delivery-tool bytes and pending state, creates an exact-byte
-  schema-1 backup, preserves every custody record, seals the schema-2 digest,
-  and atomically validates the one live registry. Recovery refuses if that
-  deterministic backup is missing or changed. The separately reviewed index
-  cutover then enables the
-  capability.
+- Release surfaces: this Protected operation is live. It requires
+  `CURRENT_LANES.json` schema 4 advertising `safe_custody_v1` (accepted on main
+  by PR 1073, 2026-09-16) and machine-local registry schema 2. A machine whose
+  registry is still schema 1 first qualifies every active durable writer as
+  quiescent and uses `migrate-registry-v2` once; it binds the actual caller to
+  `--task-ref`, refuses candidate delivery-tool bytes and pending state,
+  creates an exact-byte schema-1 backup, preserves every custody record, seals
+  the schema-2 digest, and atomically validates the one live registry.
+  Recovery refuses if that deterministic backup is missing or changed.
 
   The active writer leases `_control` on
   `work/YYYY-MM-DD-delivery-release-surfaces-<slug>` and, from its pristine
@@ -462,6 +455,10 @@ allowed only in a manually queued main run with all three values:
 - `forceProductionDeploy=true`;
 - `manualProductionSourceVersion=<exact 40-character main SHA>`;
 - `productionAuthorizationReference=<Pete's explicit decision reference>`.
+
+There is no blanket per-release approval: Pete authorizes a release
+individually or within an assigned outcome and says case by case when he must
+approve it himself. The reference records that decision.
 
 Schema operations remain manual, separately gated, and cannot share a web
 deployment run. Merge, deployment, schema, enablement, rollback, and live

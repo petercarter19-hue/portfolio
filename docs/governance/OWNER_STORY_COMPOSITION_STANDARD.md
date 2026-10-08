@@ -1,6 +1,6 @@
 # PeerSlate Owner Story Composition Standard
 
-_Owner decision: 2026-07-18. Maintained by the ChatGPT Work manager lane._
+_Owner decision: 2026-07-18. Maintained by the package manager Pete assigns._
 
 ## Purpose and authority
 
@@ -151,7 +151,8 @@ Before implementation begins, the package must provide:
 - a named production-intent visual authority and editable source;
 - negative tests for cross-user access, stale overwrite, auto-publication,
   canonical-content duplication, and inaccessible drag-only behavior; and
-- Pete plus ChatGPT Work design approval before an implementation writer starts.
+- Pete's approval of the design, from the designer he chooses, before an
+  implementation writer starts.
 
 ## Explicitly out of scope for this decision
 

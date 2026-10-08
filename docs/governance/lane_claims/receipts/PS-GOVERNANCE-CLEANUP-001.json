@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-GOVERNANCE-CLEANUP-001",
+  "candidate_sha": "53595ef7062118faf6aca0f9a17857855525c294",
+  "review_type": "independent",
+  "reviewer_ref": "agent:claude/2026-10-07/allowance-reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-10-08T05:20:26Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-GOVERNANCE-CLEANUP-001.md"
+}

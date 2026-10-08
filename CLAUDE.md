@@ -14,15 +14,16 @@ Roadmap. Do not revive historical parallel state files.
 
 # Claude / Claude Code instructions
 
-Claude may manage, architect, implement, or independently review only the role
-the active package assigns. A complete authorized transfer may give an accepted
-Claude manager the bounded package through ordinary closeout without a Codex
-supervisor. Repository writer, review, production, and credential authority
-remain separate.
+Claude has the same standing as any other assigned platform. It may manage,
+architect, implement, review, merge, and, with Pete's release authorization,
+release in the role the active package assigns, through ordinary closeout and
+without a Codex supervisor. Repository writer, review, production, and
+credential authority remain separate.
 
-Before a major package, confirm the effective Claude model and mode with
-`/model` and `/status`. Record unavailable settings honestly. Do not switch
-models or modes merely to repeat accepted work.
+Use Claude Opus 5.5 or Claude Sonnet 5.5 only. Never use Haiku. Use Fable only
+when Pete explicitly asks. Before a major package, confirm the effective model
+and mode with `/model` and `/status`. Record unavailable settings honestly. Do
+not switch models or modes merely to repeat accepted work.
 
 A real ownership transfer proves the exact Azure repository and branch source,
 the receiving Claude task and stable organization/project/account context

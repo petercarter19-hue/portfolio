@@ -1,6 +1,6 @@
 # PeerSlate AI Model and Role Routing
 
-**Operational standard:** September 12, 2026
+**Operational standard:** September 12, 2026; owner decisions applied October 7, 2026
 
 This is the central authority for model versions and stable delivery roles.
 Packages name roles, not model versions. Verify the available model and resolved
@@ -38,7 +38,9 @@ alone does not establish independent review.
   records its manager at its next handoff. The manager owns product decisions,
   scope, sequencing, shared-governance reservations, custody and routing of
   locked visual authority, conflict resolution, and final scope/product
-  readiness.
+  readiness. Record the manager in the package's fixed evidence file, or in
+  the handoff for a transfer; claims carry no manager field. A self-managed
+  package records that its sole writer is also its manager.
 - The architect is used only for new or materially changed architecture. Preserve
   its accepted package; a second architect is an escalation, not normal process.
 - The writer owns implementation, complete-diff self-review, corrections, tests,
@@ -71,6 +73,14 @@ preference.
 | Repository and technical truth | **Assigned capable environment** | The assigned manager may own repository evidence, code, tests, protected operations, Azure PR/pipeline truth and release reconciliation through package completion. |
 | Complete package on another platform | **Assigned external-platform manager** | Cursor, Claude or another capable platform may manage and deliver the whole assigned package end to end. No hidden Codex manager or Codex supervisory approval is required. |
 
+Every assigned, access-verified capable platform has equal standing: it may
+architect, build, review, merge, and, with Pete's release authorization,
+release within its assignment. There is no platform-exclusive gate. Codex
+remains the overall coordinator for now (Pete, 2026-10-07); coordination grants
+no exclusive technical privilege. Whether review must cross companies is
+undecided, so no provider pairing is required; risk-based independent review
+still applies.
+
 For packages assigned to OpenAI, Codex is the default manager when the primary
 outcome is repository truth. This default does not require an external-platform
 package to transfer management or obtain Codex supervision. Claude Co-Work
@@ -94,14 +104,14 @@ choices: verify model availability, tools, repository access and context in the
 actual environment. Azure remains authoritative; a cloud agent does not inherit
 local worktrees, iCloud files, browser sessions or task continuity automatically.
 
-Original ChatGPT is the sole creator of new or materially revised
-production-intent visual authority. It works directly with Pete during visual
-revisions, then returns the exact accepted artifacts and state set to the
-package manager. Visual assignment does not make Original ChatGPT the package
-manager, architect, writer, reviewer, or release owner. ChatGPT Work may gather
-and redact current signed-in evidence, brief the visual specialist, and compare
-the accepted result with the live surface; it may not originate or substitute
-material visual direction.
+Pete chooses who creates new or materially revised production-intent visual
+authority, and Pete approves the images. The designer works directly with Pete
+during visual revisions, then returns the exact accepted artifacts and state
+set to the package manager. Visual assignment does not make the designer the
+package manager, architect, writer, reviewer, or release owner. Any assigned
+environment may gather and redact current signed-in evidence, brief the
+designer, and compare the accepted result with the live surface; only the
+designer Pete chooses may originate material visual direction.
 
 A package may name Claude or Codex as its architect. Architecture does not grant
 manager or writer authority. Specialists return their accepted artifacts and
@@ -337,13 +347,17 @@ evidence. Do not create a separate benchmark or monitoring agent.
 | Consequential architecture or cross-package decision | **GPT-6.1 Sol, High** | Architecture or coordination whose decision materially affects multiple systems or packages |
 | Difficult unresolved debugging or integration | **GPT-6.1 Sol, Medium or High** | Use only when the unresolved cause or integration risk needs broader reasoning; state that reason first |
 | Consequential independent security, privacy or architecture review | **Fresh GPT-6.1 Sol, Extra High** | Exact-candidate review of the defined consequential risk |
-| Final independent review, including routine bounded final review | **Fresh GPT-6.1 Sol, Extra High** | Final exact-candidate independent review |
+| Final independent review when one is assigned, including a routine bounded final review | **Fresh GPT-6.1 Sol, Extra High** | Final exact-candidate independent review |
 | Other independent reviews | **Fresh GPT-6.1 Sol, Extra High** | Focused independent review of the assigned scope |
 | Routine release or closeout execution | **GPT-6.1 Sol, High** | Ordinary authorized delivery execution |
 | Demanding well-bounded implementation | **GPT-6.1 Sol, Extra High** | Selectively for an unusually demanding implementation with clear boundaries; state the concrete need first |
 
 Site and package managers use GPT-6.1 Sol Extra High. Discuss an exception with
 Pete only after explaining the concrete need.
+
+These rows choose the model once a role is assigned. None of them creates a
+review requirement; the mandatory independent-review triggers above, the
+package, or Pete decide whether a review happens.
 
 At supported launch or session change, select the assigned model and effort and
 verify the effective runtime setting. Handoff labels, inherited parent settings,
@@ -395,13 +409,25 @@ Recheck changing availability and pricing when a decision depends on them.
 
 | Stable role | Current choice | Use |
 |---|---|---|
-| Architect | **Claude Fable 5** | New or materially changed product, data, privacy, or technical architecture |
-| Implementer | **Claude Sonnet 5** | Bounded Claude Code implementation, tests, documentation, corrections, and closeout |
-| Independent reviewer | **Claude Opus 5** | Exact-SHA, risk-triggered review and audit findings; version set by the owner decision recorded in PS-SLATE-STUDIO-IA-001 doc 16 §5 (2026-08-01) |
+| Architecture or independent review | **Claude Opus 5.5, Extra High** | New or materially changed architecture, and exact-SHA review or audit |
+| Management or known-cause implementation | **Claude Opus 5.5, High** | Package management, Claude Code implementation, tests, debugging, self-review, corrections, and closeout |
+| Small or routine change | **Claude Sonnet 5.5, Medium** | Bounded documentation, small fixes, and evidence collection |
 
-In Claude Code, confirm the resolved model with `/model` and `/status` before a
-major package or audit. Do not treat a remembered marketing nickname or an
-`opusplan` alias as evidence that the required role is active.
+Claude assignments use Claude Opus 5.5 or Claude Sonnet 5.5 only. Never use
+Claude Haiku. Use Claude Fable only when Pete explicitly asks for it (Pete,
+2026-10-07). In Claude Code, confirm the resolved model with `/model` and
+`/status` before a major package or audit. Do not treat a remembered marketing
+nickname or an `opusplan` alias as evidence that the required role is active.
+
+## Product AI direction
+
+Pete's 2026-10-07 direction: routine product AI features use Microsoft Foundry
+models such as Luna. Claude Sonnet 5.5 is the intended model for the two
+hardest features, the onboarding Guide and Ask Member AI, once credits and
+onboarding acceptance allow. New product work selects no Haiku model; existing
+Haiku calls remain until a governed package replaces them. This is direction
+only: each provider or model change is its own governed package, and this
+document changes no runtime model.
 
 ## Delivery routes
 
@@ -444,50 +470,52 @@ real architecture question.
 ## Visual workflow
 
 ```text
-Original ChatGPT creates the complete production-intent visual and state set
-→ Pete selects and locks one exact durable authority
+The designer Pete chooses creates the production-intent visual and state set
+→ Pete approves the images and locks one exact durable authority
 → manager records interaction, truth, and accessibility contract
 → package records whether Pete or the assigned writer/agent is the visual inspector
 → if Pete is not personally inspecting: writer reviews the exact authority,
-  implements one bounded pass, renders the matching state/viewport, compares,
-  records mismatches, refines, and repeats without a fixed pass limit
-→ agent-run path reaches exact parity and an empty mismatch register at every
-  required state/viewport
+  implements one bounded pass, renders the matching state/viewport, compares
+  side by side, refines, and repeats without a fixed pass limit
+→ agent-run path ends with no unresolved difference at every required
+  state/viewport
 → if Pete is personally inspecting: writer returns renders, implements Pete's
   correction directions, and records Pete's final visual decision
 → one reviewer only if a defined risk trigger applies
-→ same writer corrects findings and reopens the compare-refine loop for any
-  visual-affecting change when the agent-run path applies
+→ same writer corrects findings and compares again after any visual-affecting
+  change when the agent-run path applies
 → Pete reviews the corrected real build for final visual acceptance
 → Azure release evidence and live verification
 ```
 
-Original ChatGPT is the sole visual-creation surface for new or materially
-revised PeerSlate authority. This rule covers concepts, mockups, storyboards,
+Pete chooses who creates new or materially revised PeerSlate visual authority
+and approves the images. This covers concepts, mockups, storyboards,
 responsive and state sets, style exploration, and image generation or editing.
-Authorities Pete locked before 2026-07-24 remain valid until materially revised.
-Codex and Claude implementers may translate the exact locked authority into
-code, capture implementation screenshots, report parity, usability, truth, or
-accessibility findings, and make documented non-material adaptations for
-semantic structure, focus, WCAG contrast, touch targets, reduced motion,
-truthful state wiring, or text reflow. Those evidence and implementation
-activities are not new visual design. ChatGPT Work, Codex, Claude Chat,
-Co-Work, Code, and Design may not originate or substitute the visual authority.
-A change to composition, hierarchy, dominant object/action, typography family,
-color language, or responsive interaction model is material and returns to
-Original ChatGPT and Pete for a revised exact lock.
+Authorities Pete locked earlier remain valid until materially revised.
+Implementers may translate the exact locked authority into code, capture
+implementation screenshots, report parity, usability, truth, or accessibility
+findings, and make documented non-material adaptations for semantic structure,
+focus, WCAG contrast, touch targets, reduced motion, truthful state wiring, or
+text reflow. Those evidence and implementation activities are not new visual
+design. An agent that Pete has not chosen as the designer may not originate or
+substitute the visual authority. A change to composition, hierarchy, dominant
+object/action, typography family, color language, or responsive interaction
+model is material and returns to Pete for a revised exact lock.
 
 When implementation is based on an approved mockup, that exact mockup remains
 the primary visual authority throughout delivery; neither the current build nor
 implementation screenshots replace it. Record who performs the visual
-inspection. When Pete is not personally performing it, the writer must run the
-continuous compare-refine loop in `OWNER_VISUAL_INTEGRITY_STANDARD.md` after
-every bounded pass and after every later visual-affecting change. Exact
-comparable-state and comparable-viewport parity with an empty mismatch register
-is required for an agent-run `Pass`; an unresolved mismatch is `Conditional` or
-`Fail`. When Pete personally performs the inspection, the writer implements his
-correction directions, returns updated renders, and records Pete's final visual
-decision without duplicating his inspection unless asked. Functional
+inspection. When Pete is not personally performing it, the writer compares the
+real build with the authority side by side, as
+`OWNER_VISUAL_INTEGRITY_STANDARD.md` describes, after every bounded pass and
+after every later visual-affecting change. It records only unresolved or
+intentionally adapted differences; there is no mandatory pass count or
+separate mismatch ledger. An agent-run `Pass` requires no unresolved difference
+at the comparable states and viewports; an unresolved difference is
+`Conditional` or `Fail`. When Pete personally performs the inspection, the
+writer implements his correction directions, returns updated renders, and
+records Pete's final visual decision without duplicating his inspection unless
+asked. Functional
 completion, passing tests, resemblance, time pressure, or "polish later" cannot
 replace visual acceptance under either path.
 
@@ -531,18 +559,19 @@ ordinary delivery without a hidden Codex supervisor or active originating task.
   the workflow cadence and one fresh reviewer.
 - **PS-AI-OPS-009:** Packages use stable role names; this document is the
   periodically verified model-version authority.
-- **PS-AI-OPS-010:** An assigned external platform may manage and deliver a
-  complete package end to end. Cross-platform review addresses a bounded
-  independent risk question; it does not duplicate management or delivery.
-- **PS-AI-OPS-011:** Original ChatGPT is the sole creator of new or materially
-  revised production-intent visual authority. Existing Pete-locked authorities
-  remain valid; ChatGPT Work and implementation/review agents may compare and
-  make documented non-material accessibility, truth, and reflow adaptations,
-  but may not create a competing or substitute design.
+- **PS-AI-OPS-010:** Any assigned capable platform has equal standing and may
+  manage and deliver a complete package end to end without another platform's
+  supervision. Cross-platform review addresses a bounded independent risk
+  question; it does not duplicate management or delivery.
+- **PS-AI-OPS-011:** Pete chooses who creates new or materially revised
+  production-intent visual authority and approves the images. Existing
+  Pete-locked authorities remain valid; other implementation and review agents
+  may compare and make documented non-material accessibility, truth, and reflow
+  adaptations, but may not create a competing or substitute design.
 - **PS-AI-OPS-012:** An approved mockup remains the primary authority throughout
   implementation and review. When Pete is not personally performing the visual
-  inspection, the writer repeatedly renders, compares, records, refines, and
-  rechecks without a fixed pass limit until exact parity; any later
-  visual-affecting change reopens the loop. When Pete personally inspects, the
+  inspection, the writer repeatedly renders, compares, refines, and rechecks
+  without a fixed pass limit until no unresolved difference remains; any later
+  visual-affecting change is compared again. When Pete personally inspects, the
   writer implements his corrections and records his final visual decision
   without a duplicate autonomous inspection unless requested.

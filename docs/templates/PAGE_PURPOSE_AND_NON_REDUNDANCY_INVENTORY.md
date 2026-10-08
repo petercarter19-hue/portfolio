@@ -1,8 +1,10 @@
 # Page Purpose and Non-Redundancy Inventory
 
-Use this record before ChatGPT creates or materially revises production-intent
-visual authority. It is required by the V0/V1 gates in
-`docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md`.
+Use this record before the designer Pete chooses creates or materially revises
+production-intent visual authority, when
+`docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md` calls for it: the page is
+crowded, its purpose is disputed, or the owner or package asks for
+item-by-item disposition.
 
 ## A. Scope and approval
 

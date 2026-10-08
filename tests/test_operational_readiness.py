@@ -1719,20 +1719,20 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
         # record release evidence with [skip ci] unless this test was run
         # locally against the exact record being merged.
         self.assertIn(
-            'deployed_main_commit: "ebc702870abbc0b56240cb43a7f34fa06d251fcd"',
+            'deployed_main_commit: "27d6fdb165acfd610b21e86079944e956aae3fdc"',
             baseline,
         )
-        self.assertIn('deployed_pipeline: 1761', baseline)
+        self.assertIn('deployed_pipeline: 4259', baseline)
         expected_release = release_id_for_build(
-            'ebc702870abbc0b56240cb43a7f34fa06d251fcd',
-            '1761',
+            '27d6fdb165acfd610b21e86079944e956aae3fdc',
+            '4259',
         )
         self.assertIn(f'/healthz release {expected_release}', baseline)
         self.assertIn(
-            'application_behavior_commit: "ebc702870abbc0b56240cb43a7f34fa06d251fcd"',
+            'application_behavior_commit: "27d6fdb165acfd610b21e86079944e956aae3fdc"',
             baseline,
         )
-        self.assertIn('application_behavior_pipeline: 1761', baseline)
+        self.assertIn('application_behavior_pipeline: 4259', baseline)
         self.assertIn('PS-AZURE-RELEASE-RELIABILITY-001', baseline)
         self.assertIn('PS-DELIVERY-RESET-001', baseline)
         self.assertIn('PS-GOV-LEAN-001', baseline)
@@ -1744,7 +1744,7 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
     def test_authenticated_workshop_fg_final_refusal_remains_pending_and_pre_mutation(self):
         baseline = self.read('docs/governance/CURRENT_BASELINE.yaml')
         marker = 'authenticated_workshop_fg_proof:\n'
-        self.assertIn('updated_at: "2026-08-30"', baseline)
+        self.assertIn('updated_at: "2026-10-07"', baseline)
         self.assertIn(
             'authenticated private two-member live proof remains pending',
             baseline,

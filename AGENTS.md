@@ -13,11 +13,9 @@
 > to change its claim. New work requires Pete's selected outcome and the
 > one-claim activation flow.
 
-The unrevoked standing bounded Workshop decision in
-[DECISIONS.md](docs/governance/DECISIONS.md) satisfies that selection gate only
-for a concrete minimum repository follow-up to the accepted use-disclosure
-outcome while its parent claim is active or paused. Follow the exact citation,
-expiry, and excluded-authority rules in [START_HERE.md](START_HERE.md).
+The 2026-08-27 standing bounded Workshop decision in
+[DECISIONS.md](docs/governance/DECISIONS.md) expired when its parent claim
+closed; it no longer satisfies that selection gate.
 
 ## Authority and trust
 
@@ -57,6 +55,9 @@ gates. Read only the package and specialist authority the chosen path triggers.
   `write_only`. A merge is repository truth, not deployment. Production,
   schema, configuration, enablement, rollback, and destructive actions require
   their separate exact authority. A claim never grants them.
+- Any assigned, access-verified capable platform has equal standing: it may
+  architect, build, review, merge, and, with Pete's release authorization,
+  release within its assignment. No platform needs another's supervision.
 - Follow [AI model and role routing](docs/AI_MODEL_AND_ROLE_ROUTING.md) for
   actual role capabilities. Overall audit manager, package manager, visual
   creator, architect, writer, reviewer, and release owner are distinct;
@@ -70,7 +71,7 @@ gates. Read only the package and specialist authority the chosen path triggers.
 | Trigger | Read |
 |---|---|
 | Shared behavior | [Site rules](docs/PEERSLATE_SITE_RULES.md) and the package. |
-| Material visual direction | [Visual integrity standard](docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md) and locked authority. ChatGPT creates materially revised production visual direction; writers implement it after owner acceptance. |
+| Material visual direction | [Visual integrity standard](docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md) and locked authority. Pete chooses who creates new or materially revised designs and approves the images; writers implement the approved authority. |
 | Story | [Story composition standard](docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md). |
 | Capture, Moment, or Journal | [PS-JOURNAL-001](docs/initiatives/PS-JOURNAL-001/README.md). |
 | Projects | [PS-PROJECTS-001](docs/initiatives/PS-PROJECTS-001/README.md). |

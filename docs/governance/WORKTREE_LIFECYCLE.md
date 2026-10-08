@@ -62,17 +62,17 @@ A hard process death can leave the lock directory behind. The tool does not
 guess that such a lock is stale or break it automatically; later mutation
 fails closed until the recorded owner and exact local state are investigated.
 
-### Dormant safe-custody schema and journals
+### Safe-custody schema and journals
 
-The accepted compatible tool reads current registry schema 1 and future strict
-schema 2. New scope-release and main-reconciliation operations require both
-schema 2 and `CURRENT_LANES.json` schema 4 advertising exactly
-`safe_custody_v1`; they also prove that both executing delivery/lifecycle tool
-files are byte-identical to fetched `origin/main`. Thus installing Candidate A
-does not enable a new operation.
+Safe custody is live: main's `CURRENT_LANES.json` has advertised schema 4 with
+exactly `safe_custody_v1` since PR 1073 (2026-09-16). The tool reads registry
+schema 1 and strict schema 2. Scope-release and main-reconciliation operations
+require both schema 2 and that index capability; they also prove that both
+executing delivery/lifecycle tool files are byte-identical to fetched
+`origin/main`.
 
-At a separately authorized quiescent boundary, `migrate-registry-v2` advances
-the existing registry under its mutex. It requires an exact qualification for
+On a machine whose registry is still schema 1, at a quiescent boundary,
+`migrate-registry-v2` advances the existing registry under its mutex. It requires an exact qualification for
 every active durable writer, no unresolved `pending` record, and released
 control custody. The actual native or registered caller must match `--task-ref`,
 and the executing lifecycle and supporting delivery tool must both match
@@ -83,8 +83,8 @@ registry with its exact schema-2 digest, validates, and atomically replaces the
 one live file. Already-migrated recovery also requires the deterministic backup
 to exist and hash to the recorded schema-1 digest. It
 never creates a second registry, clears ambiguity, or claims another host is
-qualified. Candidate B performs this migration and the separately reviewed
-repository-index cutover; neither happens in Candidate A.
+qualified. The repository-index cutover is complete; each machine still
+migrates its own local registry once.
 
 `scope-release prepare` binds package, actual writer, canonical durable
 worktree, implementation branch, pristine local/remote checkpoint C, prior

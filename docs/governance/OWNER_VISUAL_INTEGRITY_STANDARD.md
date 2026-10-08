@@ -30,14 +30,15 @@ makes no user-facing claim and reports that the experience remains unavailable.
 
 ## Authority
 
-- ChatGPT is the sole creator of new or materially revised PeerSlate production-intent visual
-  direction. Pete locks the selected durable authority before implementation.
+- Pete chooses who creates new or materially revised production-intent visual
+  direction and approves the images. Pete locks the selected durable authority
+  before implementation.
 - Existing Pete-locked authorities remain valid until materially revised.
-- Codex or Claude may implement a locked authority and make documented
+- Any implementer may implement a locked authority and make documented
   non-material changes needed for semantic structure, keyboard/focus, contrast,
   touch, reduced motion, truthful state wiring, or text reflow.
 - If such a correction would materially change the direction, return that
-  decision to ChatGPT and Pete. Do not invent a substitute visual.
+  decision to Pete. Do not invent a substitute visual.
 
 An approved mockup is a product promise, not loose inspiration. The production
 result must preserve its recognizable purpose, composition, interaction model,
@@ -74,7 +75,7 @@ Keep the result tasteful:
 If the result still feels generic or unintentionally flat, refine it in the same
 visual round. This adds no separate gate, artifact, pass count, or retrofit
 backlog. Existing locks remain valid until revised; the default then informs
-the new ChatGPT-created authority Pete locks.
+the new authority Pete locks.
 
 ## Lean material-visual workflow
 
@@ -94,10 +95,10 @@ purpose is disputed, or the owner/package asks for item-by-item disposition.
 
 ### 2. Lock direction
 
-ChatGPT creates enough desktop/mobile and critical-state material for the
-implementation to be unambiguous. Pete selects the exact authority. Do not
-require exhaustive mockups for states that established components already
-define and the page does not materially change.
+The designer Pete chooses creates enough desktop/mobile and critical-state
+material for the implementation to be unambiguous. Pete selects the exact
+authority. Do not require exhaustive mockups for states that established
+components already define and the page does not materially change.
 
 ### 3. Implement and compare
 

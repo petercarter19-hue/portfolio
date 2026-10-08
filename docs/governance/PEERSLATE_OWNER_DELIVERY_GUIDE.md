@@ -69,7 +69,9 @@ package's claim, receipt, and evidence paths remain permanently package-owned.
 - PR and automatic main runs build and test only.
 - A production web deployment requires a manual main run, the exact full main
   SHA, `forceProductionDeploy=true`, and a bounded reference to Pete's explicit
-  authorization.
+  authorization. There is no blanket per-release approval: Pete authorizes a
+  release individually or within an assigned outcome and says case by case
+  when he must approve it himself.
 - Schema actions are manual, separately checked, and cannot share a web
   deployment run.
 - Production operations are serialized through Azure environment locks.

@@ -76,8 +76,8 @@ Protected release and production-operation work also uses `PS-OPS-001`.
   projections separate.
 - Preserve truthful labels, accessible responsive behavior, and useful
   AI-unavailable paths.
-- ChatGPT creates materially revised production visual direction and the owner
-  accepts it; implementation agents adapt only within the locked authority.
+- Pete chooses who creates new or materially revised designs and approves the
+  images; implementation agents adapt only within the locked authority.
 
 ## Review and repository release
 
@@ -115,10 +115,13 @@ final squash message. Do not restart App Service merely to publish bookkeeping.
 
 ## Production boundary
 
-PR/main runs are CI-only. Production needs an exact main SHA, Pete's explicit
-reference, environment lock, rollback/disable path, and post-operation journey
-proof. Schema actions stay manual and mutually exclusive with web deployment.
-A green PR or merge is never live proof.
+PR/main runs are CI-only. Production needs an exact main SHA, a reference to
+Pete's explicit authorization, environment lock, rollback/disable path, and
+post-operation journey proof. There is no blanket per-release approval: Pete
+authorizes a release individually or within an assigned outcome and says case
+by case when he must approve it himself. Schema actions stay manual and
+mutually exclusive with web deployment. A green PR or merge is never live
+proof.
 
 ## Handoffs and closeout
 

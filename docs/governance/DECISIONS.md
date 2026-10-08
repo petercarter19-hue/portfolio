@@ -990,3 +990,34 @@ can push it all the way to deployment."
 - Every OpenAI role uses GPT-6.1 Sol. Site and package management, all independent reviews and demanding well-bounded implementation use Extra High. Known-cause implementation, consequential architecture and routine release use High; bounded evidence and documentation use Medium; difficult unresolved integration retains Medium or High according to stated risk.
 - The current table in `docs/AI_MODEL_AND_ROLE_ROUTING.md` owns the assignments. Apply them at supported launches and safe work boundaries, verify observable runtime settings, and preserve explicit package/session exceptions and task-specific holds.
 - This changes OpenAI assignment defaults only. Historical decisions remain evidence; product AI models, non-OpenAI roles, ownership, review requirements, CI and delivery controls remain as assigned.
+
+## 2026-10-07 - Equal platform standing, owner-chosen design, and current Claude routing
+
+- Pete gave these decisions directly on 2026-10-07; the repository outcome is
+  `PS-GOVERNANCE-CLEANUP-001` under
+  `session:01a11384-f656-73b3-b57a-ad2952f1ffad/owner-decision/2026-10-07-governance-cleanup`.
+- Any assigned, access-verified capable platform has equal standing: it may
+  architect, build, review, merge, and, with Pete's release authorization,
+  release within its assignment. No Codex supervisor or platform-exclusive
+  gate applies. Codex remains the overall coordinator for now; whether review
+  must cross companies is undecided, and risk-based independent review for
+  Protected work remains.
+- Pete chooses who creates new or materially revised designs and approves the
+  images. The former exclusive ChatGPT visual-creator rule no longer applies;
+  existing Pete-locked authorities stay valid.
+- There are no colour or palette rules. Site CSS and theme behavior are
+  unchanged by this decision.
+- Claude assignments use Claude Opus 5.5 or Claude Sonnet 5.5 only, never
+  Haiku, and Fable only when Pete explicitly asks. Product AI direction is
+  Microsoft Foundry models for routine features and Claude Sonnet 5.5 later for
+  the onboarding Guide and Ask Member AI once credits and onboarding acceptance
+  allow; each runtime change is its own governed package.
+- There is no blanket per-release approval rule. Pete authorizes a release
+  individually or within an assigned outcome and says case by case when he
+  must approve it himself; exact-main-SHA and authorization-reference mechanics
+  are unchanged.
+- The 2026-08-27 standing Workshop use-disclosure authority expired when its
+  parent claim closed on 2026-08-27 and is no longer cited as a current gate.
+- Product trust rules, one writer per surface, exact-candidate review, Azure PR
+  and CI, and truthful release states are unchanged. Earlier decisions remain
+  historical evidence.

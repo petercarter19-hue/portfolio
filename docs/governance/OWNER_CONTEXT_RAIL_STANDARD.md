@@ -45,7 +45,7 @@ its package answers yes to all four:
 
 - Desktop: left rail beside a slightly narrowed content stage; small uppercase
   room label (CONTENTS / SECTIONS / BOARD / …); 3–6 entries, each with icon +
-  name + optional one-line subtitle; exactly one gold active state.
+  name + optional one-line subtitle; exactly one active state.
 - Behavior: scroll-following active state where entries map to scroll sections;
   optional quiet counts (" · 3") and state cues (e.g., a small playing
   indicator). Counts are content counts (items in a section) — never activity
@@ -56,10 +56,11 @@ its package answers yes to all four:
   the contextual layer paralleling the desktop rail and is independent of the
   existing global mobile tabbar (`mobile-nav.js`); it does not modify, extend,
   or duplicate that tabbar. No new bottom bars, no third navigation layer.
-- Materials: Deep Navy Gold tokens only; Newsreader/Inter; the shared component
-  consumes central tokens (one place to style). Consolidating today's
-  per-page palette redefinitions is a future aspiration this pattern enables —
-  not something any rail package performs implicitly.
+- Materials: the shared component consumes the site's central tokens (one
+  place to style); Newsreader/Inter. There is no palette mandate; Pete approves
+  designs and images. Consolidating today's per-page palette redefinitions is
+  a future aspiration this pattern enables — not something any rail package
+  performs implicitly.
 - Accessibility: rendered as a labeled `nav` (scoped, e.g. "Journal sections")
   or listbox as appropriate; full keyboard operability; visible focus; correct
   `aria-current`; 200% zoom reflow (rail folds to the chip-row); reduced-motion

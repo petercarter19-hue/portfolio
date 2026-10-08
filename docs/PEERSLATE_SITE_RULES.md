@@ -72,9 +72,9 @@ the affected package; delivery mechanics belong in `docs/AI_WORKFLOW.md`.
   unfinished concept without approved route authority.
 - About PeerSlate belongs in logged-out marketing/footer context, not signed-in
   product or public-member navigation.
-- Deep Navy Gold is the shared default visual system. Use the established
-  tokens/components and existing dark-theme contract; do not invent competing
-  room themes or recolor member imagery.
+- Reuse established components and tokens. Pete approves new or changed
+  designs and images; there is no separate colour or palette rule. Never
+  recolor or alter member imagery.
 - Target WCAG 2.2 AA. Essential paths support semantic structure, keyboard,
   visible focus, assistive technology, contrast, 200% zoom/reflow, reduced
   motion, mobile touch, long content, missing media, and recovery.

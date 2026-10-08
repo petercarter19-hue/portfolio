@@ -269,7 +269,8 @@ class ProductTrustTests(unittest.TestCase):
             "ChatGPT Work is not mandatory for every package",
             "Assigned capable environment",
             "No hidden Codex manager or Codex supervisory approval is required",
-            "Visual assignment does not make Original ChatGPT the package manager",
+            "Visual assignment does not make the designer the package manager",
+            "claims carry no manager field",
             "Being package manager grants no repository, writer, merge, release, deployment, credential, or production-operator authority",
             "The accepted package assigns its manager and writer explicitly",
         ):
@@ -325,29 +326,116 @@ class ProductTrustTests(unittest.TestCase):
             normalized)
         self.assertLess(len(body.split()), 900)
 
-    def test_chatgpt_remains_material_visual_creator(self):
+    def test_pete_chooses_material_visual_creator(self):
         for parts in (
             ("AGENTS.md",),
             ("docs", "AI_WORKFLOW.md"),
             ("docs", "AI_MODEL_AND_ROLE_ROUTING.md"),
             ("docs", "governance", "OWNER_VISUAL_INTEGRITY_STANDARD.md"),
+            ("docs", "governance", "OWNER_STORY_COMPOSITION_STANDARD.md"),
+            ("docs", "templates", "PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md"),
         ):
-            body = _read(*parts)
-            self.assertIn("ChatGPT", body)
-            self.assertRegex(body, r"(?i)creat(e|es|or)")
-            self.assertRegex(body, r"(?i)material")
+            with self.subTest(parts=parts):
+                body = " ".join(_read(*parts).split())
+                self.assertRegex(
+                    body, r"designer (Pete|he) chooses|Pete chooses who creates")
+                for exclusive in (
+                    "sole creator",
+                    "sole visual-creation surface",
+                    "ChatGPT creates",
+                    "ChatGPT-created",
+                    "ChatGPT Work design approval",
+                    "Original ChatGPT",
+                ):
+                    self.assertNotIn(exclusive, body)
         self.assertIn("@AGENTS.md", _read("CLAUDE.md"))
         authority = " ".join(
             _read("docs", "AI_MODEL_AND_ROLE_ROUTING.md").split()
         )
         self.assertIn(
-            "Original ChatGPT is the sole creator of new or materially revised production-intent visual authority",
+            "Pete chooses who creates new or materially revised production-intent visual authority, and Pete approves the images",
             authority,
         )
         self.assertIn(
-            "ChatGPT Work, Codex, Claude Chat, Co-Work, Code, and Design may not originate or substitute the visual authority",
+            "only the designer Pete chooses may originate material visual direction",
             authority,
         )
+        self.assertIn(
+            "An agent that Pete has not chosen as the designer may not originate or substitute the visual authority",
+            authority,
+        )
+
+    def test_visual_routing_matches_the_visual_standard(self):
+        authority = " ".join(
+            _read("docs", "AI_MODEL_AND_ROLE_ROUTING.md").split()
+        )
+        standard = " ".join(
+            _read("docs", "governance", "OWNER_VISUAL_INTEGRITY_STANDARD.md").split()
+        )
+        self.assertIn("no mandatory pass count or separate mismatch ledger", standard)
+        self.assertIn("no mandatory pass count or separate mismatch ledger", authority)
+        for stale in ("empty mismatch register", "compare-refine loop"):
+            self.assertNotIn(stale, authority)
+        self.assertIn(
+            "Pete reviews the corrected real build for final visual acceptance",
+            authority,
+        )
+
+    def test_no_colour_or_palette_rule_in_current_authority(self):
+        baseline = _read("docs", "governance", "CURRENT_BASELINE.yaml")
+        self.assertNotRegex(baseline, r"(?m)^theme:")
+        site_rules = " ".join(_read("docs", "PEERSLATE_SITE_RULES.md").split())
+        self.assertNotIn("Deep Navy Gold", site_rules)
+        self.assertNotIn("competing room themes", site_rules)
+        self.assertIn("there is no separate colour or palette rule", site_rules)
+        self.assertIn("Never recolor or alter member imagery", site_rules)
+        rail = " ".join(
+            _read("docs", "governance", "OWNER_CONTEXT_RAIL_STANDARD.md").split()
+        )
+        self.assertNotIn("Deep Navy Gold tokens only", rail)
+        self.assertNotIn("exactly one gold active state", rail)
+        self.assertIn("There is no palette mandate", rail)
+
+    def test_equal_platform_standing_without_supervisor(self):
+        agents = " ".join(_read("AGENTS.md").split())
+        claude = " ".join(_read("CLAUDE.md").split())
+        routing = " ".join(_read("docs", "AI_MODEL_AND_ROLE_ROUTING.md").split())
+        self.assertIn(
+            "Any assigned, access-verified capable platform has equal standing",
+            agents,
+        )
+        self.assertIn("No platform needs another's supervision", agents)
+        self.assertIn(
+            "Claude has the same standing as any other assigned platform", claude)
+        self.assertIn("without a Codex supervisor", claude)
+        self.assertIn("There is no platform-exclusive gate", routing)
+        self.assertIn("Codex remains the overall coordinator for now", routing)
+        self.assertIn("no provider pairing is required", routing)
+        self.assertIn("risk-based independent review still applies", routing)
+        for parts in (("AGENTS.md",), ("START_HERE.md",)):
+            with self.subTest(parts=parts):
+                body = " ".join(_read(*parts).split())
+                self.assertNotIn("unrevoked standing", body)
+                self.assertRegex(
+                    body,
+                    r"standing bounded Workshop .{0,120}?expired when its parent claim closed",
+                )
+
+    def test_release_approval_is_case_by_case_with_exact_mechanics(self):
+        for parts in (
+            ("docs", "AI_WORKFLOW.md"),
+            ("START_HERE.md",),
+            ("docs", "governance", "PEERSLATE_OWNER_DELIVERY_GUIDE.md"),
+        ):
+            with self.subTest(parts=parts):
+                body = " ".join(_read(*parts).split())
+                self.assertIn("There is no blanket per-release approval", body)
+                self.assertIn(
+                    "says case by case when he must approve it himself", body)
+        start = " ".join(_read("START_HERE.md").split())
+        self.assertIn(
+            "manualProductionSourceVersion=<exact 40-character main SHA>", start)
+        self.assertIn("productionAuthorizationReference=", start)
 
     def test_protected_release_controls_are_triggered(self):
         body = " ".join(_read("docs", "initiatives", "PS-OPS-001", "README.md").replace(">", "").split())
@@ -381,7 +469,7 @@ class WorkflowEfficiencyTests(unittest.TestCase):
             "Consequential architecture or cross-package decision | **GPT-6.1 Sol, High**",
             "Difficult unresolved debugging or integration | **GPT-6.1 Sol, Medium or High**",
             "Consequential independent security, privacy or architecture review | **Fresh GPT-6.1 Sol, Extra High**",
-            "Final independent review, including routine bounded final review | **Fresh GPT-6.1 Sol, Extra High**",
+            "Final independent review when one is assigned, including a routine bounded final review | **Fresh GPT-6.1 Sol, Extra High**",
             "Other independent reviews | **Fresh GPT-6.1 Sol, Extra High**",
             "Routine release or closeout execution | **GPT-6.1 Sol, High**",
             "Demanding well-bounded implementation | **GPT-6.1 Sol, Extra High**",
@@ -403,6 +491,35 @@ class WorkflowEfficiencyTests(unittest.TestCase):
         self.assertIn("Explain the concrete reason before changing the implementation model", body)
         self.assertIn("new assignment or natural work boundary", body)
         self.assertIn("do not switch an active Navigation task or frozen reviewer", body)
+        self.assertIn("None of them creates a review requirement", body)
+
+    def test_claude_routing_is_current_and_excludes_haiku(self):
+        body = " ".join(_read("docs", "AI_MODEL_AND_ROLE_ROUTING.md").split())
+        for route in (
+            "Architecture or independent review | **Claude Opus 5.5, Extra High**",
+            "Management or known-cause implementation | **Claude Opus 5.5, High**",
+            "Small or routine change | **Claude Sonnet 5.5, Medium**",
+            "Claude assignments use Claude Opus 5.5 or Claude Sonnet 5.5 only",
+            "Never use Claude Haiku",
+            "Use Claude Fable only when Pete explicitly asks for it",
+        ):
+            with self.subTest(route=route):
+                self.assertIn(route, body)
+        for stale in ("**Claude Fable 5**", "**Claude Sonnet 5**", "**Claude Opus 5**"):
+            self.assertNotIn(stale, body)
+        claude = " ".join(_read("CLAUDE.md").split())
+        self.assertIn(
+            "Use Claude Opus 5.5 or Claude Sonnet 5.5 only. Never use Haiku.", claude)
+        self.assertIn("Use Fable only when Pete explicitly asks", claude)
+
+    def test_product_ai_direction_is_direction_only(self):
+        raw = _read("docs", "AI_MODEL_AND_ROLE_ROUTING.md")
+        body = " ".join(raw.split())
+        self.assertIn("## Product AI direction", raw)
+        self.assertIn("routine product AI features use Microsoft Foundry models", body)
+        self.assertIn("the onboarding Guide and Ask Member AI", body)
+        self.assertIn("New product work selects no Haiku model", body)
+        self.assertIn("this document changes no runtime model", body)
 
     def test_complete_transfer_requires_access_acceptance_without_credentials(self):
         bodies = [
