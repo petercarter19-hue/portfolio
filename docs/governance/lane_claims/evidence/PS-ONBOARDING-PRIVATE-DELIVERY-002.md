@@ -383,3 +383,25 @@ The app release the private installer loads needs a reviewed factory interface w
 ### Not yet true
 
 CI and merge of this change; the supported `update --candidate-state accepted-main --factory` promotion on a stopped, drained site; the supported probe covering both namespaces (R3); starting the site; restoring checkpoint `20261008T074824Z-9dacff66` (undoing the tester's fictional changes; the ledger and spend stay as they are); a checkpoint before the first real retry, a fictional proof, and then a retry of the owner's latest upload copy only (R4), confirming first that the source version bumped.
+
+
+## Claude custody: reviewed private factory interface for the accepted fix-round-2 source
+
+Writer `agent:claude/2026-10-07/onboarding-private-delivery`. Base: accepted main `08c3c5ffe65ae2eacb35c15e0cb2820da2890d50` (PR 1299, Azure build 4315) reconciled into this branch (`4b514fe1`). Source, CI, merge, installed controller, installed app, browser and physical-device states stay separate; this change is **source only** and installs nothing.
+
+### What this binds
+
+The same recipe as the tester-round binding (`PRIVATE_TESTER_ROUND_FACTORY.json`, whose bytes the generator round-trips), for the accepted fix-round-2 source (independent PASS at `7461d6dd73a4b3f5de017be0c27afbe78a91df31` over `cf99b83d..7461d6dd`; accepted as main `08c3c5ff`):
+
+- New interface `X:/PeerSlate/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002/round2/PRIVATE_ROUND2_FACTORY.json`, sha256 `cc121dfe7beb2c77175da79f223e5d2e4b0e845b482f72a65f2e11dd6a96c3d4`. Only the candidate sha, condition text, timestamp, the 12 pinned file hashes below and the qualification entry change. Factory signature, requirements, profiles, prices, limits, allocation and ongoing-budget contracts are untouched; promotion still refuses any change to provider contracts or caps.
+- The 12 changed pins (Git bytes at the accepted commit): `resume_intake_routes.py`, `scripts/run_mvp1_acceptance_browser_tests.py`, `services/my_data_extraction_adapter.py`, `services/resume_intake_runtime.py`, `services/resume_intake_service.py`, `services/resume_onboarding_document_reader.py`, `static/js/resume-intake.js`, `tests/test_resume_intake_browser.py`, `tests/test_resume_intake_routes.py`, `tests/test_resume_onboarding_conversation.py`, `tests/test_resume_onboarding_coverage.py`, `tests/test_resume_onboarding_document_reader.py`. All 64 pinned files at the accepted commit are byte-identical (blob ids) to the independently reviewed candidate `7461d6dd`.
+- `tools/local_reviewer/providers.py`: the new interface hash joins the allowed set, and `PRIVATE_ROUND2_ONBOARDING_QUALIFICATION` carries reviewed source `7461d6dd73a4b3f5de017be0c27afbe78a91df31`, accepted source `08c3c5ffe65ae2eacb35c15e0cb2820da2890d50` and the sha256 `de2ba86eed5c559c1c428a1546514f381ddbee49426004953b467bbf521e65f0` of the merged receipt file. Declared behaviors unchanged. `tests/test_local_reviewer_providers.py` adds the new pair to the integrity test.
+- App archive for the supported update (not part of this diff): `X:/PeerSlate/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002/tester-round/accepted-source-08c3c5ff.zip`, a `git archive` of main `08c3c5ff`, sha256 `264f132ddf74a560a9191fea05936d762a4459c6cb7d42fc06ee53ad3f192c05`, 4606 entries, no `.env`/`.git` names.
+
+### Verification (source only)
+
+`-B -m unittest tests.test_local_reviewer tests.test_local_reviewer_identity tests.test_local_reviewer_providers` under the private Python 3.12 runtime: 160 tests, 0 failures. No provider call, no installation read or write, no ledger access.
+
+### Not yet true
+
+CI and merge of this change; the supported `update --candidate-state accepted-main --factory` promotion on a stopped, drained site; the explicit post-update probe; restoring the post-retry checkpoint `20261008T125205Z-294320f4`; starting the site; and the re-run of the owner's retry (reader changed) with the source-version bump recorded.
