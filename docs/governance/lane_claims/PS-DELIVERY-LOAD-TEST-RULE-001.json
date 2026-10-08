@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-LOAD-TEST-RULE-001",
+  "state": "active",
+  "outcome": "Record Pete's 2026-10-08 delivery rule, refined with Codex feedback, in the shared agent instructions: before a PR that changes browser-facing code or browser tests, run the affected browser suite normally and once under load; rely on Playwright actionability and add explicit waits only for real application state; fix flaky tests or slow product paths rather than re-queueing. Documentation-only and control-only changes keep their existing shortcuts. Add a pointer test. No runtime, lifecycle tooling, CI configuration, deployment or product change.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude/2026-10-07/peerslate-manager",
+  "branch": "work/2026-10-08-delivery-load-test-rule-001",
+  "delivery_path": "Routine",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "da2e34fd14d3fbf944b54398f772249e4287da5c",
+  "owner_outcome_ref": "agent:claude/2026-10-07/peerslate-manager/owner-decision/2026-10-08-load-test-rule",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-DELIVERY-LOAD-TEST-RULE-001.json",
+    "docs/governance/lane_claims/receipts/PS-DELIVERY-LOAD-TEST-RULE-001.json",
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-LOAD-TEST-RULE-001.md",
+    "AGENTS.md",
+    "tests/test_governance_pointers.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-LOAD-TEST-RULE-001.md"
+  ],
+  "domains": [
+    "governance:delivery-load-test-rule"
+  ],
+  "review_requirement": "self",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
