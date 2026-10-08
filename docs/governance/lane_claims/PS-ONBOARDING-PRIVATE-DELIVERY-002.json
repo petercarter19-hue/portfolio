@@ -4,7 +4,7 @@
   "state": "active",
   "outcome": "Qualify and install the accepted conversational onboarding application on the existing private local-reviewer installation through an independently reviewed exact app/controller/factory/OCR pair. Correct typed durable snapshot publication recovery, qualify both namespaces with all29 bindings, preserve approved credential details and monotonic composer revision behavior, and refuse behaviorally incompatible rollback targets while preserving current content and provider ledger. Bind the staged seven-key219-pin OCR manifest as an absolute path string after isolation before lazy reader capture. Preserve the existing37constructor interface, owner/signing/allocation, selected workspace, configuration/model/budget contracts, original snapshots and rollback lineage. Use normal Protected source review, current-target CI/accepted-main promotion, stopped/drained lifetime custody and independent installed acceptance. No app-owned edits, persistence module expansion, schema/identity/model/budget changes, cloud/public deployment or content/ledger rewind.",
   "assignment": "implementation",
-  "writer_ref": "session:01a1128b-90fb-79b3-945a-dc09d702ca88",
+  "writer_ref": "agent:claude/2026-10-07/onboarding-private-delivery",
   "branch": "codex/2026-10-06-onboarding-private-delivery-002-restart",
   "delivery_path": "Protected",
   "repository_authority": "through_merge",
@@ -23,19 +23,20 @@
     "docs/governance/lane_claims/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002.md",
     "tools/local_reviewer/provider_budget.py"
   ],
-  "domains": ["tooling:local-reviewer:conversation-qualification"],
-  "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002.md"],
+  "domains": [
+    "tooling:local-reviewer:conversation-qualification"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002.md"
+  ],
   "review_requirement": "independent",
   "checkpoint_sha": null,
   "merged_sha": null,
   "closed_at": null,
   "handoff": {
-    "type": "owner_reassignment",
-    "from_ref": "session:01a109af-c160-7412-8e63-547436b2cf70",
-    "to_ref": "session:01a1128b-90fb-79b3-945a-dc09d702ca88",
-    "from_branch": "codex/2026-10-05-onboarding-private-delivery-002",
-    "to_branch": "codex/2026-10-06-onboarding-private-delivery-002-restart",
-    "checkpoint_sha": "1d6ee9cda801d4728366e5199ba22f1d1c243d0b",
-    "owner_authorization_ref": "session:01a11261-1162-7311-ba44-a855c29bf72b/event:evt-a4abcb0f-c0c9-4fe1-a0ed-01b46b86cf49"
+    "from_ref": "session:01a1128b-90fb-79b3-945a-dc09d702ca88",
+    "to_ref": "agent:claude/2026-10-07/onboarding-private-delivery",
+    "checkpoint_sha": "14e8f2bf4488c015c1e0d6c3e7578c49dfbee9fd",
+    "relinquished": true
   }
 }
