@@ -20,7 +20,8 @@
     "docs/LOCAL_REVIEWER.md",
     "docs/governance/lane_claims/PS-ONBOARDING-PRIVATE-DELIVERY-002.json",
     "docs/governance/lane_claims/receipts/PS-ONBOARDING-PRIVATE-DELIVERY-002.json",
-    "docs/governance/lane_claims/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002.md"
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002.md",
+    "tools/local_reviewer/provider_budget.py"
   ],
   "domains": ["tooling:local-reviewer:conversation-qualification"],
   "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002.md"],
