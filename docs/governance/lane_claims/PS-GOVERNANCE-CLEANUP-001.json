@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-GOVERNANCE-CLEANUP-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Apply Pete's direct October 7 governance decisions: equal standing for assigned capable platforms, owner-selected design authorship with no exclusive ChatGPT rule, no new theme rule, current Claude Opus 5.5/Sonnet 5.5 routing with no Haiku and Fable only on explicit request, and authorized completion without blanket release approvals. Reconcile stale governance wording and verified baseline facts, preserve existing owners and trust/delivery controls, leave cross-company review undecided and Ask Member AI Sonnet changes held for credits. Claude is the sole governance implementation writer.",
   "assignment": "implementation",
   "writer_ref": "agent:claude/2026-10-07/governance-cleanup",
@@ -45,6 +45,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "a0dd69752697330fa7e556f3f69b7e6823bef905",
+  "closed_at": "2026-10-08T10:18:00Z"
 }
