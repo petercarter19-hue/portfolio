@@ -31,7 +31,8 @@
     "docs/templates/PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md",
     "docs/governance/lane_claims/PS-GOVERNANCE-CLEANUP-001.json",
     "docs/governance/lane_claims/receipts/PS-GOVERNANCE-CLEANUP-001.json",
-    "docs/governance/lane_claims/evidence/PS-GOVERNANCE-CLEANUP-001.md"
+    "docs/governance/lane_claims/evidence/PS-GOVERNANCE-CLEANUP-001.md",
+    "docs/governance/OWNER_CONTEXT_RAIL_STANDARD.md"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-GOVERNANCE-CLEANUP-001.md"
