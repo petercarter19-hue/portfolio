@@ -64,6 +64,7 @@ from services.resume_intake_document_adapter import (
 from services.my_data_extraction_adapter import (
     ExtractionError,
     MyDataExtractionAdapter,
+    ResumeOrganization,
 )
 from services.resume_intake_jobs import (
     JobFence,
@@ -85,6 +86,7 @@ from services.resume_intake_proposals import (
     create as create_proposal,
     binding_is_current,
     decide as decide_proposal_record,
+    invalidate as invalidate_proposal,
     invalidate_for_source as invalidate_proposals_for_source,
     invalidate_for_target as invalidate_proposals_for_target,
     present as present_proposal,
@@ -496,6 +498,7 @@ class ResumeIntakeService:
                 "status_source": guide.get("status_source") or "default_unstarted",
             },
             "pending_proposals": pending,
+            "review_overview": self._review_overview(snapshot),
             "resume_section_bindings": history['section'],
             "resume_excluded_records": list(history['inclusion'].items()),
             "resume_recoverable_details": [
@@ -1558,6 +1561,16 @@ class ResumeIntakeService:
                 proposals: list[dict] = []
                 source_keys: list[str] = []
                 for plan in plans:
+                    duplicate = self._duplicate_document(snapshot, plan)
+                    if duplicate is not None:
+                        # The same file is already here with work still open: continue with it
+                        # instead of storing it again and doubling the review.
+                        results.append({
+                            "client_key": plan.client_key, "kind": "document", "outcome": "duplicate",
+                            "code": "duplicate_document", "existing_source_key": duplicate["source_key"],
+                            "saved": False,
+                            "message": "You've already uploaded this file. Let's continue with it."})
+                        continue
                     source = self._store_source(snapshot, submission_key, submission_version, plan, moment, owner=owner)
                     source_keys.append(source["source_key"])
                     fence = JobFence(
@@ -3364,12 +3377,20 @@ class ResumeIntakeService:
             }
         # Text, documents and recordings are extraction: never silently saved.
         provider_issue = None
-        duplicates: list[dict] = []
+        organization = None
+        resume_document = (plan.kind == "document" and self._extraction_adapter is not None
+                           and hasattr(self._extraction_adapter, "organize_resume"))
         if self._extraction_adapter is not None and plan.kind in {"text", "document", "recording"}:
-            drafts, provider_issue = self._extract_with_adapter(owner, plan)
+            drafts, provider_issue, organization = self._extract_with_adapter(owner, plan)
         else:
             drafts = self._interpreter(plan.source_text or "", plan.kind) or []
-        if not drafts and plan.kind == "document":
+        if resume_document:
+            # The document is kept either way. When it could not be organized there are no
+            # fragment items: the member can try again, sort it by hand, or edit directly.
+            if organization is None:
+                organization = ResumeOrganization("unavailable", [], [], [])
+            drafts = [] if organization.state == "unavailable" else organization.drafts
+        elif not drafts and plan.kind == "document":
             from services.my_data_extraction_adapter import validate_resume_extraction_payload
             from services.resume_onboarding_document_reader import inventory_source
             drafts = validate_resume_extraction_payload({"candidates": []}, text=plan.source_text or "",
@@ -3384,78 +3405,9 @@ class ResumeIntakeService:
                 "values": {"text": (plan.source_text or "")[:MAX_TEXT_UNITS]},
                 "confidence": "uncertain",
             }]
-        created = []
-        for draft in drafts or []:
-            if draft.get("outcome") == "equivalent":
-                # A true restatement keeps the existing entry and permissions:
-                # no proposal, no write, just a quiet truthful receipt entry.
-                # A reference that no longer resolves stays visible as an
-                # uncertain proposal instead of silently vanishing.
-                duplicate = self._resolve_equivalent(owner, draft)
-                if duplicate is not None:
-                    source_context = (source.get("structured_values") or {}).get("resume_conversation_v1") or {}
-                    for source_unit in source_context.get("source_units") or []:
-                        if source_unit["unit_id"] in (draft.get("unit_ids") or []):
-                            source_unit["disposition"] = "equivalent"
-                            source_unit["record_key"] = duplicate["record_key"]
-                    duplicates.append({
-                        **duplicate,
-                        "extracted_fields": dict(draft.get("values") or {}),
-                    })
-                    continue
-                draft = {**draft, "kind": "inferred_wording", "confidence": "uncertain"}
-            kind = draft.get("kind") or "inferred_wording"
-            target = None
-            if kind in {"additional_detail", "contradiction"}:
-                # Overlay the listed member-owned fact. A missing, excluded,
-                # unreadable, stale, or unlisted reference fails closed to
-                # uncertain manual review instead of creating a second row.
-                target = self._resolve_matched_target(owner, draft)
-                if target is None:
-                    kind = "inferred_wording"
-                    draft = {**draft, "kind": kind, "confidence": "uncertain"}
-                elif kind == "additional_detail":
-                    # Present the combined amendment for member review. A
-                    # confirmed append must not silently replace prior meaning.
-                    values = dict(draft.get('values') or {})
-                    for name in ('summary', 'wording'):
-                        existing_values = (target.get('proposed_values') if target.get('has_draft')
-                                           else target.get('values')) or {}
-                        existing = existing_values.get(name)
-                        addition = values.get(name)
-                        if existing and addition and addition not in existing:
-                            values[name] = existing.rstrip() + '\n' + addition
-                    draft = {**draft, 'values': values}
-            proposal = self._make_proposal(
-                snapshot, plan, source, submission_key, submission_version, policy, command,
-                kind=kind,
-                target=target,
-                confidence=draft.get("confidence") or "uncertain",
-                record_type=draft.get("record_type") or "unspecified",
-                proposed_values={**(draft.get("values") or {}),
-                    **({"suggested_category": draft["suggested_category"]}
-                       if draft.get("suggested_category") else {}),
-                    **({"suggested_parent_key": draft["parent_reference"]}
-                       if draft.get("parent_reference") else {})},
-                provided_fields=draft.get("provided_fields"),
-                quote=draft.get("quote"),
-                span_start=draft.get("span_start"),
-                span_end=draft.get("span_end"),
-            )
-            if draft.get("unit_ids"):
-                proposal["resume_conversation_v1"] = {
-                    "unit_ids": list(draft["unit_ids"]), "record_anchor": draft.get("record_anchor"),
-                    "presentation_section": draft.get("presentation_section"),
-                }
-                if target and proposal['record_type'] == 'credential':
-                    self._capture_credential_binding(owner, snapshot, proposal, target['record_key'])
-                source_context = (source.get("structured_values") or {}).get("resume_conversation_v1") or {}
-                for source_unit in source_context.get("source_units") or []:
-                    if source_unit["unit_id"] in draft["unit_ids"]:
-                        source_unit["disposition"] = "pending" if proposal["record_type"] != "unspecified" else "unresolved"
-                        source_unit["proposal_key"] = proposal["proposal_key"]
-            created.append(proposal)
-            proposals.append(proposal)
+        created, duplicates = self._proposals_from_drafts(
+            owner, snapshot, source, plan, submission_key, submission_version, policy, command,
+            drafts, proposals)
         if duplicates and not created:
             actions = _bind_extracted_candidates(
                 source, duplicates, submission_key, plan.client_key
@@ -3502,6 +3454,17 @@ class ResumeIntakeService:
                 " The organizer is unavailable right now. Your words are kept "
                 "for review, and you can retry or type them directly."
             )
+        if organization is not None:
+            summary = organization.summary()
+            if organization.state == "unavailable":
+                reason = provider_issue or (organization.rejections[0]["code"] if organization.rejections else "unusable_output")
+                summary["reason"] = reason
+                result["provider_issue"] = {"code": reason, "retryable": True}
+                result["message"] = "I read your résumé but couldn't organize it right now. Nothing is lost."
+            context = (source.get("structured_values") or {}).get("resume_conversation_v1")
+            if isinstance(context, dict):
+                context["organization"] = summary
+            result["organization"] = summary
         if plan.document:
             # A truncated or partial document is visible, never implied complete.
             result["document"] = plan.document
@@ -3621,6 +3584,391 @@ class ResumeIntakeService:
             })
         return shortlist
 
+    # -- document organization: retry, recovery and the batch-scoped review ----
+
+    @staticmethod
+    def _source_meta(source):
+        return ((source or {}).get("structured_values") or {}).get("resume_conversation_v1") or {}
+
+    @staticmethod
+    def _bound_proposals(snapshot, source_key):
+        return [row for row in snapshot["proposals"].values()
+                if (row.get("binding") or {}).get("source_key") == source_key]
+
+    def _organize_eligibility(self, snapshot, source):
+        """Why a document may be organized again: 'unavailable', 'legacy' or None.
+
+        Eligibility is re-derived from stored state on every request, so a repeat
+        under a new request id on an already-organized source is refused before any
+        dispatch. A legacy source was organized before per-candidate organization
+        existed: every proposal it produced is still an untouched unplaced item.
+        """
+        if (not source or source.get("state") != "active" or source.get("kind") != "document"
+                or not source.get("text")):
+            return None
+        organization = self._source_meta(source).get("organization")
+        bound = self._bound_proposals(snapshot, source["source_key"])
+        if isinstance(organization, dict):
+            if organization.get("state") not in {"unavailable", "member_sorted"}:
+                return None
+        elif not bound:
+            return None
+        if all(row["state"] == "pending" and row["record_type"] == "unspecified" for row in bound):
+            return "unavailable" if isinstance(organization, dict) else "legacy"
+        return None
+
+    def _duplicate_document(self, snapshot, plan):
+        """An earlier active copy of this exact file that still has open work."""
+        digest = (plan.prepared or {}).get("sha256")
+        if plan.kind != "document" or not digest:
+            return None
+        for source in snapshot["sources"].values():
+            if (source.get("state") == "active" and source.get("kind") == "document"
+                    and source.get("sha256") == digest):
+                meta = self._source_meta(source)
+                organization = meta.get("organization")
+                unorganized = isinstance(organization, dict) and organization.get("state") == "unavailable"
+                if unorganized or any(row["state"] == "pending"
+                                      for row in self._bound_proposals(snapshot, source["source_key"])):
+                    return source
+        return None
+
+    def _reread_original(self, owner, source, policy):
+        """Read the member's retained original again with the current reader.
+
+        Returns the fresh ``(text, source_units, pages, complete, ocr_sha256)`` only when it
+        differs from what this source stored at upload, so a reader improvement reaches an
+        old upload without the member sending the file again. Any gap (no retained original,
+        unreadable, unchanged) returns None and the stored reading is used as before.
+        """
+        files = self.original_files
+        if files is None:
+            return None
+        try:
+            rows = [row for row in files.list(owner)
+                    if row.get("source_key") == source["source_key"] and row.get("state") == "uploaded"
+                    and row.get("downloadable")]
+            if not rows:
+                return None
+            data, content_type = files.download(owner, rows[-1]["original_key"])
+            parsed = self.document_adapter.parse(content_type, data, policy, pipeline=self._document_pipeline)
+        except Exception:
+            return None
+        if not parsed.ok or not parsed.text or parsed.text == source.get("text"):
+            return None
+        from services.resume_onboarding_document_reader import inventory_source
+        units = list(parsed.source_units) or inventory_source(parsed.text, document=True)
+        return parsed.text, units, list(parsed.pages), parsed.complete, parsed.ocr_configuration_sha256
+
+    def organize_source(self, owner, payload, *, allow_fixture_policy=False):
+        """Organize an uploaded résumé again, or let the member sort it by hand.
+
+        ``retry`` makes one provider dispatch for a document whose organization
+        failed or predates per-candidate organization; ``sort_myself`` makes none.
+        Nothing is deleted: replaced unplaced items become ``invalidated``.
+        """
+        from services.my_data_extraction_adapter import organize_resume_extraction
+        if not getattr(self.repository, "supports_resume_conversation", False):
+            raise ResumeIntakeUnavailableError()
+        adapter = self._extraction_adapter
+        if adapter is None or not hasattr(adapter, "organize_resume"):
+            raise ResumeIntakeUnavailableError()
+        policy = self._require_usable_policy(allow_fixture=allow_fixture_policy)
+        if (not isinstance(payload, dict) or set(payload) != {"request_id", "source_key", "mode"}
+                or payload["mode"] not in {"retry", "sort_myself"}):
+            raise ResumeIntakeValidationError("Invalid request.")
+        request_id = _as_uuid(payload["request_id"], field="request id")
+        source_key = _as_uuid(payload["source_key"], field="source key")
+        mode = payload["mode"]
+        digest = _json_digest({"type": "organize_source", "source_key": source_key, "mode": mode})
+        moment = _utc(None)
+        with self.repository.owner_guard(owner):
+            snapshot = self._load(owner)
+            existing = snapshot["receipts"].get(request_id)
+            if existing is not None:
+                if existing["request_digest"] != digest:
+                    raise ResumeIntakeConflictError(
+                        "idempotency_conflict", [{"request_id": request_id}],
+                        "That request key was already used for different content.")
+                return {**existing["result"], "replayed": True, "request_digest": digest}
+            source = snapshot["sources"].get(source_key)
+            if source is None or source.get("state") != "active" or source.get("kind") != "document":
+                raise ResumeIntakeNotFoundError()
+            reason = self._organize_eligibility(snapshot, source)
+            bound = self._bound_proposals(snapshot, source_key)
+            pending = [row for row in bound if row["state"] == "pending"]
+            if reason is None or (mode == "sort_myself" and pending):
+                # Checked before any budget is reserved: a repeat dispatches nothing and writes nothing.
+                return {"success": True, "outcome": "already_organized", "source_key": source_key,
+                        "request_id": request_id, "replayed": False, "saved": False, "publishes": False,
+                        "message": "This résumé is already organized."}
+            meta = self._source_meta(source)
+            units = list(meta.get("source_units") or [])
+            text = source["text"]
+            refreshed = self._reread_original(owner, source, policy) if mode == "retry" else None
+            if refreshed:
+                text, units = refreshed[0], refreshed[1]
+            if mode == "retry":
+                from uuid import uuid5
+                try:
+                    organization = adapter.organize_resume(
+                        text, allowed_fields={name: EDITOR_FIELDS[name] for name in EDITOR_FIELDS},
+                        source_units=units, shortlist=self._matching_shortlist(owner),
+                        request_id=str(uuid5(UUID(request_id), "organize_source")))
+                except ExtractionError as error:
+                    # Nothing changed: the member's words and this source stay exactly as they were.
+                    return {"success": True, "outcome": "unavailable", "source_key": source_key,
+                            "request_id": request_id, "replayed": False, "saved": False, "publishes": False,
+                            "provider_issue": {"code": error.code, "retryable": True},
+                            "message": "The organizer is unavailable right now. Nothing was changed."}
+            else:
+                organization = organize_resume_extraction(
+                    {"candidates": []}, text=text, source_units=units,
+                    allowed_fields={name: EDITOR_FIELDS[name] for name in EDITOR_FIELDS})
+            snapshot["policy_version"] = policy.version
+            summary = organization.summary()
+            created, matched, replaced = [], [], 0
+            if refreshed and not (organization.state == "unavailable" and mode == "retry"):
+                # A fresh reading replaces the stored one under a new source version, so nothing
+                # created from the old reading can be mistaken for it.
+                source["text"], source["version"] = text, int(source.get("version") or 1) + 1
+                meta.update(source_units=units, pages=refreshed[2], complete=refreshed[3],
+                            ocr_configuration_sha256=refreshed[4])
+            if organization.state == "unavailable" and mode == "retry":
+                meta["organization"] = {**summary, "reason": "unusable_output"}
+            else:
+                for row in pending:
+                    invalidate_proposal(snapshot, row["proposal_key"], now=moment)
+                submission = snapshot["submissions"].get(source.get("submission_key")) or {}
+                plan = _ItemPlan(client_key="organize-" + source_key, kind="document", record_type="unspecified",
+                                 source_text=text, quote=text[:300], confidence="uncertain")
+                proposals = []
+                # The same outcome-to-kind rule as an upload, so a role the model matched to a saved
+                # record still amends it instead of creating a second one.
+                drafts = [{**draft, "kind": _resume_draft_kind(draft)} for draft in organization.drafts]
+                created, matched = self._proposals_from_drafts(
+                    owner, snapshot, source, plan, source["submission_key"], int(submission.get("version") or 1),
+                    policy, {"request_digest": digest}, drafts, proposals)
+                replaced = len(pending)
+                meta["organization"] = {**summary, "state": "member_sorted" if mode == "sort_myself" else summary["state"]}
+            if created:
+                message = "Organized. Nothing is saved until you review it."
+            elif matched:
+                message = "Everything in this résumé is already in your saved résumé, so there is nothing new to review."
+            else:
+                message = "I still couldn't organize it. Nothing was changed."
+            if matched and created:
+                message += (" %d %s already in your résumé and %s left as %s."
+                            % (len(matched), "item was" if len(matched) == 1 else "items were",
+                               "was" if len(matched) == 1 else "were", "it is" if len(matched) == 1 else "they are"))
+            if replaced and (created or matched):
+                message += " %d loose %s from the earlier reading %s set aside, not deleted." % (
+                    replaced, "item" if replaced == 1 else "items", "was" if replaced == 1 else "were")
+            result = {"success": True, "request_id": request_id, "request_digest": digest, "replayed": False,
+                      "outcome": "organized" if (created or matched) else "unavailable", "source_key": source_key,
+                      "mode": mode, "organization": meta["organization"], "saved": False, "publishes": False,
+                      "proposal_keys": [row["proposal_key"] for row in created],
+                      "already_saved_count": len(matched), "replaced": replaced, "message": message}
+            snapshot["receipts"][request_id] = {"request_digest": digest, "submission_key": None,
+                                                "result": receipt_for_storage(result)}
+            self.repository.save_owner(owner, snapshot)
+            return result
+
+    def _review_overview(self, snapshot):
+        """The batch-scoped grouped review: derived, read-only, never a second store."""
+        pending = [row for row in snapshot["proposals"].values() if row["state"] == "pending"]
+        documents = [row for row in snapshot["sources"].values()
+                     if row.get("state") == "active" and row.get("kind") == "document" and row.get("text")]
+        documents.sort(key=lambda row: row.get("created_at") or "")
+
+        def open_work(source):
+            return (self._organize_eligibility(snapshot, source) is not None
+                    or any((row.get("binding") or {}).get("source_key") == source["source_key"] for row in pending))
+
+        batch_source = next((row for row in reversed(documents) if open_work(row)), None)
+        overview = {"schema_version": 1, "batch": None,
+                    "counts": {"experience": 0, "education": 0, "credentials": 0, "skills": 0, "other": 0, "unplaced": 0},
+                    "groups": [], "unplaced": {"count": 0, "proposal_keys": []}, "earlier": {"count": 0},
+                    "duplicate_source_keys": []}
+        if batch_source is None:
+            overview["earlier"]["count"] = len(pending)
+            return overview
+        key = batch_source["source_key"]
+        meta = self._source_meta(batch_source)
+        eligibility = self._organize_eligibility(snapshot, batch_source)
+        organization = meta.get("organization") if isinstance(meta.get("organization"), dict) else {
+            "state": "legacy_unorganized" if eligibility == "legacy" else "organized"}
+        overview["batch"] = {
+            "source_key": key, "created_at": batch_source.get("created_at"),
+            "document": {"pages": len({u.get("page") for u in meta.get("source_units") or [] if u.get("page")}) or None,
+                         "complete": meta.get("complete")},
+            "organization": {"state": organization.get("state"),
+                             "rejected": len([r for r in organization.get("rejections") or []
+                                              if r.get("action") != "field_cleared"])},
+            "retry_available": eligibility is not None, "retry_reason": eligibility}
+        overview["duplicate_source_keys"] = [row["source_key"] for row in documents
+                                             if row["source_key"] != key and row.get("sha256") == batch_source.get("sha256")]
+        units = {u["unit_id"]: u for u in meta.get("source_units") or []}
+        bucket = {"Experience": "experience", "Education": "education", "Credentials": "credentials", "Skills": "skills"}
+        groups = []
+        # Creation order is the structural clock: wall-clock ties can occur within one tick.
+        position = {name: index for index, name in enumerate(snapshot["proposals"])}
+        submission = batch_source.get("submission_key")
+        # Everything added in the same Add as the document (typed words, a recording) is one batch.
+        bound = [position[name] for name, row in snapshot["proposals"].items()
+                 if (row.get("binding") or {}).get("submission_key") == submission]
+        started = batch_source.get("created_at") or ""
+
+        def newer(row):
+            if bound:
+                return position[row["proposal_key"]] >= min(bound)
+            return (row.get("created_at") or "") >= started
+
+        for row in pending:
+            conversation = row.get("resume_conversation_v1") or {}
+            from_batch = (row.get("binding") or {}).get("submission_key") == submission
+            if (row.get("binding") or {}).get("source_key") == key and row["record_type"] == "unspecified" and conversation.get("presentation_section") == "Unsorted":
+                overview["counts"]["unplaced"] += 1
+                overview["unplaced"]["count"] += 1
+                overview["unplaced"]["proposal_keys"].append(row["proposal_key"])
+                continue
+            # Work created after this upload (corrections, additions) belongs to it; older pending
+            # work stays reachable behind its own deliberate navigation.
+            if not from_batch and not newer(row):
+                overview["earlier"]["count"] += 1
+                continue
+            section = conversation.get("presentation_section") or "Other"
+            overview["counts"][bucket.get(section, "other")] += 1
+            groups.append(self._overview_group(row, conversation, section, units))
+        order = ["Experience", "Education", "Credentials", "Skills"]
+        groups.sort(key=lambda g: g["heading"]["start_date"] or "", reverse=True)
+        groups.sort(key=lambda g: (order.index(g["section"]) if g["section"] in order else len(order),
+                                   not g["heading"]["current"], g["heading"]["start_date"] is None))
+        overview["groups"] = groups
+        return overview
+
+    @staticmethod
+    def _overview_group(row, conversation, section, units):
+        values = dict(row.get("proposed_values") or {})
+        record_type = row["record_type"]
+        description = ("wording" if record_type == "knowledge"
+                       else "resume_credential_wording" if record_type == "credential" else "summary")
+        effective = values.get(description) or values.get("text") or ""
+        ids = list(conversation.get("unit_ids") or [])
+        selected = sorted((units[i] for i in ids if i in units), key=lambda u: u["span_start"])
+        # Lines come from the effective wording. A unit id is attached only while that wording
+        # is still exactly the joined source text, so an edited or amended item never shows stale source lines.
+        if selected and "\n".join(u["text"] for u in selected) == effective:
+            lines = [{"text": u["text"], "unit_id": u["unit_id"],
+                      "role": "header" if u["unit_id"] == conversation.get("record_anchor") else "line"}
+                     for u in selected]
+        else:
+            lines = [{"text": part, "unit_id": None, "role": "line"}
+                     for part in effective.split("\n") if part.strip()]
+        title = (values.get("role_title") or values.get("degree_name") or values.get("title")
+                 or values.get("name") or None)
+        return {
+            "record_ref": "proposal:" + row["proposal_key"], "proposal_key": row["proposal_key"],
+            "section": section, "record_type": record_type, "state": row["state"],
+            "heading": {"title": title,
+                        "organization": (values.get("employer_name") or values.get("institution_name")
+                                         or values.get("issuer") or None),
+                        "location": values.get("location_text"),
+                        "start_date": values.get("start_date"), "end_date": values.get("end_date"),
+                        "date_precision": values.get("date_precision"),
+                        "current": values.get("current_role") is True},
+            "uncertain_fields": list(conversation.get("uncertain_fields") or []),
+            "requires_member_wording": bool(row.get("requires_member_wording")),
+            "lines": lines,
+            "source": {"source_key": (row.get("provenance") or {}).get("source_key"), "unit_ids": ids,
+                       "pages": sorted({units[i].get("page") for i in ids if i in units and units[i].get("page")})},
+            "version_token": _json_digest({"proposal_key": row["proposal_key"], "state": row["state"],
+                                           "proposed_values": values, "binding": row.get("binding"),
+                                           "uncertain_fields": conversation.get("uncertain_fields")}),
+        }
+
+    def _proposals_from_drafts(self, owner, snapshot, source, plan, submission_key, submission_version,
+                               policy, command, drafts, proposals):
+        """Create pending proposals for extracted drafts; returns ``(created, duplicates)``."""
+        duplicates: list[dict] = []
+        created = []
+        for draft in drafts or []:
+            if draft.get("outcome") == "equivalent":
+                # A true restatement keeps the existing entry and permissions:
+                # no proposal, no write, just a quiet truthful receipt entry.
+                # A reference that no longer resolves stays visible as an
+                # uncertain proposal instead of silently vanishing.
+                duplicate = self._resolve_equivalent(owner, draft)
+                if duplicate is not None:
+                    source_context = (source.get("structured_values") or {}).get("resume_conversation_v1") or {}
+                    for source_unit in source_context.get("source_units") or []:
+                        if source_unit["unit_id"] in (draft.get("unit_ids") or []):
+                            source_unit["disposition"] = "equivalent"
+                            source_unit["record_key"] = duplicate["record_key"]
+                    duplicates.append({
+                        **duplicate,
+                        "extracted_fields": dict(draft.get("values") or {}),
+                    })
+                    continue
+                draft = {**draft, "kind": "inferred_wording", "confidence": "uncertain"}
+            kind = draft.get("kind") or "inferred_wording"
+            target = None
+            if kind in {"additional_detail", "contradiction"}:
+                # Overlay the listed member-owned fact. A missing, excluded,
+                # unreadable, stale, or unlisted reference fails closed to
+                # uncertain manual review instead of creating a second row.
+                target = self._resolve_matched_target(owner, draft)
+                if target is None:
+                    kind = "inferred_wording"
+                    draft = {**draft, "kind": kind, "confidence": "uncertain"}
+                elif kind == "additional_detail":
+                    # Present the combined amendment for member review. A
+                    # confirmed append must not silently replace prior meaning.
+                    values = dict(draft.get('values') or {})
+                    for name in ('summary', 'wording'):
+                        existing_values = (target.get('proposed_values') if target.get('has_draft')
+                                           else target.get('values')) or {}
+                        existing = existing_values.get(name)
+                        addition = values.get(name)
+                        if existing and addition and addition not in existing:
+                            values[name] = existing.rstrip() + '\n' + addition
+                    draft = {**draft, 'values': values}
+            proposal = self._make_proposal(
+                snapshot, plan, source, submission_key, submission_version, policy, command,
+                kind=kind,
+                target=target,
+                confidence=draft.get("confidence") or "uncertain",
+                record_type=draft.get("record_type") or "unspecified",
+                proposed_values={**(draft.get("values") or {}),
+                    **({"suggested_category": draft["suggested_category"]}
+                       if draft.get("suggested_category") else {}),
+                    **({"suggested_parent_key": draft["parent_reference"]}
+                       if draft.get("parent_reference") else {})},
+                provided_fields=draft.get("provided_fields"),
+                quote=draft.get("quote"),
+                span_start=draft.get("span_start"),
+                span_end=draft.get("span_end"),
+            )
+            if draft.get("unit_ids"):
+                proposal["resume_conversation_v1"] = {
+                    "unit_ids": list(draft["unit_ids"]), "record_anchor": draft.get("record_anchor"),
+                    "presentation_section": draft.get("presentation_section"),
+                }
+                if draft.get("uncertain_fields"):
+                    proposal["resume_conversation_v1"]["uncertain_fields"] = list(draft["uncertain_fields"])
+                if draft.get("placement"):
+                    proposal["resume_conversation_v1"]["placement"] = draft["placement"]
+                if target and proposal['record_type'] == 'credential':
+                    self._capture_credential_binding(owner, snapshot, proposal, target['record_key'])
+                source_context = (source.get("structured_values") or {}).get("resume_conversation_v1") or {}
+                for source_unit in source_context.get("source_units") or []:
+                    if source_unit["unit_id"] in draft["unit_ids"]:
+                        source_unit["disposition"] = "pending" if proposal["record_type"] != "unspecified" else "unresolved"
+                        source_unit["proposal_key"] = proposal["proposal_key"]
+            created.append(proposal)
+            proposals.append(proposal)
+        return created, duplicates
+
     def _extract_with_adapter(self, owner, plan):
         """Run strict Luna extraction, or report the provider failure.
 
@@ -3634,22 +3982,21 @@ class ResumeIntakeService:
         try:
             # The older private-provider seam carries source_text alone. Only
             # an explicitly declared document uses the resume inventory path.
-            if getattr(plan, 'kind', None) == "document" and hasattr(self._extraction_adapter, "extract_resume"):
+            if getattr(plan, 'kind', None) == "document" and hasattr(self._extraction_adapter, "organize_resume"):
                 from services.resume_onboarding_document_reader import inventory_source
-                drafts = self._extraction_adapter.extract_resume(text,
+                organization = self._extraction_adapter.organize_resume(text,
                     allowed_fields={name: EDITOR_FIELDS[name] for name in EDITOR_FIELDS},
                     source_units=inventory_source(text, document=True), shortlist=shortlist)
-                for draft in drafts:
-                    draft["kind"] = ("new_fact" if draft["outcome"] == "new" and draft["record_type"] != "unspecified" else
-                        draft["outcome"] if draft["outcome"] in {"additional_detail", "contradiction"} else "inferred_wording")
-                return drafts, None
+                for draft in organization.drafts:
+                    draft["kind"] = _resume_draft_kind(draft)
+                return organization.drafts, None, organization
             candidates = self._extraction_adapter.extract(
                 text,
                 allowed_fields={name: EDITOR_FIELDS[name] for name in EDITOR_FIELDS},
                 shortlist=shortlist,
             )
         except ExtractionError as error:
-            return None, error.code
+            return None, error.code, None
         drafts = []
         for candidate in candidates:
             record_type = candidate.record_type
@@ -3677,7 +4024,7 @@ class ResumeIntakeService:
                 "suggested_category": candidate.suggested_category,
                 "parent_reference": candidate.parent_reference,
             })
-        return drafts, None
+        return drafts, None, None
 
     def _resolve_equivalent(self, owner, draft):
         """Confirm an equivalent reference still exists, or return None."""
@@ -4075,6 +4422,15 @@ def _partial_values(plan):
     for name in plan.explicit_clears:
         values[name] = _empty_value(name)
     return values
+
+
+def _resume_draft_kind(draft):
+    """One outcome-to-kind rule for an organized resume, shared by upload and retry."""
+    if draft["outcome"] == "new" and draft["record_type"] != "unspecified":
+        return "new_fact"
+    if draft["outcome"] in {"additional_detail", "contradiction"}:
+        return draft["outcome"]
+    return "inferred_wording"
 
 
 _RECEIPT_WORD_FIELDS = frozenset({

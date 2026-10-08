@@ -446,6 +446,15 @@ class ComposerHttpTests(IntakeRoutesTestCase):
         )
         self.assertEqual(other.status_code, 404)
 
+    def test_organize_route_is_same_origin_guarded_and_unavailable_without_an_organizer(self):
+        client = self.client()
+        body = {"request_id": str(uuid4()), "source_key": str(uuid4()), "mode": "retry"}
+        url = "/api/resume-intake/me/sources/organize"
+        self.assertEqual(client.post(url, json=body).status_code, 403)
+        refused = client.post(url, headers={"X-PeerSlate-Request": "same-origin"}, json=body)
+        self.assertEqual(refused.status_code, 503)
+        self.assertFalse(refused.get_json()["success"])
+
     def test_authority_fields_are_refused(self):
         response = self.submission(
             self.client(),

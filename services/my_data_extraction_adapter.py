@@ -513,84 +513,204 @@ def validate_extraction_payload(
     return unique
 
 
-def validate_resume_extraction_payload(payload, *, text, source_units, allowed_fields, shortlist=None):
-    """Bind complete resume candidates to supplied units, without weakening
-    the shared whole-document unique-quote rule.
+# Each rule the validator enforces, stated for the model. The code-to-rule table keeps
+# the two in lockstep: a rejection code with no stated rule fails a test.
+RESUME_VALIDATOR_RULES = {
+    "binding": ("unit_ids is a nonempty list of distinct IDs from source_unit_contract.bindable_unit_ids; "
+                "record_anchor is one of that candidate's own unit_ids; presentation_section is one of the "
+                "listed sections; every candidate carries exactly the schema's fields."),
+    "exclusive_units": ("Each bindable ID appears in at most one candidate in the whole response; if two "
+                        "candidates claim the same ID, both are discarded."),
+    "identity": ("Copy role_title, employer_name, institution_name, degree_name, credential name and issuer, "
+                 "and skill name verbatim from that candidate's own selected units: do not expand "
+                 "abbreviations, add or drop words, or take them from units the candidate did not select. "
+                 "If no verbatim value exists in those units, use null."),
+    "quote": ("quote is one exact contiguous passage that occurs exactly once within the candidate's selected "
+              "units and does not reach into units it did not select."),
+    "matching": ("Use outcome equivalent, additional_detail or contradiction only with a match_reference "
+                 "naming an exact listed record of the same record_type; parent_reference only on an "
+                 "accomplishment, naming a listed role."),
+    "knowledge": "Knowledge placed under My Story is personal; all other knowledge is work.",
+    "size": "Keep every field value under 8000 bytes.",
+}
 
-    Here explicit unit identity narrows the source before that same validator
-    runs. Identical wording in different records remains distinct evidence.
-    Missing units become visible uncertain review items, never quiet omissions.
+RESUME_REJECTION_RULES = {
+    "malformed_candidate": "binding", "unknown_record_type": "binding",
+    "invalid_source_unit_binding": "binding", "unit_claimed_twice": "exclusive_units",
+    "malformed_values": "binding", "unknown_value_fields": "binding", "unknown_outcome": "matching",
+    "span_quote_mismatch": "quote", "ambiguous_quote": "quote", "invalid_span": "quote",
+    "quote_outside_selected_units": "quote",
+    "equivalent_needs_listed_match": "matching", "matched_needs_listed_match": "matching",
+    "unknown_match_reference": "matching", "matched_record_type_mismatch": "matching",
+    "unknown_parent_reference": "matching", "unknown_confidence": "binding",
+    "unknown_category": "binding", "malformed_provided_fields": "binding",
+    "knowledge_section_mismatch": "knowledge", "field_limit": "size",
+    "unsupported_record_identity": "identity",
+}
+
+RESUME_IDENTITY_FIELDS = {"role": ("role_title", "employer_name"),
+                          "education": ("institution_name", "degree_name"),
+                          "credential": ("name", "issuer"), "skill": ("name",)}
+
+
+def resume_request_instructions():
+    """General extraction rules, then the resume contract and every validator rule."""
+    return (EXTRACTION_INSTRUCTIONS + "\n\nThe member material is a resume. Where the general rules above "
+            "differ from the resume contract below, the resume contract and the rules the response is "
+            "checked against take precedence." + RESUME_EXTRACTION_INSTRUCTIONS
+            + "\nRules this response is checked against (a candidate that breaks one is discarded):\n"
+            + "\n".join("- " + sentence for sentence in RESUME_VALIDATOR_RULES.values()))
+
+
+@dataclass(frozen=True)
+class ResumeOrganization:
+    """The outcome of organizing one resume: groups, placed details and what failed.
+
+    ``rejections`` hold candidate positions, rule codes and field names only, never
+    member text. ``unavailable`` means nothing could be organized, so the caller
+    keeps the source and creates no fragment proposals.
+    """
+
+    state: str
+    drafts: list
+    rejections: list
+    unplaced_unit_ids: list
+
+    def summary(self):
+        return {"state": self.state,
+                "groups": sum(1 for draft in self.drafts if draft.get("placement") != "unplaced"),
+                "unplaced": len(self.unplaced_unit_ids),
+                "rejections": [dict(row) for row in self.rejections]}
+
+
+def _resume_draft(raw, ids, anchor, section, *, text, units, source_units, fields, index):
+    selected = sorted((units[i] for i in ids), key=lambda u: u["span_start"])
+    start, end = selected[0]["span_start"], selected[-1]["span_end"]
+    core = {key: value for key, value in raw.items() if key not in {"unit_ids", "record_anchor", "presentation_section"}}
+    candidate = _validate_candidate(core, text=text[start:end], allowed_fields=fields, shortlist=index)
+    quote_start, quote_end = candidate.span_start + start, candidate.span_end + start
+    if any(unit["kind"] in {"content", "untrusted_instruction"} and unit["unit_id"] not in ids
+            and unit["span_start"] < quote_end and unit["span_end"] > quote_start for unit in source_units):
+        raise ExtractionError("quote_outside_selected_units")
+    values = dict(candidate.values)
+    if candidate.record_type == "knowledge":
+        expected_class = "personal" if section == "My Story" else "work"
+        if values.get("classification") not in {None, expected_class}:
+            raise ExtractionError("knowledge_section_mismatch")
+        values["classification"] = expected_class
+    # The original complete paragraph/bullet wording is the default, even if the model
+    # supplied a shorter summary. An explicit later rewrite belongs to a separate
+    # conversation proposal and member confirmation.
+    lossless = "\n".join(unit["text"] for unit in selected)
+    description = "wording" if candidate.record_type == "knowledge" else "summary"
+    if candidate.record_type in {"role", "education", "skill", "knowledge"}:
+        values[description] = lossless
+    if candidate.record_type == "credential":
+        # The credential schema has no biography/qualification field. Keep complete
+        # wording beside the proposed parent for atomic approval.
+        values["resume_credential_wording"] = lossless
+    if any(len(str(value).encode("utf-8")) > 8000 for value in values.values()):
+        raise ExtractionError("field_limit")
+    # An identity field the selected units do not support is cleared, not trusted: the
+    # grouping evidence stays valid and the member supplies the missing value.
+    cleared, confidence = [], candidate.confidence
+    for name in RESUME_IDENTITY_FIELDS.get(candidate.record_type, ()):
+        value = values.get(name)
+        if value and re.sub(r"\s+", " ", value).casefold().strip(". ") not in re.sub(r"\s+", " ", lossless).casefold():
+            del values[name]
+            cleared.append(name)
+            confidence = "uncertain"
+    return {"record_type": candidate.record_type, "values": values,
+            "outcome": candidate.outcome, "quote": candidate.quote,
+            "span_start": quote_start, "span_end": quote_end,
+            "confidence": confidence, "match_reference": candidate.match_reference,
+            "provided_fields": list(values), "suggested_category": candidate.suggested_category,
+            "parent_reference": candidate.parent_reference, "unit_ids": ids,
+            "record_anchor": anchor, "presentation_section": section,
+            "uncertain_fields": cleared, "_cleared_identity": cleared}
+
+
+def organize_resume_extraction(payload, *, text, source_units, allowed_fields, shortlist=None):
+    """Organize a resume per candidate: one flawed candidate costs only itself.
+
+    A payload that is not even the closed envelope raises (the whole answer is unusable).
+    Otherwise structure, exclusive-unit and content failures reject only the failing
+    candidate, and the units no accepted candidate claims stay visible as unplaced.
     """
     if not isinstance(payload, Mapping) or set(payload) != {"candidates"} or not isinstance(payload["candidates"], list):
         raise ExtractionError("malformed_payload")
     units = _resume_content_units(source_units)
     fields = {**allowed_fields, "knowledge": RESUME_KNOWLEDGE_FIELDS}
-    index, used, drafts = _shortlist_index(shortlist), set(), []
-    for raw in payload["candidates"]:
-        if not isinstance(raw, Mapping):
-            raise ExtractionError("malformed_candidate")
-        record_type = raw.get("record_type")
-        if record_type not in {**EXTRACTION_VALUE_FIELDS, "knowledge": ()}:
-            raise ExtractionError("unknown_record_type")
-        expected_keys = _resume_candidate_schema(record_type, EXTRACTION_VALUE_FIELDS.get(record_type, ()))['properties']
-        if set(raw) != set(expected_keys):
-            raise ExtractionError("malformed_candidate")
-        ids, anchor, section = raw.get("unit_ids"), raw.get("record_anchor"), raw.get("presentation_section")
-        if (not isinstance(ids, list) or not ids or any(not isinstance(i, str) or i not in units for i in ids)
-                or len(ids) != len(set(ids)) or set(ids) & used
-                or anchor not in ids or section not in RESUME_SECTIONS):
-            raise ExtractionError("invalid_source_unit_binding")
-        selected = sorted((units[i] for i in ids), key=lambda u: u["span_start"])
-        start, end = selected[0]["span_start"], selected[-1]["span_end"]
-        core = {key: value for key, value in raw.items() if key not in {"unit_ids", "record_anchor", "presentation_section"}}
-        candidate = _validate_candidate(core, text=text[start:end], allowed_fields=fields, shortlist=index)
-        quote_start, quote_end = candidate.span_start + start, candidate.span_end + start
-        if any(unit['kind'] in {'content', 'untrusted_instruction'} and unit['unit_id'] not in ids
-                and unit['span_start'] < quote_end and unit['span_end'] > quote_start for unit in source_units):
-            raise ExtractionError('quote_outside_selected_units')
-        values = dict(candidate.values)
-        if candidate.record_type == "knowledge":
-            expected_class = "personal" if section == "My Story" else "work"
-            if values.get("classification") not in {None, expected_class}:
-                raise ExtractionError("knowledge_section_mismatch")
-            values["classification"] = expected_class
-        # The original complete paragraph/bullet wording is the default, even
-        # if the model supplied a shorter summary. An explicit later rewrite
-        # belongs to a separate conversation proposal and member confirmation.
-        lossless = "\n".join(unit["text"] for unit in selected)
-        description = "wording" if candidate.record_type == "knowledge" else "summary"
-        if candidate.record_type in {"role", "education", "skill", "knowledge"}:
-            values[description] = lossless
-        if candidate.record_type == 'credential':
-            # The credential schema has no biography/qualification field. Keep
-            # complete wording beside the proposed parent for atomic approval.
-            values['resume_credential_wording'] = lossless
-        if any(len(str(value).encode("utf-8")) > 8000 for value in values.values()):
-            raise ExtractionError("field_limit")
-        for name in {"role": ("role_title", "employer_name"),
-                     "education": ("institution_name", "degree_name"),
-                     "credential": ("name", "issuer"), "skill": ("name",)}.get(candidate.record_type, ()):
-            value = values.get(name)
-            if value and re.sub(r"\s+", " ", value).casefold().strip('. ') not in re.sub(r"\s+", " ", lossless).casefold():
-                raise ExtractionError("unsupported_record_identity")
-        used.update(ids)
-        drafts.append({"record_type": candidate.record_type, "values": values,
-                       "outcome": candidate.outcome, "quote": candidate.quote,
-                       "span_start": candidate.span_start + start, "span_end": candidate.span_end + start,
-                       "confidence": candidate.confidence, "match_reference": candidate.match_reference,
-                       "provided_fields": list(values), "suggested_category": candidate.suggested_category,
-                       "parent_reference": candidate.parent_reference, "unit_ids": ids,
-                       "record_anchor": anchor, "presentation_section": section})
-    for identity, unit in units.items():
-        if identity in used:
+    index = _shortlist_index(shortlist)
+    rejections, bound = [], []
+    for position, raw in enumerate(payload["candidates"]):
+        try:
+            if not isinstance(raw, Mapping):
+                raise ExtractionError("malformed_candidate")
+            record_type = raw.get("record_type")
+            if record_type not in {**EXTRACTION_VALUE_FIELDS, "knowledge": ()}:
+                raise ExtractionError("unknown_record_type")
+            expected = _resume_candidate_schema(record_type, EXTRACTION_VALUE_FIELDS.get(record_type, ()))["properties"]
+            if set(raw) != set(expected):
+                raise ExtractionError("malformed_candidate")
+            ids, anchor, section = raw.get("unit_ids"), raw.get("record_anchor"), raw.get("presentation_section")
+            if (not isinstance(ids, list) or not ids or any(not isinstance(i, str) or i not in units for i in ids)
+                    or len(ids) != len(set(ids)) or anchor not in ids or section not in RESUME_SECTIONS):
+                raise ExtractionError("invalid_source_unit_binding")
+        except ExtractionError as error:
+            rejections.append({"candidate_index": position, "code": error.code})
             continue
+        bound.append((position, raw, ids, anchor, section))
+    claims = {}
+    for _, _, ids, _, _ in bound:
+        for identity in ids:
+            claims[identity] = claims.get(identity, 0) + 1
+    drafts, used = [], set()
+    for position, raw, ids, anchor, section in bound:
+        if any(claims[identity] > 1 for identity in ids):
+            # Every claimant is treated alike, so the result never depends on output order.
+            rejections.append({"candidate_index": position, "code": "unit_claimed_twice"})
+            continue
+        try:
+            draft = _resume_draft(raw, ids, anchor, section, text=text, units=units,
+                                  source_units=source_units, fields=fields, index=index)
+        except ExtractionError as error:
+            rejections.append({"candidate_index": position, "code": error.code})
+            continue
+        for name in draft.pop("_cleared_identity"):
+            rejections.append({"candidate_index": position, "code": "unsupported_record_identity",
+                               "field": name, "action": "field_cleared"})
+        used.update(ids)
+        drafts.append(draft)
+    unplaced = [identity for identity in units if identity not in used]
+    organized = len(drafts)
+    for identity in unplaced:
+        unit = units[identity]
         drafts.append({"record_type": "unspecified", "values": {"text": unit["text"]},
                        "outcome": "uncertain", "quote": unit["text"],
                        "span_start": unit["span_start"], "span_end": unit["span_end"],
                        "confidence": "uncertain", "match_reference": None,
                        "provided_fields": ["text"], "unit_ids": [identity],
-                       "record_anchor": identity, "presentation_section": "Unsorted"})
-    return drafts
+                       "record_anchor": identity, "presentation_section": "Unsorted",
+                       "placement": "unplaced"})
+    state = ("unavailable" if units and not organized else
+             "partial" if rejections or unplaced else "organized")
+    rejections.sort(key=lambda row: (row["candidate_index"], row["code"], row.get("field") or ""))
+    return ResumeOrganization(state, drafts, rejections, unplaced)
+
+
+def validate_resume_extraction_payload(payload, *, text, source_units, allowed_fields, shortlist=None):
+    """Strict form of the organization: any rejection raises its rule code.
+
+    Kept for callers that need all-or-nothing validation. The conversational path
+    uses ``organize_resume_extraction`` so one flawed candidate costs only itself.
+    """
+    organization = organize_resume_extraction(payload, text=text, source_units=source_units,
+                                              allowed_fields=allowed_fields, shortlist=shortlist)
+    if organization.rejections:
+        code = organization.rejections[0]["code"]
+        raise ExtractionError("invalid_source_unit_binding" if code == "unit_claimed_twice" else code)
+    return organization.drafts
 
 
 class MyDataExtractionAdapter:
@@ -713,15 +833,12 @@ class MyDataExtractionAdapter:
             shortlist=shortlist,
         )
 
-    def extract_resume(self, text, *, allowed_fields, source_units, shortlist=None, request_id=None):
-        """Use the same selected provider/model/allowance with a resume profile.
-        The shared My Data extraction schema, instructions and behavior remain
-        unchanged. No second call or fallback is made on invalid output.
-        """
+    def _resume_payload(self, text, *, source_units, shortlist=None, request_id=None):
+        """One provider dispatch for a resume; returns the provider payload."""
         if self._provider is None:
             raise ExtractionError("provider_unavailable")
         request = replace(self.build_request(text, request_id=request_id, shortlist=shortlist),
-            instructions=RESUME_EXTRACTION_INSTRUCTIONS,
+            instructions=resume_request_instructions(),
             input_text=_json_dumps({"member_shortlist": list(shortlist or []),
                 "source_unit_contract": resume_source_unit_contract(source_units),
                 "source_units": [{k: unit.get(k) for k in ("unit_id", "kind", "section", "text")} for unit in source_units],
@@ -742,8 +859,23 @@ class MyDataExtractionAdapter:
                     or self._model in (STRUCTURED_MODEL_SOL, STRUCTURED_MODEL_NATIVE_LUNA) and result.model_name is None):
                 raise ExtractionError("model_mismatch")
             result = result.payload
-        return validate_resume_extraction_payload(result, text=text, source_units=source_units,
-            allowed_fields=allowed_fields, shortlist=shortlist)
+        return result
+
+    def organize_resume(self, text, *, allowed_fields, source_units, shortlist=None, request_id=None):
+        """Use the same selected provider/model/allowance with a resume profile.
+
+        One dispatch, no second call and no fallback on invalid output. A flawed
+        candidate is rejected alone; see ``organize_resume_extraction``.
+        """
+        payload = self._resume_payload(text, source_units=source_units, shortlist=shortlist, request_id=request_id)
+        return organize_resume_extraction(payload, text=text, source_units=source_units,
+                                          allowed_fields=allowed_fields, shortlist=shortlist)
+
+    def extract_resume(self, text, *, allowed_fields, source_units, shortlist=None, request_id=None):
+        """Strict all-or-nothing form: any rejected candidate raises its rule code."""
+        payload = self._resume_payload(text, source_units=source_units, shortlist=shortlist, request_id=request_id)
+        return validate_resume_extraction_payload(payload, text=text, source_units=source_units,
+                                                  allowed_fields=allowed_fields, shortlist=shortlist)
 
 
 @dataclass

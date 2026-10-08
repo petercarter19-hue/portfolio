@@ -37,6 +37,7 @@ from services.resume_intake_service import (
     ResumeIntakeUnavailableError, ResumeIntakeValidationError, ResumeIntakeConflictError,
 )
 from services.resume_intake_transcription_adapter import ResumeTranscriptionAdapter
+from services.resume_onboarding_document_reader import inventory_source
 
 try:
     from playwright.sync_api import sync_playwright
@@ -253,6 +254,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
     def manual(self, page):
         if page.locator('#resume-intake[open]').count():
             page.locator('#resume-intake-skip').click()
+            page.locator('#resume-intake').wait_for(state='hidden')
         details = page.locator('#resume-intake-manual-details')
         if details.get_attribute('open') is None:
             details.locator('summary').click()
@@ -1790,6 +1792,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.assertEqual(page.locator('.resume-intake').evaluate('el => getComputedStyle(el).transitionDuration'), '0s')
         self.capture(page, 'runtime-keyboard-phone')
         page.keyboard.press('Escape')
+        page.locator('#resume-intake').wait_for(state='hidden')  # pause saves first
         self.assertFalse(page.locator('#resume-intake').is_visible())
         self.assertEqual(page.evaluate('document.activeElement.id'), 'resume-intake-reopen')
         page.locator('#resume-intake-reopen').click()
@@ -2116,6 +2119,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.assertFalse(page.locator('#resume-intake-activity').is_visible())
         self.assertEqual(len(self.catalog.list_items(self.owner)),1)
         page.locator('#resume-intake-skip').click()
+        page.locator('#resume-intake').wait_for(state='hidden')  # pause saves first
         self.assertFalse(page.locator('#resume-intake').is_visible())
         self.assertEqual(page.locator('#resume-intake-text').input_value(),'My next thought.')
 
@@ -2315,6 +2319,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.assertTrue(page.locator('#resume-intake-input').is_visible())
         self.assertIn('outside work',page.locator('#resume-intake-question').inner_text())
         page.locator('#resume-intake-skip').click()
+        page.locator('#resume-intake').wait_for(state='hidden')  # pause saves first
         self.assertFalse(page.locator('#resume-intake').is_visible())
         self.input(page)
         self.assertFalse(page.locator('#resume-intake-new-question').is_visible())
@@ -2790,6 +2795,281 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.assertFalse(item['values'].get('summary'))
         self.assertFalse(item['resume_display']);self.assertFalse(item['visitor_ai'])
 
+    BATCH_TEXT = ('Experience\nEngineer, Alpha Labs.\nBuilt data pipelines.\nLed a team of four.\n'
+            'Analyst, Beta Corp.\nWrote weekly reports.\nSkills\nSQL.\nPython.')
+
+    # -- fixtures -------------------------------------------------------------
+
+    def batch_payload(self, *, flawed=False):
+        from tests.test_resume_onboarding_coverage import complete_resume_candidate
+        units = [u for u in inventory_source(self.BATCH_TEXT, document=True) if u['kind'] == 'content']
+        by_text = {u['text']: u for u in units}
+        def pick(*texts):
+            return [by_text[t] for t in texts]
+        role_a = pick('Engineer, Alpha Labs.', 'Built data pipelines.', 'Led a team of four.')
+        role_b = pick('Analyst, Beta Corp.', 'Wrote weekly reports.')
+        candidates = [
+            complete_resume_candidate('role', {'role_title': 'Engineer', 'employer_name': 'Alpha Labs'}, role_a[0]['text'], role_a, 'Experience'),
+            complete_resume_candidate('role', {'role_title': 'Analyst', 'employer_name': 'Beta Corp'}, role_b[0]['text'], role_b, 'Experience'),
+            complete_resume_candidate('skill', {'name': 'SQL'}, 'SQL.', pick('SQL.'), 'Skills'),
+            complete_resume_candidate('skill', {'name': 'Python'}, 'Python.', pick('Python.'), 'Skills'),
+        ]
+        if flawed:
+            candidates[3]['quote'] = 'A passage the source never contains.'
+        return {'candidates': candidates}
+
+    def batch_service(self, provider=None):
+        from services.my_data_extraction_adapter import MyDataExtractionAdapter
+        from tests.test_my_data_intake_sources import extracted_pipeline
+        service = ResumeIntakeService(
+            repository=self.repository, draft_service=self.draft_service, policy=selected_policy_for_tests(),
+            document_adapter=ResumeDocumentAdapter(), document_pipeline=extracted_pipeline(self.BATCH_TEXT),
+            extraction_adapter=MyDataExtractionAdapter(provider=provider))
+        app.config['RESUME_INTAKE_SERVICE'] = service
+        self.calls = []
+        return service
+
+    def batch_upload(self, service):
+        from tests.test_my_data_intake_ai import add_request
+        from tests.test_my_data_intake_sources import FakeUpload
+        return service.submit(self.owner, add_request(attachments=[{'client_key': 'doc', 'kind': 'document',
+            'declared_content_type': 'text/plain', 'filename': 'resume.txt'}]),
+            files={'doc': FakeUpload('text/plain', self.BATCH_TEXT.encode())})
+
+    def batch_counting(self, payload):
+        def provider(request, **options):
+            self.calls.append(request)
+            return payload
+        return provider
+
+    # -- the batch ----------------------------------------------------------------
+
+    CONTRAST_SCRIPT = """(selector) => {
+        const parse = (value) => value.match(/[0-9.]+/g).map(Number);
+        const luminance = ([r, g, b]) => {
+            const f = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+            return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+        };
+        const ratio = (a, b) => { const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
+        const element = document.querySelector(selector);
+        const ink = parse(getComputedStyle(element).color).slice(0, 3);
+        // The guide's surfaces are white or ivory; the darkest of them is the honest worst case.
+        return Math.min(ratio(ink, [255, 255, 255]), ratio(ink, [251, 248, 241]), ratio(ink, [255, 253, 248]));
+    }"""
+
+    def assert_contrast(self, page, selector):
+        self.assertGreaterEqual(page.evaluate(self.CONTRAST_SCRIPT, selector), 4.5, selector)
+
+    def test_overview_counts_one_complete_role_and_the_details_it_could_not_place(self):
+        service = self.batch_service(self.batch_counting(self.batch_payload(flawed=True)))
+        self.batch_upload(service)
+        page = self.page()
+        page.locator('#resume-intake-review:visible').wait_for()
+        batch = page.locator('#resume-intake-batch')
+        batch.wait_for()
+        text = batch.inner_text()
+        self.assertIn('I organized your résumé: 2 roles · 1 skill.', text)
+        self.assertIn('1 detail I couldn’t place', text)
+        self.assertNotIn('groups to review', page.locator('#resume-intake-review-position').inner_text())
+        self.assertEqual(page.locator('#resume-intake-review-position').inner_text(), 'Experience · 1 of 2')
+        lines = page.locator('.resume-intake__lines li')
+        lines.nth(2).wait_for()
+        self.assertEqual(lines.count(), 3)
+        self.assertIn('resume-intake__line--header', lines.nth(0).get_attribute('class'))
+        self.assertEqual(lines.nth(2).inner_text(), 'Led a team of four.')
+        self.assertEqual(page.get_by_role('button', name='Confirm details', exact=True).count(), 1)
+        self.assertEqual(self.catalog.list_items(self.owner), [])
+        self.assertEqual(len(self.calls), 1)
+        self.assertEqual(self.errors, [])
+        for selector in ('.resume-intake__quiet', '.resume-intake__proposal-source', '.resume-intake__footer p'):
+            self.assert_contrast(page, selector)
+
+    def test_loose_details_open_one_at_a_time_and_earlier_work_stays_behind_its_own_link(self):
+        service = self.batch_service(self.batch_counting(self.batch_payload(flawed=True)))
+        from tests.test_my_data_intake_ai import add_request
+        service.submit(self.owner, add_request(text='An older note from an earlier visit.'))
+        self.batch_upload(service)
+        page = self.page()
+        page.locator('#resume-intake-batch').wait_for()
+        self.assertEqual(page.locator('[data-earlier-items]').inner_text(), 'Earlier unfinished items (1)')
+        self.assertNotIn('older note', page.locator('#resume-intake-proposals').inner_text())
+        page.locator('.resume-intake__loose summary').click()
+        self.assertEqual(page.locator('[data-loose-key]').count(), 1)
+        page.locator('[data-loose-key]').click()
+        page.locator('#resume-intake-proposals').get_by_text('Python.', exact=False).first.wait_for()
+        page.locator('[data-earlier-items]').click()
+        page.locator('#resume-intake-batch').get_by_text('Earlier unfinished items', exact=True).wait_for()
+        self.assertIn('older note', page.locator('#resume-intake-proposals').inner_text())
+        page.get_by_role('button', name='Back to your uploaded résumé', exact=True).click()
+        page.locator('#resume-intake-batch').get_by_text('Your uploaded résumé', exact=True).wait_for()
+        self.assertEqual(self.catalog.list_items(self.owner), [])
+
+    def test_unavailable_organizer_offers_retry_and_a_retry_regroups_the_stored_source(self):
+        service = self.batch_service(None)
+        self.batch_upload(service)
+        page = self.page()
+        page.locator('#resume-intake-review:visible').wait_for()
+        card = page.locator('#resume-intake-batch')
+        card.get_by_text('I read your résumé but couldn’t organize it right now. Nothing is lost.').wait_for()
+        self.assertEqual(page.locator('#resume-intake-proposals li').count(), 0)
+        service._extraction_adapter._provider = self.batch_counting(self.batch_payload())
+        page.get_by_role('button', name='Try organizing again', exact=True).click()
+        card.get_by_text('I organized your résumé: 2 roles · 2 skills.').wait_for()
+        self.assertEqual(len(self.calls), 1)
+        page.locator('.resume-intake__lines li').nth(2).wait_for()
+        self.assertEqual(page.locator('.resume-intake__lines li').count(), 3)
+        self.assertEqual(page.get_by_role('button', name='Try organizing again').count(), 0)
+        self.assertEqual(self.catalog.list_items(self.owner), [])
+
+    def test_the_same_file_is_not_stored_or_dispatched_twice(self):
+        service = self.batch_service(self.batch_counting(self.batch_payload()))
+        self.batch_upload(service)
+        page = self.page()
+        page.locator('#resume-intake-review:visible').wait_for()
+        page.locator('[data-add-more]').click()
+        page.locator('#resume-intake-input:visible').wait_for()
+        page.locator('#resume-intake-file').set_input_files(
+            {'name': 'resume.txt', 'mimeType': 'text/plain', 'buffer': self.BATCH_TEXT.encode()})
+        page.locator('#resume-intake-add').click()
+        page.locator('#resume-intake-review').get_by_text('You’ve already uploaded this file.', exact=False).wait_for()
+        self.assertEqual(len(self.calls), 1)
+        snapshot = self.repository.load_owner(self.owner)
+        self.assertEqual(len([s for s in snapshot['sources'].values() if s['kind'] == 'document']), 1)
+
+    # -- pause ------------------------------------------------------------------------
+
+    def test_pause_waits_for_the_save_and_the_status_and_says_only_what_happened(self):
+        service = self.batch_service(self.batch_counting(self.batch_payload()))
+        self.batch_upload(service)
+        page = self.page()
+        page.locator('#resume-intake-review:visible').wait_for()
+        notice = page.locator('#resume-intake-pause-notice')
+        # Unsent words make the checkpoint real. The draft cannot be saved: the dialog stays,
+        # the failure is visible, and nothing says paused.
+        page.evaluate("() => { const box = document.getElementById('resume-intake-text'); box.value = 'Words not sent yet.'; box.dispatchEvent(new Event('input', {bubbles: true})); }")
+        page.route('**/api/resume-intake/me/draft', lambda route: route.abort() if route.request.method == 'PUT' else route.continue_())
+        page.get_by_role('button', name='Pause', exact=True).click()
+        page.locator('#resume-intake-pause-failure').wait_for()
+        self.assertTrue(page.locator('#resume-intake[open]').count())
+        self.assertEqual(page.locator('#resume-intake-pause-notice').count(), 0)
+        page.unroute('**/api/resume-intake/me/draft')
+        # The draft saves but the pause is not recorded: say exactly that, and retry works.
+        page.route('**/api/resume-intake/me/guide/status', lambda route: route.fulfill(status=503, body='{}', content_type='application/json'))
+        page.get_by_role('button', name='Try again', exact=True).click()
+        notice.wait_for()
+        notice.get_by_text('Draft saved, but pausing wasn’t recorded.', exact=False).wait_for()
+        self.assertNotIn('Paused.', notice.inner_text())
+        page.unroute('**/api/resume-intake/me/guide/status')
+        notice.get_by_role('button', name='Retry', exact=True).click()
+        notice.get_by_text('Paused. Your draft is saved privately.', exact=True).wait_for()
+        self.assertFalse(page.locator('#resume-intake[open]').count())
+
+    def test_escape_and_the_close_button_are_the_same_truthful_pause(self):
+        service = self.batch_service(self.batch_counting(self.batch_payload()))
+        self.batch_upload(service)
+        page = self.page()
+        page.locator('#resume-intake-review:visible').wait_for()
+        page.keyboard.press('Escape')
+        notice = page.locator('#resume-intake-pause-notice')
+        notice.get_by_text('Paused. Your draft is saved privately.', exact=True).wait_for()
+        # The notice floats: it neither shifts the fixed reopen button nor blocks the page beneath it.
+        self.assertEqual(notice.evaluate("el => [getComputedStyle(el).position, getComputedStyle(el).pointerEvents]"),
+                         ['absolute', 'none'])
+        page.locator('#resume-intake-reopen').click()
+        page.locator('#resume-intake[open]').wait_for()
+        page.locator('#resume-intake-hide').click()
+        page.locator('#resume-intake-pause-notice').get_by_text('Paused. Your draft is saved privately.', exact=True).wait_for()
+
+    @staticmethod
+    def boxes_overlap(first, second):
+        return not (first['x'] + first['width'] <= second['x'] or second['x'] + second['width'] <= first['x']
+                    or first['y'] + first['height'] <= second['y'] or second['y'] + second['height'] <= first['y'])
+
+    def batch_clocked_page(self, width, height):
+        """A page whose timers can be fast-forwarded, so a 15 second clear needs no real wait."""
+        context = self.browser.new_context(viewport={'width': width, 'height': height})
+        self.addCleanup(context.close)
+        page = context.new_page()
+        page.set_default_timeout(7000)
+        page.route('https://fonts.**', lambda route: route.abort())
+        page.clock.install()
+        self.errors = []
+        page.on('pageerror', lambda error: self.errors.append(str(error)))
+        page.goto(self.base_url + '/app/resume')
+        page.locator('#resume-intake[open]').wait_for()
+        return page
+
+    def test_pause_notice_never_covers_the_reopen_or_photo_buttons_and_retry_is_reachable(self):
+        for width, height in ((1440, 1000), (390, 844)):
+            self.owner = 'notice-%d-%s' % (width, self._testMethodName)
+            app.config.update(PEERSLATE_DEV_USER_KEY=self.owner)
+            service = self.batch_service(self.batch_counting(self.batch_payload()))
+            self.batch_upload(service)
+            page = self.page(width, height)
+            page.locator('#resume-intake-review:visible').wait_for()
+            page.route('**/api/resume-intake/me/guide/status',
+                       lambda route: route.fulfill(status=503, body='{}', content_type='application/json'))
+            page.get_by_role('button', name='Pause', exact=True).click()
+            notice = page.locator('#resume-intake-pause-notice')
+            notice.get_by_text('Draft saved, but pausing wasn’t recorded.', exact=False).wait_for()
+            self.assertEqual(notice.get_attribute('role'), 'status')
+            box = notice.bounding_box()
+            self.assertFalse(self.boxes_overlap(box, page.locator('#resume-intake-reopen').bounding_box()), (width, 'reopen'))
+            media = page.locator('#resume-media button:visible')
+            for index in range(media.count()):
+                self.assertFalse(self.boxes_overlap(box, media.nth(index).bounding_box()), (width, 'photo button', index))
+            retry = notice.get_by_role('button', name='Retry', exact=True)
+            retry.focus(); page.keyboard.press('Shift+Tab'); page.keyboard.press('Tab')
+            self.assertEqual(page.evaluate('document.activeElement.textContent'), 'Retry')
+            style, thickness = retry.evaluate("el => [getComputedStyle(el).outlineStyle, parseFloat(getComputedStyle(el).outlineWidth)]")
+            self.assertNotEqual(style, 'none')
+            self.assertGreaterEqual(thickness, 2)
+            where = retry.bounding_box()
+            self.assertTrue(where['x'] >= 0 and where['x'] + where['width'] <= width, width)
+            self.assertEqual(retry.evaluate("el => getComputedStyle(el).pointerEvents"), 'auto')
+            self.assertEqual(self.errors, [])
+
+    def test_only_a_fully_successful_pause_notice_clears_itself(self):
+        service = self.batch_service(self.batch_counting(self.batch_payload()))
+        self.batch_upload(service)
+        page = self.batch_clocked_page(1440, 1000)
+        page.locator('#resume-intake-review:visible').wait_for()
+        notice = page.locator('#resume-intake-pause-notice')
+        page.keyboard.press('Escape')
+        notice.get_by_text('Paused. Your draft is saved privately.', exact=True).wait_for()
+        page.clock.fast_forward(16000)
+        notice.wait_for(state='hidden')
+        # A save that fails and is closed anyway leaves a notice about unsaved changes: it must stay.
+        page.locator('#resume-intake-reopen').click()
+        page.locator('#resume-intake[open]').wait_for()
+        page.evaluate("() => { const box = document.getElementById('resume-intake-text'); box.value = 'Words not saved.'; box.dispatchEvent(new Event('input', {bubbles: true})); }")
+        page.route('**/api/resume-intake/me/draft', lambda route: route.abort() if route.request.method == 'PUT' else route.continue_())
+        page.get_by_role('button', name='Pause', exact=True).click()
+        page.get_by_role('button', name='Close anyway', exact=True).click()
+        notice.get_by_text('Closed. Your last saved draft is kept', exact=False).wait_for()
+        page.clock.fast_forward(60000)
+        self.assertTrue(notice.is_visible())
+        self.assertIn('Closed. Your last saved draft is kept', notice.inner_text())
+
+    # -- phone --------------------------------------------------------------------------
+
+    def test_phone_sheet_fills_the_screen_and_the_last_action_stays_reachable(self):
+        service = self.batch_service(self.batch_counting(self.batch_payload()))
+        self.batch_upload(service)
+        page = self.page(390, 844)
+        page.locator('#resume-intake-review:visible').wait_for()
+        box = page.locator('#resume-intake').bounding_box()
+        self.assertEqual((round(box['x']), round(box['y']), round(box['width']), round(box['height'])), (0, 0, 390, 844))
+        self.assertLessEqual(page.evaluate('document.documentElement.scrollWidth'), 390)
+        page.locator('#resume-intake-guide').evaluate('el => { el.scrollTop = el.scrollHeight; }')
+        confirm = page.get_by_role('button', name='Confirm details', exact=True)
+        confirm.scroll_into_view_if_needed()
+        action = confirm.bounding_box()
+        self.assertGreaterEqual(action['y'], 0)
+        self.assertLessEqual(action['y'] + action['height'], 844)
+        pause = page.get_by_role('button', name='Pause', exact=True).bounding_box()
+        self.assertGreaterEqual(pause['height'], 44)
+        self.assertEqual(self.errors, [])
 
 
 if __name__ == '__main__':

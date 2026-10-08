@@ -56,6 +56,61 @@ class ResumeOnboardingDocumentReaderTests(unittest.TestCase):
         self.assertIn('SQL.', result['text'])
         self.assertTrue(result['complete'])
 
+    @staticmethod
+    def _rows_pdf(rows):
+        """One page of positioned runs: (x, y, text). Mirrors how word processors place right-aligned dates."""
+        from pypdf import PdfWriter
+        from pypdf.generic import DictionaryObject, NameObject, DecodedStreamObject
+        writer = PdfWriter()
+        page = writer.add_blank_page(612, 792)
+        font = DictionaryObject({NameObject("/Type"): NameObject("/Font"), NameObject("/Subtype"): NameObject("/Type1"),
+                                 NameObject("/BaseFont"): NameObject("/Helvetica"),
+                                 NameObject("/Encoding"): NameObject("/WinAnsiEncoding")})
+        page[NameObject("/Resources")] = DictionaryObject({NameObject("/Font"): DictionaryObject(
+            {NameObject("/F1"): writer._add_object(font)})})
+        stream = DecodedStreamObject()
+        stream.set_data("\n".join("BT /F1 10 Tf 1 0 0 1 %s %s Tm <%s> Tj ET" % (x, y, text.encode("cp1252").hex())
+                                  for x, y, text in rows).encode("ascii"))
+        page[NameObject("/Contents")] = writer._add_object(stream)
+        output = io.BytesIO(); writer.write(output)
+        return output.getvalue()
+
+    def test_right_aligned_dates_stay_on_the_line_of_their_job(self):
+        # Titles on the left, dates right-aligned on the same row: one column, never two.
+        jobs = [("Systems Engineer, Alpha Labs", "Jan 2019 - Present"), ("Analyst, Beta Corp", "2014 - 2018"),
+                ("Technician, Gamma Works", "Mar 2009 - Dec 2013"), ("Intern, Delta Group", "2008")]
+        rows = []
+        for index, (title, dates) in enumerate(jobs):
+            y = 740 - index * 40
+            rows += [(40, y, title), (600 - 5.2 * len(dates), y, dates),
+                     (50, y - 14, "Built and maintained the reporting pipeline for the team.")]
+        result = self.reader.read('application/pdf', self._rows_pdf(rows), limits=self.limits)
+        lines = result['text'].split('\n')
+        for title, dates in jobs:
+            line = next(row for row in lines if title in row)
+            self.assertIn(dates, line)
+        self.assertFalse(lines[-1].strip() in {dates for _, dates in jobs})
+
+    def test_equal_width_dates_are_still_not_a_second_column(self):
+        # Identical-width dates do start at one x, but they are dates, not a column of text.
+        rows = []
+        for index in range(5):
+            y = 740 - index * 30
+            rows += [(40, y, "Role %d, Employer %d" % (index, index)), (480, y, "2015 - 2019")]
+        result = self.reader.read('application/pdf', self._rows_pdf(rows), limits=self.limits)
+        lines = result['text'].split('\n')
+        for index in range(5):
+            self.assertIn("2015 - 2019", next(row for row in lines if "Role %d," % index in row))
+
+    def test_a_real_second_column_still_keeps_each_column_together(self):
+        rows = []
+        for index in range(5):
+            y = 740 - index * 14
+            rows += [(40, y, "Left line number %d of the first column." % index),
+                     (330, y, "Right line number %d of the second column." % index)]
+        text = self.reader.read('application/pdf', self._rows_pdf(rows), limits=self.limits)['text']
+        self.assertLess(text.index("Left line number 4"), text.index("Right line number 0"))
+
     def test_image_only_page_without_ocr_is_explicitly_unreadable(self):
         from pypdf import PdfWriter
         writer = PdfWriter(); writer.add_blank_page(612, 792)

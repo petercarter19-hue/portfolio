@@ -441,10 +441,38 @@ def _ocr_page(pdfium, page, number, settings, root, total_pixels):
                   "review_required": True, "low_confidence": any(t["confidence"] < 85 for t in tokens)}, pixels
 
 
+_DATE_RUN = re.compile(r"(?:19|20)\d\d|present|current", re.I)
+
+
+def _is_column_layout(fragments, width):
+    """True only for a real second column, not for right-aligned dates.
+
+    A column's lines all start at one x. A right-aligned date shares its row with the
+    left text and starts wherever its width puts it, so dates and the continuation runs
+    of long lines never line up. Short date-like runs are ignored; at least three
+    right-hand rows must then start at one x for the page to count as two columns.
+    """
+    rows = {}
+    for x, y, text in fragments:
+        rows.setdefault(round(y / 3), []).append((x, text))
+    starts = []
+    for row in rows.values():
+        right = [x for x, text in row
+                 if x > width * .52 and not (len(text.strip()) <= 30 and _DATE_RUN.search(text))]
+        if right:
+            starts.append(min(right))
+    if len([f for f in fragments if f[0] < width * .45]) < 3 or len(starts) < 3:
+        return False
+    ordered = sorted(starts)
+    anchor = ordered[len(ordered) // 2]
+    return sum(1 for x in starts if abs(x - anchor) <= width * .02) >= .6 * len(starts)
+
+
 def _pdf_text_page(page):
     # pypdf's content-stream reading preserves whole columns when authored in
-    # that order. Visitor positions allow common two-column layouts authored
-    # row-first to keep their complete records together.
+    # that order. Visitor positions let common two-column layouts authored
+    # row-first keep their complete records together; a single column with
+    # right-aligned dates keeps every date on the line of its title.
     fragments = []
     def visitor(text, cm, tm, font, size):
         if text.strip():
@@ -453,9 +481,7 @@ def _pdf_text_page(page):
             fragments.append((x, y, text))
     original = page.extract_text(visitor_text=visitor) or ""
     width = float(page.mediabox.width)
-    left = [f for f in fragments if f[0] < width * .45]
-    right = [f for f in fragments if f[0] > width * .52]
-    if len(left) >= 3 and len(right) >= 3:
+    if _is_column_layout(fragments, width):
         groups = ([f for f in fragments if f[0] <= width * .5],
                   [f for f in fragments if f[0] > width * .5])
         return "\n".join(f[2].rstrip() for group in groups for f in sorted(group, key=lambda f: -f[1]))

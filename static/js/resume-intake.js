@@ -39,6 +39,7 @@
         historyReview: root.getAttribute('data-history-review-url'),
         excludedReview: root.getAttribute('data-excluded-review-url'),
         purge: root.getAttribute('data-intake-purge-url'),
+        organize: root.getAttribute('data-intake-organize-url'),
         originals: root.getAttribute('data-intake-originals-url'),
         guide: root.getAttribute('data-guide-url'),
         guideStatus: root.getAttribute('data-guide-status-url'),
@@ -157,6 +158,8 @@
     var lastAcknowledgement = '';
     var lastConfirmedKey = null;
     var proposalDrafts = {};
+    var reviewOverview = null, reviewScope = 'batch', allPendingRows = [], unplacedChoice = null;
+    var pendingOrganize = null, organizeBusy = false, pausing = false, pauseNoticeTimer = null;
     var screen = 'welcome';
     var initialized = false;
     var acknowledgedFacts = 0;
@@ -344,11 +347,12 @@
         var adding = activityOperations.some(function (operation) { return operation.kind === 'add'; });
         var transcribing = activityOperations.some(function (operation) { return operation.kind === 'transcription'; });
         var waiting = activityOperations.some(function (operation) { return operation.longWait; });
-        var message = adding ? 'Preparing your information…' : '';
+        var organizing = activityOperations.some(function (operation) { return operation.kind === 'organize'; });
+        var message = adding ? 'Preparing your information…' : organizing ? 'Organizing your résumé…' : '';
         if (transcribing) {
             message += (message ? ' ' : '') + 'Turning your recording into text…';
         }
-        if (message) {
+        if (message && !organizing) {
             message += waiting
                 ? ' This request is taking longer. You can keep typing; your new words will be kept.'
                 : ' You can keep typing.';
@@ -802,6 +806,234 @@
         }
         return typeof value === 'string' && CHOICES[name] ? value.replace(/_/g, ' ') : String(value);
     }
+    /* -- the latest upload, reviewed as one batch ---------------------- */
+
+    function batchOverview() {
+        return reviewOverview && reviewOverview.batch ? reviewOverview : null;
+    }
+    function batchNeedsAttention() {
+        var overview = batchOverview();
+        return Boolean(overview && (overview.batch.retry_available ||
+            (overview.unplaced.count && !overview.groups.length)));
+    }
+    function groupFor(proposalKey) {
+        var overview = batchOverview();
+        return overview ? overview.groups.find(function (group) { return group.proposal_key === proposalKey; }) || null : null;
+    }
+    // Review the new upload on its own. Older unfinished work stays reachable, and the loose
+    // details nobody placed are opened one at a time on purpose, never as a long queue.
+    function scopedRows(rows) {
+        var overview = batchOverview();
+        if (!overview) return rows;
+        var grouped = {}, loose = {};
+        overview.groups.forEach(function (group) { grouped[group.proposal_key] = true; });
+        (overview.unplaced.proposal_keys || []).forEach(function (key) { loose[key] = true; });
+        return rows.filter(function (row) {
+            if (reviewScope === 'earlier') return !grouped[row.proposal_key] && !loose[row.proposal_key];
+            return grouped[row.proposal_key] || row.proposal_key === unplacedChoice;
+        });
+    }
+    function chooseLoose(proposalKey) {
+        var row = allPendingRows.find(function (candidate) { return candidate.proposal_key === proposalKey; });
+        if (!row) return;
+        var base = proposals.filter(function (candidate) { return candidate.proposal_key !== unplacedChoice; });
+        unplacedChoice = proposalKey; selectedProposalKey = proposalKey;
+        renderProposals(base.concat([row]));
+    }
+    function countSentence(counts) {
+        var parts = [];
+        [['experience', 'role', 'roles'], ['education', 'education entry', 'education entries'],
+         ['credentials', 'credential', 'credentials'], ['skills', 'skill', 'skills'],
+         ['other', 'other detail', 'other details']].forEach(function (entry) {
+            var count = counts[entry[0]] || 0;
+            if (count) parts.push(count + ' ' + (count === 1 ? entry[1] : entry[2]));
+        });
+        return parts.join(' · ');
+    }
+    function organizeSource(mode) {
+        var overview = batchOverview();
+        if (!overview || organizeBusy) return;
+        // One unacknowledged request keeps its id, so a dropped reply is safely retried.
+        if (!pendingOrganize || pendingOrganize.mode !== mode) {
+            pendingOrganize = {request_id: requestId(), source_key: overview.batch.source_key, mode: mode};
+        }
+        var attempt = pendingOrganize;
+        organizeBusy = true;
+        var operation = beginActivity('organize');
+        setStatus(mode === 'retry' ? 'Organizing your résumé…' : 'Setting your details out one by one…', 'ok');
+        postJson(urls.organize, attempt).then(function (result) {
+            if (!result.response.ok) {
+                if (result.response.status !== 503) pendingOrganize = null;
+                throw new Error(result.payload.message || 'That did not finish. Nothing was changed.');
+            }
+            var payload = result.payload;
+            if (payload.success !== true || payload.request_id !== attempt.request_id) {
+                throw new Error('No valid reply arrived. You can try again.');
+            }
+            pendingOrganize = null;
+            var message = payload.outcome === 'organized' ? 'Organized. Nothing is saved until you review it.'
+                : payload.outcome === 'already_organized' ? 'This résumé is already organized.'
+                : (payload.message || 'The organizer is unavailable right now. Nothing was changed.');
+            return loadParentCandidates().then(load).then(function () {
+                reviewScope = 'batch'; unplacedChoice = null;
+                renderProposals(scopedRows(allPendingRows));
+                renderBatchOverview(); showScreen('review');
+                setStatus(message, payload.outcome === 'unavailable' ? 'error' : 'ok');
+            });
+        }).catch(function (error) {
+            setStatus(error.name !== 'TypeError' && error.message ? error.message :
+                'The connection dropped. Nothing was changed; you can try again.', 'error');
+        }).finally(function () { endActivity(operation); organizeBusy = false; renderBatchOverview(); });
+    }
+    function renderBatchOverview() {
+        var region = document.getElementById('resume-intake-batch');
+        if (!region) return;
+        region.replaceChildren();
+        var overview = batchOverview();
+        region.hidden = !overview;
+        if (!overview) return;
+        var batch = overview.batch;
+        if (reviewScope === 'earlier') {
+            region.appendChild(node('h3', 'Earlier unfinished items'));
+            region.appendChild(node('p', 'These came from before your latest upload. Nothing here has been saved.', 'resume-intake__hint'));
+            var back = node('button', 'Back to your uploaded résumé', 'resume-intake__quiet'); back.type = 'button';
+            back.addEventListener('click', function () {
+                reviewScope = 'batch'; unplacedChoice = null;
+                renderProposals(scopedRows(allPendingRows)); renderBatchOverview();
+            });
+            region.appendChild(back);
+            return;
+        }
+        region.appendChild(node('h3', 'Your uploaded résumé'));
+        if (batch.retry_available) {
+            region.appendChild(node('p', batch.retry_reason === 'legacy'
+                ? 'I read this résumé, but its details were split into loose pieces. I can try organizing it again. Nothing you confirmed changes.'
+                : 'I read your résumé but couldn’t organize it right now. Nothing is lost.'));
+            var actions = node('div', undefined, 'resume-intake__proposal-actions');
+            var again = node('button', 'Try organizing again', 'resume-intake__add'); again.type = 'button';
+            again.disabled = organizeBusy;
+            again.addEventListener('click', function () { organizeSource('retry'); });
+            actions.appendChild(again);
+            if (batch.organization.state === 'unavailable' && !overview.unplaced.count) {
+                var manualSort = node('button', 'Sort it myself', 'resume-intake__secondary'); manualSort.type = 'button';
+                manualSort.disabled = organizeBusy;
+                manualSort.addEventListener('click', function () { organizeSource('sort_myself'); });
+                actions.appendChild(manualSort);
+            }
+            region.appendChild(actions);
+            region.appendChild(node('p', 'You can also add details yourself with the manual editor.', 'resume-intake__hint'));
+        } else {
+            var sentence = countSentence(overview.counts);
+            region.appendChild(node('p', sentence ? 'I organized your résumé: ' + sentence + '.' : 'Your résumé is organized.'));
+            if (batch.organization.rejected) {
+                region.appendChild(node('p', batch.organization.rejected + (batch.organization.rejected === 1 ? ' detail' : ' details') +
+                    ' couldn’t be placed and ' + (batch.organization.rejected === 1 ? 'is' : 'are') + ' listed below.', 'resume-intake__hint'));
+            }
+        }
+        if (overview.unplaced.count) {
+            var loose = node('details', undefined, 'resume-intake__loose');
+            loose.appendChild(node('summary', overview.unplaced.count + (overview.unplaced.count === 1 ? ' detail' : ' details') + ' I couldn’t place'));
+            var list = node('ul', undefined, 'resume-intake__loose-list');
+            overview.unplaced.proposal_keys.forEach(function (key) {
+                var row = allPendingRows.find(function (candidate) { return candidate.proposal_key === key; });
+                if (!row) return;
+                var text = String((row.proposed_values || {}).text || row.quote || '');
+                var entry = node('li'), choose = node('button', text.length > 90 ? text.slice(0, 87) + '…' : text, 'resume-intake__quiet');
+                choose.type = 'button'; choose.setAttribute('data-loose-key', key);
+                choose.addEventListener('click', function () { chooseLoose(key); });
+                entry.appendChild(choose); list.appendChild(entry);
+            });
+            loose.appendChild(list); region.appendChild(loose);
+        }
+        if (overview.earlier.count) {
+            var earlier = node('button', 'Earlier unfinished items (' + overview.earlier.count + ')', 'resume-intake__quiet'); earlier.type = 'button';
+            earlier.setAttribute('data-earlier-items', '');
+            earlier.addEventListener('click', function () {
+                reviewScope = 'earlier'; unplacedChoice = null;
+                renderProposals(scopedRows(allPendingRows)); renderBatchOverview();
+                if (!proposals.length) setStatus('Nothing earlier is waiting.', 'ok');
+            });
+            region.appendChild(earlier);
+        }
+        var more = node('button', 'Add or upload something else', 'resume-intake__quiet'); more.type = 'button';
+        more.setAttribute('data-add-more', '');
+        more.addEventListener('click', function () { showScreen('input'); textarea.focus(); });
+        region.appendChild(more);
+    }
+
+    /* -- pause: both steps must succeed before the member is told so -- */
+
+    function pauseNotice(message, retry, settled) {
+        var notice = document.getElementById('resume-intake-pause-notice');
+        if (!notice) {
+            notice = node('p', undefined, 'resume-intake__activity resume-intake__activity--outside');
+            notice.id = 'resume-intake-pause-notice';
+            notice.setAttribute('role', 'status'); notice.setAttribute('aria-live', 'polite');
+            reopenButton.parentNode.insertBefore(notice, reopenButton.parentNode.firstChild);
+        }
+        window.clearTimeout(pauseNoticeTimer);
+        notice.replaceChildren();
+        notice.hidden = !message;
+        if (!message) return;
+        notice.appendChild(node('span', message));
+        if (retry) {
+            var button = node('button', 'Retry', 'resume-intake__quiet'); button.type = 'button';
+            button.addEventListener('click', retry);
+            notice.appendChild(button);
+        } else if (settled) {
+            // Only the fully successful notice clears itself. A Retry, or a notice about unsaved
+            // changes, stays until it is acted on or replaced.
+            pauseNoticeTimer = window.setTimeout(function () { notice.replaceChildren(); notice.hidden = true; }, 15000);
+        }
+    }
+    function showPauseFailure(status) {
+        var box = document.getElementById('resume-intake-pause-failure');
+        if (!box) {
+            box = node('div', undefined, 'resume-intake__inset resume-intake__pause-failure');
+            box.id = 'resume-intake-pause-failure'; box.setAttribute('role', 'alert');
+            guidePanel.appendChild(box);
+        }
+        box.replaceChildren();
+        box.hidden = false;
+        box.appendChild(node('p', 'We couldn’t save your draft just now. Try again, or close anyway. Changes made since your last save on this page may be lost.'));
+        var row = node('div', undefined, 'resume-intake__quiet-actions');
+        var retry = node('button', 'Try again', 'resume-intake__secondary'); retry.type = 'button';
+        retry.addEventListener('click', function () { pauseGuide(status); });
+        var close = node('button', 'Close anyway', 'resume-intake__quiet'); close.type = 'button';
+        close.addEventListener('click', function () {
+            box.hidden = true; hideGuide();
+            setGuideStatus(status).then(function (recorded) {
+                pauseNotice(recorded ? 'Closed. Your last saved draft is kept; newer changes on this page may be lost.'
+                                     : 'Closed without saving your latest changes, and the pause wasn’t recorded.');
+            });
+        });
+        row.append(retry, close); box.appendChild(row);
+        retry.focus({preventScroll: true});
+    }
+    function pauseGuide(status) {
+        if (pausing) return Promise.resolve(false);
+        pausing = true;
+        var stale = document.getElementById('resume-intake-pause-failure');
+        if (stale) stale.hidden = true;
+        var label = status === 'skipped' ? 'Manual editing' : 'Paused';
+        // A pending choice between two draft copies already keeps both safe; there is nothing newer to save.
+        var holding = Boolean(draftRecovery || draftRecoveryBusy);
+        var kept = holding ? ' Both copies of your draft are kept; you’ll choose between them when you return.'
+                           : ' Your draft is saved privately.';
+        return Promise.resolve(conversationSupported && !holding ? checkpointDraft() : true).then(function (saved) {
+            if (conversationSupported && !saved) { showPauseFailure(status); return false; }
+            hideGuide();
+            return setGuideStatus(status).then(function (recorded) {
+                if (recorded) { pauseNotice(label + '.' + kept, null, true); return true; }
+                pauseNotice('Draft saved, but ' + (status === 'skipped' ? 'switching to manual editing' : 'pausing') + ' wasn’t recorded.', function () {
+                    setGuideStatus(status).then(function (ok) { if (ok) pauseNotice(label + '.' + kept, null, true); });
+                });
+                return false;
+            });
+        }).catch(function () { showPauseFailure(status); return false; })
+          .finally(function () { pausing = false; });
+    }
+
     function renderProposals(rows, preserveScreen, recoveredMode) {
         var previousFrame = navigationFrame();
         if (!preserveScreen && window.PeerSlateResumeFieldVoice) window.PeerSlateResumeFieldVoice.stop();
@@ -821,6 +1053,7 @@
             proposals.find(function (row) { return row.proposal_key === selectedProposalKey; }) ||
             proposals.find(function (row) { return newestProposalKeys.indexOf(row.proposal_key) !== -1; }) || proposals[0];
         selectedProposalKey = proposal.proposal_key;
+        var overviewGroup = groupFor(proposal.proposal_key);
         var proposed = Object.assign({}, proposal.proposed_values || {});
         var known = ownerCatalog.find(function (row) { return row.record_key === proposal.target_key; });
         if (known) proposed = Object.assign({}, known.values || {}, known.proposed_values || {}, proposed);
@@ -969,6 +1202,7 @@
         var groupedDates = type === 'role' || type === 'education';
         (FIELDS[type] || []).forEach(function (name) {
             if (type === 'knowledge' && name === 'classification') return;
+            if (overviewGroup && ['summary', 'wording', 'resume_credential_wording'].indexOf(name) !== -1) return;
             if (groupedDates && ['start_date', 'end_date', 'date_precision', 'current_role'].indexOf(name) !== -1) return;
             if (proposed[name] === undefined || proposed[name] === null || proposed[name] === '') return;
             var row = node('div'); row.append(node('dt', fieldLabel(name)), node('dd', displayValue(name, proposed[name], proposed))); facts.appendChild(row);
@@ -987,7 +1221,27 @@
             if (type === 'knowledge' && name === 'classification') return;
             var row = node('div'); row.append(node('dt', fieldLabel(name)), node('dd', 'Remove the existing value')); facts.appendChild(row);
         });
-        group.append(facts, correction); item.appendChild(group);
+        group.appendChild(facts);
+        if (overviewGroup && overviewGroup.lines.length) {
+            var lineList = node('ul', undefined, 'resume-intake__lines');
+            lineList.setAttribute('aria-label', 'Details from your résumé');
+            overviewGroup.lines.forEach(function (line) {
+                lineList.appendChild(node('li', line.text, 'resume-intake__line' + (line.role === 'header' ? ' resume-intake__line--header' : '')));
+            });
+            group.appendChild(lineList);
+            if ((overviewGroup.uncertain_fields || []).length) {
+                group.appendChild(node('p', 'Please check the ' + overviewGroup.uncertain_fields.map(function (name) {
+                    return FIELD_LABELS[name] || name;
+                }).join(' and ').toLowerCase() + '. I could not read it reliably from your résumé.', 'resume-intake__hint resume-intake__uncertain'));
+            }
+            var original = node('button', 'View original text', 'resume-intake__quiet'); original.type = 'button';
+            original.addEventListener('click', function () {
+                var details = document.getElementById('resume-intake-source-review');
+                if (details) { details.hidden = false; details.open = true; details.scrollIntoView({block: 'nearest'}); }
+            });
+            group.appendChild(original);
+        }
+        group.appendChild(correction); item.appendChild(group);
         var invitation = proposalInvitations[proposal.proposal_key];
         var invitationRevision = proposal.resume_conversation_v1 || {};
         var substantiveRevision = invitationRevision.operation === 'revise_content' &&
@@ -1094,7 +1348,19 @@
         var oldOverview = document.getElementById('resume-intake-suggestion-overview');
         if (oldOverview) oldOverview.remove();
         overview.id = 'resume-intake-suggestion-overview';
-        document.getElementById('resume-intake-review-position').textContent = proposals.length === 1 ? 'One group of details to review' : proposals.length + ' groups to review · one at a time';
+        (function () {
+            var position = document.getElementById('resume-intake-review-position');
+            if (overviewGroup) {
+                var peers = proposals.filter(function (row) {
+                    var peer = groupFor(row.proposal_key);
+                    return peer && peer.section === overviewGroup.section;
+                });
+                var place = peers.findIndex(function (row) { return row.proposal_key === proposal.proposal_key; }) + 1;
+                position.textContent = overviewGroup.section + ' · ' + place + ' of ' + peers.length;
+                return;
+            }
+            position.textContent = proposals.length === 1 ? 'One group of details to review' : proposals.length + ' groups to review · one at a time';
+        })();
         function syncCorrection() {
             correction.hidden = !correcting; facts.hidden = correcting;
             edit.hidden = correcting;
@@ -1264,11 +1530,11 @@
         var status = (workspace.guide && workspace.guide.status) || 'not_started';
         applyQuestion(guide);
         if (!guide || guide.load_state !== 'loaded') {
-            if (!proposals.length) showScreen('input', false);
+            if (!proposals.length) showScreen(batchNeedsAttention() ? 'review' : 'input', false);
             return;
         }
         if (['paused', 'completed', 'skipped'].indexOf(status) !== -1 || guideDismissed) return;
-        if (!proposals.length) showScreen(status === 'not_started' && !workspace.receipts_count ? 'welcome' : 'input', false);
+        if (!proposals.length) showScreen(batchNeedsAttention() ? 'review' : status === 'not_started' && !workspace.receipts_count ? 'welcome' : 'input', false);
         reopenGuide();
     }
 
@@ -1427,7 +1693,10 @@
                     if (!turn.next_question) return;
                     (turn.proposals || []).forEach(function (row) { proposalInvitations[row.proposal_key] = turn.next_question; });
                 });
-                renderProposals(result.payload.pending_proposals || [], initialized);
+                reviewOverview = result.payload.review_overview || null;
+                allPendingRows = result.payload.pending_proposals || [];
+                renderProposals(scopedRows(allPendingRows), initialized);
+                renderBatchOverview();
                 if (!initialized) renderReceipt(result.payload.last_receipt || null);
                 renderCoverage(result.payload.source_accounting || []);
                 return fetch(urls.guide, {credentials: 'same-origin'})
@@ -1908,6 +2177,10 @@
                 ? 'I organized ' + Object.keys(groups).map(function (label) { return groups[label] + ' ' + label.toLowerCase(); }).join(', ') + '.'
                 : newestProposalKeys.length + ' suggestions are ready.') + ' Review before saving.';
             renderReceipt(receipt);
+            var duplicate = receipt.results.some(function (row) { return row.code === 'duplicate_document'; });
+            var unorganized = receipt.results.some(function (row) { return (row.organization || {}).state === 'unavailable'; });
+            if (unorganized) lastAcknowledgement = '';
+            if (duplicate) lastAcknowledgement = 'You’ve already uploaded this file. Let’s continue with it.';
             var failure = receipt.results.filter(function (row) { return row.outcome === 'failed' || row.outcome === 'pending'; });
             var acknowledged = receipt.results.filter(function (row) {
                 return row.outcome === 'saved' || row.outcome === 'unresolved' || row.outcome === 'duplicate';
@@ -1923,11 +2196,12 @@
             var savedCount = receipt.results.filter(function (row) { return row.outcome === 'saved'; }).length;
             if (savedCount) factSaved(savedCount);
             renderQueued(); renderAttachments(); refreshDraftLabel();
-            setStatus(failure.length ? (receipt.message || 'Some input still needs attention.') : (attempt.mode === 'guide' ? 'I received your answer. ' + newestProposalKeys.length + ' new suggestions are ready for your review; nothing is saved yet.' : (receipt.message || 'Saved privately.')), failure.length ? 'error' : 'ok');
+            setStatus(failure.length ? (receipt.message || 'Some input still needs attention.') : duplicate ? 'You’ve already uploaded this file. Let’s continue with it.' : unorganized ? 'I read your résumé but couldn’t organize it right now. Nothing is lost.' : (attempt.mode === 'guide' ? 'I received your answer. ' + newestProposalKeys.length + ' new suggestions are ready for your review; nothing is saved yet.' : (receipt.message || 'Saved privately.')), failure.length ? 'error' : 'ok');
             return loadParentCandidates().then(load).then(function () {
                 if (attempt.mode === 'guide' && !guideHidden) {
                     if (failure.length || (textarea.value || '').trim()) showScreen('input');
                     else if (proposals.length) { renderProposals(proposals); showScreen(screen); }
+                    else if (batchNeedsAttention()) { reviewScope = 'batch'; renderBatchOverview(); showScreen('review'); }
                     else showScreen(savedCount ? 'next' : 'input');
                     receiptBox.hidden = !failure.length;
                 }
@@ -2171,10 +2445,10 @@
         refreshActualPreview();
     }
     function setGuideStatus(status) {
-        if (guideBusy) return;
+        if (guideBusy) return Promise.resolve(false);
         // A new choice cannot replace an unacknowledged member choice.
         if (pendingGuide && pendingGuide.status !== status) {
-            setStatus('The previous guide update still needs a response. Retry it before making a different choice.', 'error'); return;
+            setStatus('The previous guide update still needs a response. Retry it before making a different choice.', 'error'); return Promise.resolve(false);
         }
         if (!pendingGuide) pendingGuide = {request_id: requestId(), status: status};
         var attempt = pendingGuide; guideBusy = true; completeButton.disabled = true;
@@ -2186,7 +2460,8 @@
             pendingGuide = null;
             if (attempt.status === 'completed') { showScreen('finish'); setStatus('', 'ok'); }
             else setStatus('You can continue the guide whenever you’re ready.', 'ok');
-        }).catch(function (error) { setStatus(error.message || 'The guide update did not finish. Try again.', 'error'); })
+            return true;
+        }).catch(function (error) { setStatus(error.message || 'The guide update did not finish. Try again.', 'error'); return false; })
           .finally(function () {
               guideBusy = false; completeButton.disabled = false;
               document.getElementById('resume-intake-retry-guide').hidden = !pendingGuide;
@@ -2355,10 +2630,11 @@
             startRecording();
         }
     });
-    hideButton.addEventListener('click', function () { hideGuide(); setGuideStatus('paused'); });
+    hideButton.addEventListener('click', function () { pauseGuide('paused'); });
+    on('pause', function () { pauseGuide('paused'); });
     reopenButton.addEventListener('click', reopenGuide);
-    root.addEventListener('cancel', function (event) { event.preventDefault(); hideGuide(); setGuideStatus('paused'); });
-    skipButton.addEventListener('click', function () { hideGuide(); setGuideStatus('skipped'); });
+    root.addEventListener('cancel', function (event) { event.preventDefault(); pauseGuide('paused'); });
+    skipButton.addEventListener('click', function () { pauseGuide('skipped'); });
     completeButton.addEventListener('click', function () { setGuideStatus('completed'); });
     on('start-type', function () { showScreen('input'); textarea.focus(); });
     on('start-upload', function () { showScreen('input'); fileInput.click(); });

@@ -515,3 +515,131 @@ Stable exact5185ffb931dce9676516e8ded28334ff1b8ba05c changes only tests/test_res
 Actual sequential predecessor/successor fixtures PASS2/0skip in9.709seconds. The exact clean official118 run PASS0errors/failures/skips (264.832seconds test runtime,269.109seconds process duration). Same independent reviewer native01a112b3-11a5-7440-9a60-5397c5472376, verifiedgpt-6-astra/high, independently verified the bounded cleanup AST/order, all8actual source blobs and final118 evidence, issuing exact SOURCE PASS at2026-10-06T23:48:27Z. Authentic CORE_CI4225_SOURCE_RECEIPT.json SHA256b849dd850f273c18b8eebabeee36c11428ff2b77e01b42964e20ed1429351644 is copied byte-identically. Distinct report CORE_CI4225_SOURCE_REVIEW.md hash67cc8077b9266dfae0ff14bbebe8d5c153d63fb802a2d37a7939566746071e3c, source seals and all prior receipts/failures remain underrestart-20261006/final-review and implementation. This tail changes only the fixed authentic receipt and runtime-inert package evidence.
 
 Fresh current-target CI and native merge admission remain required before accepted core. Final private composition/factory/controller qualification, actual copied namespaces/rollback/publication/OCR, installation and actual bounded provider/browser/physical acceptance remain separate. No actual provider call or installed mutation occurred; full A01-A15/PD01-PD06 acceptance is not claimed. Original FIRST/OCR evidence and historical unknowns remain intact.
+
+## Claude custody: slice 1a scope reconciliation and acceptance plan, before product edits
+
+Writer: `agent:claude/2026-10-07/onboarding-conversation` (Claude Opus 5.5), caller context `b768cf35fabb5d2fd283ddfc7e43bb4e`, received through the accepted voluntary transfer (PR 1289) at checkpoint `fbb445d3d18d8626766c178757ad34595e3d31e3`. The product files at that checkpoint are byte-identical to main `243eadde3036315ae9a9acb4c37b36e93b706941`. Design: `X:\PeerSlate\Claude\plans\2026-10-07_onboarding-slice-1a-1b-design.md`, built on the Claude pre-implementation review (findings F1–F16).
+
+### Scope reconciliation
+
+The claim outcome keeps "Expanded chatbot UI and optional tutorial" in MVP2. Slice 1a presents the existing review and turn machinery as one continuous Guide panel with a pinned composer. That change is presentation only. It adds no conversation operation, capability or model, and the closed operation set in `services/resume_intake_runtime.py` is unchanged. 1a therefore falls within the outcome's "lean contextual guidance, reliable navigation/state/manual recovery".
+
+Where the older wording differs, the owner's explicit current decision ranks first under `docs/governance/DOCUMENT_CONTROL.md`:
+- Pete selected the 14 conversation-led desktop/mobile Guide references.
+- Pete directed "Okay, let's get going" in the onboarding thread (user messages `01a11904-d32a-7191-8b97-ab4e41fa0072`, `01a11905-dfa3-7e90-af1c-36d31ae93a61`).
+- Pete assigned the remaining onboarding architecture and implementation to Claude (central thread `01a11384-f656-73b3-b57a-ad2952f1ffad`, turn `01a1195a-194b-71a1-badc-09a7dd0d773a`).
+
+Slice 1b's `move_content` adds a capability and will carry its own reconciliation note before its edits. No claim outcome transition is made.
+
+### Diagnosis bound to the saved receipt
+
+Saved receipt request `574b1b77-cf0e-425d-8aad-812d98488ed7` (submission `084e80cd-ed7a-4612-904d-d716ff2f55ff`) reports `provider_issue.code = unsupported_record_identity`. The failure has three parts:
+1. **The validator is all-or-nothing.** `services/my_data_extraction_adapter.py:570-575` raises for the whole batch when one candidate's identity field is not a substring of its own selected units.
+2. **The model was never told the rule.** `extract_resume` replaces the general instructions with the résumé instructions (`:723-724`), and neither states the verbatim-identity rule.
+3. **The fallback fragments the document.** The document fallback at `services/resume_intake_service.py:3372-3378` turned all 64 content units into pending `unspecified` items.
+
+The 85 earlier pending items include a prior import of the same PDF (`e94c2684-4d4a-4c26-9f56-693327dcf1e7`), and nothing detects duplicate uploads. The exact rejected field was not retained. No replay or provider call was made.
+
+### 1a changes (bounded)
+
+1. **Per-candidate organization (F1).** Structural, overlap and content failures reject only the failing candidate. An unsupported identity field is cleared and marked uncertain rather than discarding the group. Whole-payload or provider failure stores the source and creates no fragment proposals. Rejection codes and field names are recorded without text.
+2. **Composed instructions (F2).** General plus résumé instructions, plus an explicit sentence for each validator rule, guarded by a code-to-sentence test.
+3. **`organize_source`.** Retry, or member-chosen "sort it myself", for an unorganized or legacy-failed document source. It is gated like conversation turns (private repository only). A successful retry invalidates only that source's pending unplaced items, atomically.
+4. **Duplicate-document guard.** Keyed by `sha256` while the earlier source still has pending or unorganized work.
+5. **`review_overview` (F3).** A derived, read-only addition to the workspace: batch-scoped counts, complete groups with per-line `unit_id`s, the unplaced count, earlier work behind navigation, and version tokens. Existing fields are unchanged.
+6. **Review surface and Pause (F5, F15).** A batch overview card at the top of review (counts, organization state, retry actions, unplaced details, earlier work) and the complete role card built from the effective lines with View original. Pause is truthful and two-step (R5): X, Escape and a visible Pause control await the draft checkpoint and then the guide-status request; "Paused" is shown only when both succeed, a failed save keeps the dialog open, and a recorded-save-but-unrecorded-pause shows an outside-dialog Retry. Warm values from the live Sage Mist palette are scoped to the Guide (gold text `#8b5505` for AA). On a phone the Guide is a full-screen sheet with a keyboard inset.
+
+Deferred inside 1a, recorded here so it is not discovered later: the persisted transcript log, removal of the forced Finish detour, and the "Use this version / Edit wording" relabel. About 40 pinned browser assertions encode today's labels and Finish flow; changing them is a separate, reviewed test refresh, and none of it is needed for the upload to be understood.
+
+Not in 1a: the move operation, the deferred items above, Education status schema (F16), enrichment, the reader heuristic change (diagnostic fixtures only unless a trace implicates it), production SQL parity, `base.html`, global tokens and `living_resume_editor_service.py`.
+
+### Acceptance plan
+
+**Source tests:**
+- the per-candidate matrix for every rejection code;
+- the overlap rule;
+- identity-field clearing;
+- whole-payload failure giving no fragments;
+- the instruction-composition table;
+- overview batch scope with an earlier backlog, line identities, legacy recognition and an unchanged `pending_proposals`;
+- the duplicate guard with no dispatch;
+- `organize_source`: retry atomicity, failure leaving nothing changed, same-ID replay with no second dispatch, `sort_myself` with no provider call, foreign source 404, accepted items untouched;
+- no résumé text in rejection records.
+
+**Browser tests**, updating the pinned list deliberately and naming every changed test:
+- overview counts;
+- the complete role card with Use this version;
+- pause awaiting the checkpoint, and visible pause failure;
+- X/Escape equal to Pause;
+- the last bullet above the composer at 390×844;
+- no horizontal scroll;
+- focus not obscured;
+- 200% text;
+- reduced motion;
+- manual edit with Guide re-entry.
+
+**Later and separate:**
+- independent exact-SHA review;
+- CI and merge;
+- private installation by PS-ONBOARDING-PRIVATE-DELIVERY-002;
+- installed browser acceptance;
+- provider placement evidence on fictional fixtures under the installed allowance;
+- physical-phone checks by Pete.
+
+Source, CI/merge, installed, browser, provider and physical-device states are reported separately.
+
+
+## Claude custody: slice 1a implementation and verification (candidate)
+
+Writer `agent:claude/2026-10-07/onboarding-conversation`. Base: accepted main `c75725b1` reconciled into the branch. Design `X:/PeerSlate/Claude/plans/2026-10-07_onboarding-slice-1a-1b-design.md`, independently approved with required changes R1-R5 (`X:/PeerSlate/Claude/reviews/2026-10-07_onboarding-1a-architecture-review.md`). Source, CI, installed, browser-on-the-installed-site, provider and physical-device states stay separate; this candidate is **source only**.
+
+### What changed
+
+- **Per-candidate organization (F1).** `organize_resume_extraction` rejects only the failing candidate. Structure, exclusive-unit and content failures are recorded as codes and field names (never member text); an unsupported identity field is cleared and marked uncertain instead of discarding the group; units no accepted candidate claims stay visible as unplaced. An unusable envelope, a provider failure or no usable group keeps the source and creates **no** per-unit fragment items. `validate_resume_extraction_payload` remains as the strict all-or-nothing form.
+- **Composed instructions (F2).** The model receives the general rules, the resume contract and one sentence per validator rule (`RESUME_VALIDATOR_RULES`); a test binds every rejection code to a stated rule.
+- **Retry and recovery.** `POST /api/resume-intake/me/sources/organize` (`retry` or `sort_myself`). Eligibility (an unavailable organization, or a legacy source whose items are all untouched unplaced fragments) is re-derived before any budget is reserved, so a repeat under a new request id dispatches nothing and writes nothing (R2). Replaced items become `invalidated`, never deleted. The dispatch id is derived from the request id. A retry first re-reads the member's retained original with the current reader and, if the reading differs, stores it under a new source version.
+- **Duplicate file.** The same file (sha256) is not stored or dispatched again while its earlier copy has open work.
+- **Batch-scoped review (F3, R1).** The workspace gains a derived, read-only `review_overview`: counts for the latest upload only, complete groups whose lines come from the effective wording (a unit id is attached only while the wording still equals the joined source text), details it could not place, earlier work counted apart, and per-group version tokens. `pending_proposals` is unchanged. Everything added in the same Add as the document belongs to its batch.
+- **Reader (F4).** The PDF two-column heuristic treated right-aligned dates as a second column and moved every date to the end of the page. It now requires right-hand rows that start at one x and ignores short date runs. Measured on the owner's retained PDF (read-only, on a copy; no content reproduced here): 258 reading lines with all 11 dates detached became 78 lines with each date on its job line, and 64 source units became 26. New tests build single-column pages with right-aligned dates, equal-width dates and a genuine two-column page; the first two fail on the old reader.
+- **Guide (F5, F15, R5).** A batch card at the top of review (counts, organization state, Try organizing again, Sort it myself, details I couldn't place, earlier unfinished items, add or upload something else). Each role shows its effective lines. Pause, Escape and the close button wait for the draft checkpoint and then the guide-status request and say only what happened: a failed save keeps the dialog open with Try again or Close anyway; a saved draft whose pause was not recorded shows a Retry outside the dialog. Warm values from the live Sage Mist palette are scoped to the Guide; on a phone it is a full-screen sheet.
+
+### Verification (this candidate, source and local browser only)
+
+- Source suites (coverage, intake AI, conversation, routes, service, runtime, reader, drafts, SQL contract and engine fixtures, proposals, sources, runner pin): 424 tests, 0 failures.
+- Browser, real Chrome: all 149 tests in `test_resume_intake_browser`, `test_mvp1_acceptance_browser` and `test_my_data_browser` pass; the CI-pinned runner `scripts/run_mvp1_acceptance_browser_tests.py` runs and passes all 125 pinned tests including the 7 new batch/pause/phone tests, which were folded into the already-pinned intake class so the pinned-count test is unchanged.
+- Old tests deliberately changed (all assertions about the same behavior, now truthful): the document-failure accounting and invalid-binding tests no longer expect a flood of per-unit items; the generic-extraction wiring test returns a three-part tuple; four tests wait for the dialog to close because Pause now saves first.
+- Full repository discover on this machine (7,426 tests): 21 failures and errors, none involving onboarding. They reproduce on untouched checkouts: the scheduler, IPv6/address-classification, file-permission, macOS-launcher, work-impact media type and worktree-lease tests fail the same way on an export of the previous checkpoint, and the three dark-theme browser tests (`bodyInk` is green because of the separate Sage Mist change) fail on untouched `origin/main` `c75725b1`. No failure was introduced by this candidate.
+
+### Deferred inside 1a (disclosed)
+
+The persisted transcript log, removal of the forced Finish detour and the "Use this version / Edit wording" relabel are not in this candidate (about 40 pinned browser assertions encode today's labels and flow). Keyboard-open and safe-area behavior is claimed only as viewport-resize emulation; physical iPhone Safari and Android Chrome remain the owner's check.
+
+### Not yet true (separate, later states)
+
+R3 (the supported install probe on a copy of the installation, covering both namespaces, with the snapshot contract unchanged and the declared behaviors still qualifying) and R4 (a checkpoint before the first real retry on the owner's workspace, after proving one retry on a fictional resume) are install-time steps. Each app release also needs its own reviewed factory interface (new pinned file hashes and qualification entry), which is a separate private-delivery change. Nothing is installed, merged or deployed by this candidate, and no provider call was made.
+
+## Slice 1a code-review correction round (findings F1-F3)
+
+The independent code review of `0290c4076b976159d01f662cc87b2fbceac4878c` (`X:/PeerSlate/Claude/reviews/2026-10-07_onboarding-1a-code-review.md`, verdict FINDINGS; everything else verified sound) required three fixes, made in one commit on top of the reviewed candidate:
+
+- **F1 (medium).** The retry flattened every draft to `inferred_wording`, so a role the model matched to an already-saved record lost its target and accepting it would have created a second record. Upload and retry now share one outcome-to-kind rule (`_resume_draft_kind`). A new test runs the same model answer through an upload and through a retry and requires identical kinds and targets, including an `additional_detail` role that targets the saved record; it fails on the previous service.
+- **F2 (medium, accessibility).** Three remapped text colours fell under 4.5:1: quiet links `#33875d` now forest `#07513a`; the proposal-source line `#62806e` and the footer text `#5e7b6a` now muted `#5d7062`. A computed-contrast assertion for those three selectors (worst case over white and the ivory surfaces) joins the overview browser test and fails on the previous colours (4.10:1). A scan of every text colour declared in the stylesheet found no other text under 4.5:1; the remaining two lower values are the decorative recording wave and the microphone icon, which are non-text elements held to 3:1.
+- **F3 (low).** The retry result no longer depends only on whether proposals were created. It says what happened: organized with items to review; "everything in this résumé is already in your saved résumé" when only matches resulted; and how many loose items from the earlier reading were set aside (not deleted). A new test for the all-already-saved retry fails on the previous service.
+
+Verification of this correction: source suites 426 tests, 0 failures; all 149 tests in `test_resume_intake_browser`, `test_mvp1_acceptance_browser` and `test_my_data_browser` pass in real Chrome; the CI-pinned runner passes 125 of 125. Source and local-browser only; nothing installed, no provider call.
+
+## Slice 1a independent review: PASS at c022295c
+
+The candidate was reviewed in two rounds by `agent:claude/2026-10-07/allowance-reviewer`, a separate Claude session that did not write it. The code review of `0290c4076b976159d01f662cc87b2fbceac4878c` returned three findings (retry dropped matched-record targets, three text colours under 4.5:1, a retry message that could say "Nothing was changed" after changing things); all three were fixed in one commit and the delta was reviewed PASS at `c022295cf41d3c5e7c328dc5534eea58750b4ec3` (receipt `docs/governance/lane_claims/receipts/PS-ONBOARDING-CONVERSATION-002.json`, reviewed 2026-10-08T05:26:54Z, findings none). Review text: `X:/PeerSlate/Claude/reviews/2026-10-07_onboarding-1a-code-review.md`. The reviewer confirmed the reconcile base equals accepted main, reran the source suites (491 tests) and the CI-pinned browser runner (125 of 125), and probed the retry and the all-already-saved retry; restoring each defect made the matching new test fail.
+
+One non-blocking follow-up from the review: `organizeSource` in `static/js/resume-intake.js` shows its own fixed "Organized..." text instead of the server's now-truthful `message`, so the all-already-saved retry still reads generically on screen. The server message and receipt are correct; the code is frozen and reviewed, so this is the first follow-up and not part of this candidate.
+
+Still separate and not yet true: CI and merge of this candidate, the reviewed factory interface and installed app, R3 (install probe on a copy, both namespaces) and R4 (checkpoint, fictional proof, then a retry of the owner's latest upload copy only). At this commit nothing about this slice is installed or merged.
+
+## Slice 1a CI correction: the pause notice must never block the page
+
+Azure build 4285 on PR 1293 failed only in the CI-pinned browser runner (123 of 125). Both failures were this slice's: (1) `test_media_editor_refresh_preserves_crop_caption_and_newer_choice` could not click a photo button because the new "Paused" / "Manual editing" notice, placed in normal flow inside the fixed reopen widget, shifted the reopen button and its text intercepted pointer events over the page beneath it, a genuine defect that the larger local window did not show; (2) `test_unavailable_organizer_offers_retry_and_a_retry_regroups_the_stored_source` read the role lines one render tick before they appeared. Correction: the notice now floats above the reopen button (`position:absolute`, `pointer-events:none`, its Retry button alone clickable), a settled notice clears itself after 15 seconds while one that needs a Retry stays, and a browser assertion pins the floating position and click-through; the two tests that read the lines now wait for them. No other logic changed. Tightening requested by the independent reviewer before the delta review: (a) only the fully successful "Paused..." / "Manual editing..." notice clears itself after 15 seconds; "Draft saved, but pausing wasn't recorded" (with its Retry) and "Closed..." notices stay until acted on or replaced, proved with a fast-forwarded clock; (b) the Retry button keeps pointer events, is reached by keyboard (Shift+Tab then Tab) and shows a visible focus outline of at least 2px; (c) the notice keeps `role=status`, is `position:absolute` and `pointer-events:none`, and its element box overlaps neither the reopen button nor any photo button, checked at 1440x1000 and at 390x844, with the end-to-end photo-button click covered by the existing media test that failed in CI; (d) the race fix waits for the role-line elements, not a fixed sleep. Local result after the correction: the CI-pinned runner passes 127 of 127 (two new tests added to its list) and all 154 tests across `test_resume_intake_browser`, `test_mvp1_acceptance_browser`, `test_my_data_browser` and the runner-pin test pass. Auto-complete on PR 1293 was switched off until this delta is independently reviewed, so no unreviewed commit can merge.
+
+## Slice 1a final independent review: PASS at 194283cf
+
+After the CI correction, `agent:claude/2026-10-07/allowance-reviewer` reviewed the delta from the earlier PASS and bound its receipt to the final candidate `194283cf8d6190a7e71790b0af04053f024da41b` (reviewed 2026-10-08T06:23:07Z, findings none), superseding the earlier receipt for `c022295cf41d3c5e7c328dc5534eea58750b4ec3`. The reviewer measured real element boxes in Chrome at both sizes and found no overlap; a plain "Paused" notice clears and a notice needing Retry stays. The reviewer also recorded one watch item: on its first full pinned run `test_welcome_has_benefits_equal_actions_real_document_and_no_provider_work` failed once, seeing "Your résumé is taking shape." instead of the welcome title, then passed on rerun and in isolation. The test and the code under it are untouched by this delta; it is a fixture-isolation flake and a requeue, not a code change, is the response if Azure CI shows it. Non-blocking follow-ups: (1) `organizeSource` should display the server's truthful `message`; (2) failure notices should carry an explicit keep flag instead of relying on the absence of the settled flag. Review text: `X:/PeerSlate/Claude/reviews/2026-10-07_onboarding-1a-code-review.md`.

@@ -310,12 +310,442 @@ class ResumeOnboardingCoverageTests(unittest.TestCase):
         workspace=service.get_workspace(owner)
         accounting=workspace['source_accounting'][0]
         self.assertEqual(len([u for u in accounting['source_units'] if u['kind']=='content']),2)
-        self.assertEqual(len(workspace['pending_proposals']),2)
-        self.assertTrue(all(p['resume_conversation_v1']['unit_ids'] for p in workspace['pending_proposals']))
+        # An unavailable organizer keeps the source and its accounting, but floods nothing.
+        self.assertEqual(workspace['pending_proposals'],[])
+        self.assertEqual(workspace['review_overview']['batch']['organization']['state'],'unavailable')
         service.purge_source(owner,{'request_id':str(uuid4()),'source_key':accounting['source_key']})
         self.assertEqual(service.get_workspace(owner)['source_accounting'],[])
         snapshot=service.repository.load_owner(owner)
         self.assertNotIn('Spreadsheet analysis.',json.dumps(snapshot))
+
+
+class ResumeOrganizationTests(unittest.TestCase):
+    """Per-candidate organization, retry, duplicate guard and the batch-scoped review view."""
+
+    TEXT = ('Experience\nEngineer, Alpha Labs.\nBuilt data pipelines.\nLed a team of four.\n'
+            'Analyst, Beta Corp.\nWrote weekly reports.\nSkills\nSQL.\nPython.')
+
+    def groups(self, text=None):
+        text = text or self.TEXT
+        units = inventory_source(text, document=True)
+        content = [u for u in units if u['kind'] == 'content']
+        by_text = {u['text']: u for u in content}
+        def pick(*texts):
+            return [by_text[t] for t in texts]
+        role_a = pick('Engineer, Alpha Labs.', 'Built data pipelines.', 'Led a team of four.')
+        role_b = pick('Analyst, Beta Corp.', 'Wrote weekly reports.')
+        sql, python = pick('SQL.'), pick('Python.')
+        return text, units, {
+            'a': complete_resume_candidate('role', {'role_title': 'Engineer', 'employer_name': 'Alpha Labs'},
+                                           role_a[0]['text'], role_a, 'Experience'),
+            'b': complete_resume_candidate('role', {'role_title': 'Analyst', 'employer_name': 'Beta Corp'},
+                                           role_b[0]['text'], role_b, 'Experience'),
+            'sql': complete_resume_candidate('skill', {'name': 'SQL'}, 'SQL.', sql, 'Skills'),
+            'python': complete_resume_candidate('skill', {'name': 'Python'}, 'Python.', python, 'Skills'),
+        }
+
+    def organize(self, payload, text, units):
+        from services.my_data_extraction_adapter import organize_resume_extraction
+        return organize_resume_extraction(payload, text=text, source_units=units, allowed_fields=EDITOR_FIELDS)
+
+    def test_one_flawed_candidate_costs_only_itself_for_each_kind_of_flaw(self):
+        text, units, g = self.groups()
+        flaws = {
+            'invalid_source_unit_binding': lambda raw: raw.update(unit_ids=['not-a-supplied-unit']),
+            'span_quote_mismatch': lambda raw: raw.update(quote='A passage the source never contains.'),
+            'unknown_record_type': lambda raw: raw.update(record_type='mystery'),
+        }
+        for code, damage in flaws.items():
+            with self.subTest(code=code):
+                bad = copy.deepcopy(g['python'])
+                damage(bad)
+                result = self.organize({'candidates': [g['a'], g['b'], g['sql'], bad]}, text, units)
+                placed = [d for d in result.drafts if d.get('placement') != 'unplaced']
+                self.assertEqual(len(placed), 3)
+                self.assertEqual(result.state, 'partial')
+                self.assertEqual([r['code'] for r in result.rejections], [code])
+                self.assertEqual(len(result.unplaced_unit_ids), 1)
+                python_unit = next(u for u in units if u['text'] == 'Python.')
+                self.assertEqual(result.unplaced_unit_ids, [python_unit['unit_id']])
+                self.assertNotIn('Python', json.dumps(result.rejections))
+
+    def test_two_candidates_claiming_one_unit_are_both_rejected_in_any_order(self):
+        text, units, g = self.groups()
+        clash = copy.deepcopy(g['sql'])
+        clash['quote'] = 'SQL.'
+        for order in ([g['a'], g['sql'], clash], [clash, g['sql'], g['a']]):
+            result = self.organize({'candidates': order}, text, units)
+            self.assertEqual(sorted(r['code'] for r in result.rejections), ['unit_claimed_twice'] * 2)
+            self.assertEqual(len([d for d in result.drafts if d.get('placement') != 'unplaced']), 1)
+
+    def test_unsupported_identity_clears_that_field_and_keeps_the_group(self):
+        text, units, g = self.groups()
+        wrong = copy.deepcopy(g['a'])
+        wrong['values']['employer_name'] = 'Alpha Laboratories International'
+        result = self.organize({'candidates': [wrong]}, text, units)
+        draft = result.drafts[0]
+        self.assertEqual(draft['record_type'], 'role')
+        self.assertNotIn('employer_name', draft['values'])
+        self.assertEqual(draft['values']['role_title'], 'Engineer')
+        self.assertEqual((draft['confidence'], draft['uncertain_fields']), ('uncertain', ['employer_name']))
+        self.assertIn('Led a team of four.', draft['values']['summary'])
+        self.assertEqual(result.rejections, [{'candidate_index': 0, 'code': 'unsupported_record_identity',
+                                              'field': 'employer_name', 'action': 'field_cleared'}])
+
+    def test_unusable_envelope_raises_and_no_usable_group_is_unavailable_without_fragments_flag(self):
+        text, units, g = self.groups()
+        with self.assertRaisesRegex(ExtractionError, 'malformed_payload'):
+            self.organize({'candidates': [], 'extra': 1}, text, units)
+        result = self.organize({'candidates': []}, text, units)
+        self.assertEqual(result.state, 'unavailable')
+
+    def test_request_tells_the_model_every_rule_the_validator_enforces(self):
+        from services.my_data_extraction_adapter import (
+            EXTRACTION_INSTRUCTIONS, RESUME_REJECTION_RULES, RESUME_VALIDATOR_RULES)
+        text, units, g = self.groups()
+        seen = []
+        def provider(request, **options):
+            seen.append(request)
+            return {'candidates': []}
+        MyDataExtractionAdapter(provider=provider).organize_resume(
+            text, allowed_fields=EDITOR_FIELDS, source_units=units)
+        instructions = seen[0].instructions
+        self.assertIn(EXTRACTION_INSTRUCTIONS, instructions)
+        for sentence in RESUME_VALIDATOR_RULES.values():
+            self.assertIn(sentence, instructions)
+        self.assertEqual(set(RESUME_REJECTION_RULES.values()) - set(RESUME_VALIDATOR_RULES), set())
+        self.assertEqual(set(RESUME_VALIDATOR_RULES) - set(RESUME_REJECTION_RULES.values()), set())
+
+    # -- service ----------------------------------------------------------------------
+
+    def service_with(self, payload_for, text=None):
+        text = text or self.TEXT
+        calls = []
+        def provider(request, **options):
+            calls.append(request)
+            return payload_for(text)
+        service = build_service(document_pipeline=extracted_pipeline(text),
+                                extraction_adapter=MyDataExtractionAdapter(provider=provider))
+        return service, calls, text
+
+    def upload(self, service, owner, text, name='resume.txt'):
+        return service.submit(owner, add_request(attachments=[{'client_key': 'doc', 'kind': 'document',
+            'declared_content_type': 'text/plain', 'filename': name}]),
+            files={'doc': FakeUpload('text/plain', text.encode())})
+
+    def payload(self, *names, flaw=None):
+        def make(text):
+            _, _, g = self.groups(text)
+            chosen = [copy.deepcopy(g[n]) for n in names]
+            if flaw:
+                flaw(chosen)
+            return {'candidates': chosen}
+        return make
+
+    def test_upload_with_one_flawed_candidate_keeps_the_good_groups_and_counts_only_this_upload(self):
+        def break_last(chosen):
+            chosen[-1]['quote'] = 'Never in the source.'
+        service, calls, text = self.service_with(self.payload('a', 'b', 'sql', 'python', flaw=break_last))
+        owner = 'synthetic-organization-owner'
+        result = self.upload(service, owner, text)
+        self.assertEqual(result['results'][0]['organization']['state'], 'partial')
+        workspace = service.get_workspace(owner)
+        overview = workspace['review_overview']
+        self.assertEqual((overview['counts']['experience'], overview['counts']['skills'],
+                          overview['counts']['unplaced']), (2, 1, 1))
+        self.assertEqual(len(overview['groups']), 3)
+        self.assertEqual(overview['batch']['organization']['state'], 'partial')
+        self.assertFalse(overview['batch']['retry_available'])
+        self.assertEqual(len(workspace['pending_proposals']), 4)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(overview['earlier']['count'], 0)
+        role = next(group for group in overview['groups'] if group['heading']['organization'] == 'Alpha Labs')
+        self.assertEqual([line['text'] for line in role['lines']],
+                         ['Engineer, Alpha Labs.', 'Built data pipelines.', 'Led a team of four.'])
+        self.assertTrue(all(line['unit_id'] for line in role['lines']))
+        self.assertEqual(role['lines'][0]['role'], 'header')
+        self.assertEqual(role['record_ref'], 'proposal:' + role['proposal_key'])
+
+    def test_provider_failure_keeps_the_source_and_creates_no_fragment_items(self):
+        service = build_service(document_pipeline=extracted_pipeline(self.TEXT),
+                                extraction_adapter=MyDataExtractionAdapter())
+        owner = 'synthetic-unavailable-owner'
+        result = self.upload(service, owner, self.TEXT)
+        row = result['results'][0]
+        self.assertEqual(row['organization']['state'], 'unavailable')
+        self.assertEqual(row['provider_issue']['code'], 'provider_unavailable')
+        workspace = service.get_workspace(owner)
+        self.assertEqual(workspace['pending_proposals'], [])
+        self.assertEqual(len([u for u in workspace['source_accounting'][0]['source_units']
+                              if u['kind'] == 'content']), 7)
+        overview = workspace['review_overview']
+        self.assertEqual(overview['batch']['organization']['state'], 'unavailable')
+        self.assertEqual((overview['batch']['retry_available'], overview['batch']['retry_reason']), (True, 'unavailable'))
+
+    def test_overview_lines_follow_the_effective_wording_not_stale_source_text(self):
+        service, calls, text = self.service_with(self.payload('a', 'b', 'sql', 'python'))
+        owner = 'synthetic-effective-owner'
+        self.upload(service, owner, text)
+        snapshot = service.repository.load_owner(owner)
+        role = next(row for row in snapshot['proposals'].values()
+                    if row['proposed_values'].get('employer_name') == 'Alpha Labs')
+        original = service.get_workspace(owner)['review_overview']['groups'][0]
+        self.assertTrue(all(line['unit_id'] for line in original['lines']))
+        # An edited pending item and an amended (existing + new) item both carry other wording.
+        for wording in ('Corrected wording.\nA second corrected line.',
+                        'Built data pipelines.\nLed a team of four.\nAdded after the first upload.'):
+            role['proposed_values']['summary'] = wording
+            service.repository.save_owner(owner, snapshot)
+            group = next(g for g in service.get_workspace(owner)['review_overview']['groups']
+                         if g['proposal_key'] == role['proposal_key'])
+            self.assertEqual([line['text'] for line in group['lines']], wording.split('\n'))
+            self.assertTrue(all(line['unit_id'] is None for line in group['lines']))
+            self.assertNotEqual(group['version_token'], original['version_token'])
+
+    def test_older_pending_work_is_counted_apart_from_the_new_upload(self):
+        first, calls, text = self.service_with(self.payload('a', 'b', 'sql', 'python'))
+        owner = 'synthetic-backlog-owner'
+        self.upload(first, owner, text)
+        other = 'Experience\nDesigner, Gamma Studio.\nDrew interfaces.\nSkills\nFigma.'
+        units = inventory_source(other, document=True)
+        content = [u for u in units if u['kind'] == 'content']
+        payload = {'candidates': [
+            complete_resume_candidate('role', {'role_title': 'Designer', 'employer_name': 'Gamma Studio'},
+                                      content[0]['text'], content[:2], 'Experience'),
+            complete_resume_candidate('skill', {'name': 'Figma'}, 'Figma.', content[2:], 'Skills')]}
+        second = build_service(repository=first.repository, document_pipeline=extracted_pipeline(other),
+                               extraction_adapter=MyDataExtractionAdapter(provider=lambda request, **options: payload))
+        self.upload(second, owner, other, name='second.txt')
+        overview = second.get_workspace(owner)['review_overview']
+        self.assertEqual((overview['counts']['experience'], overview['counts']['skills']), (1, 1))
+        self.assertEqual(overview['earlier']['count'], 4)
+        self.assertEqual(len(second.get_workspace(owner)['pending_proposals']), 6)
+        # Work created after the upload (a correction or addition) belongs to it, not to the backlog.
+        snapshot = second.repository.load_owner(owner)
+        newest = max(snapshot['proposals'].values(), key=lambda row: row['created_at'])
+        addition = copy.deepcopy(newest)
+        addition.update(proposal_key=str(uuid4()), created_at='2999-01-01T00:00:00+00:00')
+        addition['binding'] = {**addition['binding'], 'source_key': str(uuid4())}
+        snapshot['proposals'][addition['proposal_key']] = addition
+        second.repository.save_owner(owner, snapshot)
+        after = second.get_workspace(owner)['review_overview']
+        self.assertEqual(after['earlier']['count'], 4)
+        self.assertIn(addition['proposal_key'], [group['proposal_key'] for group in after['groups']])
+
+    def test_words_sent_with_the_document_belong_to_the_same_batch(self):
+        service, calls, text = self.service_with(self.payload('a', 'b', 'sql', 'python'))
+        owner = 'synthetic-together-owner'
+        service.submit(owner, add_request(text='A typed note sent with the file.', attachments=[
+            {'client_key': 'doc', 'kind': 'document', 'declared_content_type': 'text/plain', 'filename': 'resume.txt'}]),
+            files={'doc': FakeUpload('text/plain', text.encode())})
+        overview = service.get_workspace(owner)['review_overview']
+        self.assertEqual(overview['earlier']['count'], 0)
+        self.assertEqual(len(overview['groups']), 5)
+
+    def test_same_file_with_open_work_is_not_stored_or_dispatched_twice(self):
+        service, calls, text = self.service_with(self.payload('a', 'b', 'sql', 'python'))
+        owner = 'synthetic-duplicate-owner'
+        self.upload(service, owner, text)
+        again = self.upload(service, owner, text, name='copy.txt')
+        row = again['results'][0]
+        self.assertEqual((row['outcome'], row['code']), ('duplicate', 'duplicate_document'))
+        self.assertEqual(len(calls), 1)
+        snapshot = service.repository.load_owner(owner)
+        self.assertEqual(len([s for s in snapshot['sources'].values() if s['kind'] == 'document']), 1)
+        self.assertEqual(row['existing_source_key'],
+                         next(s['source_key'] for s in snapshot['sources'].values() if s['kind'] == 'document'))
+        self.assertEqual(len(service.get_workspace(owner)['pending_proposals']), 4)
+
+    def organize_command(self, source_key, mode='retry', request_id=None):
+        return {'request_id': request_id or str(uuid4()), 'source_key': source_key, 'mode': mode}
+
+    def test_retry_replaces_only_the_unorganized_items_and_a_repeat_dispatches_nothing(self):
+        # A source organized before per-candidate organization existed: untouched unplaced items only.
+        text = self.TEXT
+        service = build_service(document_pipeline=extracted_pipeline(text), extraction_adapter=MyDataExtractionAdapter())
+        owner = 'synthetic-legacy-owner'
+        self.upload(service, owner, text)
+        key = service.get_workspace(owner)['source_accounting'][0]['source_key']
+        service.organize_source(owner, self.organize_command(key, 'sort_myself'))
+        snapshot = service.repository.load_owner(owner)
+        del snapshot['sources'][key]['structured_values']['resume_conversation_v1']['organization']
+        service.repository.save_owner(owner, snapshot)
+        legacy = service.get_workspace(owner)
+        self.assertEqual(len(legacy['pending_proposals']), 7)
+        self.assertEqual(legacy['review_overview']['batch']['retry_reason'], 'legacy')
+        source_key = legacy['source_accounting'][0]['source_key']
+        calls = []
+        def provider(request, **options):
+            calls.append(request)
+            return self.payload('a', 'b', 'sql', 'python')(text)
+        service._extraction_adapter = MyDataExtractionAdapter(provider=provider)
+        command = self.organize_command(source_key)
+        result = service.organize_source(owner, command)
+        self.assertEqual((result['outcome'], len(result['proposal_keys'])), ('organized', 4))
+        self.assertEqual(len(calls), 1)
+        snapshot = service.repository.load_owner(owner)
+        states = sorted(row['state'] for row in snapshot['proposals'].values())
+        self.assertEqual(states, ['invalidated'] * 7 + ['pending'] * 4)
+        self.assertEqual(snapshot['sources'][source_key]['text'], text)
+        overview = service.get_workspace(owner)['review_overview']
+        self.assertEqual((overview['counts']['experience'], overview['counts']['skills']), (2, 2))
+        # The same request replays; a new request id on an organized source refuses first.
+        replay = service.organize_source(owner, command)
+        self.assertTrue(replay['replayed'])
+        before = (copy.deepcopy(snapshot), len(calls))
+        again = service.organize_source(owner, self.organize_command(source_key))
+        self.assertEqual(again['outcome'], 'already_organized')
+        self.assertEqual(len(calls), before[1])
+        self.assertEqual(service.repository.load_owner(owner), before[0])
+
+    def test_retry_reads_the_retained_original_again_with_the_current_reader(self):
+        old_text = 'Experience\nEngineer, Alpha Labs.\nBuilt data pipelines.\nLed a team of four.\nJan 2019 - Present\nSkills\nSQL.'
+        new_text = 'Experience\nEngineer, Alpha Labs. Jan 2019 - Present.\nBuilt data pipelines.\nLed a team of four.\nSkills\nSQL.'
+        current = {'text': old_text}
+
+        def pipeline(*args, **kwargs):
+            return current['text'], 'extracted', None, False, None
+
+        class Originals:
+            def __init__(self):
+                self.files = {}
+
+            def retain(self, owner, source, data):
+                self.files[source['source_key']] = data
+
+            def list(self, owner):
+                return [{'original_key': key, 'source_key': key, 'state': 'uploaded', 'downloadable': True}
+                        for key in self.files]
+
+            def download(self, owner, original_key):
+                return self.files[original_key], 'text/plain'
+
+        service = build_service(document_pipeline=pipeline, extraction_adapter=MyDataExtractionAdapter())
+        service.original_files = Originals()
+        owner = 'synthetic-reread-owner'
+        self.upload(service, owner, old_text)
+        source_key = service.get_workspace(owner)['source_accounting'][0]['source_key']
+        self.assertEqual(service.get_workspace(owner)['review_overview']['batch']['retry_reason'], 'unavailable')
+        # The reader improves after the upload; the stored reading is stale, the original is not.
+        current['text'] = new_text
+
+        def provider(request, **options):
+            units = [u for u in json.loads(request.input_text)['source_units'] if u['kind'] == 'content']
+            return {'candidates': [
+                complete_resume_candidate('role', {'role_title': 'Engineer', 'employer_name': 'Alpha Labs'},
+                                          units[0]['text'], units[:3], 'Experience'),
+                complete_resume_candidate('skill', {'name': 'SQL'}, 'SQL.', units[3:], 'Skills')]}
+        service._extraction_adapter = MyDataExtractionAdapter(provider=provider)
+        result = service.organize_source(owner, self.organize_command(source_key))
+        self.assertEqual(result['outcome'], 'organized')
+        snapshot = service.repository.load_owner(owner)
+        source = snapshot['sources'][source_key]
+        self.assertEqual((source['text'], source['version']), (new_text, 2))
+        role = next(g for g in service.get_workspace(owner)['review_overview']['groups'] if g['section'] == 'Experience')
+        self.assertIn('Jan 2019 - Present', role['lines'][0]['text'])
+        self.assertTrue(all(row['binding']['source_version'] == 2 for row in snapshot['proposals'].values()))
+
+    def saved_records(self, service, owner):
+        """Four saved records the model can match the resume's four groups to."""
+        keys = {}
+        for name, record_type, values in (
+                ('a', 'role', {'role_title': 'Engineer', 'employer_name': 'Alpha Labs'}),
+                ('b', 'role', {'role_title': 'Analyst', 'employer_name': 'Beta Corp'}),
+                ('sql', 'skill', {'name': 'SQL'}), ('python', 'skill', {'name': 'Python'})):
+            keys[name] = str(uuid4())
+            service.draft_service.catalog.create_private(
+                owner, {'record_key': keys[name], 'record_type': record_type, 'values': values})
+        return keys
+
+    def matched_payload(self, text, keys, outcome, names):
+        _, _, groups = self.groups(text)
+        payload = []
+        for name in ('a', 'b', 'sql', 'python'):
+            raw = copy.deepcopy(groups[name])
+            if name in names:
+                raw.update(outcome=outcome, match_reference=keys[name])
+            payload.append(raw)
+        return {'candidates': payload}
+
+    def test_retry_keeps_the_saved_record_a_role_was_matched_to_exactly_as_an_upload_does(self):
+        text = self.TEXT
+        outcomes = {}
+        for path in ('upload', 'retry'):
+            holder = {}
+            service = build_service(document_pipeline=extracted_pipeline(text), exclusions=lambda owner: (),
+                extraction_adapter=MyDataExtractionAdapter(
+                    provider=lambda request, **options: self.matched_payload(text, holder['keys'], 'additional_detail', {'a'})))
+            owner = 'synthetic-match-' + path
+            holder['keys'] = self.saved_records(service, owner)
+            if path == 'retry':
+                service._extraction_adapter = MyDataExtractionAdapter()
+            self.upload(service, owner, text)
+            if path == 'retry':
+                service._extraction_adapter = MyDataExtractionAdapter(
+                    provider=lambda request, **options: self.matched_payload(text, holder['keys'], 'additional_detail', {'a'}))
+                key = service.get_workspace(owner)['source_accounting'][0]['source_key']
+                self.assertEqual(service.organize_source(owner, self.organize_command(key))['outcome'], 'organized')
+            rows = [row for row in service.repository.load_owner(owner)['proposals'].values() if row['state'] == 'pending']
+            role = next(row for row in rows if row['proposed_values'].get('employer_name') == 'Alpha Labs')
+            self.assertEqual((role['kind'], role['target_key']), ('additional_detail', holder['keys']['a']))
+            outcomes[path] = sorted((row['kind'], bool(row['target_key'])) for row in rows)
+        self.assertEqual(outcomes['upload'], outcomes['retry'])
+
+    def test_a_retry_where_everything_is_already_saved_says_what_it_did(self):
+        text = self.TEXT
+        holder = {}
+        service = build_service(document_pipeline=extracted_pipeline(text), exclusions=lambda owner: (),
+                                extraction_adapter=MyDataExtractionAdapter())
+        owner = 'synthetic-allsaved-owner'
+        holder['keys'] = self.saved_records(service, owner)
+        self.upload(service, owner, text)
+        key = service.get_workspace(owner)['source_accounting'][0]['source_key']
+        self.assertEqual(service.organize_source(owner, self.organize_command(key, 'sort_myself'))['outcome'], 'organized')
+        service._extraction_adapter = MyDataExtractionAdapter(
+            provider=lambda request, **options: self.matched_payload(text, holder['keys'], 'equivalent', {'a', 'b', 'sql', 'python'}))
+        result = service.organize_source(owner, self.organize_command(key))
+        self.assertEqual((result['outcome'], result['proposal_keys'], result['replaced']), ('organized', [], 7))
+        self.assertIn('already in your saved résumé', result['message'])
+        self.assertIn('7 loose items', result['message'])
+        self.assertNotIn('Nothing was changed', result['message'])
+        states = sorted(row['state'] for row in service.repository.load_owner(owner)['proposals'].values())
+        self.assertEqual(states, ['invalidated'] * 7)
+
+    def test_retry_failure_changes_nothing_and_a_later_retry_can_succeed(self):
+        text = self.TEXT
+        service = build_service(document_pipeline=extracted_pipeline(text), extraction_adapter=MyDataExtractionAdapter())
+        owner = 'synthetic-retry-owner'
+        self.upload(service, owner, text)
+        source_key = service.get_workspace(owner)['source_accounting'][0]['source_key']
+        before = copy.deepcopy(service.repository.load_owner(owner))
+        failed = service.organize_source(owner, self.organize_command(source_key))
+        self.assertEqual((failed['outcome'], failed['provider_issue']['code']), ('unavailable', 'provider_unavailable'))
+        self.assertEqual(service.repository.load_owner(owner), before)
+        service._extraction_adapter = MyDataExtractionAdapter(provider=lambda request, **o: self.payload('a', 'b', 'sql', 'python')(text))
+        ok = service.organize_source(owner, self.organize_command(source_key))
+        self.assertEqual(ok['outcome'], 'organized')
+
+    def test_sort_myself_makes_no_provider_call_and_foreign_sources_are_not_found(self):
+        from services.resume_intake_service import ResumeIntakeNotFoundError
+        text = self.TEXT
+        calls = []
+        service = build_service(document_pipeline=extracted_pipeline(text),
+                                extraction_adapter=MyDataExtractionAdapter())
+        owner = 'synthetic-sort-owner'
+        self.upload(service, owner, text)
+        source_key = service.get_workspace(owner)['source_accounting'][0]['source_key']
+        service._extraction_adapter = MyDataExtractionAdapter(provider=lambda request, **o: calls.append(request))
+        with self.assertRaises(ResumeIntakeNotFoundError):
+            service.organize_source('someone-else', self.organize_command(source_key))
+        sorted_result = service.organize_source(owner, self.organize_command(source_key, 'sort_myself'))
+        self.assertEqual((sorted_result['outcome'], len(sorted_result['proposal_keys'])), ('organized', 7))
+        self.assertEqual(calls, [])
+        self.assertEqual(service.get_workspace(owner)['review_overview']['batch']['organization']['state'],
+                         'member_sorted')
+        # Sorting by hand does not close the door on a later automatic try.
+        self.assertEqual(service.get_workspace(owner)['review_overview']['batch']['retry_reason'], 'unavailable')
+        self.assertEqual(service.organize_source(owner, self.organize_command(source_key, 'sort_myself'))['outcome'],
+                         'already_organized')
 
 
 if __name__=='__main__':
@@ -561,8 +991,10 @@ class ResumeSourceBindingContractTests(unittest.TestCase):
         self.assertEqual(next(iter(snapshot['sources'].values()))['text'], text)
         self.assertEqual(catalog.list_items(owner), before)
         workspace = service.get_workspace(owner)
-        self.assertEqual(len(workspace['pending_proposals']), len(content))
-        self.assertTrue(all(row['record_type'] == 'unspecified' for row in workspace['pending_proposals']))
+        # The one rejected candidate costs only itself; nothing is flooded into per-unit items.
+        self.assertEqual(workspace['pending_proposals'], [])
+        self.assertEqual(result['results'][0]['organization']['state'], 'unavailable')
+        self.assertEqual(result['results'][0]['organization']['rejections'][0]['code'], 'invalid_source_unit_binding')
         self.assertEqual([u['text'] for u in workspace['source_accounting'][0]['source_units'] if u['kind'] == 'content'],
                          [u['text'] for u in content])
         self.assertTrue(service.submit(owner, command, files={

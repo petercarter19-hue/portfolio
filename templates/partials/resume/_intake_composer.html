@@ -9,6 +9,7 @@
     data-excluded-review-url="{{ url_for('resume_intake.post_excluded_detail_review') }}"
     data-intake-originals-url="{{ url_for('resume_intake.get_original_files') }}"
     data-intake-purge-url="{{ url_for('resume_intake.post_source_purge') }}"
+    data-intake-organize-url="{{ url_for('resume_intake.post_source_organize') }}"
     data-guide-url="{{ url_for('resume_intake.get_guide_state') }}"
     data-guide-status-url="{{ url_for('resume_intake.post_guide_status') }}"
     data-interview-enabled="{{ 'true' if config.get('PEERSLATE_RESUME_INTERVIEW_ENABLED', false) else 'false' }}"
@@ -20,7 +21,8 @@
     <header class="resume-intake__header">
       <button type="button" class="resume-intake__icon-button" id="resume-intake-back" aria-label="Go back" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
       <p class="resume-intake__eyebrow" id="resume-intake-eyebrow">WELCOME TO PEERSLATE</p>
-      <button type="button" class="resume-intake__icon-button" id="resume-intake-hide" aria-label="Close guide and edit manually"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button>
+      <button type="button" class="resume-intake__quiet resume-intake__pause" id="resume-intake-pause">Pause</button>
+      <button type="button" class="resume-intake__icon-button" id="resume-intake-hide" aria-label="Pause the guide and edit manually"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button>
     </header>
     <div id="resume-intake-guide">
       <h2 id="resume-intake-title" class="resume-intake__title" tabindex="-1">The more PeerSlate knows you, the more it can do for you.</h2>
@@ -96,6 +98,7 @@
         </div>
       </section>
       <section id="resume-intake-review" aria-label="Review suggested details" hidden>
+        <section id="resume-intake-batch" class="resume-intake__batch" aria-label="Your uploaded résumé" hidden></section>
         <p id="resume-intake-review-position" class="resume-intake__hint"></p>
         <ul class="resume-intake__proposals" id="resume-intake-proposals"></ul>
         <details id="resume-intake-source-review" class="resume-intake__policy-details" hidden><summary>Review original text and coverage</summary><div id="resume-intake-source-units"></div></details>

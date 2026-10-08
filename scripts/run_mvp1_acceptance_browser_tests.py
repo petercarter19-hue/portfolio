@@ -133,6 +133,15 @@ INTAKE_METHODS = (
     'test_stop_correction_preserves_restoration_and_releases_target_after_reload',
     'test_lost_stop_response_replays_once_and_preserves_newer_words_without_target',
     'test_old_stop_retry_preserves_new_correction_target_prompt_and_reload',
+    'test_overview_counts_one_complete_role_and_the_details_it_could_not_place',
+    'test_loose_details_open_one_at_a_time_and_earlier_work_stays_behind_its_own_link',
+    'test_unavailable_organizer_offers_retry_and_a_retry_regroups_the_stored_source',
+    'test_the_same_file_is_not_stored_or_dispatched_twice',
+    'test_pause_waits_for_the_save_and_the_status_and_says_only_what_happened',
+    'test_escape_and_the_close_button_are_the_same_truthful_pause',
+    'test_phone_sheet_fills_the_screen_and_the_last_action_stays_reachable',
+    'test_pause_notice_never_covers_the_reopen_or_photo_buttons_and_retry_is_reachable',
+    'test_only_a_fully_successful_pause_notice_clears_itself',
 )
 
 

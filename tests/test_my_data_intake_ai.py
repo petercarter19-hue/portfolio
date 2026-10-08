@@ -531,7 +531,7 @@ class ServiceWiringTests(unittest.TestCase):
         adapter = LooseExtractionAdapter([])
         adapter.extract_resume = lambda *args, **kwargs: self.fail('Undeclared document inference')
         service = build_service(extraction_adapter=adapter)
-        self.assertEqual(service._extract_with_adapter('member-a', SimpleNamespace(source_text='Literal notes.')), ([], None))
+        self.assertEqual(service._extract_with_adapter('member-a', SimpleNamespace(source_text='Literal notes.')), ([], None, None))
 
     def setUp(self):
         self.owner = "member-a"

@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-ONBOARDING-CONVERSATION-002",
-  "candidate_sha": "5185ffb931dce9676516e8ded28334ff1b8ba05c",
+  "candidate_sha": "194283cf8d6190a7e71790b0af04053f024da41b",
   "review_type": "independent",
-  "reviewer_ref": "session:01a112b3-11a5-7440-9a60-5397c5472376",
+  "reviewer_ref": "agent:claude/2026-10-07/allowance-reviewer",
   "result": "pass",
-  "reviewed_at": "2026-10-06T23:48:27Z",
+  "reviewed_at": "2026-10-08T06:23:07Z",
   "findings": [],
-  "evidence_ref": "X:/PeerSlate/evidence/PS-ONBOARDING-CONVERSATION-002/restart-20261006/final-review/CORE_CI4225_SOURCE_REVIEW.md (single fixture route cleanup; exact retained runtime and completed118 fixture PASS; current CI, accepted main, private and installed acceptance remain separate)"
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-ONBOARDING-CONVERSATION-002.md"
 }

@@ -368,6 +368,32 @@ def post_source_purge():
     return jsonify(result)
 
 
+@resume_intake.post("/api/resume-intake/me/sources/organize")
+def post_source_organize():
+    identity = _identity_or_not_found()
+    if identity is None:
+        return jsonify({"success": False, "message": "Not found."}), 404
+    try:
+        result = _service().organize_source(
+            identity.user_key,
+            _json_body(),
+            allow_fixture_policy=_fixture_policy_enabled(),
+        )
+    except ResumeIntakeValidationError as error:
+        return jsonify({"success": False, "code": "invalid", "message": str(error)}), 400
+    except ResumeIntakePolicyError as error:
+        return _policy_response(error)
+    except ResumeIntakeNotFoundError:
+        return jsonify({"success": False, "code": "not_found", "message": "Not found."}), 404
+    except ResumeIntakeConflictError as error:
+        return jsonify({
+            "success": False, "code": error.error_code, "message": str(error),
+        }), 409
+    except ResumeIntakeUnavailableError as error:
+        return jsonify(_unavailable(error, "The composer is unavailable.")), 503
+    return jsonify(result)
+
+
 @resume_intake.get("/api/resume-intake/me/draft")
 def get_draft():
     identity = _identity_or_not_found()
