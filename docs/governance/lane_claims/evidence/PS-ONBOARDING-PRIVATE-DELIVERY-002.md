@@ -361,3 +361,25 @@ CI and merge of this change; the supported `update --candidate-state accepted-ma
 ## Install binding independent review: PASS at 55ef7a8e
 
 `agent:claude/2026-10-07/allowance-reviewer`, a separate Claude session that did not write it, reviewed the factory binding at exact commit `55ef7a8ec86006bfb16de6fdc3b510a6a75dae19` and issued PASS (receipt `docs/governance/lane_claims/receipts/PS-ONBOARDING-PRIVATE-DELIVERY-002.json`, reviewed 2026-10-08T07:08:03Z, findings none). Review text: `X:/PeerSlate/Claude/reviews/2026-10-08_onboarding-1a-install-binding-review.md`. This tail adds only the receipt and this section on top of the reviewed commit. CI, merge, the supported promotion, the probe, starting the site and the recovery of the owner's upload remain separate and are recorded when they happen.
+
+
+## Claude custody: reviewed private factory interface for the accepted tester-round source
+
+Writer `agent:claude/2026-10-07/onboarding-private-delivery`. Base: accepted main `a91a78da1c656d80c3b0d311b52c211171c8ade4` (PR 1297, Azure build 4302) reconciled into this branch (`d6119a3a`). Source, CI, merge, installed controller, installed app, browser and physical-device states stay separate; this change is **source only** and installs nothing.
+
+### What this binds
+
+The app release the private installer loads needs a reviewed factory interface whose pinned file hashes and qualification entry the controller recognizes. This adds the interface for the accepted tester-round source (independent PASS at `c4c33f79946d696e4ba2a51260bdf79c5efdd507`; accepted as main `a91a78da`), built exactly as the slice 1a interface was (`PRIVATE_SLICE_1A_FACTORY.json`, whose bytes the generator round-trips):
+
+- New interface `X:/PeerSlate/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002/tester-round/PRIVATE_TESTER_ROUND_FACTORY.json`, sha256 `2c37f07791e095fa1fbb0506304ca4178be8349ba1516170cbc77264482eef7d`. It is the slice 1a interface with only these values changed: candidate sha, condition text, timestamp, the 11 pinned file hashes below, and the qualification entry. Factory signature, requirements, profiles, prices, limits, allocation and ongoing-budget contracts are untouched, and promotion still refuses any change to provider contracts or caps.
+- The 11 changed pins (Git bytes at the accepted commit): `resume_intake_routes.py`, `scripts/run_mvp1_acceptance_browser_tests.py`, `services/resume_intake_service.py`, `services/resume_onboarding_document_reader.py`, `static/css/resume-intake.css`, `static/js/resume-intake.js`, `tests/test_resume_intake_browser.py`, `tests/test_resume_intake_routes.py`, `tests/test_resume_onboarding_conversation.py`, `tests/test_resume_onboarding_coverage.py`, `tests/test_resume_onboarding_document_reader.py`. All 64 pinned files at the accepted commit are byte-identical to the independently reviewed candidate `c4c33f79` (checked blob by blob), so the pins describe the reviewed code.
+- `tools/local_reviewer/providers.py`: the new interface hash joins the allowed set, and `PRIVATE_TESTER_ROUND_ONBOARDING_QUALIFICATION` carries reviewed source `c4c33f79946d696e4ba2a51260bdf79c5efdd507`, accepted source `a91a78da1c656d80c3b0d311b52c211171c8ade4` and the sha256 `8374ac6b5f8d5b3843de8e529931a4619a2f61f9d844f71f4fe48fc10b531ebe` of the merged receipt file. The declared behaviors are unchanged, so no new behavior qualification is introduced. `tests/test_local_reviewer_providers.py` adds the new pair to the integrity test.
+- App archive for the supported update (not part of this diff): `X:/PeerSlate/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002/slice-1a/accepted-source-a91a78da.zip`, a `git archive` of main `a91a78da`, sha256 `ae26dcfd4e01ce36efef8f11c1cc23b26bdad1d7544a5e091093a71a8bfc9a6f`, 4606 entries, no `.env`/`.git` names.
+
+### Verification (source only)
+
+`-B -m unittest tests.test_local_reviewer tests.test_local_reviewer_identity tests.test_local_reviewer_providers` under the private Python 3.12 runtime: 160 tests, 0 failures. No provider call, no installation read or write, no ledger access.
+
+### Not yet true
+
+CI and merge of this change; the supported `update --candidate-state accepted-main --factory` promotion on a stopped, drained site; the supported probe covering both namespaces (R3); starting the site; restoring checkpoint `20261008T074824Z-9dacff66` (undoing the tester's fictional changes; the ledger and spend stay as they are); a checkpoint before the first real retry, a fictional proof, and then a retry of the owner's latest upload copy only (R4), confirming first that the source version bumped.
