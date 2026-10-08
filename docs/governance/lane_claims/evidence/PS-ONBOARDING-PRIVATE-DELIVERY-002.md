@@ -336,3 +336,28 @@ Verification: `-B -m unittest tests.test_local_reviewer tests.test_local_reviewe
 The correction was reviewed at exact commit `7a1ccf44b5db8ee37eb8883f9f4836d444af617d` by `agent:claude/2026-10-07/allowance-reviewer`, a separate Claude session that did not write it (receipt `docs/governance/lane_claims/receipts/PS-ONBOARDING-PRIVATE-DELIVERY-002.json`, reviewed 2026-10-08T04:16:22Z, findings none). The reviewer confirmed that the merge from main brought in only main, that the delta `67f6e830..7a1ccf44` changes only `tools/local_reviewer/manager.py` (the probe), `tests/test_local_reviewer_providers.py` and this evidence file, that `provider_budget.py`, `providers.py`, `runtime.py` and `docs/LOCAL_REVIEWER.md` are unchanged since the earlier reviewed candidate, and that restoring the old masking made the new F1 test fail and removing the aggregate fence made the F2 test fail. The review text is `X:/PeerSlate/Claude/reviews/2026-10-07_allowance-candidate-review.md`; the escape-damaged path in the earlier section is corrected here, in this evidence-only tail.
 
 Source and CI state, installed controller, installed grant and read-back remain separate facts. At this commit nothing is installed or granted.
+
+
+## Claude custody: reviewed private factory interface for accepted slice 1a
+
+Writer `agent:claude/2026-10-07/onboarding-private-delivery`. Base: accepted main `5454f3c73b3b0a188b86caa24e9e79fcd1f58a02` (slice 1a, Azure build 4289) reconciled into this branch (`27ff57e2`). Source, CI, merge, installed controller, installed app, browser and physical-device states stay separate; this change is **source only** and installs nothing.
+
+### What this binds
+
+Every app release the private installer loads needs a reviewed factory interface whose pinned file hashes and qualification entry the controller recognizes. This change adds the interface for accepted slice 1a, built exactly as the previous corrected interface was and verified to reproduce it byte-for-byte when run on the old inputs:
+
+- New interface file `X:/PeerSlate/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002/slice-1a/PRIVATE_SLICE_1A_FACTORY.json` (interface version 12, sha256 `7fa07b67f316fa9543e77073628ffd9a0a54bec8d9133d9d2284fa1db58ad028`). It is the corrected interface with only these values changed: the candidate sha (`194283cf8d6190a7e71790b0af04053f024da41b`), the condition text, the timestamp, the 13 pinned file hashes below, and the qualification entry. Factory signature, requirements, profiles, prices, limits, allocation and ongoing-budget contracts are untouched, and promotion still refuses any change to provider contracts or caps.
+- The 13 changed pins (Git bytes at the accepted commit): `resume_intake_routes.py`, `scripts/run_mvp1_acceptance_browser_tests.py`, `services/my_data_extraction_adapter.py`, `services/resume_intake_service.py`, `services/resume_onboarding_document_reader.py`, `static/css/resume-intake.css`, `static/js/resume-intake.js`, `templates/partials/resume/_intake_composer.html`, `tests/test_my_data_intake_ai.py`, `tests/test_resume_intake_browser.py`, `tests/test_resume_intake_routes.py`, `tests/test_resume_onboarding_coverage.py`, `tests/test_resume_onboarding_document_reader.py`. All 64 pinned files at the accepted commit are byte-identical to the independently reviewed candidate `194283cf` (checked file by file), so the pins describe the reviewed code.
+- `tools/local_reviewer/providers.py`: the new interface hash joins the allowed set, and `PRIVATE_SLICE_1A_ONBOARDING_QUALIFICATION` carries reviewed source `194283cf8d6190a7e71790b0af04053f024da41b`, accepted source `5454f3c73b3b0a188b86caa24e9e79fcd1f58a02` and the sha256 `191eb6fde3174be620223464c3ec51da1c8635a33e6cb97fe81cb0de806deb75` of the merged receipt file `docs/governance/lane_claims/receipts/PS-ONBOARDING-CONVERSATION-002.json`. The declared behaviors are unchanged (bound credential details, monotonic composer lifecycle, contextual exclusion recovery), so no new behavior qualification is introduced. `tests/test_local_reviewer_providers.py` adds the new pair to the integrity test.
+
+### Verification (source only)
+
+`-B -m unittest tests.test_local_reviewer tests.test_local_reviewer_identity tests.test_local_reviewer_providers` under the private Python 3.12 runtime: 160 tests, 0 failures. No provider call, no installation read or write, no ledger access.
+
+### Not yet true
+
+CI and merge of this change; the supported `update --candidate-state accepted-main --factory` promotion on a stopped, drained site; the supported probe covering both namespaces with the snapshot contract unchanged (R3); starting the site; a checkpoint before the first real retry, a fictional proof and then a retry of the owner's latest upload copy only (R4).
+
+## Install binding independent review: PASS at 55ef7a8e
+
+`agent:claude/2026-10-07/allowance-reviewer`, a separate Claude session that did not write it, reviewed the factory binding at exact commit `55ef7a8ec86006bfb16de6fdc3b510a6a75dae19` and issued PASS (receipt `docs/governance/lane_claims/receipts/PS-ONBOARDING-PRIVATE-DELIVERY-002.json`, reviewed 2026-10-08T07:08:03Z, findings none). Review text: `X:/PeerSlate/Claude/reviews/2026-10-08_onboarding-1a-install-binding-review.md`. This tail adds only the receipt and this section on top of the reviewed commit. CI, merge, the supported promotion, the probe, starting the site and the recovery of the owner's upload remain separate and are recorded when they happen.
