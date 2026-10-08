@@ -564,6 +564,18 @@ def delete_original_file(original_key):
     return jsonify(result), 202 if result["outcome"] == "delete_pending" else 200
 
 
+# What a member is told when private assistance refuses before or after the model: the reason and what to do.
+_ASSISTANCE_MESSAGES = {
+    'input_too_large': 'There is too much to read at once, so I did not send this. Nothing was changed and nothing was spent. '
+                       'Finish or set aside some earlier items, or use the manual editor. Your words are kept.',
+    'changed': 'Your résumé changed while I was working, so I stopped. Nothing was saved. Try again. Your words are kept.',
+    'no_eligible_sources': 'There is nothing saved yet for me to work from. Add a detail first, or use the manual editor.',
+    'target_locked': 'That part cannot be changed here right now. Use the manual editor. Your words are kept.',
+    'not_found': 'That item is no longer there. Reload the page to see what is current. Your words are kept.',
+    'unavailable': 'Private assistance is unavailable right now. Nothing was changed. Try again shortly, or use the manual editor.',
+}
+
+
 def _private_assistance(kind, method):
     # Flag off is neutral before identity, parsing, signing, SQL or provider I/O.
     if (current_app.config.get('PEERSLATE_RESUME_EDITOR_ENABLED') is not True
@@ -628,7 +640,7 @@ def _private_assistance(kind, method):
         code = error.code
         status = 404 if code == 'not_found' else 409 if code == 'changed' else 503 if code == 'unavailable' else 400
         body = {'success': False, 'code': code,
-            'message': 'Private assistance could not complete. Your words and manual editor remain available.'}
+            'message': _ASSISTANCE_MESSAGES.get(code) or 'Private assistance could not complete. Your words and manual editor remain available.'}
         diagnostic = conversation_failure_diagnostic(error)
         if diagnostic is not None:
             body['diagnostic'] = diagnostic

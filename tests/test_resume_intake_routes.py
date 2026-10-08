@@ -1031,6 +1031,24 @@ if __name__ == "__main__":
 
 # Selected model/private assistance integration regressions; fixtures only.
 class RouteBoundaryTests(unittest.TestCase):
+    def test_too_large_context_is_explained_in_plain_words_before_any_model_call(self):
+        from tests.test_resume_onboarding_conversation import ConversationTests
+        from unittest.mock import patch
+        fixture = ConversationTests(); fixture.setUp(); fixture.owner = 'fiction-owner'
+        fixture.assistance.limits['maximum_input_bytes'] = 2000
+        self.app.config['RESUME_PRIVATE_ASSISTANCE_SERVICE'] = fixture.assistance
+        command = fixture.command('Engineer at Example Labs.')
+        with patch.object(self.routes, '_service', return_value=fixture.intake):
+            response = self.client.post('/api/resume-interview/me/turn', json=command,
+                headers={'X-PeerSlate-Request': 'same-origin'})
+        self.assertEqual(response.status_code, 400)
+        body = response.get_json()
+        self.assertEqual(body['code'], 'input_too_large')
+        self.assertIn('too much to read at once', body['message'])
+        self.assertIn('Nothing was changed', body['message'])
+        self.assertNotIn('could not complete', body['message'])
+        self.assertEqual(fixture.calls, [])
+
     def test_actual_rejected_conversation_returns_only_closed_private_diagnostic(self):
         from tests.test_resume_onboarding_conversation import ConversationTests, operation
         from unittest.mock import patch

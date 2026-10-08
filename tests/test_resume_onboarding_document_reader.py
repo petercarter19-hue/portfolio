@@ -91,6 +91,37 @@ class ResumeOnboardingDocumentReaderTests(unittest.TestCase):
             self.assertIn(dates, line)
         self.assertFalse(lines[-1].strip() in {dates for _, dates in jobs})
 
+    def test_right_aligned_places_and_dates_beside_employer_and_title_stay_on_their_lines(self):
+        # The layout of a reviewed fictional résumé: a place right-aligned beside each employer,
+        # dates right-aligned beside each title. Places that happen to start at one x must not
+        # make the page look like two columns, or every date lands in one block at the page's end.
+        jobs = [("Northwind Cold Storage", "Duluth, MN", "Distribution Operations Manager", "June 2021 - Present"),
+                ("Lakehead Freight Partners", "Superior, WI", "Inventory Control Supervisor", "March 2017 - May 2021"),
+                ("Harbor Grocery Cooperative", "Two Harbors, MN", "Receiving Lead", "August 2013 - February 2017"),
+                ("Pinecrest Summer Camp", "Duluth, MN", "Seasonal Logistics Assistant", "May 2012 - August 2012"),
+                ("Lake Superior College", "Duluth, MN", "Certificate, Forklift Safety", "December 2016")]
+        rows = []
+        for index, (employer, place, title, dates) in enumerate(jobs):
+            y = 740 - index * 50
+            rows += [(50, y, employer), (562 - 5.0 * len(place), y, place),
+                     (50, y - 12, title), (562 - 5.0 * len(dates), y - 12, dates),
+                     (64, y - 27, "Supervised the receiving dock and kept every count accurate.")]
+        lines = self.reader.read('application/pdf', self._rows_pdf(rows), limits=self.limits)['text'].split('\n')
+        for employer, place, title, dates in jobs:
+            self.assertIn(place, next(row for row in lines if employer in row))
+            self.assertIn(dates, next(row for row in lines if title in row))
+
+    def test_job_headings_with_dates_are_not_glued_to_the_first_bullet_but_wrapped_bullets_still_join(self):
+        from services.resume_onboarding_document_reader import inventory_source
+        text = ('Experience\nNorthwind Cold Storage Duluth, MN\nDistribution Operations Manager June 2021 – Present\n'
+                'Lead a team of 24 warehouse associates across two shifts in a 180,000 square foot refrigerated\n'
+                'facility.\nReduced spoilage write-offs by 18% in 2023.')
+        texts = [row['text'] for row in inventory_source(text, document=True) if row['kind'] == 'content']
+        self.assertEqual(texts, [
+            'Northwind Cold Storage Duluth, MN', 'Distribution Operations Manager June 2021 – Present',
+            'Lead a team of 24 warehouse associates across two shifts in a 180,000 square foot refrigerated\nfacility.',
+            'Reduced spoilage write-offs by 18% in 2023.'])
+
     def test_equal_width_dates_are_still_not_a_second_column(self):
         # Identical-width dates do start at one x, but they are dates, not a column of text.
         rows = []

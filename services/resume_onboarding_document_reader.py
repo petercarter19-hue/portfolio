@@ -150,6 +150,10 @@ _SECTION_NAMES = {
 }
 
 
+# A line that ends in a date or "Present" is a job or school heading, not a wrapped sentence.
+_HEADING_DATE_END = re.compile(r"(?:(?:19|20)\d\d|present|current)\s*$", re.I)
+
+
 def inventory_source(text, *, pages=None, document=False):
     """Account for every nonblank source span; infer no biographical assertion.
 
@@ -175,6 +179,8 @@ def inventory_source(text, *, pages=None, document=False):
                         and rows[-1]["section"] == section
                         and start - rows[-1]["span_end"] <= 2
                         and not re.match(r"[•*\-]|\d+[.)]", stripped)
+                        and not _HEADING_DATE_END.search(stripped)
+                        and not _HEADING_DATE_END.search(rows[-1]["text"])
                         and not rows[-1]["text"].rstrip().endswith((".", ";", ":", "!", "?")))
         if continuation:
             row = rows[-1]
@@ -444,21 +450,46 @@ def _ocr_page(pdfium, page, number, settings, root, total_pixels):
 _DATE_RUN = re.compile(r"(?:19|20)\d\d|present|current", re.I)
 
 
-def _is_column_layout(fragments, width):
-    """True only for a real second column, not for right-aligned dates.
+def _right_aligned_ends(short, width):
+    """Short right-hand runs that end at one edge: locations and dates, not a column.
 
-    A column's lines all start at one x. A right-aligned date shares its row with the
+    A column's lines share a left x. Right-aligned cells share their right edge while
+    their left x moves with their width, so their estimated ends sit closer together
+    than their starts do. (Glyph widths are estimated from the font size.)
+    """
+    if len(short) < 3:
+        return set()
+    starts = [x for x, _end in short.values()]
+    ends = [end for _x, end in short.values()]
+    if max(ends) - min(ends) > width * .06 or max(starts) - min(starts) < (max(ends) - min(ends)) * 1.5:
+        return set()
+    return set(short)
+
+
+def _is_column_layout(fragments, width):
+    """True only for a real second column, not for right-aligned dates and places.
+
+    A column's lines all start at one x. A right-aligned cell shares its row with the
     left text and starts wherever its width puts it, so dates and the continuation runs
-    of long lines never line up. Short date-like runs are ignored; at least three
-    right-hand rows must then start at one x for the page to count as two columns.
+    of long lines never line up. Short date-like runs are ignored, and so are short runs
+    whose ends line up at one right edge (a location beside each employer); at least
+    three of the remaining right-hand rows must start at one x for two columns.
     """
     rows = {}
-    for x, y, text in fragments:
-        rows.setdefault(round(y / 3), []).append((x, text))
+    for fragment in fragments:
+        x, y, text = fragment[:3]
+        size = fragment[3] if len(fragment) > 3 else 10.0
+        rows.setdefault(round(y / 3), []).append((x, text, x + len(text.strip()) * size * .5))
+    short = {}
+    for key, row in rows.items():
+        for x, text, end in row:
+            if x > width * .52 and len(text.strip()) <= 30:
+                short[(key, x)] = (x, end)
+    aligned = _right_aligned_ends(short, width)
     starts = []
-    for row in rows.values():
-        right = [x for x, text in row
-                 if x > width * .52 and not (len(text.strip()) <= 30 and _DATE_RUN.search(text))]
+    for key, row in rows.items():
+        right = [x for x, text, _end in row
+                 if x > width * .52 and not (len(text.strip()) <= 30 and (_DATE_RUN.search(text) or (key, x) in aligned))]
         if right:
             starts.append(min(right))
     if len([f for f in fragments if f[0] < width * .45]) < 3 or len(starts) < 3:
@@ -472,13 +503,13 @@ def _pdf_text_page(page):
     # pypdf's content-stream reading preserves whole columns when authored in
     # that order. Visitor positions let common two-column layouts authored
     # row-first keep their complete records together; a single column with
-    # right-aligned dates keeps every date on the line of its title.
+    # right-aligned dates and places keeps every one on the line of its title.
     fragments = []
     def visitor(text, cm, tm, font, size):
         if text.strip():
             x = tm[4] * cm[0] + tm[5] * cm[2] + cm[4]
             y = tm[4] * cm[1] + tm[5] * cm[3] + cm[5]
-            fragments.append((x, y, text))
+            fragments.append((x, y, text, float(size or 10.0) * abs(float(cm[0]) or 1.0)))
     original = page.extract_text(visitor_text=visitor) or ""
     width = float(page.mediabox.width)
     if _is_column_layout(fragments, width):

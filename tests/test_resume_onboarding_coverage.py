@@ -532,6 +532,31 @@ class ResumeOrganizationTests(unittest.TestCase):
         self.assertEqual(after['earlier']['count'], 4)
         self.assertIn(addition['proposal_key'], [group['proposal_key'] for group in after['groups']])
 
+    def test_batch_scope_follows_stored_time_not_the_order_rows_load_in(self):
+        # A database may return rows in key order. Older pending work must stay out of the new
+        # upload's review however the rows happen to be ordered.
+        first, calls, text = self.service_with(self.payload('a', 'b', 'sql', 'python'))
+        owner = 'synthetic-row-order-owner'
+        self.upload(first, owner, text)
+        other = 'Experience\nDesigner, Gamma Studio.\nDrew interfaces.\nSkills\nFigma.'
+        units = inventory_source(other, document=True)
+        content = [u for u in units if u['kind'] == 'content']
+        payload = {'candidates': [
+            complete_resume_candidate('role', {'role_title': 'Designer', 'employer_name': 'Gamma Studio'},
+                                      content[0]['text'], content[:2], 'Experience'),
+            complete_resume_candidate('skill', {'name': 'Figma'}, 'Figma.', content[2:], 'Skills')]}
+        second = build_service(repository=first.repository, document_pipeline=extracted_pipeline(other),
+                               extraction_adapter=MyDataExtractionAdapter(provider=lambda request, **options: payload))
+        self.upload(second, owner, other, name='second.txt')
+        snapshot = second.repository.load_owner(owner)
+        snapshot['proposals'] = dict(sorted(snapshot['proposals'].items(), key=lambda item: item[1]['created_at'], reverse=True))
+        second.repository.save_owner(owner, snapshot)
+        overview = second.get_workspace(owner)['review_overview']
+        self.assertEqual((overview['counts']['experience'], overview['counts']['skills']), (1, 1))
+        self.assertEqual(overview['earlier']['count'], 4)
+        self.assertEqual(overview['batch']['saved'], 0)
+        self.assertEqual(overview['batch']['uncovered'], [])
+
     def test_words_sent_with_the_document_belong_to_the_same_batch(self):
         service, calls, text = self.service_with(self.payload('a', 'b', 'sql', 'python'))
         owner = 'synthetic-together-owner'
@@ -710,6 +735,54 @@ class ResumeOrganizationTests(unittest.TestCase):
         self.assertNotIn('Nothing was changed', result['message'])
         states = sorted(row['state'] for row in service.repository.load_owner(owner)['proposals'].values())
         self.assertEqual(states, ['invalidated'] * 7)
+
+    def test_retry_dispatches_inside_the_composition_owner_scope_with_a_deterministic_id(self):
+        # The real provider refuses outside the owner scope its composition opens around
+        # `_extract_with_adapter`; an adapter call that bypasses that seam only fails live.
+        import contextvars
+        from uuid import UUID, uuid5
+        from services.ai_foundation.errors import ProviderUnavailableError
+        from services.resume_draft_repository import InMemoryCanonicalCatalog, InMemoryResumeDraftRepository
+        from services.resume_draft_service import ResumeDraftService
+        from services.resume_intake_policy import selected_policy_for_tests
+        from services.resume_intake_repository import InMemoryResumeIntakeRepository
+        scope = contextvars.ContextVar('extraction_owner', default=None)
+
+        class ScopedService(ResumeIntakeService):
+            def _extract_with_adapter(self, owner, plan):
+                token = scope.set(owner)
+                try:
+                    return super()._extract_with_adapter(owner, plan)
+                finally:
+                    scope.reset(token)
+
+        text, requests = self.TEXT, []
+        payload = self.batch_payload_for(text)
+
+        def provider(request, **options):
+            if scope.get() is None:
+                raise ProviderUnavailableError('No authorized extraction scope is active.')
+            requests.append(request)
+            return payload
+
+        catalog = InMemoryCanonicalCatalog()
+        service = ScopedService(
+            repository=InMemoryResumeIntakeRepository(),
+            draft_service=ResumeDraftService(repository=InMemoryResumeDraftRepository(), catalog=catalog),
+            policy=selected_policy_for_tests(), document_pipeline=extracted_pipeline(text),
+            extraction_adapter=MyDataExtractionAdapter())
+        owner = 'synthetic-scope-owner'
+        self.upload(service, owner, text)
+        source_key = service.get_workspace(owner)['source_accounting'][0]['source_key']
+        service._extraction_adapter = MyDataExtractionAdapter(provider=provider)
+        command = self.organize_command(source_key)
+        result = service.organize_source(owner, command)
+        self.assertEqual((result['outcome'], len(requests)), ('organized', 1), result.get('provider_issue'))
+        self.assertEqual(requests[0].request_id, str(uuid5(UUID(command['request_id']), 'organize_source')))
+
+    def batch_payload_for(self, text):
+        _, _, groups = self.groups(text)
+        return {'candidates': [copy.deepcopy(groups[name]) for name in ('a', 'b', 'sql', 'python')]}
 
     def test_retry_failure_changes_nothing_and_a_later_retry_can_succeed(self):
         text = self.TEXT

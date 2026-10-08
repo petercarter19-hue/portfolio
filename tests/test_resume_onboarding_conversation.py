@@ -434,6 +434,38 @@ class ConversationTests(unittest.TestCase):
         self.assertIn('eight people', saved['values']['summary'])
         self.assertIn('not independently verified', saved['values']['summary'])
 
+    def upload_document(self, text, employer):
+        self.intake._document_pipeline = extracted_pipeline(text)
+        self.intake._extraction_adapter = DeterministicFakeExtractionAdapter([{'record_type': 'role',
+            'values': {'role_title': 'Engineer', 'employer_name': employer}, 'quote': text.split('\n', 1)[1],
+            'outcome': 'new', 'confidence': 'certain'}])
+        self.intake.submit(self.owner, add_request(attachments=[{'client_key': 'doc', 'kind': 'document',
+            'declared_content_type': 'text/plain', 'filename': 'resume.txt'}]), files={'doc': FakeUpload('text/plain', text.encode())})
+
+    def test_a_turn_reads_the_latest_upload_not_the_whole_workspace(self):
+        # A workspace with many earlier unfinished uploads must not make every turn too large:
+        # the Guide reads the current batch, and earlier items are left out of the context.
+        filler = '\n'.join('Earlier unfinished line %d about warehouse planning and safety.' % n for n in range(120))
+        for number in range(12):
+            self.upload_document('Experience\nEngineer, Earlier Employer %d.\n%s\nOld marker %d.' % (number, filler, number),
+                                 'Earlier Employer %d' % number)
+        current = 'Experience\nEngineer, Current Employer.\nCurrent unique duties.'
+        self.upload_document(current, 'Current Employer')
+        snapshot = self.intake._load(self.owner)
+        canonical = self.assistance._context(self.owner, [], allow_empty=True)
+        whole = len(json.dumps(self.intake._conversation_view(snapshot, canonical), ensure_ascii=False).encode('utf-8'))
+        self.assertGreater(whole, self.assistance.limits['maximum_input_bytes'], 'the fixture must be too large unbounded')
+        pending = self.intake.get_workspace(self.owner)['pending_proposals']
+        latest = next(row for row in pending if (row['proposed_values'] or {}).get('employer_name') == 'Current Employer')
+        self.behavior = lambda ctx: {'response': 'Which detail should change?', 'next_question': '', 'operations': []}
+        self.turn('Please add the location Denver to this role.', 'proposal:' + latest['proposal_key'])
+        sent = self.calls[-1]['context']
+        text = json.dumps(sent, ensure_ascii=False)
+        self.assertIn('Current unique duties.', text)
+        self.assertNotIn('Old marker', text)
+        self.assertNotIn('Earlier Employer', text)
+        self.assertLess(len(text.encode('utf-8')), self.assistance.limits['maximum_input_bytes'])
+
     def test_question_stop_and_ambiguous_remove_never_become_biography(self):
         for statement in ('Remove that.', 'Stop here.', 'What should I include next?'):
             result = self.turn(statement)

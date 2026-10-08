@@ -2504,7 +2504,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         page.get_by_role('button',name='Change something',exact=True).click()
         original='The first role started in 2021.'
         page.locator('#resume-intake-text').fill(original);page.locator('#resume-intake-add').click()
-        page.locator('#resume-intake-status').get_by_text('could not complete',exact=False).wait_for()
+        page.locator('#resume-intake-status').get_by_text('Private assistance is unavailable right now',exact=False).wait_for()
         newer=original+' Keep this later thought too.'
         page.locator('#resume-intake-text').fill(newer);page.locator('#resume-intake-back').click()
         page.get_by_role('button',name='Edit fields manually',exact=True).click()
@@ -3028,6 +3028,55 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
             self.assertTrue(where['x'] >= 0 and where['x'] + where['width'] <= width, width)
             self.assertEqual(retry.evaluate("el => getComputedStyle(el).pointerEvents"), 'auto')
             self.assertEqual(self.errors, [])
+
+    def test_a_save_that_never_answers_never_leaves_close_and_retry_stuck(self):
+        service = self.batch_service(self.batch_counting(self.batch_payload()))
+        self.batch_upload(service)
+        page = self.batch_clocked_page(1440, 1000)
+        page.locator('#resume-intake-review:visible').wait_for()
+        page.evaluate("() => { const box = document.getElementById('resume-intake-text'); box.value = 'Words to keep.'; box.dispatchEvent(new Event('input', {bubbles: true})); }")
+        def hang(route):
+            if route.request.method != 'PUT':
+                route.continue_()
+        page.route('**/api/resume-intake/me/draft', hang)
+        page.get_by_role('button', name='Pause', exact=True).click()
+        page.clock.fast_forward(16000)
+        failure = page.locator('#resume-intake-pause-failure')
+        failure.get_by_text('We couldn’t save your draft just now.', exact=False).wait_for()
+        # The same controls still work: let the save through, and Try again completes the pause.
+        page.unroute('**/api/resume-intake/me/draft', hang)
+        failure.get_by_role('button', name='Try again', exact=True).click()
+        # Any other save still waiting on the dead connection runs out its own time too.
+        page.clock.fast_forward(16000)
+        page.locator('#resume-intake-pause-notice').get_by_text('Paused. Your draft is saved privately.', exact=True).wait_for()
+        self.assertEqual(self.errors, [])
+
+    def test_review_keeps_the_role_in_view_with_a_change_box_at_desktop_and_phone_width(self):
+        for width, height in ((1440, 1000), (390, 844)):
+            with self.subTest(width=width):
+                self.owner = 'quick-change-%d' % width
+                app.config.update(PEERSLATE_DEV_USER_KEY=self.owner)
+                service = self.batch_service(self.batch_counting(self.batch_payload()))
+                self.batch_upload(service)
+                seen = []
+                from tests.test_resume_onboarding_conversation import operation
+                self.conversation_service(service, lambda ctx: seen.append(ctx) or
+                    {'response': 'Which detail should change?', 'next_question': '', 'operations': []})
+                page = self.page(width, height)
+                page.locator('#resume-intake-review:visible').wait_for()
+                box = page.get_by_label('Tell me what to change about this one')
+                box.wait_for(state='visible')
+                # No screen swap: the role card and the box are on screen together.
+                self.assertTrue(page.locator('#resume-intake-proposals').get_by_text('Alpha Labs', exact=False).first.is_visible())
+                where = box.bounding_box()
+                self.assertTrue(0 <= where['x'] and where['x'] + where['width'] <= width, (width, where))
+                self.assertEqual(page.locator('#resume-intake-question').is_visible(), False)
+                box.fill('Please add the location Duluth, MN to this role.')
+                with page.expect_response(lambda response: response.request.method == 'POST' and response.url.endswith('/api/resume-interview/me/turn')) as sent:
+                    page.get_by_role('button', name='Send change', exact=True).click()
+                self.assertEqual(sent.value.status, 200)
+                self.assertTrue(seen[-1]['selected_target'].startswith('proposal:'))
+                self.assertEqual(self.errors, [])
 
     def test_only_a_fully_successful_pause_notice_clears_itself(self):
         service = self.batch_service(self.batch_counting(self.batch_payload()))

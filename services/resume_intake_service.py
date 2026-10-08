@@ -260,6 +260,15 @@ class ResumeIntakeUnavailableError(Exception):
         self.proposed = proposed
 
 
+def _moment_utc(value):
+    """A stored timestamp as an aware UTC datetime, or None when it cannot be read."""
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
 def _utc(now):
     value = now or datetime.now(timezone.utc)
     if value.tzinfo is None:
@@ -347,6 +356,8 @@ class _ItemPlan:
     # Only ever set from the member's own Keep-as-separate decision on a
     # duplicate receipt, never inferred.
     as_separate: bool = False
+    # A deterministic provider request id for a retry, so the ledger can recognize the same call.
+    dispatch_id: str | None = None
 
 
 class ResumeIntakeService:
@@ -666,8 +677,14 @@ class ResumeIntakeService:
                 latest[row['proposal_key']] = row
         return list(latest.values())
 
-    def _conversation_view(self, snapshot, canonical, *, exclude_source=None):
-        """Full authorized context; client-provided facts never enter this read."""
+    def _conversation_view(self, snapshot, canonical, *, exclude_source=None, budget=None):
+        """Authorized context for one turn; client-provided facts never enter this read.
+
+        With a ``budget`` the view is bounded to the work in hand: the latest upload, what
+        came with or after it, and the selected record. Earlier unfinished items and older
+        sources are left out (the member can still reach them in the review), and the
+        remaining history is trimmed until the whole context fits.
+        """
         from services.resume_onboarding_document_reader import inventory_source
         history = self._resume_history(snapshot)
         if history['conflicts']:
@@ -680,6 +697,16 @@ class ResumeIntakeService:
         resume_exclusions = history['inclusion']
         targets, materials, turns = [], [], []
         authorized_records = set(eligible) - restricted_parents
+        guide_state = (snapshot.get('drafts', {}).get(DRAFT_KEY) or {}).get('guide_state') or {}
+        selected_key = guide_state.get('selected_proposal_key')
+        in_batch, started, keep_sources = None, None, set()
+        if budget is not None:
+            pending_rows = [row for row in snapshot['proposals'].values() if row['state'] == 'pending']
+            batch_source = self._batch_source(snapshot, self._active_documents(snapshot), pending_rows)
+            if batch_source is not None:
+                in_batch = self._batch_membership(snapshot, batch_source)
+                started = _moment_utc(batch_source.get('created_at'))
+                keep_sources.add(batch_source['source_key'])
         def unit_records(source_key, unit):
             # Scalar legacy accounting was last-writer-wins. Reconstruct its
             # complete cohort from the retained source references as well as
@@ -713,9 +740,14 @@ class ResumeIntakeService:
                 continue
             if row.get('target_key') in restricted_parents:
                 continue
+            if (in_batch is not None and row['state'] == 'pending'
+                    and row['proposal_key'] != selected_key and not in_batch(row)):
+                continue
             source = snapshot['sources'].get((row.get('binding') or {}).get('source_key'))
             if not source or source.get('state') != 'active':
                 continue
+            if in_batch is not None:
+                keep_sources.add(source['source_key'])
             base = next((target for target in targets if target['target_ref'] == 'record:' + str(row.get('target_key'))), None)
             values = {**copy.deepcopy((base or {}).get('values') or {}), **copy.deepcopy(row['proposed_values'])}
             for name in row.get('explicit_clears') or []:
@@ -732,6 +764,10 @@ class ResumeIntakeService:
             meta = (source.get('structured_values') or {}).get('resume_conversation_v1') or {}
             if meta.get('turn_state') in {'reserved', 'failed', 'changed'}:
                 continue
+            if in_batch is not None and source['source_key'] not in keep_sources:
+                made = _moment_utc(source.get('created_at'))
+                if started is None or made is None or made < started:
+                    continue
             units = copy.deepcopy(meta.get('source_units') or inventory_source(source.get('text') or ''))
             # A previously approved unit may now be excluded from private AI.
             # Do not reintroduce it via its original uploaded document.
@@ -787,10 +823,36 @@ class ResumeIntakeService:
             guide_control['selected_target'] = selected_ref
             if intent not in {'story','project'}:
                 guide_control['section'] = (selected.get('resume_conversation_v1') or {}).get('presentation_section')
-        return {'canonical': copy.deepcopy(canonical), 'targets': targets,
+        view = {'canonical': copy.deepcopy(canonical), 'targets': targets,
                 'materials': materials, 'prior_turns': turns,
                 'guide_control': guide_control, 'field_contract': conversation_field_contract(),
                 'lifecycle_epoch': snapshot['lifecycle_epoch'], 'policy_version': snapshot['policy_version']}
+        if budget is not None:
+            self._trim_conversation_view(view, budget, selected_ref=guide_control.get('selected_target'),
+                                         selected_source=(selected.get('binding') or {}).get('source_key'))
+        return view
+
+    @staticmethod
+    def _trim_conversation_view(view, budget, *, selected_ref, selected_source):
+        """Drop the least relevant history, step by step, until the context fits the budget."""
+        def size():
+            return len(json.dumps(view, ensure_ascii=False).encode('utf-8'))
+
+        def keep_turns(count):
+            view['prior_turns'] = view['prior_turns'][-count:] if count else []
+
+        def only_needed_materials():
+            view['materials'] = [row for row in view['materials'] if row['source_key'] == selected_source]
+
+        def only_needed_targets():
+            view['targets'] = [row for row in view['targets']
+                               if row['target_ref'] == selected_ref or row['target_ref'].startswith('record:')]
+
+        for step in (lambda: keep_turns(6), lambda: keep_turns(2), lambda: keep_turns(0),
+                     only_needed_materials, only_needed_targets):
+            if size() <= budget:
+                break
+            step()
 
     def _conversation_response(self, snapshot, source, *, replayed=False):
         meta = (source.get('structured_values') or {}).get('resume_conversation_v1') or {}
@@ -1218,7 +1280,9 @@ class ResumeIntakeService:
             if canonical['draft_version'] != command['expected_draft_version']:
                 raise SynthesisError('changed')
             snapshot['policy_version'] = policy.version
-            context = self._conversation_view(snapshot, canonical)
+            reserve = min(assistance.limits['maximum_input_bytes'] // 2, 2 * assistance.limits['maximum_task_bytes'] + 4096)
+            context = self._conversation_view(snapshot, canonical,
+                budget=assistance.limits['maximum_input_bytes'] - reserve)
             refs = {row['target_ref'] for row in context['targets']}
             if command['selected_target'] is not None and command['selected_target'] not in refs:
                 raise SynthesisError('not_found')
@@ -3710,16 +3774,17 @@ class ResumeIntakeService:
                 text, units = refreshed[0], refreshed[1]
             if mode == "retry":
                 from uuid import uuid5
-                try:
-                    organization = adapter.organize_resume(
-                        text, allowed_fields={name: EDITOR_FIELDS[name] for name in EDITOR_FIELDS},
-                        source_units=units, shortlist=self._matching_shortlist(owner),
-                        request_id=str(uuid5(UUID(request_id), "organize_source")))
-                except ExtractionError as error:
+                # The same seam an upload uses, so every composition's provider scope (the private owner
+                # scope, the hosted one) wraps this dispatch; calling the adapter directly would bypass it.
+                dispatch = _ItemPlan(client_key="organize-" + source_key, kind="document", record_type="unspecified",
+                                     source_text=text, quote=text[:300], confidence="uncertain",
+                                     dispatch_id=str(uuid5(UUID(request_id), "organize_source")))
+                _drafts, provider_issue, organization = self._extract_with_adapter(owner, dispatch)
+                if organization is None:
                     # Nothing changed: the member's words and this source stay exactly as they were.
                     return {"success": True, "outcome": "unavailable", "source_key": source_key,
                             "request_id": request_id, "replayed": False, "saved": False, "publishes": False,
-                            "provider_issue": {"code": error.code, "retryable": True},
+                            "provider_issue": {"code": provider_issue or "provider_unavailable", "retryable": True},
                             "message": "The organizer is unavailable right now. Nothing was changed."}
             else:
                 organization = organize_resume_extraction(
@@ -3774,18 +3839,60 @@ class ResumeIntakeService:
             self.repository.save_owner(owner, snapshot)
             return result
 
-    def _review_overview(self, snapshot):
-        """The batch-scoped grouped review: derived, read-only, never a second store."""
-        pending = [row for row in snapshot["proposals"].values() if row["state"] == "pending"]
+    @staticmethod
+    def _active_documents(snapshot):
         documents = [row for row in snapshot["sources"].values()
                      if row.get("state") == "active" and row.get("kind") == "document" and row.get("text")]
         documents.sort(key=lambda row: row.get("created_at") or "")
+        return documents
 
+    def _batch_source(self, snapshot, documents, pending):
         def open_work(source):
             return (self._organize_eligibility(snapshot, source) is not None
                     or any((row.get("binding") or {}).get("source_key") == source["source_key"] for row in pending))
 
-        batch_source = next((row for row in reversed(documents) if open_work(row)), None)
+        return next((row for row in reversed(documents) if open_work(row)), None)
+
+    @staticmethod
+    def _batch_membership(snapshot, batch_source):
+        """``in_batch(row)``: the pending item came with the latest upload or after it."""
+        submission = batch_source.get("submission_key")
+        # Creation order is the structural clock: wall-clock ties can occur within one tick.
+        position = {name: index for index, name in enumerate(snapshot["proposals"])}
+        # Everything added in the same Add as the document (typed words, a recording) is one batch.
+        bound = [position[name] for name, row in snapshot["proposals"].items()
+                 if (row.get("binding") or {}).get("submission_key") == submission]
+        started = batch_source.get("created_at") or ""
+
+        moment = _moment_utc
+        origin = moment(started)
+
+        def newer(row):
+            # Stored time is the clock; the order rows happen to load in is not (a database
+            # may return them in key order). A tie (a coarse clock) is settled by the time of the
+            # source the item came from, and only then by creation order.
+            created = moment(row.get("created_at"))
+            if created is not None and origin is not None and created != origin:
+                return created > origin
+            came_from = moment(((snapshot["sources"].get((row.get("binding") or {}).get("source_key")) or {}).get("created_at")))
+            if came_from is not None and origin is not None and came_from != origin:
+                return came_from > origin
+            if bound:
+                return position[row["proposal_key"]] >= min(bound)
+            return created is not None and origin is not None
+
+        def in_batch(row):
+            # Work created after this upload (corrections, additions) belongs to it; older pending
+            # work stays reachable behind its own deliberate navigation.
+            return (row.get("binding") or {}).get("submission_key") == submission or newer(row)
+
+        return in_batch
+
+    def _review_overview(self, snapshot):
+        """The batch-scoped grouped review: derived, read-only, never a second store."""
+        pending = [row for row in snapshot["proposals"].values() if row["state"] == "pending"]
+        documents = self._active_documents(snapshot)
+        batch_source = self._batch_source(snapshot, documents, pending)
         overview = {"schema_version": 1, "batch": None,
                     "counts": {"experience": 0, "education": 0, "credentials": 0, "skills": 0, "other": 0, "unplaced": 0},
                     "groups": [], "unplaced": {"count": 0, "proposal_keys": []}, "earlier": {"count": 0},
@@ -3809,24 +3916,21 @@ class ResumeIntakeService:
         overview["duplicate_source_keys"] = [row["source_key"] for row in documents
                                              if row["source_key"] != key and row.get("sha256") == batch_source.get("sha256")]
         units = {u["unit_id"]: u for u in meta.get("source_units") or []}
+        # What the member has already saved from this upload, and any original text that no item
+        # (pending, saved, left out or restated) accounts for: it is counted, never silently lost.
+        from_source = [row for row in snapshot["proposals"].values() if (row.get("binding") or {}).get("source_key") == key]
+        overview["batch"]["saved"] = len([row for row in from_source if row["state"] == "accepted"
+                                          and not (row.get("resume_conversation_v1") or {}).get("resume_exclusion")])
+        accounted = {unit_id for row in from_source for unit_id in (row.get("resume_conversation_v1") or {}).get("unit_ids") or []}
+        accounted |= {unit_id for unit_id, unit in units.items() if unit.get("disposition") == "equivalent"}
+        overview["batch"]["uncovered"] = [unit_id for unit_id, unit in units.items()
+                                          if unit.get("kind") == "content" and unit_id not in accounted]
         bucket = {"Experience": "experience", "Education": "education", "Credentials": "credentials", "Skills": "skills"}
         groups = []
-        # Creation order is the structural clock: wall-clock ties can occur within one tick.
-        position = {name: index for index, name in enumerate(snapshot["proposals"])}
-        submission = batch_source.get("submission_key")
-        # Everything added in the same Add as the document (typed words, a recording) is one batch.
-        bound = [position[name] for name, row in snapshot["proposals"].items()
-                 if (row.get("binding") or {}).get("submission_key") == submission]
-        started = batch_source.get("created_at") or ""
-
-        def newer(row):
-            if bound:
-                return position[row["proposal_key"]] >= min(bound)
-            return (row.get("created_at") or "") >= started
+        in_batch = self._batch_membership(snapshot, batch_source)
 
         for row in pending:
             conversation = row.get("resume_conversation_v1") or {}
-            from_batch = (row.get("binding") or {}).get("submission_key") == submission
             if (row.get("binding") or {}).get("source_key") == key and row["record_type"] == "unspecified" and conversation.get("presentation_section") == "Unsorted":
                 overview["counts"]["unplaced"] += 1
                 overview["unplaced"]["count"] += 1
@@ -3834,7 +3938,7 @@ class ResumeIntakeService:
                 continue
             # Work created after this upload (corrections, additions) belongs to it; older pending
             # work stays reachable behind its own deliberate navigation.
-            if not from_batch and not newer(row):
+            if not in_batch(row):
                 overview["earlier"]["count"] += 1
                 continue
             section = conversation.get("presentation_section") or "Other"
@@ -3986,7 +4090,8 @@ class ResumeIntakeService:
                 from services.resume_onboarding_document_reader import inventory_source
                 organization = self._extraction_adapter.organize_resume(text,
                     allowed_fields={name: EDITOR_FIELDS[name] for name in EDITOR_FIELDS},
-                    source_units=inventory_source(text, document=True), shortlist=shortlist)
+                    source_units=inventory_source(text, document=True), shortlist=shortlist,
+                    request_id=getattr(plan, "dispatch_id", None))
                 for draft in organization.drafts:
                     draft["kind"] = _resume_draft_kind(draft)
                 return organization.drafts, None, organization

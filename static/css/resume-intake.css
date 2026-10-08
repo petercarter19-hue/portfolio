@@ -188,3 +188,9 @@ body.resume-onboarding-open .mobile-tabbar{visibility:hidden}
   .resume-intake .resume-intake__title{font-size:26px;letter-spacing:-.8px}
   .resume-intake__batch{padding:14px}
 }
+/* Follow-up round: links never run together, and the role stays in view while the member types a change. */
+.resume-intake__batch-links{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px}
+.resume-intake__quick-change{margin:14px 0 4px;display:grid;gap:8px}
+.resume-intake__quick-label{font-size:14px;font-weight:600;color:var(--intake-ink)}
+.resume-intake__quick-change textarea{width:100%;border:1px solid #cad7c2;border-radius:11px;background:#fff;color:var(--intake-ink);padding:10px 12px;font-size:16px;line-height:1.5;min-height:64px;resize:vertical}
+.resume-intake__quick-change button{justify-self:end;min-height:44px}

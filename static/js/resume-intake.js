@@ -149,7 +149,7 @@
     var selectedProposalKey = null;
     var newestProposalKeys = [];
     var ownerCatalog = [];
-    var correctionTarget = null;
+    var correctionTarget = null, quickInputs = {};
     var correctionInputs = {};
     var correctionDraft = null;
     var pendingCorrection = null;
@@ -160,6 +160,7 @@
     var proposalDrafts = {};
     var reviewOverview = null, reviewScope = 'batch', allPendingRows = [], unplacedChoice = null;
     var pendingOrganize = null, organizeBusy = false, pausing = false, pauseNoticeTimer = null;
+    var SAVE_TIMEOUT = 15000;
     var screen = 'welcome';
     var initialized = false;
     var acknowledgedFacts = 0;
@@ -398,27 +399,44 @@
         micButton.querySelector('span').textContent = recording ? 'Stop recording' : 'Start recording';
     }
 
+    // A request that names a timeout is abandoned when it runs out, so whatever waits on it
+    // (a save before closing, a pause) always gets an answer instead of waiting for ever.
     function send(url, options) {
         var settings = options || {};
+        var timeout = settings.timeout;
+        delete settings.timeout;
         settings.credentials = 'same-origin';
         settings.headers = Object.assign(
             {'X-PeerSlate-Request': 'same-origin'}, settings.headers || {}
         );
+        var timer = null;
+        if (timeout && typeof AbortController === 'function' && !settings.signal) {
+            var controller = new AbortController();
+            settings.signal = controller.signal;
+            timer = window.setTimeout(function () { controller.abort(); }, timeout);
+        }
         return fetch(url, settings).then(function (response) {
             return response.json().catch(function () { return {}; }).then(function (payload) {
                 return {response: response, payload: payload};
             });
-        });
+        }).finally(function () { if (timer !== null) window.clearTimeout(timer); });
     }
 
-    function postJson(url, body) {
+    function postJson(url, body, timeout) {
         return send(url, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(body)
+            body: JSON.stringify(body),
+            timeout: timeout
         });
     }
 
+    function pluralLabel(count, label) {
+        var text = String(label).toLowerCase(), many = {
+            'role': 'roles', 'skill': 'skills', 'credential': 'credentials', 'impact': 'impacts',
+            'private entry': 'private entries', 'education': 'education', 'unsorted words': 'unsorted words'};
+        return count + ' ' + (count === 1 && text !== 'unsorted words' ? text : (many[text] || text));
+    }
     function labelFor(type) {
         return {
             role: 'Role', skill: 'Skill', education: 'Education',
@@ -923,8 +941,15 @@
             region.appendChild(actions);
             region.appendChild(node('p', 'You can also add details yourself with the manual editor.', 'resume-intake__hint'));
         } else {
-            var sentence = countSentence(overview.counts);
-            region.appendChild(node('p', sentence ? 'I organized your résumé: ' + sentence + '.' : 'Your résumé is organized.'));
+            var sentence = countSentence(overview.counts), savedCount = batch.saved || 0;
+            region.appendChild(node('p', !sentence ? (savedCount ? 'Everything from your résumé is reviewed.' : 'Your résumé is organized.')
+                : savedCount ? 'You have saved ' + savedCount + (savedCount === 1 ? ' item' : ' items') + ' from your résumé. Left to review: ' + sentence + '.'
+                : 'I organized your résumé: ' + sentence + '.'));
+            if ((batch.uncovered || []).length) {
+                region.appendChild(node('p', batch.uncovered.length + (batch.uncovered.length === 1 ? ' line' : ' lines') +
+                    ' of your original résumé ' + (batch.uncovered.length === 1 ? 'is' : 'are') +
+                    ' not attached to any item. Open the original text below to see ' + (batch.uncovered.length === 1 ? 'it' : 'them') + '.', 'resume-intake__hint'));
+            }
             if (batch.organization.rejected) {
                 region.appendChild(node('p', batch.organization.rejected + (batch.organization.rejected === 1 ? ' detail' : ' details') +
                     ' couldn’t be placed and ' + (batch.organization.rejected === 1 ? 'is' : 'are') + ' listed below.', 'resume-intake__hint'));
@@ -945,6 +970,8 @@
             });
             loose.appendChild(list); region.appendChild(loose);
         }
+        var batchLinks = node('div', undefined, 'resume-intake__batch-links');
+        region.appendChild(batchLinks);
         if (overview.earlier.count) {
             var earlier = node('button', 'Earlier unfinished items (' + overview.earlier.count + ')', 'resume-intake__quiet'); earlier.type = 'button';
             earlier.setAttribute('data-earlier-items', '');
@@ -953,12 +980,12 @@
                 renderProposals(scopedRows(allPendingRows)); renderBatchOverview();
                 if (!proposals.length) setStatus('Nothing earlier is waiting.', 'ok');
             });
-            region.appendChild(earlier);
+            batchLinks.appendChild(earlier);
         }
         var more = node('button', 'Add or upload something else', 'resume-intake__quiet'); more.type = 'button';
         more.setAttribute('data-add-more', '');
         more.addEventListener('click', function () { showScreen('input'); textarea.focus(); });
-        region.appendChild(more);
+        batchLinks.appendChild(more);
     }
 
     /* -- pause: both steps must succeed before the member is told so -- */
@@ -1013,6 +1040,12 @@
     function pauseGuide(status) {
         if (pausing) return Promise.resolve(false);
         pausing = true;
+        // Whatever happens to the requests, closing and trying again must stay possible.
+        var watchdog = window.setTimeout(function () {
+            if (!pausing) return;
+            pausing = false; guideBusy = false; completeButton.disabled = false;
+            showPauseFailure(status);
+        }, SAVE_TIMEOUT * 2 + 5000);
         var stale = document.getElementById('resume-intake-pause-failure');
         if (stale) stale.hidden = true;
         var label = status === 'skipped' ? 'Manual editing' : 'Paused';
@@ -1031,7 +1064,7 @@
                 return false;
             });
         }).catch(function () { showPauseFailure(status); return false; })
-          .finally(function () { pausing = false; });
+          .finally(function () { window.clearTimeout(watchdog); pausing = false; });
     }
 
     function renderProposals(rows, preserveScreen, recoveredMode) {
@@ -1316,7 +1349,36 @@
         if (proposal.undo_exclusion_token) reject.textContent = 'Undo exclusion';
         var quietActions = node('div', undefined, 'resume-intake__quiet-actions');
         quietActions.append(manualEdit, reject);
-        actions.append(accept, edit); item.append(actions, quietActions); proposalList.appendChild(item);
+        actions.append(accept, edit);
+        // The role stays in view while the member says what to change: a short correction box on the card
+        // itself. Recording and files are still one tap away behind "Change something".
+        var quick = null;
+        if (conversationSupported && root.getAttribute('data-interview-enabled') === 'true') {
+            quick = node('form', undefined, 'resume-intake__quick-change');
+            var quickId = 'resume-intake-quick-' + proposal.proposal_key;
+            var quickLabel = node('label', 'Tell me what to change about this one', 'resume-intake__quick-label'); quickLabel.setAttribute('for', quickId);
+            var quickText = document.createElement('textarea');
+            quickText.id = quickId; quickText.rows = 2; quickText.maxLength = 2000;
+            quickText.placeholder = 'For example: add the dates, or fix the title.';
+            quickText.value = quickInputs[proposal.proposal_key] || '';
+            quickText.addEventListener('input', function () { quickInputs[proposal.proposal_key] = quickText.value; });
+            var quickSend = node('button', 'Send change', 'resume-intake__secondary'); quickSend.type = 'submit';
+            quick.append(quickLabel, quickText, quickSend);
+            quick.addEventListener('submit', function (event) {
+                event.preventDefault();
+                var statement = quickText.value.trim();
+                if (!statement) { setStatus('Type what you would like changed, then send it.', 'ok'); quickText.focus(); return; }
+                if (pendingDecision || decisionBusy || interviewBusy || pendingConversation || (textarea.value || '').trim()) {
+                    setStatus((textarea.value || '').trim() ? 'Your unfinished answer is kept. Finish it first, then send this change.'
+                        : 'Finish what is in progress, then send this change.', 'ok'); return;
+                }
+                quickSend.disabled = true;
+                sendConversation({statement: statement, selectedTarget: 'proposal:' + proposal.proposal_key, target: proposal,
+                    onSuccess: function () { delete quickInputs[proposal.proposal_key]; }})
+                    .then(function () { quickSend.disabled = false; });
+            });
+        }
+        item.append(actions); if (quick) item.append(quick); item.append(quietActions); proposalList.appendChild(item);
         var overview = node('div', undefined, 'resume-intake__suggestions');
         if (lastAcknowledgement) overview.appendChild(node('p', lastAcknowledgement, 'resume-intake__hint'));
         overview.setAttribute('aria-label', 'Choose a suggestion');
@@ -1359,7 +1421,9 @@
                 position.textContent = overviewGroup.section + ' · ' + place + ' of ' + peers.length;
                 return;
             }
-            position.textContent = proposals.length === 1 ? 'One group of details to review' : proposals.length + ' groups to review · one at a time';
+            position.textContent = reviewScope === 'earlier'
+                ? proposals.length + (proposals.length === 1 ? ' earlier item' : ' earlier items') + ' from before your latest upload'
+                : proposals.length === 1 ? 'One group of details to review' : proposals.length + ' groups to review · one at a time';
         })();
         function syncCorrection() {
             correction.hidden = !correcting; facts.hidden = correcting;
@@ -1368,7 +1432,7 @@
             correction.disabled = Boolean(pendingDecision);
             accept.textContent = pendingDecision ? 'Retry confirmation' : 'Confirm details';
             reject.disabled = Boolean(pendingDecision);
-            if (revision.history_review || (revision.recovery_review || {}).as_shown) { edit.hidden = true; manualEdit.hidden = true; correction.hidden = true; facts.hidden = false; }
+            if (revision.history_review || (revision.recovery_review || {}).as_shown) { edit.hidden = true; manualEdit.hidden = true; correction.hidden = true; facts.hidden = false; if (quick) quick.hidden = true; }
             showScreen(correcting ? 'correction' : 'review', false, false, previousFrame);
             previousFrame = null;
         }
@@ -1836,7 +1900,7 @@
         if (!pendingDraftSave) pendingDraftSave = JSON.parse(JSON.stringify(
             Object.assign({request_id: requestId(), expected_version: draftVersion}, contents)));
         var attempt = pendingDraftSave;
-        draftBusy = send(urls.draft, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(attempt)})
+        draftBusy = send(urls.draft, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(attempt), timeout: SAVE_TIMEOUT})
             .then(function (result) {
                 if (!result.response.ok || !result.payload.draft) {
                     if ([400, 409].indexOf(result.response.status) !== -1) pendingDraftSave = null;
@@ -2034,7 +2098,7 @@
         if (!conversationSupported || root.getAttribute('data-interview-enabled') !== 'true') {
             setStatus('Conversation is unavailable here. Your words are kept; you can edit the fields manually.', 'error'); return Promise.resolve();
         }
-        var target = correctionTarget;
+        var target = options.target || correctionTarget;
         var selected = options.selectedTarget || (target ? 'proposal:' + target.proposal_key : null);
         var submittedText = options.statement ? null : (pendingConversation ? pendingConversation.statement : textarea.value);
         var inputScreen = screen;
@@ -2071,6 +2135,7 @@
                 (data.topic_skipped !== undefined && typeof data.topic_skipped !== 'boolean')) throw new Error('No valid turn arrived. Retry to recover the same turn.');
             pendingConversation = null;
             undispatchedConversationKey = null;
+            if (options.onSuccess) options.onSuccess(data);
             if (generation !== conversationGeneration) return;
             attachments = attachments.filter(function (row) { return attempt.source_keys.indexOf(row.source_key) === -1; });
             var currentCorrection = correctionTarget ? 'proposal:' + correctionTarget.proposal_key : null;
@@ -2174,8 +2239,8 @@
                 groups[label] = (groups[label] || 0) + 1;
             });
             lastAcknowledgement = 'I received your answer. ' + (Object.keys(groups).length
-                ? 'I organized ' + Object.keys(groups).map(function (label) { return groups[label] + ' ' + label.toLowerCase(); }).join(', ') + '.'
-                : newestProposalKeys.length + ' suggestions are ready.') + ' Review before saving.';
+                ? 'I organized ' + Object.keys(groups).map(function (label) { return pluralLabel(groups[label], label); }).join(', ') + '.'
+                : newestProposalKeys.length + (newestProposalKeys.length === 1 ? ' suggestion is' : ' suggestions are') + ' ready.') + ' Review before saving.';
             renderReceipt(receipt);
             var duplicate = receipt.results.some(function (row) { return row.code === 'duplicate_document'; });
             var unorganized = receipt.results.some(function (row) { return (row.organization || {}).state === 'unavailable'; });
@@ -2198,6 +2263,11 @@
             renderQueued(); renderAttachments(); refreshDraftLabel();
             setStatus(failure.length ? (receipt.message || 'Some input still needs attention.') : duplicate ? 'You’ve already uploaded this file. Let’s continue with it.' : unorganized ? 'I read your résumé but couldn’t organize it right now. Nothing is lost.' : (attempt.mode === 'guide' ? 'I received your answer. ' + newestProposalKeys.length + ' new suggestions are ready for your review; nothing is saved yet.' : (receipt.message || 'Saved privately.')), failure.length ? 'error' : 'ok');
             return loadParentCandidates().then(load).then(function () {
+                // The review overview states the counts for an uploaded résumé; a second, differently
+                // counted sentence would disagree with it.
+                if (lastAcknowledgement && !duplicate && batchOverview() && receipt.results.some(function (row) { return row.kind === 'document'; })) {
+                    lastAcknowledgement = 'I received your résumé. Review each suggestion before anything is saved.';
+                }
                 if (attempt.mode === 'guide' && !guideHidden) {
                     if (failure.length || (textarea.value || '').trim()) showScreen('input');
                     else if (proposals.length) { renderProposals(proposals); showScreen(screen); }
@@ -2452,7 +2522,7 @@
         }
         if (!pendingGuide) pendingGuide = {request_id: requestId(), status: status};
         var attempt = pendingGuide; guideBusy = true; completeButton.disabled = true;
-        return postJson(urls.guideStatus, attempt).then(function (result) {
+        return postJson(urls.guideStatus, attempt, SAVE_TIMEOUT).then(function (result) {
             if (!result.response.ok || result.payload.success !== true || result.payload.request_id !== attempt.request_id || result.payload.status !== attempt.status) {
                 if ([400, 409].indexOf(result.response.status) !== -1) pendingGuide = null;
                 throw new Error(result.payload.message || 'The guide update did not finish. Try again.');

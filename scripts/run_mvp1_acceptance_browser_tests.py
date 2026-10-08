@@ -142,6 +142,8 @@ INTAKE_METHODS = (
     'test_phone_sheet_fills_the_screen_and_the_last_action_stays_reachable',
     'test_pause_notice_never_covers_the_reopen_or_photo_buttons_and_retry_is_reachable',
     'test_only_a_fully_successful_pause_notice_clears_itself',
+    'test_a_save_that_never_answers_never_leaves_close_and_retry_stuck',
+    'test_review_keeps_the_role_in_view_with_a_change_box_at_desktop_and_phone_width',
 )
 
 
