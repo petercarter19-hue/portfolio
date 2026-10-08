@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "package": "PS-GOVERNANCE-CLEANUP-001",
+  "state": "active",
+  "outcome": "Apply Pete's direct October 7 governance decisions: equal standing for assigned capable platforms, owner-selected design authorship with no exclusive ChatGPT rule, no new theme rule, current Claude Opus 5.5/Sonnet 5.5 routing with no Haiku and Fable only on explicit request, and authorized completion without blanket release approvals. Reconcile stale governance wording and verified baseline facts, preserve existing owners and trust/delivery controls, leave cross-company review undecided and Ask Member AI Sonnet changes held for credits. Claude is the sole governance implementation writer.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude/2026-10-07/governance-cleanup",
+  "branch": "work/2026-10-07-governance-cleanup-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "27d6fdb165acfd610b21e86079944e956aae3fdc",
+  "owner_outcome_ref": "session:01a11384-f656-73b3-b57a-ad2952f1ffad/owner-decision/2026-10-07-governance-cleanup",
+  "surfaces": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "START_HERE.md",
+    "docs/AI_WORKFLOW.md",
+    "docs/AI_MODEL_AND_ROLE_ROUTING.md",
+    "docs/PEERSLATE_SITE_RULES.md",
+    "docs/governance/DOCUMENT_CONTROL.md",
+    "docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md",
+    "docs/governance/WORKTREE_LIFECYCLE.md",
+    "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md",
+    "docs/governance/CURRENT_BASELINE.yaml",
+    "docs/governance/DECISIONS.md",
+    "tests/test_governance_pointers.py",
+    "tests/test_site_rules.py",
+    "tests/test_operational_readiness.py",
+    "docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md",
+    "docs/templates/PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md",
+    "docs/governance/lane_claims/PS-GOVERNANCE-CLEANUP-001.json",
+    "docs/governance/lane_claims/receipts/PS-GOVERNANCE-CLEANUP-001.json",
+    "docs/governance/lane_claims/evidence/PS-GOVERNANCE-CLEANUP-001.md"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-GOVERNANCE-CLEANUP-001.md"
+  ],
+  "domains": [
+    "governance:agent-platform-routing",
+    "governance:visual-authorship",
+    "governance:delivery-documentation"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
