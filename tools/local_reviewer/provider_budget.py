@@ -20,6 +20,8 @@ RESERVE_KEYS = {"@UserKey", "@Scope", "@RequestId", "@ReservationMicroUsd",
                 "@MaximumCalls", "@HardCapMicroUsd", "@ConcurrentRequests"}
 FINISH_KEYS = {"@UserKey", "@Scope", "@RequestId"}
 PROFILE_NAMES = {"interview", "extraction", "synthesis", "public", "speech"}
+ONBOARDING_ALLOWANCE_MICRO_USD = 50_000_000
+ALLOWANCE_TABLES = ("onboarding_allowances", "onboarding_allowance_members")
 
 
 def encoded(value):
@@ -141,11 +143,12 @@ class ProviderBudget:
         if any(p.is_symlink() or getattr(p, "is_junction", lambda: False)() for p in (path, *path.parents)):
             raise ValueError("Ordinary private ledger path required")
 
-    def __init__(self, path, *, owner, allocation_sha256, profiles):
+    def __init__(self, path, *, owner, allocation_sha256, profiles, onboarding_context=None):
         validate_allocation(owner, allocation_sha256, profiles)
         self.path, self.owner = Path(path).absolute(), owner
         self.profiles = json.loads(encoded(profiles))
         self.expected = {"owner": owner, "allocation_sha256": allocation_sha256, "profiles": encoded(profiles)}
+        self.onboarding_context = self.validate_onboarding_context(onboarding_context)
         with self.connection() as db:
             if (db.execute("PRAGMA quick_check").fetchone()[0] != "ok"
                     or db.execute("PRAGMA foreign_key_check").fetchone() is not None):
@@ -165,8 +168,8 @@ class ProviderBudget:
             # a concurrent valid v2-to-v3 commit must not look like corruption.
             db.execute("BEGIN")
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            tables = self.TABLES + (("operator_resolutions",) if version == 3 else ())
-            if (version not in (2, 3)
+            tables = self.TABLES + (("operator_resolutions",) if version >= 3 else ()) + (ALLOWANCE_TABLES if version == 4 else ())
+            if (version not in (2, 3, 4)
                     or dict(db.execute("SELECT name,value FROM metadata")) != self.expected
                     or {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")} != set(tables)
                     or {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='trigger'")}
@@ -184,6 +187,107 @@ class ProviderBudget:
     def profile(self, scope):
         return next((p for p in self.profiles.values() if p["scope"] == scope), None)
 
+    @staticmethod
+    def validate_onboarding_context(value):
+        if value is None:
+            return None
+        if (type(value) is not dict or set(value) != {"installation", "namespace"}
+                or not isinstance(value["installation"], str) or not re.fullmatch("[0-9a-f]{48}", value["installation"])
+                or not isinstance(value["namespace"], str) or not re.fullmatch("[0-9a-f]{64}", value["namespace"])):
+            raise ValueError("Exact server-owned onboarding context required")
+        return dict(value)
+
+    @staticmethod
+    def _create_allowance_tables(db):
+        db.execute("""CREATE TABLE onboarding_allowances (
+            request_id TEXT PRIMARY KEY, installation TEXT NOT NULL, owner TEXT NOT NULL,
+            namespace TEXT NOT NULL, amount INTEGER NOT NULL CHECK(amount=50000000),
+            payload TEXT NOT NULL, created_at_utc TEXT NOT NULL,
+            UNIQUE(installation,owner,namespace))""")
+        db.execute("""CREATE TABLE onboarding_allowance_members (
+            scope TEXT NOT NULL, request_id TEXT NOT NULL, allowance_id TEXT NOT NULL,
+            PRIMARY KEY(scope,request_id), FOREIGN KEY(scope,request_id) REFERENCES reservations,
+            FOREIGN KEY(allowance_id) REFERENCES onboarding_allowances(request_id))""")
+        for table in ALLOWANCE_TABLES:
+            for action in ("UPDATE", "DELETE"):
+                db.execute(f"CREATE TRIGGER immutable_{table}_{action} BEFORE {action} ON {table} "
+                           "BEGIN SELECT RAISE(ABORT,'Immutable accounting event'); END")
+        db.execute("PRAGMA user_version=4")
+
+    def _allowance(self, db):
+        if self.onboarding_context is None or db.execute("PRAGMA user_version").fetchone()[0] != 4:
+            return None
+        return db.execute("SELECT * FROM onboarding_allowances WHERE installation=? AND owner=? AND namespace=?",
+                          (self.onboarding_context["installation"], self.owner, self.onboarding_context["namespace"])).fetchone()
+
+    @staticmethod
+    def _allowance_totals(db, allowance):
+        return db.execute("""SELECT COUNT(*) AS calls,
+            COALESCE(SUM(MAX(CASE WHEN x.request_id IS NOT NULL THEN s.charge ELSE COALESCE(o.charge,r.amount) END,
+                             COALESCE(v.charge,0))),0) AS encumbered,
+            COALESCE(SUM(CASE WHEN x.request_id IS NOT NULL THEN s.charge ELSE 0 END),0) AS settled,
+            COALESCE(SUM(COALESCE(o.charge,0)),0) AS failed_charge,
+            COALESCE(SUM(CASE WHEN x.request_id IS NULL AND o.request_id IS NULL THEN r.amount ELSE 0 END),0) AS unresolved,
+            COALESCE(MAX(CASE WHEN v.request_id IS NOT NULL THEN 1 ELSE 0 END),0) AS overrun_fenced
+            FROM onboarding_allowance_members a JOIN reservations r USING(scope,request_id)
+            LEFT JOIN settlements s USING(scope,request_id) LEFT JOIN releases x USING(scope,request_id)
+            LEFT JOIN operator_resolutions o USING(scope,request_id)
+            LEFT JOIN (SELECT scope,request_id,MAX(observed_charge) AS charge FROM overruns GROUP BY scope,request_id) v
+                USING(scope,request_id) WHERE a.allowance_id=?""", (allowance,)).fetchone()
+
+    def grant_onboarding_allowance(self, document, *, evidence):
+        fields = {"schema_version", "request_id", "installation", "owner", "namespace", "allocation_sha256",
+                  "configuration_sha256", "authority_ref", "amount_micro_usd"}
+        if (type(document) is not dict or set(document) != fields or type(document["schema_version"]) is not int
+                or document["schema_version"] != 1 or document["owner"] != self.owner
+                or document["allocation_sha256"] != self.expected["allocation_sha256"]
+                or self.onboarding_context != {key: document[key] for key in ("installation", "namespace")}
+                or type(document["amount_micro_usd"]) is not int or document["amount_micro_usd"] != ONBOARDING_ALLOWANCE_MICRO_USD
+                or not isinstance(document["authority_ref"], str) or not 1 <= len(document["authority_ref"]) <= 240
+                or not isinstance(document["configuration_sha256"], str) or not re.fullmatch("[0-9a-f]{64}", document["configuration_sha256"])
+                or type(evidence) is not dict or set(evidence) != {"proof_sha256", "review_sha256", "source_sha256"}
+                or any(not isinstance(v, str) or not re.fullmatch("[0-9a-f]{64}", v) for v in evidence.values())):
+            raise ValueError("Exact reviewed owner onboarding allowance required")
+        request_id(document["request_id"])
+        payload = encoded({"document": document, "evidence": evidence})
+        with self.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            version = db.execute("PRAGMA user_version").fetchone()[0]
+            if version == 4:
+                previous = db.execute("SELECT * FROM onboarding_allowances WHERE request_id=?", (document["request_id"],)).fetchone()
+                if previous is not None:
+                    if previous["payload"] != payload:
+                        raise ValueError("Changed allowance request replay refused")
+                    db.commit()
+                    return {"grant_request_id": previous["request_id"], "replayed": True}
+                if self._allowance(db) is not None:
+                    raise ValueError("One onboarding allowance only; replenishment is not supported")
+            if any(self._totals(db, p["scope"])["active"] for p in self.profiles.values()) or db.execute("SELECT 1 FROM overruns").fetchone():
+                raise ValueError("Unresolved provider accounting remains fenced")
+            if version == 2:
+                self._resolutions(db)
+            if version != 4:
+                self._create_allowance_tables(db)
+            db.execute("INSERT INTO onboarding_allowances VALUES (?,?,?,?,?,?,?)",
+                       (document["request_id"], document["installation"], self.owner, document["namespace"],
+                        document["amount_micro_usd"], payload, datetime.now(timezone.utc).isoformat()))
+            db.commit()
+        return {"grant_request_id": document["request_id"], "replayed": False}
+
+    def onboarding_allowance_snapshot(self):
+        with self.connection() as db:
+            row = self._allowance(db)
+            if row is None:
+                return None
+            totals = self._allowance_totals(db, row["request_id"])
+            return {"grant_request_id": row["request_id"], "installation": row["installation"], "owner": row["owner"],
+                    "namespace": row["namespace"], "amount_micro_usd": row["amount"],
+                    "available_micro_usd": max(0, row["amount"] - totals["encumbered"]),
+                    "encumbered_micro_usd": totals["encumbered"], "settled_micro_usd": totals["settled"],
+                    "failed_charge_micro_usd": totals["failed_charge"],
+                    "overrun_fenced": bool(totals["overrun_fenced"]),
+                    "unresolved_micro_usd": totals["unresolved"], "dispatched_calls": totals["calls"]}
+
     def first_row(self, procedure, values=None):
         if procedure == RESERVE:
             return {"reserved": self.reserve(parameters(values, RESERVE_KEYS))}
@@ -194,9 +298,12 @@ class ProviderBudget:
         raise ValueError("Unsupported provider accounting operation")
 
     @staticmethod
-    def _totals(db, scope):
-        resolved = ("operator_resolutions" if db.execute("PRAGMA user_version").fetchone()[0] == 3
+    def _totals(db, scope, *, base_only=False):
+        version = db.execute("PRAGMA user_version").fetchone()[0]
+        resolved = ("operator_resolutions" if version >= 3
                     else "(SELECT NULL AS scope,NULL AS request_id,0 AS charge WHERE 0)")
+        funding_filter = (" AND NOT EXISTS (SELECT 1 FROM onboarding_allowance_members a WHERE a.scope=r.scope AND a.request_id=r.request_id)"
+                          if base_only and version == 4 else "")
         return db.execute(f"""SELECT COUNT(*) AS calls,
             COALESCE(SUM(CASE WHEN s.request_id IS NULL THEN r.amount ELSE s.charge END),0) AS encumbered,
             COALESCE(SUM(COALESCE(s.charge,0)),0) AS settled,
@@ -204,7 +311,7 @@ class ProviderBudget:
             COALESCE(SUM(CASE WHEN x.request_id IS NULL AND o.request_id IS NULL THEN 1 ELSE 0 END),0) AS active
             FROM reservations r LEFT JOIN settlements s USING(scope,request_id)
             LEFT JOIN releases x USING(scope,request_id)
-            LEFT JOIN {resolved} o USING(scope,request_id) WHERE r.scope=?""", (scope,)).fetchone()
+            LEFT JOIN {resolved} o USING(scope,request_id) WHERE r.scope=?{funding_filter}""", (scope,)).fetchone()
 
     def resolve_failed_public(self, *, owner, scope, request, amount, evidence):
         """Local operator only. Caller must hold the stopped installation lock.
@@ -253,12 +360,23 @@ class ProviderBudget:
             total = self._totals(db, scope)
             duplicate = db.execute("SELECT 1 FROM reservations WHERE scope=? AND request_id=?", (scope, request)).fetchone()
             overrun = db.execute("SELECT 1 FROM overruns WHERE scope=?", (scope,)).fetchone()
+            allowance = self._allowance(db)
+            if allowance is not None:
+                funding = self._allowance_totals(db, allowance["request_id"])
+                money = (not funding["overrun_fenced"]
+                         and funding["encumbered"] + selected["reservation_micro_usd"] <= allowance["amount"])
+            else:
+                # After migration, an unrecognised onboarding context never borrows base funding.
+                money = (not (self.onboarding_context is not None and db.execute("PRAGMA user_version").fetchone()[0] == 4)
+                         and self._totals(db, scope, base_only=True)["encumbered"] + selected["reservation_micro_usd"] <= selected["hard_cap_micro_usd"])
             allowed = (not duplicate and not overrun and not total["active"]
                        and total["calls"] < selected["maximum_calls"]
-                       and total["encumbered"] + selected["reservation_micro_usd"] <= selected["hard_cap_micro_usd"])
+                       and money)
             if allowed:
                 db.execute("INSERT INTO reservations VALUES (?,?,?,?,?)", (scope, request, self.owner,
                     selected["reservation_micro_usd"], datetime.now(timezone.utc).isoformat()))
+                if allowance is not None:
+                    db.execute("INSERT INTO onboarding_allowance_members VALUES (?,?,?)", (scope, request, allowance["request_id"]))
             db.commit()
             return bool(allowed)
 
@@ -320,7 +438,7 @@ class ProviderBudget:
         with self.connection() as db:
             db.execute("BEGIN IMMEDIATE")
             self._binding(db, owner, scope, request)
-            if (db.execute("PRAGMA user_version").fetchone()[0] == 3 and db.execute(
+            if (db.execute("PRAGMA user_version").fetchone()[0] >= 3 and db.execute(
                     "SELECT 1 FROM operator_resolutions WHERE scope=? AND request_id=?", (scope, request)).fetchone()):
                 raise ValueError("Operator-resolved failure cannot become successful")
             previous = db.execute("SELECT charge,evidence FROM settlements WHERE scope=? AND request_id=?", (scope, request)).fetchone()
@@ -344,17 +462,20 @@ class ProviderBudget:
             return None
         with self.connection() as db:
             total = self._totals(db, scope)
+            base = self._totals(db, scope, base_only=True)
             rows = db.execute("""SELECT r.scope,r.request_id,r.owner,r.amount,r.created_at_utc,
                 CASE WHEN x.request_id IS NULL THEN 'active' ELSE 'finished' END AS state,
                 s.charge,s.evidence,x.created_at_utc AS finished_at_utc FROM reservations r
                 LEFT JOIN settlements s USING(scope,request_id) LEFT JOIN releases x USING(scope,request_id)
                 WHERE r.scope=? ORDER BY r.created_at_utc""", (scope,))
             reservations = [dict(row) for row in rows]
-            resolutions = [dict(row) for row in db.execute("SELECT * FROM operator_resolutions WHERE scope=?", (scope,))] if db.execute("PRAGMA user_version").fetchone()[0] == 3 else []
+            resolutions = [dict(row) for row in db.execute("SELECT * FROM operator_resolutions WHERE scope=?", (scope,))] if db.execute("PRAGMA user_version").fetchone()[0] >= 3 else []
             for row in reservations:
                 if any(r["request_id"] == row["request_id"] for r in resolutions):
                     row["state"] = "failed_operator_resolved"
             return {"budget": {**profile, "dispatched_calls": total["calls"], "prepaid_micro_usd": total["encumbered"],
+                               "base_prepaid_micro_usd": base["encumbered"],
+                               "base_available_micro_usd": max(0, profile["hard_cap_micro_usd"] - base["encumbered"]),
                                "settled_micro_usd": total["settled"], "failed_charge_micro_usd": total["failed_charge"]},
                     "reservations": reservations, "operator_resolutions": resolutions,
                     "overruns": [dict(row) for row in db.execute("SELECT * FROM overruns WHERE scope=?", (scope,))]}

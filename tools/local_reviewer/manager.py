@@ -1034,6 +1034,137 @@ def operator_source_digest():
         ("manager.py", "provider_budget.py", "providers.py")})).hexdigest()
 
 
+def allowance_source_digest():
+    directory = Path(__file__).parent
+    return hashlib.sha256(canonical({name: digest(directory / name) for name in
+        ("manager.py", "provider_budget.py", "providers.py", "runtime.py")})).hexdigest()
+
+
+def grant_onboarding_test_allowance(root, proof_path, review_path):
+    """One reviewed prospective grant; never alter the original allocation."""
+    from .provider_budget import ProviderBudget
+    from .runtime import selected_context
+    proof, review = read(proof_path), read(review_path)
+    if (type(review) is not dict or set(review) != {"schema_version", "result", "proof_sha256", "allowance_source_sha256", "reviewer_ref"}
+            or type(review["schema_version"]) is not int or review["schema_version"] != 1 or review["result"] != "pass"
+            or review["proof_sha256"] != digest(proof_path) or review["allowance_source_sha256"] != allowance_source_digest()
+            or not isinstance(review["reviewer_ref"], str) or not 1 <= len(review["reviewer_ref"]) <= 200):
+        raise ValueError("Independent exact-source and allowance proof review required")
+    # A local attestation, not an authenticated review service; private OS/operator custody still applies.
+    with private_operator(root) as (manifest, identity, configuration, budget):
+        selection = manifest.get("workspace")
+        if type(selection) is not dict:
+            raise ValueError("Existing authenticated onboarding workspace required")
+        context = selected_context(root, {**manifest, "workspace": {**selection, "selected": "onboarding"}})
+        if (type(proof) is not dict or proof.get("installation") != manifest["installation"]
+                or proof.get("owner") != identity.owner or proof.get("namespace") != context.namespace
+                or proof.get("configuration_sha256") != operator_configuration_digest(root, manifest)
+                or proof.get("allocation_sha256") != configuration["allocation_sha256"]):
+            raise ValueError("Exact original installation and onboarding descriptor required")
+        scoped = ProviderBudget(budget.path, owner=identity.owner, allocation_sha256=configuration["allocation_sha256"],
+                                profiles=configuration["profiles"], onboarding_context={"installation": manifest["installation"],
+                                                                                      "namespace": context.namespace})
+        result = scoped.grant_onboarding_allowance(proof, evidence={"proof_sha256": digest(proof_path),
+            "review_sha256": digest(review_path), "source_sha256": allowance_source_digest()})
+        return {**result, "allowance": scoped.onboarding_allowance_snapshot(), "provider_dispatches": 0}
+
+
+def qualify_onboarding_allowance_accounting(root, target, configuration):
+    """Execute the selected controller on copied accounting before rollback effects."""
+    import sqlite3
+    from contextlib import closing
+    with closing(sqlite3.connect((root / "data/provider-budget-v1.sqlite3").resolve().as_uri() + "?mode=ro", uri=True)) as db:
+        version = db.execute("PRAGMA user_version").fetchone()[0]
+        if version not in (2, 3, 4):
+            raise ValueError("Unknown provider accounting format remains fenced")
+        if version != 4:
+            return None
+        manifest = read(root / "installation.json")
+        from .runtime import selected_context
+        selection = manifest.get("workspace")
+        if type(selection) is not dict:
+            raise ValueError("Allowance requires its retained onboarding workspace")
+        context = selected_context(root, {**manifest, "workspace": {**selection, "selected": "onboarding"}})
+        path = (root / "controllers" / target["controller"] / "tools/local_reviewer/provider_budget.py"
+                if target is not None else Path(__file__).parent / "provider_budget.py")
+        if target is not None and target.get("controller_files", {}).get("tools/local_reviewer/provider_budget.py") != digest(path):
+            raise ValueError("Selected accounting controller binding changed")
+        with tempfile.TemporaryDirectory(prefix="peerslate-allowance-qualification-") as directory:
+            directory = Path(directory)
+            copied = directory / "actual-accounting-copy.sqlite3"
+            with closing(sqlite3.connect(copied)) as destination:
+                db.backup(destination)
+            arguments = {"owner": configuration["owner"], "allocation_sha256": configuration["allocation_sha256"],
+                         "profiles": configuration["profiles"]}
+            binding = {"installation": manifest["installation"], "namespace": context.namespace}
+            parameters = directory / "parameters.json"
+            parameters.write_bytes(canonical({"arguments": arguments, "context": binding}))
+            script = '''import importlib.util,json,sys
+from pathlib import Path
+from uuid import uuid4
+p=Path(sys.argv[1]); spec=importlib.util.spec_from_file_location("selected_accounting",p)
+m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+v=json.loads(Path(sys.argv[3]).read_bytes()); a=v["arguments"]; c=v["context"]
+# Decode with the actual selected implementation before invoking any new interface.
+m.ProviderBudget(Path(sys.argv[2]),**a)
+b=m.ProviderBudget(Path(sys.argv[2]),**a,onboarding_context=c)
+w=b.onboarding_allowance_snapshot()
+if w is None or w["amount_micro_usd"]!=50000000 or w["namespace"]!=c["namespace"]:
+    raise ValueError("Selected controller does not preserve the actual allowance")
+# Behavioral fixture uses that same selected module, never current helpers substituted into it.
+profiles={n:{"scope":"fixture-"+n,"maximum_calls":100,"hard_cap_micro_usd":30000000,
+"reservation_micro_usd":30000000,"concurrent_requests":1,"input_tokens":1,"output_tokens":0,
+"input_micro_usd_per_million":30000000000000,"output_micro_usd_per_million":1} for n in a["profiles"]}
+f=Path(sys.argv[2]).with_name("synthetic-behavior.sqlite3")
+m.ProviderBudget.initialize(f,owner=a["owner"],allocation_sha256=a["allocation_sha256"],profiles=profiles)
+s=m.ProviderBudget(f,owner=a["owner"],allocation_sha256=a["allocation_sha256"],profiles=profiles,onboarding_context=c)
+doc={"schema_version":1,"request_id":str(uuid4()),**c,"owner":a["owner"],"allocation_sha256":a["allocation_sha256"],
+"configuration_sha256":"a"*64,"authority_ref":"synthetic-qualification-only","amount_micro_usd":50000000}
+e={"proof_sha256":"b"*64,"review_sha256":"c"*64,"source_sha256":"d"*64}
+s.grant_onboarding_allowance(doc,evidence=e)
+def reserve(b,n,r):
+    p=profiles[n]
+    return b.reserve({"@UserKey":a["owner"],"@Scope":p["scope"],"@RequestId":r,
+"@ReservationMicroUsd":p["reservation_micro_usd"],"@MaximumCalls":100,"@HardCapMicroUsd":p["hard_cap_micro_usd"],"@ConcurrentRequests":1})
+r=str(uuid4())
+if not reserve(s,"interview",r) or reserve(s,"extraction",str(uuid4())):
+    raise ValueError("Selected controller fails aggregate full-envelope reservation")
+s.settle(a["owner"],profiles["interview"]["scope"],r,[{"phase":1,"identity_sha256":"1"*64,"input_tokens":1,"output_tokens":0}])
+personal=m.ProviderBudget(f,owner=a["owner"],allocation_sha256=a["allocation_sha256"],profiles=profiles)
+if not reserve(personal,"interview",str(uuid4())) or reserve(s,"extraction",str(uuid4())):
+    raise ValueError("Selected controller borrows or consumes unrelated base funding")
+# Replenishment runs on fresh ledgers with nothing active or fenced, so no other refusal can mask it.
+def fresh(name):
+    q=Path(sys.argv[2]).with_name(name)
+    m.ProviderBudget.initialize(q,owner=a["owner"],allocation_sha256=a["allocation_sha256"],profiles=profiles)
+    return q,m.ProviderBudget(q,owner=a["owner"],allocation_sha256=a["allocation_sha256"],profiles=profiles,onboarding_context=c)
+second={**doc,"request_id":str(uuid4()),"authority_ref":"another-synthetic-authority"}
+fresh("synthetic-second-document.sqlite3")[1].grant_onboarding_allowance(second,evidence=e)
+g,t=fresh("synthetic-replenishment.sqlite3")
+t.grant_onboarding_allowance(doc,evidence=e)
+try:
+    t.grant_onboarding_allowance(second,evidence=e)
+    refused=False
+except ValueError:
+    refused=True
+import sqlite3
+from contextlib import closing
+with closing(sqlite3.connect(g)) as q:
+    grants=q.execute("SELECT COUNT(*) FROM onboarding_allowances").fetchone()[0]
+if not refused or grants!=1:
+    raise ValueError("Selected controller permits replenishment")
+print(json.dumps({"actual_ledger_decode":True,"selected_target_behavior":True,"provider_dispatches":0}))
+'''
+            probe = subprocess.run([sys.executable, "-I", "-B", "-c", script, str(path), str(copied), str(parameters)],
+                                   capture_output=True, text=True, timeout=60)
+            if probe.returncode:
+                raise ValueError("Selected target cannot preserve onboarding allowance before promotion: " + probe.stderr[-1000:])
+            proof = json.loads(probe.stdout)
+            if proof != {"actual_ledger_decode": True, "selected_target_behavior": True, "provider_dispatches": 0}:
+                raise ValueError("Selected accounting qualification incomplete")
+            return proof
+
+
 def operator_configuration_digest(root, manifest):
     binding = {"installation": manifest["installation"], "release": manifest["release"],
         "files": {name: digest(root / name) for name in
@@ -1275,6 +1406,9 @@ def main(argv=None):
     recovery = sub.add_parser("resolve-failed-public")
     recovery.add_argument("--proof", type=Path, required=True)
     recovery.add_argument("--review", type=Path, required=True)
+    allowance = sub.add_parser("grant-onboarding-test-allowance")
+    allowance.add_argument("--proof", type=Path, required=True)
+    allowance.add_argument("--review", type=Path, required=True)
     diagnostic = sub.add_parser("arm-public-diagnostic")
     diagnostic.add_argument("--fictional-qualification-only", action="store_true", required=True)
     args = parser.parse_args(argv)
@@ -1316,8 +1450,9 @@ def main(argv=None):
                 from .providers import (load_configuration, selected_configuration,
                                         selected_ocr_configuration, onboarding_qualification)
                 identity = selected_context(root, current).identity
-                load_configuration(root, identity, source, configuration_id=args.provider_configuration,
+                configuration = load_configuration(root, identity, source, configuration_id=args.provider_configuration,
                                    original=args.original_provider_configuration)
+                qualify_onboarding_allowance_accounting(root, target, configuration)
                 _, interface = selected_configuration(root, args.provider_configuration,
                                                       original=args.original_provider_configuration)
                 ocr_configuration = selected_ocr_configuration(root, configuration_id=args.provider_configuration,
@@ -1411,6 +1546,8 @@ def main(argv=None):
             result = setup_private(root, args)
         elif args.action == "resolve-failed-public":
             result = resolve_failed_public(root, args.proof, args.review)
+        elif args.action == "grant-onboarding-test-allowance":
+            result = grant_onboarding_test_allowance(root, args.proof, args.review)
         elif args.action == "arm-public-diagnostic":
             result = arm_public_diagnostic(root)
         elif args.action == "open":

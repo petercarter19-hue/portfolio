@@ -973,7 +973,7 @@ class PublicDiagnostic:
 
 
 def configure_private_providers(fixture, app, root, identity, configuration, *,
-                                token_provider=None, transport=None, speech_session=None):
+                                token_provider=None, transport=None, speech_session=None, workspace=None):
     """Compose actual app factories with this installation's existing ledger."""
     from pathlib import Path
     from itsdangerous import URLSafeTimedSerializer
@@ -981,8 +981,15 @@ def configure_private_providers(fixture, app, root, identity, configuration, *,
     from services.resume_intake_runtime import BoundedResumeExtractionProvider, build_private_resume_assistance
     from services.member_visitor_ai_service import build_configured_visitor_ai
     profiles, factory = configuration["profiles"], configuration["factory"]
+    onboarding_context = None
+    if workspace is not None and workspace.namespace is not None:
+        if workspace.key != "onboarding":
+            raise ValueError("Only server-owned onboarding may use test funding")
+        onboarding_context = {"installation": json_codec.loads((Path(root) / "installation.json").read_bytes())["installation"],
+                              "namespace": workspace.namespace}
     database = ProviderBudget(Path(root) / "data" / "provider-budget-v1.sqlite3",
-                              owner=identity.owner, allocation_sha256=configuration["allocation_sha256"], profiles=profiles)
+                              owner=identity.owner, allocation_sha256=configuration["allocation_sha256"], profiles=profiles,
+                              onboarding_context=onboarding_context)
     acquire = token_provider or azure_cli_token_callback()
     ongoing = OngoingPrivateBudgetPort(database, factory)
     trace = ContentFreeTransport(root, transport or UrllibTransport(), ongoing)

@@ -63,6 +63,46 @@ services remain unavailable. This is local acceptance, not proof of production
 identity, SQL, storage or deployment. Source acceptance is recorded separately
 from the installed candidate label.
 
+## Owner-selected onboarding testing allowance
+
+The separately authorized `grant-onboarding-test-allowance --proof <exact JSON>
+--review <independent review JSON>` operator provides one prospective USD50 pool
+for the existing authenticated onboarding namespace. It requires the stopped,
+drained installation and an exact owner/installation/descriptor/allocation and
+configuration proof, plus an independent source-bound local review attestation.
+The private OS/operator boundary supplies authority; the attestation is not an
+authenticated review service. Preparing a plan or installing compatible code
+does not itself apply the allowance. The command returns the actual grant and
+its readback; no provider is contacted.
+
+The pool is shared by all five existing feature profiles only for requests
+genuinely composed in onboarding. The original allocation, models, scopes,
+full-envelope reservations, concurrency and 100 lifetime operations per profile
+remain unchanged. Historical rows cannot be attributed retrospectively to a
+workspace and remain fully charged/fenced. New grant-funded spending does not
+consume or replenish unrelated personal/public monetary funding. Exhausted
+onboarding funding never falls back to those allowances.
+
+The additive ledger-format4 grant and reservation membership are immutable.
+Exact request/proof/review replay returns the same grant; any changed payload
+or second grant for the same installation/owner/namespace is refused, including
+a different authority string. Future owner changes require an explicitly
+admitted amendment; this command supplies no replenishment/reset mechanism.
+Reservations commit with funding membership before credentials/network access.
+Concurrent features share one atomic cap. Unknown calls and completed-but-not-
+released operations retain their full envelope; only validated released
+completion reduces it to measured usage. Known failed operations stay charged,
+and overruns stay fenced. Restart, workspace selection and content restore do
+not renew money or counters.
+
+The supported rollback probe executes the selected controller's actual budget
+implementation against a copied current ledger, then exercises its aggregate
+funding and no-replenishment behavior on a synthetic ledger. An older target
+that cannot read or enforce this format refuses before pointer/checkpoint/
+receipt changes. Startup rejection after changing a pointer is insufficient.
+Never downgrade or restore the accounting ledger; use a reviewed forward
+correction. These controls do not establish Azure invoice accuracy.
+
 ## Privacy and device access
 
 The app listens on `127.0.0.1:53720`. Tailscale Serve provides the private HTTPS

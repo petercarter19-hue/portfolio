@@ -374,6 +374,41 @@ class ProviderCompositionTests(unittest.TestCase):
         self.assertNotIn("offline-placeholder", events)
         self.assertEqual(len(events.splitlines()), 2)
 
+    def test_server_owned_onboarding_composes_shared_grant_without_touching_personal_funding(self):
+        from types import SimpleNamespace
+        from tools.local_reviewer.runtime import build_fixture
+        from tools.local_reviewer.providers import configure_private_providers
+        self.transport.post = Mock(side_effect=AssertionError("Allowance composition cannot dispatch"))
+        (self.root / "installation.json").write_text(json.dumps({"installation": "1" * 48}))
+        context = SimpleNamespace(key="onboarding", namespace="a" * 64)
+        fixture, app, _, state = build_fixture(SOURCE, self.stack)
+        scoped = configure_private_providers(fixture, app, self.root,
+            self.identity.fictional_origin("https://test.example.ts.net:8444"), self.config,
+            token_provider=self.tokens, transport=self.transport, workspace=context)
+        self.assertEqual(scoped.onboarding_context, {"installation": "1" * 48, "namespace": "a" * 64})
+        self.assertIsNone(self.budget.onboarding_context)
+        self.assertEqual((scoped.path, scoped.profiles), (self.budget.path, self.budget.profiles))
+        before = {name: self.budget.snapshot(profile["scope"]) for name, profile in self.config["profiles"].items()}
+        document = {"schema_version": 1, "request_id": str(uuid4()), **scoped.onboarding_context,
+            "owner": self.identity.owner, "allocation_sha256": self.config["allocation_sha256"],
+            "configuration_sha256": "b" * 64, "authority_ref": "synthetic-owner-instruction", "amount_micro_usd": 50_000_000}
+        scoped.grant_onboarding_allowance(document, evidence={"proof_sha256": "c" * 64,
+            "review_sha256": "d" * 64, "source_sha256": "e" * 64})
+        self.assertEqual(scoped.onboarding_allowance_snapshot()["available_micro_usd"], 50_000_000)
+        self.assertEqual({name: self.budget.snapshot(profile["scope"]) for name, profile in self.config["profiles"].items()}, before)
+        self.tokens.assert_not_called()
+        self.transport.post.assert_not_called()
+
+    def test_non_onboarding_workspace_cannot_claim_grant_composition(self):
+        from types import SimpleNamespace
+        from tools.local_reviewer.providers import configure_private_providers
+        with self.assertRaisesRegex(ValueError, "server-owned onboarding"):
+            configure_private_providers(self.fixture, self.app, self.root, self.identity, self.config,
+                token_provider=self.tokens, transport=self.transport,
+                workspace=SimpleNamespace(key="personal", namespace="a" * 64))
+        self.tokens.assert_not_called()
+        self.assertEqual(self.transport.calls, [])
+
     def test_foreign_owner_cannot_consume_private_ai_or_request_credentials(self):
         from services.resume_intake_runtime import SYNTHESIS_SCHEMA
         from services.ai_foundation.errors import ProviderUnavailableError
@@ -1215,8 +1250,343 @@ class SpeechAccountingTests(unittest.TestCase):
                     session.post.assert_called_once()
 
 
-if __name__ == "__main__":
-    unittest.main()
+class OnboardingAllowanceTests(unittest.TestCase):
+    def setUp(self):
+        ProviderBudgetTests.setUp(self)
+        self.context = {"installation": "1" * 48, "namespace": "2" * 64}
+        self.scoped = ProviderBudget(self.path, **self.arguments, onboarding_context=self.context)
+        self.document = {"schema_version": 1, "request_id": str(uuid4()), **self.context, "owner": self.owner,
+                         "allocation_sha256": "a" * 64, "configuration_sha256": "b" * 64,
+                         "authority_ref": "synthetic-owner-instruction", "amount_micro_usd": 50_000_000}
+        self.evidence = {"proof_sha256": "c" * 64, "review_sha256": "d" * 64, "source_sha256": "e" * 64}
+
+    def grant(self, document=None):
+        return self.scoped.grant_onboarding_allowance(document or self.document, evidence=self.evidence)
+
+    def reserve(self, name="extraction", budget=None, request=None):
+        budget = budget or self.scoped
+        profile = budget.profiles[name]
+        request = request or str(uuid4())
+        result = budget.reserve({"@UserKey": self.owner, "@Scope": profile["scope"], "@RequestId": request,
+            "@ReservationMicroUsd": profile["reservation_micro_usd"], "@MaximumCalls": profile["maximum_calls"],
+            "@HardCapMicroUsd": profile["hard_cap_micro_usd"], "@ConcurrentRequests": 1})
+        return result, request
+
+    def large(self):
+        profiles = {name: {**profile, "hard_cap_micro_usd": 30_000_000, "reservation_micro_usd": 30_000_000,
+                          "input_tokens": 1, "input_micro_usd_per_million": 30_000_000_000_000}
+                    for name, profile in self.profiles.items()}
+        self.path = self.path.with_name("large.sqlite3")
+        self.arguments["profiles"] = profiles
+        self.budget = ProviderBudget.initialize(self.path, **self.arguments)
+        self.scoped = ProviderBudget(self.path, **self.arguments, onboarding_context=self.context)
+
+    def event(self, request, count=1):
+        from tools.local_reviewer.provider_budget import identity_digest
+        return [{"phase": 1, "identity_sha256": identity_digest(request), "input_tokens": count, "output_tokens": 0}]
+
+    def history(self):
+        import sqlite3
+        with closing(sqlite3.connect(self.path)) as db:
+            return {name: sorted(db.execute("SELECT * FROM " + name).fetchall()) for name in self.budget.TABLES}
+
+    def test_exact_replay_and_different_authority_cannot_replenish(self):
+        before = self.history()
+        first = self.grant()
+        self.assertEqual(self.grant(), {"grant_request_id": first["grant_request_id"], "replayed": True})
+        for changed in ({"configuration_sha256": "f" * 64},
+                        {"request_id": str(uuid4()), "authority_ref": "different-authority"}):
+            with self.subTest(changed=changed), self.assertRaises(ValueError):
+                self.grant({**self.document, **changed})
+        self.assertEqual(self.history(), before)
+        self.assertEqual(self.scoped.onboarding_allowance_snapshot()["available_micro_usd"], 50_000_000)
+
+    def test_all_five_profiles_share_one_pool_and_cannot_borrow_base_money(self):
+        self.large()
+        self.grant()
+        accepted, request = self.reserve("interview")
+        self.assertTrue(accepted)
+        for name in ("extraction", "synthesis", "public", "speech"):
+            self.assertFalse(self.reserve(name)[0])
+        self.scoped.settle(self.owner, self.profiles["interview"]["scope"], request, self.event(request))
+        self.assertEqual(self.scoped.onboarding_allowance_snapshot()["available_micro_usd"], 20_000_000)
+        self.assertFalse(self.reserve("interview")[0])
+        self.assertTrue(self.reserve("interview", budget=self.budget)[0])
+        self.assertEqual(self.budget.snapshot("test-interview")["budget"]["base_prepaid_micro_usd"], 30_000_000)
+        self.assertEqual(self.scoped.onboarding_allowance_snapshot()["available_micro_usd"], 20_000_000)
+
+    def test_valid_settlement_releases_only_proven_charge_and_pending_release_keeps_envelope(self):
+        self.large()
+        self.grant()
+        _, request = self.reserve("interview")
+        self.scoped.settle(self.owner, "test-interview", request, self.event(request, 0), release=False)
+        self.assertEqual(self.scoped.onboarding_allowance_snapshot()["available_micro_usd"], 20_000_000)
+        self.assertFalse(self.reserve("extraction")[0])
+        self.scoped.settle(self.owner, "test-interview", request, self.event(request, 0), release=True)
+        self.assertEqual(self.scoped.onboarding_allowance_snapshot()["available_micro_usd"], 50_000_000)
+        self.assertTrue(self.reserve("extraction")[0])
+
+    def test_historical_and_new_failed_public_charges_remain_spent(self):
+        before, request = self.reserve("public", budget=self.budget)
+        self.assertTrue(before)
+        old_evidence = {"proof_sha256": "1" * 64, "configuration_sha256": "2" * 64, "review_sha256": "3" * 64}
+        self.budget.resolve_failed_public(owner=self.owner, scope="test-public", request=request, amount=10, evidence=old_evidence)
+        history = self.history()
+        self.grant()
+        self.assertEqual(self.history(), history)
+        _, new_request = self.reserve("public")
+        self.scoped.resolve_failed_public(owner=self.owner, scope="test-public", request=new_request, amount=10, evidence=old_evidence)
+        snapshot = self.scoped.snapshot("test-public")
+        self.assertEqual((snapshot["budget"]["prepaid_micro_usd"], snapshot["budget"]["settled_micro_usd"],
+                          snapshot["budget"]["failed_charge_micro_usd"], snapshot["budget"]["base_prepaid_micro_usd"]), (20, 0, 20, 10))
+        wallet = self.scoped.onboarding_allowance_snapshot()
+        self.assertEqual((wallet["available_micro_usd"], wallet["failed_charge_micro_usd"], wallet["unresolved_micro_usd"]),
+                         (49_999_990, 10, 0))
+
+    def test_old_active_reservation_blocks_grant_without_migration_or_refund(self):
+        import sqlite3
+        self.assertTrue(self.reserve(budget=self.budget)[0])
+        before = self.history()
+        with self.assertRaises(ValueError):
+            self.grant()
+        self.assertEqual(self.history(), before)
+        with closing(sqlite3.connect(self.path)) as db:
+            self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 2)
+
+    def test_unrecognised_or_personal_context_cannot_use_grant(self):
+        self.grant()
+        forged = ProviderBudget(self.path, **self.arguments, onboarding_context={**self.context, "namespace": "f" * 64})
+        self.assertFalse(self.reserve(budget=forged)[0])
+        for index in range(6):
+            accepted, request = self.reserve(budget=self.budget)
+            self.assertTrue(accepted)
+            self.budget.settle(self.owner, "test-extraction", request, self.event(request, 10))
+        self.assertFalse(self.reserve(budget=self.budget)[0])
+        self.assertTrue(self.reserve()[0])
+
+    def test_changed_owner_namespace_or_amount_refuses(self):
+        for changed in ({"owner": str(uuid4())}, {"namespace": "f" * 64}, {"amount_micro_usd": 100_000_000},
+                        {"amount_micro_usd": True}, {"allocation_sha256": "f" * 64}):
+            with self.subTest(changed=changed), self.assertRaises(ValueError):
+                self.grant({**self.document, **changed})
+        self.assertIsNone(self.scoped.onboarding_allowance_snapshot())
+
+    def test_known_overrun_is_not_refunded_and_fences_all_grant_features(self):
+        self.large()
+        self.grant()
+        _, request = self.reserve("interview")
+        with self.assertRaises(ValueError):
+            self.scoped.settle(self.owner, "test-interview", request, self.event(request, 2))
+        wallet = self.scoped.onboarding_allowance_snapshot()
+        self.assertEqual((wallet["encumbered_micro_usd"], wallet["available_micro_usd"], wallet["overrun_fenced"]),
+                         (60_000_000, 0, True))
+        self.assertFalse(self.reserve("speech")[0])
+        self.assertTrue(self.reserve("speech", budget=self.budget)[0])
+
+    def test_cheap_overrun_fences_other_grant_features_but_not_personal_funding(self):
+        self.grant()
+        _, request = self.reserve("interview")
+        with self.assertRaises(ValueError):
+            self.scoped.settle(self.owner, "test-interview", request, self.event(request, 11))
+        wallet = self.scoped.onboarding_allowance_snapshot()
+        # The tiny charge leaves money in the pool: only the overrun fence can refuse.
+        self.assertTrue(wallet["overrun_fenced"])
+        self.assertLess(wallet["encumbered_micro_usd"] + self.profiles["speech"]["reservation_micro_usd"], 50_000_000)
+        self.assertFalse(self.reserve("speech")[0])
+        self.assertTrue(self.reserve("speech", budget=self.budget)[0])
+
+    def test_migration_commit_failure_preserves_original_format_and_history(self):
+        import sqlite3
+        original = sqlite3.connect
+        before = self.history()
+        class FailingCommit(sqlite3.Connection):
+            def commit(self):
+                raise sqlite3.OperationalError("synthetic interrupted grant")
+        with patch("tools.local_reviewer.provider_budget.sqlite3.connect", side_effect=lambda *a, **k: original(*a, **k, factory=FailingCommit)):
+            with self.assertRaises(ValueError):
+                self.grant()
+        self.assertEqual(self.history(), before)
+        with closing(sqlite3.connect(self.path)) as db:
+            self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 2)
+        self.assertFalse(self.grant()["replayed"])
+
+    def test_original_100_operation_counter_still_blocks_with_unused_money(self):
+        for _ in range(100):
+            _, request = self.reserve(budget=self.budget)
+            self.budget.settle(self.owner, "test-extraction", request, self.event(request, 0))
+        self.grant()
+        self.assertFalse(self.reserve()[0])
+        self.assertEqual(self.scoped.onboarding_allowance_snapshot()["available_micro_usd"], 50_000_000)
+
+    def test_two_real_processes_cannot_overreserve_across_different_profiles(self):
+        import subprocess, sys
+        self.large()
+        self.grant()
+        config, barrier = self.path.with_suffix(".json"), self.path.with_suffix(".go")
+        config.write_text(json.dumps({**self.arguments, "onboarding_context": self.context}))
+        script = '''import json,sys,time
+from pathlib import Path
+from uuid import uuid4
+from tools.local_reviewer.provider_budget import ProviderBudget
+while not Path(sys.argv[3]).exists(): time.sleep(.01)
+b=ProviderBudget(sys.argv[1],**json.loads(Path(sys.argv[2]).read_text())); p=b.profiles[sys.argv[4]]
+print(b.reserve({"@UserKey":b.owner,"@Scope":p["scope"],"@RequestId":str(uuid4()),"@ReservationMicroUsd":p["reservation_micro_usd"],
+"@MaximumCalls":100,"@HardCapMicroUsd":p["hard_cap_micro_usd"],"@ConcurrentRequests":1}))
+'''
+        workers = [subprocess.Popen([sys.executable, "-B", "-c", script, str(self.path), str(config), str(barrier), name],
+                                    cwd=SOURCE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                   for name in ("interview", "extraction")]
+        try:
+            barrier.touch()
+            outputs = [worker.communicate(timeout=15) for worker in workers]
+            self.assertEqual(sorted(out.strip() for out, err in outputs), ["False", "True"], outputs)
+            self.assertTrue(all(worker.returncode == 0 for worker in workers), outputs)
+        finally:
+            for worker in workers:
+                if worker.poll() is None:
+                    worker.kill()
+                    worker.wait()
+        self.assertEqual(self.scoped.onboarding_allowance_snapshot()["encumbered_micro_usd"], 30_000_000)
+
+
+    def qualification_root(self):
+        import sqlite3
+        root = self.path.parent / "installation-copy"
+        (root / "data").mkdir(parents=True)
+        with closing(sqlite3.connect(self.path)) as source, closing(sqlite3.connect(root / "data/provider-budget-v1.sqlite3")) as dest:
+            source.backup(dest)
+        (root / "installation.json").write_text(json.dumps({"installation": self.context["installation"], "workspace": {"selected": "onboarding"}}))
+        return root
+
+    def test_selected_current_controller_executes_decode_and_real_accounting_behavior_on_copies(self):
+        from types import SimpleNamespace
+        from tools.local_reviewer import manager
+        self.grant()
+        root = self.qualification_root()
+        original = self.history()
+        configuration = {"owner": self.owner, "allocation_sha256": "a" * 64, "profiles": self.profiles}
+        with patch("tools.local_reviewer.runtime.selected_context", return_value=SimpleNamespace(namespace=self.context["namespace"])):
+            proof = manager.qualify_onboarding_allowance_accounting(root, None, configuration)
+        self.assertEqual(proof, {"actual_ledger_decode": True, "selected_target_behavior": True, "provider_dispatches": 0})
+        self.assertEqual(self.history(), original)
+
+    def test_actual_pre_allowance_controller_refuses_new_ledger_before_any_pointer_effects(self):
+        import hashlib
+        from types import SimpleNamespace
+        from tools.local_reviewer import manager
+        self.grant()
+        root = self.qualification_root()
+        # Exact pre-allowance bytes (main 243eadde), vendored so no Git history is needed.
+        old = PRE_ALLOWANCE_PROVIDER_BUDGET[1:].encode("utf-8")
+        self.assertEqual(hashlib.sha256(old).hexdigest(), PRE_ALLOWANCE_PROVIDER_BUDGET_SHA256)
+        path = root / "controllers/pre-allowance/tools/local_reviewer/provider_budget.py"
+        path.parent.mkdir(parents=True)
+        path.write_bytes(old)
+        target = {"controller": "pre-allowance", "controller_files": {"tools/local_reviewer/provider_budget.py": hashlib.sha256(old).hexdigest()}}
+        before = (root / "installation.json").read_bytes(), self.history()
+        configuration = {"owner": self.owner, "allocation_sha256": "a" * 64, "profiles": self.profiles}
+        with patch("tools.local_reviewer.runtime.selected_context", return_value=SimpleNamespace(namespace=self.context["namespace"])), \
+                self.assertRaisesRegex(ValueError, "Provider allocation or ledger changed"):
+            manager.qualify_onboarding_allowance_accounting(root, target, configuration)
+        self.assertEqual(((root / "installation.json").read_bytes(), self.history()), before)
+        self.assertFalse((root / "rollback-receipt.json").exists())
+        self.assertFalse((root / "checkpoints").exists())
+
+    def test_rollback_probe_refuses_a_target_that_writes_a_second_grant(self):
+        import hashlib
+        from types import SimpleNamespace
+        from tools.local_reviewer import manager
+        self.grant()
+        root = self.qualification_root()
+        current = (SOURCE / "tools/local_reviewer/provider_budget.py").read_text(encoding="utf-8")
+        removals = ('                if self._allowance(db) is not None:\n'
+                    '                    raise ValueError("One onboarding allowance only; replenishment is not supported")\n',
+                    ",\n            UNIQUE(installation,owner,namespace)")
+        mutated = current
+        for removed in removals:
+            self.assertEqual(mutated.count(removed), 1)
+            mutated = mutated.replace(removed, "")
+        path = root / "controllers/replenishing/tools/local_reviewer/provider_budget.py"
+        path.parent.mkdir(parents=True)
+        path.write_text(mutated, encoding="utf-8")
+        target = {"controller": "replenishing",
+                  "controller_files": {"tools/local_reviewer/provider_budget.py": hashlib.sha256(path.read_bytes()).hexdigest()}}
+        before = (root / "installation.json").read_bytes(), self.history()
+        configuration = {"owner": self.owner, "allocation_sha256": "a" * 64, "profiles": self.profiles}
+        with patch("tools.local_reviewer.runtime.selected_context", return_value=SimpleNamespace(namespace=self.context["namespace"])),                 self.assertRaisesRegex(ValueError, "permits replenishment"):
+            manager.qualify_onboarding_allowance_accounting(root, target, configuration)
+        self.assertEqual(((root / "installation.json").read_bytes(), self.history()), before)
+
+    def test_unknown_accounting_version_refuses_instead_of_skipping_rollback_qualification(self):
+        import sqlite3
+        from tools.local_reviewer import manager
+        root = self.qualification_root()
+        with closing(sqlite3.connect(root / "data/provider-budget-v1.sqlite3")) as db:
+            db.execute("PRAGMA user_version=99")
+        with self.assertRaisesRegex(ValueError, "Unknown provider accounting format"):
+            manager.qualify_onboarding_allowance_accounting(root, None, {})
+
+    def test_operator_binds_review_configuration_namespace_and_stopped_custody(self):
+        from contextlib import contextmanager
+        from types import SimpleNamespace
+        from tools.local_reviewer import manager
+        root = self.path.parent
+        proof_path, review_path = root / "grant-proof.json", root / "grant-review.json"
+        manifest = {"installation": self.context["installation"], "workspace": {"selected": "personal"}}
+        configuration = {"owner": self.owner, "allocation_sha256": "a" * 64, "profiles": self.profiles}
+        identity = SimpleNamespace(owner=self.owner)
+        @contextmanager
+        def operator(_):
+            yield manifest, identity, configuration, self.budget
+        def documents(document):
+            proof_path.write_text(json.dumps(document))
+            review_path.write_text(json.dumps({"schema_version": 1, "result": "pass", "proof_sha256": manager.digest(proof_path),
+                "allowance_source_sha256": manager.allowance_source_digest(), "reviewer_ref": "synthetic-independent-review-fixture"}))
+        documents({**self.document, "namespace": "f" * 64})
+        with patch.object(manager, "private_operator", operator), patch.object(manager, "operator_configuration_digest", return_value="b" * 64), \
+                patch("tools.local_reviewer.runtime.selected_context", return_value=SimpleNamespace(namespace=self.context["namespace"])):
+            with self.assertRaisesRegex(ValueError, "descriptor"):
+                manager.grant_onboarding_test_allowance(root, proof_path, review_path)
+            documents(self.document)
+            result = manager.grant_onboarding_test_allowance(root, proof_path, review_path)
+            self.assertEqual((result["allowance"]["available_micro_usd"], result["provider_dispatches"]), (50_000_000, 0))
+            self.assertTrue(manager.grant_onboarding_test_allowance(root, proof_path, review_path)["replayed"])
+            documents({**self.document, "configuration_sha256": "f" * 64})
+            with self.assertRaisesRegex(ValueError, "installation"):
+                manager.grant_onboarding_test_allowance(root, proof_path, review_path)
+        self.assertEqual(manifest["workspace"]["selected"], "personal")
+        documents(self.document)
+        with patch.object(manager, "private_operator", side_effect=ValueError("stopped custody unavailable")), \
+                self.assertRaisesRegex(ValueError, "stopped custody"):
+            manager.grant_onboarding_test_allowance(root, proof_path, review_path)
+
+    def test_missing_independent_attestation_refuses_before_operator_or_ledger_access(self):
+        from tools.local_reviewer import manager
+        root = self.path.parent
+        proof, review = root / "proof.json", root / "review.json"
+        proof.write_text(json.dumps(self.document))
+        review.write_text(json.dumps({"result": "pass"}))
+        with patch.object(manager, "private_operator") as custody, self.assertRaisesRegex(ValueError, "Independent"):
+            manager.grant_onboarding_test_allowance(root, proof, review)
+        custody.assert_not_called()
+        self.assertIsNone(self.scoped.onboarding_allowance_snapshot())
+
+    def test_allowance_rows_members_and_historical_rows_remain_immutable(self):
+        import sqlite3
+        self.grant()
+        _, completed = self.reserve()
+        self.scoped.settle(self.owner, "test-extraction", completed, self.event(completed))
+        _, failed = self.reserve("public")
+        self.scoped.resolve_failed_public(owner=self.owner, scope="test-public", request=failed, amount=10,
+            evidence={"proof_sha256": "1" * 64, "configuration_sha256": "2" * 64, "review_sha256": "3" * 64})
+        _, overrun = self.reserve()
+        with self.assertRaises(ValueError):
+            self.scoped.settle(self.owner, "test-extraction", overrun, self.event(overrun, 11))
+        with closing(sqlite3.connect(self.path)) as db:
+            for name in ("onboarding_allowances", "onboarding_allowance_members", "operator_resolutions", *self.budget.TABLES):
+                with self.subTest(table=name), self.assertRaises(sqlite3.IntegrityError):
+                    db.execute("DELETE FROM " + name)
+
 
 class OperatorResolutionTests(unittest.TestCase):
     setUp = ProviderBudgetTests.setUp
@@ -1432,3 +1802,377 @@ class OperatorResolutionTests(unittest.TestCase):
             state={'request_id':third};diagnostic.claim(state)
             self.assertNotIn('diagnostic',state)
             self.assertFalse((root/'logs/public-diagnostic/operation-3').exists())
+
+
+# Exact bytes of tools/local_reviewer/provider_budget.py at main 243eadde (pre-allowance).
+PRE_ALLOWANCE_PROVIDER_BUDGET_SHA256 = "624869de412f772cae47280caa94f36cd2dfbbc6c4d2453e1bda5ccc6071950a"
+PRE_ALLOWANCE_PROVIDER_BUDGET = r'''
+"""Immutable installation AI accounting, excluded from content backups.
+
+Balances are derived from at most 500 lifetime reservations. Uncertain calls keep
+their full encumbrance and active fence. Deliberate administrator rollback of the
+entire ledger cannot be detected without an external monotonic anchor.
+"""
+from contextlib import closing, contextmanager
+from datetime import datetime, timezone
+from hashlib import sha256
+import json
+import os
+from pathlib import Path
+import re
+import sqlite3
+from uuid import UUID
+
+RESERVE = "usp_ReserveResumeHostedExtractionForOwner"
+FINISH = "usp_FinishResumeHostedExtractionForOwner"
+RESERVE_KEYS = {"@UserKey", "@Scope", "@RequestId", "@ReservationMicroUsd",
+                "@MaximumCalls", "@HardCapMicroUsd", "@ConcurrentRequests"}
+FINISH_KEYS = {"@UserKey", "@Scope", "@RequestId"}
+PROFILE_NAMES = {"interview", "extraction", "synthesis", "public", "speech"}
+
+
+def encoded(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
+
+
+def parameters(value, expected):
+    if not isinstance(value, (list, tuple)):
+        raise ValueError("Closed accounting parameters required")
+    result = {}
+    for pair in value:
+        if not isinstance(pair, (tuple, list)) or len(pair) != 2 or pair[0] in result:
+            raise ValueError("Closed accounting parameters required")
+        result[pair[0]] = pair[1]
+    if set(result) != expected:
+        raise ValueError("Closed accounting parameters required")
+    return result
+
+
+def request_id(value):
+    if not isinstance(value, str) or str(UUID(value)) != value:
+        raise ValueError("Canonical request UUID required")
+    return value
+
+
+def natural(value, *, positive=False):
+    if type(value) is not int or not int(positive) <= value <= 2**53 - 1:
+        raise ValueError("Bounded integer accounting value required")
+    return value
+
+
+def identity_digest(value):
+    if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,200}", value):
+        raise ValueError("Bounded native response identity required")
+    return sha256(value.encode("ascii")).hexdigest()
+
+
+def validate_allocation(owner, allocation_sha256, profiles):
+    request_id(owner)
+    if not isinstance(allocation_sha256, str) or not re.fullmatch("[0-9a-f]{64}", allocation_sha256):
+        raise ValueError("Bound allocation digest required")
+    if not isinstance(profiles, dict) or set(profiles) != PROFILE_NAMES:
+        raise ValueError("All five allocated profiles required")
+    scopes = set()
+    for profile in profiles.values():
+        if not isinstance(profile, dict):
+            raise ValueError("Explicit profile allocation required")
+        scope = profile.get("scope")
+        if not isinstance(scope, str) or not re.fullmatch("[a-z0-9-]{1,80}", scope) or scope in scopes:
+            raise ValueError("Distinct explicit scopes required")
+        scopes.add(scope)
+        for key in ("maximum_calls", "hard_cap_micro_usd", "reservation_micro_usd", "concurrent_requests"):
+            natural(profile.get(key), positive=True)
+        if (profile["concurrent_requests"] != 1 or profile["maximum_calls"] > 100
+                or profile["reservation_micro_usd"] > profile["hard_cap_micro_usd"]):
+            raise ValueError("Bound allocation limits exceeded")
+
+
+class ProviderBudget:
+    persistence_label = "private_installation_sqlite_immutable_accounting_not_azure_sql"
+    TABLES = ("metadata", "reservations", "settlements", "native_responses", "releases", "overruns")
+
+    @staticmethod
+    def _resolutions(db):
+        db.execute("""CREATE TABLE operator_resolutions (
+            scope TEXT NOT NULL, request_id TEXT NOT NULL, charge INTEGER NOT NULL CHECK(charge>0),
+            evidence TEXT NOT NULL, created_at_utc TEXT NOT NULL,
+            PRIMARY KEY(scope,request_id), FOREIGN KEY(scope,request_id) REFERENCES reservations)""")
+        for action in ("UPDATE", "DELETE"):
+            db.execute(f"CREATE TRIGGER immutable_operator_resolutions_{action} BEFORE {action} ON operator_resolutions "
+                       "BEGIN SELECT RAISE(ABORT,'Immutable accounting event'); END")
+        db.execute("PRAGMA user_version=3")
+
+    @classmethod
+    def initialize(cls, path, *, owner, allocation_sha256, profiles):
+        validate_allocation(owner, allocation_sha256, profiles)
+        path = Path(path).absolute()
+        cls._ordinary(path)
+        if path.suffix != ".sqlite3":
+            raise ValueError("Ordinary private ledger path required")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        descriptor = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        os.close(descriptor)
+        with closing(sqlite3.connect(path, isolation_level=None)) as db:
+            db.execute("PRAGMA journal_mode=WAL")
+            db.execute("PRAGMA synchronous=FULL")
+            db.execute("BEGIN IMMEDIATE")
+            db.execute("CREATE TABLE metadata (name TEXT PRIMARY KEY, value TEXT NOT NULL)")
+            db.execute("""CREATE TABLE reservations (
+                scope TEXT NOT NULL, request_id TEXT NOT NULL, owner TEXT NOT NULL,
+                amount INTEGER NOT NULL CHECK(amount>0), created_at_utc TEXT NOT NULL,
+                PRIMARY KEY(scope,request_id))""")
+            db.execute("""CREATE TABLE settlements (
+                scope TEXT NOT NULL, request_id TEXT NOT NULL, charge INTEGER NOT NULL CHECK(charge>=0),
+                evidence TEXT NOT NULL, created_at_utc TEXT NOT NULL,
+                PRIMARY KEY(scope,request_id), FOREIGN KEY(scope,request_id) REFERENCES reservations)""")
+            db.execute("""CREATE TABLE native_responses (
+                identity_sha256 TEXT PRIMARY KEY, scope TEXT NOT NULL, request_id TEXT NOT NULL,
+                FOREIGN KEY(scope,request_id) REFERENCES settlements)""")
+            db.execute("""CREATE TABLE releases (
+                scope TEXT NOT NULL, request_id TEXT NOT NULL, created_at_utc TEXT NOT NULL,
+                PRIMARY KEY(scope,request_id), FOREIGN KEY(scope,request_id) REFERENCES settlements)""")
+            db.execute("""CREATE TABLE overruns (
+                scope TEXT NOT NULL, request_id TEXT NOT NULL, observed_charge INTEGER NOT NULL,
+                evidence TEXT NOT NULL, PRIMARY KEY(scope,request_id,evidence),
+                FOREIGN KEY(scope,request_id) REFERENCES reservations)""")
+            for table in cls.TABLES:
+                for action in ("UPDATE", "DELETE"):
+                    db.execute(f"CREATE TRIGGER immutable_{table}_{action} BEFORE {action} ON {table} "
+                               "BEGIN SELECT RAISE(ABORT,'Immutable accounting event'); END")
+            db.executemany("INSERT INTO metadata VALUES (?,?)", {
+                "owner": owner, "allocation_sha256": allocation_sha256, "profiles": encoded(profiles)}.items())
+            db.execute("PRAGMA user_version=2")
+            db.commit()
+        return cls(path, owner=owner, allocation_sha256=allocation_sha256, profiles=profiles)
+
+    @staticmethod
+    def _ordinary(path):
+        if any(p.is_symlink() or getattr(p, "is_junction", lambda: False)() for p in (path, *path.parents)):
+            raise ValueError("Ordinary private ledger path required")
+
+    def __init__(self, path, *, owner, allocation_sha256, profiles):
+        validate_allocation(owner, allocation_sha256, profiles)
+        self.path, self.owner = Path(path).absolute(), owner
+        self.profiles = json.loads(encoded(profiles))
+        self.expected = {"owner": owner, "allocation_sha256": allocation_sha256, "profiles": encoded(profiles)}
+        with self.connection() as db:
+            if (db.execute("PRAGMA quick_check").fetchone()[0] != "ok"
+                    or db.execute("PRAGMA foreign_key_check").fetchone() is not None):
+                raise ValueError("Provider ledger is incomplete")
+
+    @contextmanager
+    def connection(self):
+        self._ordinary(self.path)
+        if not self.path.is_file():
+            raise ValueError("Existing private ledger required; no new allowance created")
+        db = sqlite3.connect(self.path.as_uri() + "?mode=rw", uri=True, timeout=5, isolation_level=None)
+        try:
+            db.row_factory = sqlite3.Row
+            db.execute("PRAGMA foreign_keys=ON")
+            db.execute("PRAGMA synchronous=FULL")
+            # Version, tables and triggers must come from one read snapshot:
+            # a concurrent valid v2-to-v3 commit must not look like corruption.
+            db.execute("BEGIN")
+            version = db.execute("PRAGMA user_version").fetchone()[0]
+            tables = self.TABLES + (("operator_resolutions",) if version == 3 else ())
+            if (version not in (2, 3)
+                    or dict(db.execute("SELECT name,value FROM metadata")) != self.expected
+                    or {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")} != set(tables)
+                    or {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='trigger'")}
+                    != {f"immutable_{t}_{a}" for t in tables for a in ("UPDATE", "DELETE")}):
+                raise ValueError("Provider allocation or ledger changed; uncertainty preserved")
+            db.rollback()
+            yield db
+        except sqlite3.Error:
+            raise ValueError("Provider accounting unavailable; uncertainty preserved") from None
+        finally:
+            if db.in_transaction:
+                db.rollback()
+            db.close()
+
+    def profile(self, scope):
+        return next((p for p in self.profiles.values() if p["scope"] == scope), None)
+
+    def first_row(self, procedure, values=None):
+        if procedure == RESERVE:
+            return {"reserved": self.reserve(parameters(values, RESERVE_KEYS))}
+        if procedure == FINISH:
+            parameters(values, FINISH_KEYS)
+            # Legacy finish cannot authorize usage settlement or fence release.
+            return {"finished": False}
+        raise ValueError("Unsupported provider accounting operation")
+
+    @staticmethod
+    def _totals(db, scope):
+        resolved = ("operator_resolutions" if db.execute("PRAGMA user_version").fetchone()[0] == 3
+                    else "(SELECT NULL AS scope,NULL AS request_id,0 AS charge WHERE 0)")
+        return db.execute(f"""SELECT COUNT(*) AS calls,
+            COALESCE(SUM(CASE WHEN s.request_id IS NULL THEN r.amount ELSE s.charge END),0) AS encumbered,
+            COALESCE(SUM(COALESCE(s.charge,0)),0) AS settled,
+            COALESCE(SUM(COALESCE(o.charge,0)),0) AS failed_charge,
+            COALESCE(SUM(CASE WHEN x.request_id IS NULL AND o.request_id IS NULL THEN 1 ELSE 0 END),0) AS active
+            FROM reservations r LEFT JOIN settlements s USING(scope,request_id)
+            LEFT JOIN releases x USING(scope,request_id)
+            LEFT JOIN {resolved} o USING(scope,request_id) WHERE r.scope=?""", (scope,)).fetchone()
+
+    def resolve_failed_public(self, *, owner, scope, request, amount, evidence):
+        """Local operator only. Caller must hold the stopped installation lock.
+
+        Evidence attests independent review of transport/worker quiescence, not
+        successful native completion. No successful-settlement row is invented.
+        Migration and failure event commit together; ordinary startup never migrates.
+        """
+        if (owner != self.owner or scope != self.profiles["public"]["scope"]
+                or type(amount) is not int or amount != self.profiles["public"]["reservation_micro_usd"]
+                or type(evidence) is not dict or set(evidence) != {"proof_sha256", "configuration_sha256", "review_sha256"}
+                or any(not isinstance(v, str) or not re.fullmatch("[0-9a-f]{64}", v) for v in evidence.values())):
+            raise ValueError("Exact reviewed failed public operation required")
+        evidence = encoded(evidence)
+        with self.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            self._binding(db, owner, scope, request)
+            row = db.execute("SELECT amount FROM reservations WHERE scope=? AND request_id=?", (scope, request)).fetchone()
+            if row["amount"] != amount or db.execute("SELECT 1 FROM overruns WHERE scope=?", (scope,)).fetchone():
+                raise ValueError("Original full reservation without overrun required")
+            if db.execute("SELECT 1 FROM settlements WHERE scope=? AND request_id=?", (scope, request)).fetchone():
+                raise ValueError("Partial or successful settlement cannot be operator resolved")
+            if db.execute("PRAGMA user_version").fetchone()[0] == 2:
+                self._resolutions(db)
+            previous = db.execute("SELECT charge,evidence FROM operator_resolutions WHERE scope=? AND request_id=?",
+                                  (scope, request)).fetchone()
+            if previous:
+                if previous["charge"] != amount or previous["evidence"] != evidence:
+                    raise ValueError("Conflicting operator resolution refused")
+            else:
+                db.execute("INSERT INTO operator_resolutions VALUES (?,?,?,?,?)",
+                           (scope, request, amount, evidence, datetime.now(timezone.utc).isoformat()))
+            db.commit()
+        return {"request_id": request, "state": "failed_operator_resolved", "charge_micro_usd": amount}
+
+    def reserve(self, values):
+        selected = self.profile(values["@Scope"])
+        if values["@UserKey"] != self.owner or selected is None or any(
+                type(values[k]) is not int or values[k] != selected[f] for k, f in (
+                    ("@ReservationMicroUsd", "reservation_micro_usd"), ("@MaximumCalls", "maximum_calls"),
+                    ("@HardCapMicroUsd", "hard_cap_micro_usd"), ("@ConcurrentRequests", "concurrent_requests"))):
+            return False
+        request, scope = request_id(values["@RequestId"]), selected["scope"]
+        with self.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            total = self._totals(db, scope)
+            duplicate = db.execute("SELECT 1 FROM reservations WHERE scope=? AND request_id=?", (scope, request)).fetchone()
+            overrun = db.execute("SELECT 1 FROM overruns WHERE scope=?", (scope,)).fetchone()
+            allowed = (not duplicate and not overrun and not total["active"]
+                       and total["calls"] < selected["maximum_calls"]
+                       and total["encumbered"] + selected["reservation_micro_usd"] <= selected["hard_cap_micro_usd"])
+            if allowed:
+                db.execute("INSERT INTO reservations VALUES (?,?,?,?,?)", (scope, request, self.owner,
+                    selected["reservation_micro_usd"], datetime.now(timezone.utc).isoformat()))
+            db.commit()
+            return bool(allowed)
+
+    def _binding(self, db, owner, scope, request):
+        request_id(request)
+        if owner != self.owner or self.profile(scope) is None or db.execute(
+                "SELECT 1 FROM reservations WHERE scope=? AND request_id=? AND owner=?",
+                (scope, request, owner)).fetchone() is None:
+            raise ValueError("Reserved accounting identity required")
+
+    def usage(self, scope, events):
+        profile = self.profile(scope)
+        if profile is None or not isinstance(events, list) or not 1 <= len(events) <= profile.get("maximum_phases", 1):
+            raise ValueError("Bound completed phases required")
+        charge, overrun, identities = 0, False, set()
+        for index, event in enumerate(events, 1):
+            speech = "duration_tariff" in profile
+            fields = {"phase", "identity_sha256", "seconds"} if speech else {
+                "phase", "identity_sha256", "input_tokens", "output_tokens"}
+            if type(event) is not dict or set(event) != fields or type(event["phase"]) is not int or event["phase"] != index:
+                raise ValueError("Closed ordered completed phase required")
+            identity = event["identity_sha256"]
+            if not isinstance(identity, str) or not re.fullmatch("[0-9a-f]{64}", identity) or identity in identities:
+                raise ValueError("Unique completed native identity required")
+            identities.add(identity)
+            if speech:
+                seconds, tariff = natural(event["seconds"], positive=True), profile["duration_tariff"]
+                charge += (seconds * tariff["operator_micro_usd_per_audio_hour"] + 3599) // 3600
+                overrun |= seconds > tariff["maximum_decoded_seconds"]
+            else:
+                incoming, outgoing = natural(event["input_tokens"]), natural(event["output_tokens"])
+                charge += (incoming * profile["input_micro_usd_per_million"]
+                           + outgoing * profile["output_micro_usd_per_million"] + 999999) // 1000000
+                overrun |= (incoming > profile.get("input_tokens", profile.get("input_tokens_per_phase", 0))
+                            or outgoing > profile.get("output_tokens", profile.get("output_tokens_per_phase", 0)))
+        natural(charge)
+        return charge, overrun or charge > profile["reservation_micro_usd"]
+
+    def observe_overrun(self, owner, scope, request, events):
+        charge, overrun = self.usage(scope, events)
+        if overrun:
+            with self.connection() as db:
+                db.execute("BEGIN IMMEDIATE")
+                self._binding(db, owner, scope, request)
+                db.execute("INSERT OR IGNORE INTO overruns VALUES (?,?,?,?)", (scope, request, charge, encoded(events)))
+                db.commit()
+
+    def settle(self, owner, scope, request, events, *, release=True, zero_completion=False):
+        if zero_completion is True and scope == self.profiles["public"]["scope"] and events == []:
+            charge, overrun = 0, False
+        else:
+            if zero_completion is not False:
+                raise ValueError("Closed zero completion required")
+            charge, overrun = self.usage(scope, events)
+        if overrun:
+            self.observe_overrun(owner, scope, request, events)
+            raise ValueError("Observed usage exceeded its reserved envelope")
+        evidence = encoded({"zero": "authorized_no_sources", "events": []} if zero_completion else events)
+        with self.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            self._binding(db, owner, scope, request)
+            if (db.execute("PRAGMA user_version").fetchone()[0] == 3 and db.execute(
+                    "SELECT 1 FROM operator_resolutions WHERE scope=? AND request_id=?", (scope, request)).fetchone()):
+                raise ValueError("Operator-resolved failure cannot become successful")
+            previous = db.execute("SELECT charge,evidence FROM settlements WHERE scope=? AND request_id=?", (scope, request)).fetchone()
+            if previous is not None:
+                if previous["charge"] != charge or previous["evidence"] != evidence:
+                    raise ValueError("Conflicting settlement replay refused")
+            else:
+                if db.execute("SELECT 1 FROM overruns WHERE scope=?", (scope,)).fetchone():
+                    raise ValueError("Overrun accounting remains fenced")
+                db.execute("INSERT INTO settlements VALUES (?,?,?,?,?)",
+                           (scope, request, charge, evidence, datetime.now(timezone.utc).isoformat()))
+                db.executemany("INSERT INTO native_responses VALUES (?,?,?)",
+                               [(e["identity_sha256"], scope, request) for e in events])
+            if release:
+                db.execute("INSERT OR IGNORE INTO releases VALUES (?,?,?)", (scope, request, datetime.now(timezone.utc).isoformat()))
+            db.commit()
+
+    def snapshot(self, scope):
+        profile = self.profile(scope)
+        if profile is None:
+            return None
+        with self.connection() as db:
+            total = self._totals(db, scope)
+            rows = db.execute("""SELECT r.scope,r.request_id,r.owner,r.amount,r.created_at_utc,
+                CASE WHEN x.request_id IS NULL THEN 'active' ELSE 'finished' END AS state,
+                s.charge,s.evidence,x.created_at_utc AS finished_at_utc FROM reservations r
+                LEFT JOIN settlements s USING(scope,request_id) LEFT JOIN releases x USING(scope,request_id)
+                WHERE r.scope=? ORDER BY r.created_at_utc""", (scope,))
+            reservations = [dict(row) for row in rows]
+            resolutions = [dict(row) for row in db.execute("SELECT * FROM operator_resolutions WHERE scope=?", (scope,))] if db.execute("PRAGMA user_version").fetchone()[0] == 3 else []
+            for row in reservations:
+                if any(r["request_id"] == row["request_id"] for r in resolutions):
+                    row["state"] = "failed_operator_resolved"
+            return {"budget": {**profile, "dispatched_calls": total["calls"], "prepaid_micro_usd": total["encumbered"],
+                               "settled_micro_usd": total["settled"], "failed_charge_micro_usd": total["failed_charge"]},
+                    "reservations": reservations, "operator_resolutions": resolutions,
+                    "overruns": [dict(row) for row in db.execute("SELECT * FROM overruns WHERE scope=?", (scope,))]}
+
+    def has_active(self, scopes):
+        with self.connection() as db:
+            return any(self._totals(db, scope)["active"] for scope in scopes)
+'''
+
+
+if __name__ == "__main__":
+    unittest.main()

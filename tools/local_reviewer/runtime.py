@@ -750,7 +750,7 @@ def serve(install: Path, release: Path, metadata, token):
         fresh_state = state.capture()
         if identity:
             identity.bind_principal(stack)
-            configure_private_providers(fixture, app, install, identity, configuration)
+            configure_private_providers(fixture, app, install, identity, configuration, workspace=context)
             metadata = {**metadata, "provider": "live_azure_ai", "url": identity.origin}
         metadata = {**metadata, "workspace": context.binding}
         store = context.store(state)
