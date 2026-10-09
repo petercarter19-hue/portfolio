@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-DELIVERY-REPAIR-CI-PARITY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Make the documented hash-bound required-check repair path compatible with target-trusted Azure classification for either Claude or Codex. Admit only a structurally valid Protected repair activation within accepted target repair surfaces to full CI, never the control-only shortcut. Preserve target-only validation, collision and provenance checks, normal server policies, external owner and independent review proofs, and all product/production boundaries.",
   "assignment": "implementation",
   "writer_ref": "session:01a11384-f656-73b3-b57a-ad2952f1ffad",
@@ -30,6 +30,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "9e15cf51bfe3fd402a71d035a633fbb8c8d60c54",
+  "closed_at": "2026-10-09T15:15:29Z"
 }
