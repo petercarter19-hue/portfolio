@@ -73,7 +73,7 @@ class GitleaksConfigurationTests(unittest.TestCase):
         # suite reused the qualification suite's call idiom with its own
         # actor literals, which the deliberately narrow member-[ab] class
         # does not cover. Same shape, own file, own actor class.
-        self.assertEqual(13, len(allowlists))
+        self.assertEqual(14, len(allowlists))
         self.assertEqual(
             {
                 'description': (
@@ -250,6 +250,10 @@ class GitleaksConfigurationTests(unittest.TestCase):
             myopp_retrieval_path: [myopp_retrieval_line],
         }
 
+        expected[r'^tests/test_operational_telemetry\.py$'] = [
+            "^\\n?\\ \\ \\ \\ \\ \\ \\ \\ client\\.get\\('/member/PRIVATE_3982\\?k[e]y=PRIVATE_3982',\\ headers=\\{'Cookie':\\ 'PRIVATE_3982'\\}\\)\\r?$"
+        ]
+
         scoped = [
             allowlist for allowlist in allowlists if 'paths' in allowlist
         ]
@@ -270,6 +274,25 @@ class GitleaksConfigurationTests(unittest.TestCase):
                 'a commit-pinned allowlist cannot survive a squash merge',
             )
 
+
+    def test_telemetry_canary_allowlist_rejects_path_and_value_drift(self):
+        with open(os.path.join(ROOT, '.gitleaks.toml'), 'rb') as config_file:
+            entry = next(item for item in tomllib.load(config_file)['allowlists']
+                         if item.get('paths') == [r'^tests/test_operational_telemetry\.py$'])
+        path = 'tests/test_operational_telemetry.py'
+        line = (' ' * 8 + "client.get('/member/PRIVATE_3982?" + 'k' +
+                "ey=PRIVATE_3982', headers={'Cookie': 'PRIVATE_3982'})")
+        def allows(candidate_path, candidate_line):
+            return (re.search(entry['paths'][0], candidate_path) is not None
+                    and re.search(entry['regexes'][0], candidate_line) is not None)
+        for allowed in (line, '\n' + line, line + '\r'):
+            self.assertTrue(allows(path, allowed))
+        for other_path in ('tests/other.py', path.upper(), 'prefix/' + path, path + '.bak'):
+            self.assertFalse(allows(other_path, line))
+        for changed in (line.replace('PRIVATE_3982', 'changed'), line + ' # text',
+                        ' ' + line, line + '; api_' + 'key="' + 'synthetic-credential-123456789abcdef' + '"',
+                        line + '\n' + line, '\n\n' + line):
+            self.assertFalse(allows(path, changed))
 
     def test_living_resume_uuid_allowlist_rejects_path_and_assignment_drift(self):
         import re
