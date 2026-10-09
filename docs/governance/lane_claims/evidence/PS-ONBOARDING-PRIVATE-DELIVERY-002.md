@@ -405,3 +405,22 @@ The same recipe as the tester-round binding (`PRIVATE_TESTER_ROUND_FACTORY.json`
 ### Not yet true
 
 CI and merge of this change; the supported `update --candidate-state accepted-main --factory` promotion on a stopped, drained site; the explicit post-update probe; restoring the post-retry checkpoint `20261008T125205Z-294320f4`; starting the site; and the re-run of the owner's retry (reader changed) with the source-version bump recorded.
+
+## Claude custody: reviewed private factory interface for the accepted fix-round-3 source
+
+The same recipe as the tester-round binding (`PRIVATE_TESTER_ROUND_FACTORY.json`, whose bytes the generator round-trips), for the accepted fix-round-3 source (independent PASS at `95955371ba0bf88234a63bb4744f08f7aa451586`, superseding the PASS at `47f7ec0f`; accepted as main `5b030fdc28564b23ba2974f599c8da9973c0a4be` through PR 1304, build 4339).
+
+### What this binds
+
+- New interface `X:/PeerSlate/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002/round3/PRIVATE_ROUND3_FACTORY.json`, sha256 `8bcf3d6399586ed4ae807506daf062ff8aafa0d1747af93a48052ea1bd956c96`. Only the candidate sha, condition text, timestamp, the 13 pinned file hashes below and the qualification entry change. Factory signature, requirements, profiles, prices, limits, allocation and ongoing-budget contracts are byte-for-byte the tester-round interface's.
+- The 13 changed pins (Git bytes at the accepted commit): `resume_intake_routes.py`, `scripts/run_mvp1_acceptance_browser_tests.py`, `services/my_data_extraction_adapter.py`, `services/resume_intake_runtime.py`, `services/resume_intake_service.py`, `services/resume_onboarding_document_reader.py`, `static/js/resume-editor.js`, `static/js/resume-intake.js`, `tests/test_resume_intake_browser.py`, `tests/test_resume_intake_routes.py`, `tests/test_resume_onboarding_conversation.py`, `tests/test_resume_onboarding_coverage.py`, `tests/test_resume_onboarding_document_reader.py`.
+- `tools/local_reviewer/providers.py`: the new interface hash joins the allowed set, and `PRIVATE_ROUND3_ONBOARDING_QUALIFICATION` (chained on the round-2 entry) carries reviewed source `95955371ba0bf88234a63bb4744f08f7aa451586`, accepted source `5b030fdc28564b23ba2974f599c8da9973c0a4be` and the sha256 `44a67acadbbff6c017768ede59045292fd3d8a51d44e7c6bdc24b86d3d09f936` of the merged receipt file. Declared behaviors unchanged. `tests/test_local_reviewer_providers.py`: the new pair joins the integrity test.
+- App archive for the supported update (not part of this diff): `X:/PeerSlate/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002/round3/accepted-source-5b030fdc.zip`, a `git archive` of main `5b030fdc`, sha256 `21f576b1565e704cc1fb65f1ead24c7b0ee606c4106804fb9281e7be988b1897`, 4607 entries, no `.env`/`.git` names.
+
+### Verification (source only)
+
+`-B -m unittest tests.test_local_reviewer tests.test_local_reviewer_identity tests.test_local_reviewer_providers` under the private Python 3.12 runtime: 160 tests, 0 failures. No provider call, no installation read or write, no ledger access.
+
+### Not yet true
+
+CI and merge of this change; the supported `update --candidate-state accepted-main --factory` promotion on a stopped, drained site; the explicit post-update probe; the $50 ledger read-back; restoring the owner's pre-retry checkpoint `20261008T181451Z-41111d20`; starting the site; and the re-run of the owner's retry (reader changed) with the source-version bump and the structural cleanup metrics recorded.
