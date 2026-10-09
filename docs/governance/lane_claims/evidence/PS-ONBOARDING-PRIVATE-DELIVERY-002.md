@@ -470,3 +470,15 @@ The three local reviewer suites under the private runtime: 160 tests, 0 failures
 ### Not yet true
 
 CI and merge; the supported accepted-main update with the proofs and the $50 read-back; the writer's and the reviewer's live-model smokes on fictional data; restoring `20261008T181451Z-41111d20`; the owner's single clean retry.
+
+## Claude custody: reviewed private factory interface for the accepted fix-round-5b source
+
+The same scripted recipe, generated from the round-5 interface, for the accepted fix-round-5b source (independent PASS at `01d5b2394c6f261ed7e74627ef99f59757218cd3`; accepted as main `2589713a15dcc513e17b495f611837e3c1a4d4d6` through PR 1323, build 4402).
+
+- New interface `X:/PeerSlate/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002/round5b/PRIVATE_ROUND5B_FACTORY.json`, sha256 `5382a0665868e530d9dd76b3f7f4d0a25f5b77837bca2a009fb42c86f554fcf6`. Only the candidate sha, condition text, timestamp, the 3 pinned file hashes below and the qualification entry change.
+- The 3 changed pins (exactly the pinned files `git diff 53837248 2589713a` changes): `services/resume_intake_runtime.py`, `services/resume_intake_service.py`, `tests/test_resume_onboarding_conversation.py`.
+- `tools/local_reviewer/providers.py`: the new interface hash joins the allowed set, and `PRIVATE_ROUND5B_ONBOARDING_QUALIFICATION` (chained on round 5) carries reviewed source `01d5b239…`, accepted source `2589713a…` and the sha256 `7f7a2999ed951e2b4154fded1b070795975ea3fe5a720dc2ae0eb260369b20c3` of the merged receipt file. `tests/test_local_reviewer_providers.py`: the new pair joins the integrity test.
+- App archive (not in this diff): `X:/PeerSlate/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002/round5b/accepted-source-2589713a.zip`, sha256 `76ac216a606b9a3aa6337aa656a10d6cc828a469c72e759b574d26ab168ff8e4`.
+- The branch was first brought to main `2589713a` by the journaled `reconcile-main` (result `bb322f3f73ecf892dd5bc51a58e09ade1f3b7ae4`).
+- Verification (source only): the three local reviewer suites under the private runtime, 160 OK; the interface's qualification equals the constant and `onboarding_qualification` and `bound_factory(..., for_promotion=True)` accept it.
+- Not yet true: CI and merge; the accepted-main update with proofs and the $50 read-back; the writer's re-run of the round-5 live smoke and the reviewer's smoke; restoring `20261008T181451Z-41111d20`; the owner's single clean retry.
