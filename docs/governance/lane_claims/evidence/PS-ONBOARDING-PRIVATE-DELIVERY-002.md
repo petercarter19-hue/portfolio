@@ -450,3 +450,23 @@ CI and merge of this change; the supported `update --candidate-state accepted-ma
 Onboarding round 5 (PR 1319, reviewed at `3c5874fcfd3632f288de4a3905519de95903cc01`) makes `organize_resume` ask once more, under its own request id, when an answer names no candidate at all. `ProviderCompositionTests.test_private_upload_persists_originals_and_never_logs_document_text` uploads a fictional document through a fake transport whose answer names no candidate, and asserted exactly one provider call, so PR 1319's build 4390 failed on it (2 != 1; the only failure of 7,750). The assertion now accepts one call (current main) or two (the round-5 source), with the reason beside it; every other assertion of the test is unchanged. The round-5 install binding tightens it to exactly two.
 
 Verification: the three local reviewer suites under the private runtime, 160 OK on this branch (main `9e53daed` after the journaled reconcile `bc970c88`); the same test module against the round-5 source, 82 OK.
+
+## Claude custody: reviewed private factory interface for the accepted fix-round-5 source
+
+The same scripted recipe as round 4 (`X:/PeerSlate/Claude/tools/make_round_factory.py`), for the accepted fix-round-5 source (independent PASS at `3c5874fcfd3632f288de4a3905519de95903cc01`; accepted as main `53837248a295f8352410832da0e755ec6d211e1f` through PR 1319, build 4394 after the test bridge PR 1320).
+
+### What this binds
+
+- New interface `X:/PeerSlate/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002/round5/PRIVATE_ROUND5_FACTORY.json`, sha256 `b3259725dd57d1f90e3403a5ec6b43f2f7970746b04e2cf7d5d6b8978b4314a7`, generated from the round-4 interface. Only the candidate sha, condition text, timestamp, the 7 pinned file hashes below and the qualification entry change; every contract is byte-for-byte the round-4 interface's.
+- The 7 changed pins (exactly the pinned files `git diff 51f5033b 53837248` changes; the rest are other packages' files and records): `scripts/run_mvp1_acceptance_browser_tests.py`, `services/my_data_extraction_adapter.py`, `services/resume_intake_service.py`, `static/js/resume-intake.js`, `tests/test_resume_intake_browser.py`, `tests/test_resume_onboarding_conversation.py`, `tests/test_resume_onboarding_coverage.py`.
+- `tools/local_reviewer/providers.py`: the new interface hash joins the allowed set, and `PRIVATE_ROUND5_ONBOARDING_QUALIFICATION` (chained on round 4) carries reviewed source `3c5874fc…`, accepted source `53837248…` and the sha256 `f7ac44365564b14c8c96457375ee22729fb9c8c8380c138b7b6e2d0393af10bd` of the merged receipt file. `tests/test_local_reviewer_providers.py`: the new pair joins the integrity test, and the private upload test now expects exactly two provider calls (the round-5 re-ask; tightened from the bridge's one-or-two).
+- App archive (not in this diff): `X:/PeerSlate/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002/round5/accepted-source-53837248.zip`, sha256 `441dfcb3269fd366401f72edb328ed94fe3cf1f49941cd8bba22848011636c07`, 4616 entries, no `.env`/`.git` names.
+- The branch was first brought to main `53837248` by the journaled `reconcile-main` (result `1ecbaedb759643a2a6a8ca5cc06ee41c2cc4436d`).
+
+### Verification (source only)
+
+The three local reviewer suites under the private runtime: 160 tests, 0 failures. The interface's qualification equals `PRIVATE_ROUND5_ONBOARDING_QUALIFICATION`, `onboarding_qualification` accepts it, and `bound_factory(..., for_promotion=True)` accepts its bytes. No provider call, installation write or ledger access.
+
+### Not yet true
+
+CI and merge; the supported accepted-main update with the proofs and the $50 read-back; the writer's and the reviewer's live-model smokes on fictional data; restoring `20261008T181451Z-41111d20`; the owner's single clean retry.

@@ -140,7 +140,8 @@ class PrivateFactoryIntegrityTests(unittest.TestCase):
                 ("PRIVATE_TESTER_ROUND_DELIVERY_FACTORY_SHA256", "PRIVATE_TESTER_ROUND_ONBOARDING_QUALIFICATION"),
                 ("PRIVATE_ROUND2_DELIVERY_FACTORY_SHA256", "PRIVATE_ROUND2_ONBOARDING_QUALIFICATION"),
                 ("PRIVATE_ROUND3_DELIVERY_FACTORY_SHA256", "PRIVATE_ROUND3_ONBOARDING_QUALIFICATION"),
-                ("PRIVATE_ROUND4_DELIVERY_FACTORY_SHA256", "PRIVATE_ROUND4_ONBOARDING_QUALIFICATION")):
+                ("PRIVATE_ROUND4_DELIVERY_FACTORY_SHA256", "PRIVATE_ROUND4_ONBOARDING_QUALIFICATION"),
+                ("PRIVATE_ROUND5_DELIVERY_FACTORY_SHA256", "PRIVATE_ROUND5_ONBOARDING_QUALIFICATION")):
             with self.subTest(factory=factory_name):
                 successor_source = ("synthetic independently reviewed source " + factory_name).encode("utf-8")
                 (self.source / "service.py").write_bytes(successor_source)
@@ -505,9 +506,9 @@ class ProviderCompositionTests(unittest.TestCase):
                 "declared_content_type": "text/plain", "filename": "fictional-resume.txt"}]}),
                 "file:d1": (io.BytesIO(document), "fictional-resume.txt", "text/plain")})
         self.assertEqual(response.status_code, 200, response.get_data(as_text=True))
-        # One dispatch, plus one re-ask only when the answer names no candidate (onboarding round 5's organize_resume).
-        # This fake transport's answer names none: the round-5 source asks twice, earlier sources once.
-        self.assertIn(len(self.transport.calls), {1, 2})
+        # One dispatch, plus one re-ask because this fake transport's answer names no candidate (organize_resume asks
+        # once more when an answer names none; its own request id keys the budget reservation, not the wire request).
+        self.assertEqual(len(self.transport.calls), 2)
         self.assertEqual(len(self.fixture.intake.original_files.list(self.identity.owner)), 1)
         persisted = self.state.capture()
         self.state.restore(initial)
