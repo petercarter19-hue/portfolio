@@ -21,7 +21,9 @@
     "services/operational_telemetry.py",
     "tests/test_operational_telemetry.py",
     "app.py",
-    "requirements.txt"
+    "requirements.txt",
+    "azure-pipelines.yml",
+    "pipelines/azure-startup-qualification.yml"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-AZURE-OPERATIONS-RELIABILITY-001.md"
