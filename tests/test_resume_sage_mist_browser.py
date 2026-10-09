@@ -124,6 +124,93 @@ class SageMistBrowserTests(unittest.TestCase):
                 self.assertGreater(self.page.locator('[data-ask-pete-source]').count(), 0)
                 self.page.unroute('**/api/chat')
 
+    # A short desktop rail must show the latest answer, not just a composer.
+    # Settled means the transcript has reached its compact size and two more
+    # frames have rendered, so a late re-alignment cannot slip past the check.
+    SHORT_RAIL_SETTLED = """() => {
+        const c=document.querySelector('[data-ask-pete-companion]'), s=c.querySelector('.ask-pete-evidence-companion__scroll');
+        return document.querySelector('[data-sage-mist]').dataset.sageTight==='true' && c.dataset.sagePlacement==='rail'
+            && c.dataset.askPetePhase==='answered' && s.clientHeight<260;
+    }"""
+    SHORT_RAIL_READABLE = """() => {
+        const c=document.querySelector('[data-ask-pete-companion]'), s=c.querySelector('.ask-pete-evidence-companion__scroll');
+        const h=c.querySelector('.sage-ai-turn:last-child .ask-pete-evidence-answer__heading');
+        const p=c.querySelector('.sage-ai-turn:last-child .ask-pete-evidence-answer__summary');
+        const sr=s.getBoundingClientRect(), hr=h.getBoundingClientRect(), pr=p.getBoundingClientRect();
+        const input=c.querySelector('[data-ask-pete-input]'), ir=input.getBoundingClientRect();
+        return {transcript:s.clientHeight, headingInside:hr.top>=sr.top-1 && hr.bottom<=sr.bottom+1,
+            summaryVisible:Math.min(pr.bottom,sr.bottom)-Math.max(pr.top,sr.top),
+            inputVisible:ir.top>=0 && ir.bottom<=innerHeight, draftClipped:input.scrollHeight>input.clientHeight+1};
+    }"""
+
+    def settle_short_rail(self):
+        self.page.wait_for_function(self.SHORT_RAIL_SETTLED)
+        self.page.evaluate("() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
+
+    def assert_short_rail_readable(self):
+        result = self.page.evaluate(self.SHORT_RAIL_READABLE)
+        self.assertGreaterEqual(result['transcript'], 100, result)
+        self.assertTrue(result['headingInside'], result)
+        self.assertGreaterEqual(result['summaryVisible'], 40, result)  # At least two lines of the answer itself.
+        self.assertTrue(result['inputVisible'], result)
+        self.assertFalse(result['draftClipped'], result)
+
+    def test_short_rail_keeps_current_answer_readable_after_resize(self):
+        self.open()
+        self.respond()
+        self.page.locator('[data-ask-pete-input]').fill('Unsaved follow-up draft')
+        self.away(1440)
+        for width in (1024, 1280):
+            with self.subTest(width=width):
+                self.page.set_viewport_size({'width': width, 'height': 500})
+                self.settle_short_rail()
+                self.assert_short_rail_readable()
+                self.assert_geometry()
+                self.assertEqual(self.page.locator('[data-ask-pete-input]').input_value(), 'Unsaved follow-up draft')
+                status = self.page.locator('[data-ask-pete-status]')
+                self.assertIn('Answer ready', status.text_content())
+                self.assertEqual(status.get_attribute('aria-live'), 'polite')
+                self.assertEqual(self.page.locator('[data-ask-pete-input]').get_attribute('aria-describedby'), 'ask-pete-evidence-help')
+        self.page.set_viewport_size({'width': 1440, 'height': 900})
+        self.page.wait_for_function("document.querySelector('[data-sage-mist]').dataset.sageTight === 'false'")
+        self.assert_geometry()
+        self.assertTrue(self.page.locator('#ask-pete-evidence-help').is_visible())
+        self.assertEqual(self.page.locator('[data-ask-pete-input]').input_value(), 'Unsaved follow-up draft')
+
+    def test_short_rail_opened_directly_shows_answer_asked_there(self):
+        self.open(1024, 500)
+        self.away(1024)
+        self.respond()
+        self.settle_short_rail()
+        self.assert_short_rail_readable()
+        self.assert_geometry()
+
+    def test_short_rail_respects_reader_viewing_earlier_messages(self):
+        self.open()
+        self.page.route('**/api/chat', lambda route: route.fulfill(status=200, json=answer_fixture()))
+        for count, question in enumerate(('First question', 'Second question'), start=1):
+            self.page.locator('[data-ask-pete-input]').fill(question)
+            self.page.locator('[data-ask-pete-form] [data-ask-pete-submit]').click()
+            self.page.wait_for_function(f"document.querySelectorAll('.sage-ai-turn').length === {count}")
+        self.away(1440)
+        # The reader scrolls the transcript themselves to keep reading the first answer.
+        first_turn = self.page.locator('.sage-ai-turn').first
+        first_turn.locator('.ask-pete-evidence-answer__summary').hover()  # Waits for the relocated rail to be stable.
+        scroll = "document.querySelector('[data-ask-pete-companion] .ask-pete-evidence-companion__scroll')"
+        before = self.page.evaluate(f"{scroll}.scrollTop")
+        self.page.mouse.wheel(0, 120)  # Returns before the browser scrolls; wait for the wheel itself.
+        self.page.wait_for_function(f"{scroll}.scrollTop > {before} + 1")
+        self.page.set_viewport_size({'width': 1024, 'height': 500})
+        self.settle_short_rail()
+        visible = self.page.evaluate("""() => {
+            const s=document.querySelector('[data-ask-pete-companion] .ask-pete-evidence-companion__scroll').getBoundingClientRect();
+            const [first, latest]=[...document.querySelectorAll('.sage-ai-turn')].map(t=>t.getBoundingClientRect());
+            return {first: Math.min(first.bottom,s.bottom)-Math.max(first.top,s.top), latestTop: latest.top-s.top};
+        }""")
+        self.assertGreater(visible['first'], 40, visible)  # Still reading the first answer...
+        self.assertGreater(visible['latestTop'], 40, visible)  # ...not pulled to the latest one.
+        self.page.unroute('**/api/chat')
+
     def test_draft_transcript_focus_and_historical_sources_survive_relocation(self):
         self.open()
         seen = []

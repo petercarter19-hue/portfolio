@@ -278,6 +278,17 @@ body:has([data-sage-mist]) .site-sky { display: none; }
 #living-resume-page[data-sage-mist][data-sage-tight="true"] .sage-rail-ai-mount .ask-pete-evidence-companion__scroll { padding: 8px 12px; gap: 8px; }
 #living-resume-page[data-sage-mist][data-sage-tight="true"] .sage-rail-ai-mount .ask-pete-evidence-companion__starter { padding: 6px 8px; min-height: 32px; }
 #living-resume-page[data-sage-mist][data-sage-tight="true"] .sage-rail-ai-mount .ask-pete-evidence-companion__promise { display: none; }
+/* Short desktop window, settled answer: the transcript keeps the room. The
+   status and the source note stay in the accessibility tree (live region and
+   the input's description); only their repeated visual lines are dropped. */
+#living-resume-page[data-sage-mist][data-sage-tight="true"] .sage-rail-ai-mount [data-ask-pete-phase="answered"] :is(.ask-pete-evidence-companion__status, #ask-pete-evidence-help) {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+#living-resume-page[data-sage-mist][data-sage-tight="true"] .sage-rail-ai-mount [data-ask-pete-phase="answered"] .ask-pete-evidence-composer { padding-top: 6px; }
+#living-resume-page[data-sage-mist][data-sage-tight="true"] .sage-rail-ai-mount [data-ask-pete-phase="answered"] .ask-pete-evidence-composer textarea { height: 50px; min-height: 50px; padding-block: 5px; }
+#living-resume-page[data-sage-mist][data-sage-tight="true"] .sage-rail-ai-mount [data-ask-pete-phase="answered"] .ask-pete-evidence-composer button[type="submit"] { min-height: 44px; }
+#living-resume-page[data-sage-mist][data-sage-tight="true"] .sage-rail-ai-mount [data-ask-pete-phase="answered"] .ask-pete-evidence-companion__dock { padding-block: 6px 4px; }
 #living-resume-page[data-sage-mist] :focus-visible { outline: 2px solid #a8690a; outline-offset: 3px; }
 #living-resume-page[data-sage-mist] [hidden] { display: none !important; }
 @media (max-width: 1050px) {

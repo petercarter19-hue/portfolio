@@ -111,7 +111,7 @@ exact-SHA delta review and current-target CI before merge.
   "schema_version": 1,
   "package": "PS-RESUME-SAGE-MIST-001",
   "plan_sha": "806ba94328c859e8e34c9a65cd0d914dd11ac93c",
-  "candidate_sha": "4c65fc7ad32583ade256ff98b07868fad179610f",
+  "candidate_sha": "559d91f1629cb71e48b9bc538369eef7e8203487",
   "baseline": [
     {
       "command": "test-runtime/python -B -m unittest tests.test_resume2 tests.test_member_overview_public_integration tests.test_member_overview_renderer tests.test_member_overview_accessibility tests.ask_pete.test_resume_evidence_companion tests.ask_pete_direct.test_companion_answer_order (test-only key, Flask 3.1.3, Werkzeug 3.1.9)",
@@ -151,55 +151,55 @@ exact-SHA delta review and current-target CI before merge.
       "criterion_id": "approved_composition",
       "result": "pass",
       "kind": "browser",
-      "candidate_sha": "4c65fc7ad32583ade256ff98b07868fad179610f",
-      "source_ref": "X:\\PeerSlate\\evidence\\PS-RESUME-SAGE-MIST-001\\preview-final-independent-review.json",
-      "observed": "Exact R12 composition retained with 1240px maximum, 240px rail, white background, sage/ivory/gold, entered employer case, compact contact and six navigation targets; final contrast changes preserve sizes. Final candidate runtime bytes match the prior accepted visual candidate; all 155 focused tests and independent preview delta pass.",
+      "candidate_sha": "559d91f1629cb71e48b9bc538369eef7e8203487",
+      "source_ref": "X:\\PeerSlate\\Claude\\reviews\\2026-10-08_sage-mist-compact-review.md",
+      "observed": "The approved Sage Mist composition is unchanged outside the short-window rail: the independent reviewer compared screenshots and found the 1440x900 answered rail and the 390x844 phone sheet pixel-identical to the base. The only visible changes are inside the compact rail at 1024x500 and 1280x500 (answer heading and text in view, source-note line hidden visually, two-line input).",
       "provenance": {
-        "observer_ref": "session:01a0fea6-6252-7f92-9ce8-c14882af5a3a",
-        "captured_at": "2026-10-07T16:01:31Z",
-        "source_ref": "X:\\PeerSlate\\evidence\\PS-RESUME-SAGE-MIST-001\\preview-final-independent-review.json"
+        "observer_ref": "agent:claude/2026-10-07/allowance-reviewer",
+        "captured_at": "2026-10-08T22:15:06Z",
+        "source_ref": "X:\\PeerSlate\\Claude\\reviews\\2026-10-08_sage-mist-compact-review.md"
       }
     },
     {
       "criterion_id": "connected_ai",
       "result": "pass",
       "kind": "automated",
-      "candidate_sha": "4c65fc7ad32583ade256ff98b07868fad179610f",
-      "source_ref": "X:\\PeerSlate\\evidence\\PS-RESUME-SAGE-MIST-001\\preview-corrected-tests.log",
-      "observed": "One companion preserves page-memory replies and edited drafts across center/rail/mobile relocation. Independently grounded followups, historical source buttons, busy/cancel and insufficient/unavailable recovery pass; backend adapter blocked in test harness. Final candidate runtime bytes match the prior accepted visual candidate; all 155 focused tests and independent preview delta pass."
+      "candidate_sha": "559d91f1629cb71e48b9bc538369eef7e8203487",
+      "source_ref": "X:\\PeerSlate\\evidence\\PS-RESUME-SAGE-MIST-001\\claude-compact-correction-2026-10-08\\comparison-summary.json",
+      "observed": "One companion keeps its history, unsent draft, focus and sources across rail, sheet and resize. All 9 Sage Mist browser tests pass normally and in 12 of 12 runs under 4x parallel load on the merged tree, including relocation/draft/historical-source, cancellation/recovery and the three new short-rail tests (resize route, opened directly short, reader viewing earlier messages). The new tests fail on the shipped code, and the reader test fails with the reader guard removed. Browser requests use controlled responses with the provider boundary blocked."
     },
     {
       "criterion_id": "responsive_accessibility",
       "result": "pass",
       "kind": "browser",
-      "candidate_sha": "4c65fc7ad32583ade256ff98b07868fad179610f",
-      "source_ref": "X:\\PeerSlate\\evidence\\PS-RESUME-SAGE-MIST-001\\preview-final-independent-review.json",
-      "observed": "Actual Chrome checks cover 320-2560px, short desktop heights and 200-percent effective reflow, no unintended overflow, visible composer, keyboard/native disclosures and reduced motion. Final delta verifies AA contrast ratios 4.530, 6.081 and 5.817. Final candidate runtime bytes match the prior accepted visual candidate; all 155 focused tests and independent preview delta pass.",
+      "candidate_sha": "559d91f1629cb71e48b9bc538369eef7e8203487",
+      "source_ref": "X:\\PeerSlate\\evidence\\PS-RESUME-SAGE-MIST-001\\claude-compact-correction-2026-10-08\\screenshots\\1-1024x500-after-resize.png",
+      "observed": "At 1024x500 and 1280x500 after relocation to the rail and a resize with an unsent draft, the transcript grows from 22px to 130px and from 55px to 148px (measured against the shipped code), with the latest answer heading and its first lines visible beside the full draft; at 1440x900 and in the 390x844 sheet the layout is unchanged. The status line keeps aria-live=polite and the input keeps aria-describedby for the visually hidden source note; the independent reviewer verified that keyboard focus is never scrolled away by the re-alignment after any user input, with no loop. No physical-device or screen-reader run is claimed.",
       "provenance": {
-        "observer_ref": "session:01a0fea6-6252-7f92-9ce8-c14882af5a3a",
-        "captured_at": "2026-10-07T16:01:31Z",
-        "source_ref": "X:\\PeerSlate\\evidence\\PS-RESUME-SAGE-MIST-001\\preview-final-independent-review.json"
+        "observer_ref": "agent:claude/2026-10-08/sage-mist-compact",
+        "captured_at": "2026-10-08T16:17:31Z",
+        "source_ref": "X:\\PeerSlate\\evidence\\PS-RESUME-SAGE-MIST-001\\claude-compact-correction-2026-10-08\\screenshots\\1-1024x500-after-resize.png"
       }
     },
     {
       "criterion_id": "adaptive_content",
       "result": "pass",
       "kind": "automated",
-      "candidate_sha": "4c65fc7ad32583ade256ff98b07868fad179610f",
-      "source_ref": "X:\\PeerSlate\\evidence\\PS-RESUME-SAGE-MIST-001\\preview-corrected-tests.log",
-      "observed": "Production-rendered missing photos/story/credential groups release space; long intro and optional public phone wrap. Four display impacts preserve canonical five; actual skill counts 1/15/16/17 balance without filler. Final candidate runtime bytes match the prior accepted visual candidate; all 155 focused tests and independent preview delta pass."
+      "candidate_sha": "559d91f1629cb71e48b9bc538369eef7e8203487",
+      "source_ref": "X:\\PeerSlate\\evidence\\PS-RESUME-SAGE-MIST-001\\claude-compact-correction-2026-10-08\\full-discover-on-559d91f1.log",
+      "observed": "Optional photos, story and credential groups still release their space and skill counts 1/15/16/17 still balance without filler: test_optional_groups_long_copy_and_balanced_skill_counts passes in the 9/9 browser suite and the 149 focused non-browser tests pass. This correction changes no content, template or balancing code, only the compact-rail AI layout."
     },
     {
       "criterion_id": "source_contracts",
       "result": "pass",
       "kind": "manual",
-      "candidate_sha": "4c65fc7ad32583ade256ff98b07868fad179610f",
-      "source_ref": "X:\\PeerSlate\\evidence\\PS-RESUME-SAGE-MIST-001\\preview-final-independent-review.json",
-      "observed": "Independent exact-SHA review PASS; existing overview, source locator, consent, fallback and career constellation regressions remain green. No provider, backend, identity, schema, flags or private-publication changes; no automatic contact sends. Final candidate runtime bytes match the prior accepted visual candidate; all 155 focused tests and independent preview delta pass.",
+      "candidate_sha": "559d91f1629cb71e48b9bc538369eef7e8203487",
+      "source_ref": "X:\\PeerSlate\\Claude\\reviews\\2026-10-08_sage-mist-compact-review.md",
+      "observed": "Independent exact-SHA review PASS with no findings. The change is three files within the claim (rail stylesheet, companion script, browser test); no backend, provider, identity, schema, flag, private-publication or content change and no sample data. In the full repository run 47 tests do not pass; every one also fails on untouched main da2e34fd except one slow worktree-lifecycle test that was not compared on base. Onboarding intake changes on main stay dormant while the intake flags are unset.",
       "provenance": {
-        "observer_ref": "session:01a0fea6-6252-7f92-9ce8-c14882af5a3a",
-        "captured_at": "2026-10-07T16:01:31Z",
-        "source_ref": "X:\\PeerSlate\\evidence\\PS-RESUME-SAGE-MIST-001\\preview-final-independent-review.json"
+        "observer_ref": "agent:claude/2026-10-07/allowance-reviewer",
+        "captured_at": "2026-10-08T22:15:06Z",
+        "source_ref": "X:\\PeerSlate\\Claude\\reviews\\2026-10-08_sage-mist-compact-review.md"
       }
     }
   ]
@@ -226,3 +226,19 @@ All 155 focused tests pass, including seven Chrome interaction/contrast checks.
 Runtime files match the previously accepted visual candidate exactly.
 Current-target product CI, merge, manual production deploy and live proof remain
 pending. This post-review tail changes only fixed acceptance evidence and receipt.
+
+## Compact-window correction round (2026-10-08)
+
+Writer `agent:claude/2026-10-08/sage-mist-compact` (Claude Code; Opus 5.5 for diagnosis, Sonnet 5.5 for implementation and merge steps; effective effort is not inspectable from inside the session and is reported unverified). Custody arrived by the voluntary delivery-transfer from `session:01a0fea6-6252-7f92-9ce8-c14882af5a3a` (Azure PR 1300, main da2e34fd), on Codex's pushed WIP checkpoint b0fba01c, whose three files matched the handoff snapshot hashes. Main da2e34fd was merged into the branch as 7898d91c; it touched no claimed surface. Write preflight passed with this writer's own reference and registered caller context. Owner decision reference: `agent:claude/2026-10-07/peerslate-manager/owner-decision/2026-10-08-sage-mist-compact-to-claude`. Package scope is unchanged; this is a bounded usability correction, not a new visual direction.
+
+Defect: with the AI relocated to the right rail in a short desktop window (1024x500, 1280x500) the transcript had 22px and 55px, and the latest answer stayed scrolled out of view. Per-frame recording showed the one-time reveal ran before the rail finished settling, and the unfinished local test waited on a selector (`data-ask-pete-caption`) that does not exist.
+
+Correction (candidate 559d91f1629cb71e48b9bc538369eef7e8203487): in the compact rail only, the latest answer is re-aligned whenever the transcript or answer changes size, until the reader scrolls, clicks or tabs into the transcript. The compact answered dock hides the repeated status and source-note lines visually (both stay in the accessibility tree) and sizes the input for two lines. Result: the transcript is 130px at 1024x500 and 148px at 1280x500, with the heading and first answer lines visible beside the full draft. The unfinished test was replaced by three tests that wait on real layout conditions; two load-timing races in the new reader test were fixed in the test (the wheel scroll had not yet been applied), not by loosening it.
+
+Verification: 9/9 Sage Mist browser tests pass normally and in 12 of 12 runs under 4x parallel load; the reader test passed 20 of 20 under 5x load; 149 focused non-browser tests pass. The full `unittest discover` ran 7496 tests with 47 not passing (11 failures, 36 errors, 13 skipped). A rerun of the failing files on untouched main da2e34fd (13 files, 386 tests, 49 not passing) reproduces every one of them. The causes are this machine's missing azure.storage, packaging, PDF parser and Unix-only resource module, Windows file permissions, Mac-only sealed-browser tests, and the three dark-theme browser tests on /petec/resume that expect the pre-Sage-Mist navy ink. One test, `test_worktree_lifecycle.WorktreeLifecycleTests.test_ephemeral_invocation_lease_blocks_concurrent_retirement`, was among the 47 but is **not compared on base** (the file takes too long to rerun); it concerns worktree lease handling and no file in this change. The machine-readable summary and logs are in the external evidence folder named in the checks.
+
+Independent review: `agent:claude/2026-10-07/allowance-reviewer` returned PASS on exactly 559d91f1 with no findings (report X:\PeerSlate\Claude\reviews\2026-10-08_sage-mist-compact-review.md): the reader guard has no loop and never fights user input; the visually hidden text keeps aria-live and aria-describedby; 1440x900 and 390x844 are pixel-identical to the base; tests use real waits. Non-blocking follow-up: after a resize a keyboard-focused control can sit below the shrunken visible area; consider keeping a focused element in view on resize. Release note: `static/js/resume-editor.js` from onboarding round 3 is not intake-gated, so readable card dates ride along wherever the editor is enabled; cosmetic.
+
+Release scope (read-only check against main, 2026-10-08): the résumé-intake and onboarding code on main stays dormant in production while `PEERSLATE_RESUME_INTAKE_ENABLED` and the editor flag are unset; the production app settings were observed read-only with both unset. No public résumé, Ask Pete, authentication or schema code outside this package changes. Re-check what ships immediately before any production run, because main will carry later onboarding rounds.
+
+Limits: all browser proof uses controlled public-answer fixtures and installed Chrome with the provider boundary blocked; no live provider, physical device or screen-reader run is claimed. Merge, deployment and live verification are separate states and are still pending; nothing is deployed by this evidence.

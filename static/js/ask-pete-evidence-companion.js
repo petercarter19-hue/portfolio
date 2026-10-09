@@ -217,6 +217,7 @@
         const sageMist = page.hasAttribute('data-sage-mist');
         const turnPayloads = new WeakMap();
         let latestTurn = null;
+        let readerMovedTranscript = false;
 
         const state = {
             layout: 'wide_rail', open: false, phase: 'idle', draft: '',
@@ -889,9 +890,12 @@
            résumé behind the rail as a side effect. */
         function revealAnswerTop() {
             if (!scroller || elements.answer.hidden) return;
-            const revealTarget = sageMist && latestTurn ? latestTurn : elements.answer;
+            const compactRail = sageMist && companion.dataset.sagePlacement === 'rail' && page.dataset.sageTight === 'true';
+            const revealTarget = compactRail && latestTurn
+                ? latestTurn.querySelector('.ask-pete-evidence-answer__heading') || latestTurn
+                : sageMist && latestTurn ? latestTurn : elements.answer;
             const offset = revealTarget.getBoundingClientRect().top
-                - scroller.getBoundingClientRect().top;
+                - scroller.getBoundingClientRect().top - (compactRail ? 8 : 0);
             if (Math.abs(offset) < 2) return;
             const top = Math.max(0, scroller.scrollTop + offset);
             /* Proven live 2026-08-09: browsers suppress smooth scrolling in a
@@ -966,6 +970,7 @@
                 elements.answer.replaceChildren(fragment);
             }
             elements.answer.hidden = false;
+            readerMovedTranscript = false;
             revealAnswerTop();
         }
 
@@ -1285,10 +1290,32 @@
                 closeCompanion();
             }
         });
+        /* Short desktop windows (2026-10-08): the compact rail can shrink the
+           transcript after an answer has already been aligned - the rail
+           height, tight styles and text wrapping settle over several frames
+           after a resize or relocation. Re-align the latest answer whenever
+           the transcript or its content changes size, until the reader takes
+           over the transcript themselves; their position then wins. */
+        function keepCompactAnswerInView() {
+            if (readerMovedTranscript || state.phase !== 'answered') return;
+            if (companion.dataset.sagePlacement !== 'rail' || page.dataset.sageTight !== 'true') return;
+            revealAnswerTop();
+        }
+        if (sageMist && scroller) {
+            ['wheel', 'touchstart', 'pointerdown', 'keydown', 'focusin'].forEach((type) => {
+                scroller.addEventListener(type, () => { readerMovedTranscript = true; }, { passive: true });
+            });
+            if (typeof ResizeObserver === 'function') {
+                const transcriptObserver = new ResizeObserver(keepCompactAnswerInView);
+                transcriptObserver.observe(scroller);
+                transcriptObserver.observe(elements.answer);
+            }
+        }
         window.addEventListener('resize', () => syncLayout());
         page.addEventListener('resume:sage-placement', (event) => {
             if (event.detail && event.detail.placement === 'sheet' && event.detail.focused) state.open = true;
             syncLayout();
+            if (sageMist) keepCompactAnswerInView();
         });
 
         syncLayout();

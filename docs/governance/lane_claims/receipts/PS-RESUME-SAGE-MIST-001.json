@@ -1,20 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-RESUME-SAGE-MIST-001",
-  "candidate_sha": "4c65fc7ad32583ade256ff98b07868fad179610f",
+  "candidate_sha": "559d91f1629cb71e48b9bc538369eef7e8203487",
   "review_type": "independent",
-  "reviewer_ref": "agent:sage_mist_final_review",
+  "reviewer_ref": "agent:claude/2026-10-07/allowance-reviewer",
   "result": "pass",
-  "reviewed_at": "2026-10-07T16:01:31Z",
-  "findings": [
-    {
-      "status": "resolved",
-      "description": "Footer direct-child text meets AA against actual sage background."
-    },
-    {
-      "status": "resolved",
-      "description": "Small gold headline and career attribution meet AA against actual ivory backgrounds."
-    }
-  ],
+  "reviewed_at": "2026-10-08T22:15:06Z",
+  "findings": [],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-RESUME-SAGE-MIST-001.md"
 }
