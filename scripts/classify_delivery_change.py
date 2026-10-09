@@ -402,6 +402,66 @@ def _transition(
     raise InvalidChange("illegal or unexplained claim transition")
 
 
+def validate_repair_activation(
+    root: Path, target: str, merge: str,
+    delta: list[tuple[str, str]], claim_changes: list[str],
+) -> None:
+    """Validate structural full-CI routing, never external repair authority.
+
+    Only the immutable target supplies validators and the repair boundary.
+    Owner authorization and hash-bound independent reviews remain separate
+    local admission proofs; candidate code cannot attest to itself here.
+    """
+    if len(claim_changes) != 1:
+        raise InvalidChange("repair activation must add exactly one claim")
+    path = claim_changes[0]
+    with target_validator(root, target) as validator:
+        index_blob = blob(root, target, "docs/governance/CURRENT_LANES.json")
+        if index_blob is None or index_blob[0] != "100644":
+            raise UnknownProvenance("authoritative claim index is missing")
+        index = strict_json(index_blob[1])
+        if index.get("schema_version") != 4 or validator.validate_index(index):
+            raise UnknownProvenance("authoritative claim index schema is unsupported")
+        before_set = claim_set(root, target, validator)
+        after_set = claim_set(root, merge, validator)
+        after = next((claim for claim in after_set.values()
+                      if claim["_relative_path"] == path), None)
+        if (after is None or after["package"].casefold() in before_set
+            or path != validator.claim_relative_path(after["package"])
+            or blob(root, target, path) is not None
+            or ("A", path) not in delta):
+            raise InvalidChange("repair requires a fresh canonical activation claim")
+        if (_transition(target, path, None, after, root, validator) != "activation"
+            or any(field in after for field in OPTIONAL_CLAIM_FIELDS)
+            or after["delivery_path"] != "Protected"
+            or after["review_requirement"] != "independent"
+            or after["repository_authority"] not in {"through_merge", "write_only"}
+            or after["production_authority"] != "withheld"
+            or not validator.REF_RE.fullmatch(after["owner_outcome_ref"])
+            or after["owner_outcome_ref"] == after["writer_ref"]):
+            raise InvalidChange("repair requires an owner-selected Protected independent activation")
+        repair_paths = {changed for _status, changed in delta} - {path}
+        allowed = getattr(validator, "REPAIR_SURFACES", None)
+        if allowed is None:
+            raise UnknownProvenance("target repair boundary is unavailable")
+        if not repair_paths or repair_paths - allowed:
+            raise InvalidChange("repair contains unsupported files or no gate correction")
+        expected_surfaces = repair_paths | set(validator.control_relative_paths(after["package"]))
+        if set(after["surfaces"]) != expected_surfaces:
+            raise InvalidChange("repair must reserve exactly changed files and fixed controls")
+        for status, changed in delta:
+            try:
+                canonical = validator.normalize_path(changed)
+            except ValueError as exc:
+                raise InvalidChange("repair path is not canonical") from exc
+            old, new = blob(root, target, changed), blob(root, merge, changed)
+            if (canonical != changed or status not in {"A", "M"}
+                or new is None or new[0] != "100644"
+                or (status == "A" and old is not None)
+                or (status == "M" and (old is None or old[0] != "100644"))):
+                raise InvalidChange("repair permits only added or modified regular files without mode changes")
+
+
 def classify(
     root: Path, ctx: Context, *, target_tip: Callable[[Context], str] = azure_main_tip,
     branch_tip: Callable[[Context, str], str] = azure_branch_tip,
@@ -451,6 +511,10 @@ def classify(
                 break
         delta = changed_paths(root, target, ctx.merge)
         claim_changes = [path for _status, path in delta if path.startswith(CLAIMS + "/") and path.endswith(".json") and "/" not in path[len(CLAIMS) + 1:]]
+        if claim_changes and len(delta) > 1:
+            validate_repair_activation(root, target, ctx.merge, delta, claim_changes)
+            return Decision("full", "bounded required-check repair activation",
+                            ctx.source, target, ctx.merge, digest)
         if not trusted:
             if claim_changes:
                 raise InvalidChange("claim transition cannot certify altered validation guards")

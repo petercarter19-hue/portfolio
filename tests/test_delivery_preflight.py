@@ -5862,6 +5862,20 @@ class RepairAdmissionTests(unittest.TestCase):
         self.assertEqual([], errors)
         self.assertIn('not verified', facts['server_ci'])
 
+    def test_classifier_repair_files_require_the_same_bound_independent_review(self):
+        for filename in ('scripts/classify_delivery_change.py',
+                         'tests/test_delivery_change_classification.py'):
+            with self.subTest(filename=filename):
+                self.files = {self.claim_path: 'a' * 40, filename: 'b' * 40}
+                self.manifest['authorization']['files'] = dict(self.files)
+                self.facts.branch_paths = tuple(self.files)
+                self.claim['surfaces'] = sorted(set(self.files) |
+                    set(preflight.control_relative_paths(self.package)))
+                self.sign_manifest()
+                self.assertEqual([], self.evaluate()[1])
+                self.manifest['precommit_review']['authorization_sha256'] = '0' * 64
+                self.assertTrue(any('precommit' in error for error in self.evaluate()[1]))
+
     def test_write_only_activation_passes_direct_and_full_admission(self):
         self.claim['repository_authority'] = 'write_only'
         self.assertEqual([], self.evaluate()[1])

@@ -113,6 +113,15 @@ cannot use this path. Ownership collisions still stop it.
    worktree, then continue normal lifecycle operations. This admission grants
    no deployment authority.
 
+The accepted target classifier recognizes this fresh Protected activation only
+within the target validator's `REPAIR_SURFACES`, with exactly the changed files
+and fixed control surfaces reserved. It validates both complete claim sets and
+ordinary file modes, and always routes the repair through **full CI**. Candidate
+validator changes cannot expand that boundary. CI proves structural eligibility
+and check results; it does not authenticate the external owner/reviewer
+references or replace the local manifest, precommit review, exact-commit review,
+or custody checks. The same predicates apply to every supported writer runtime.
+
 Before these mechanisms have reached accepted main, executing an external
 reviewed copy is a one-use bootstrap exception requiring Pete's explicit
 hash-bound approval. The code cannot grant its own acceptance. Keep the

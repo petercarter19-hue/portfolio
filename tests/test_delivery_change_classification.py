@@ -110,6 +110,196 @@ class RepositoryFixture:
         self.temp.cleanup()
 
 
+class RepairChangeClassificationTests(unittest.TestCase):
+    def fixture(self):
+        fixture = RepositoryFixture()
+        self.addCleanup(fixture.cleanup)
+        return fixture
+
+    def repair_claim(self, fixture, paths):
+        claim = fixture.claim()
+        claim["surfaces"] = claim["surfaces"][:3] + list(paths)
+        return claim
+
+    def decision(self, fixture, claim, extras):
+        ctx, _ = fixture.finish([claim], extras)
+        return classify(fixture.root, ctx, target_tip=lambda _: fixture.target)
+
+    def advance_target(self, fixture, files):
+        command(fixture.root, "checkout", "main")
+        for path, body in files.items():
+            fixture.write(path, body)
+        command(fixture.root, "add", "-A")
+        command(fixture.root, "commit", "-m", "accepted target setup")
+        fixture.target = command(fixture.root, "rev-parse", "HEAD")
+        command(fixture.root, "checkout", "work/test-claim")
+        command(fixture.root, "merge", "--ff-only", "main")
+
+    def test_scanner_repair_runs_full_for_each_supported_caller(self):
+        for caller in ("session:00000000-0000-0000-0000-000000000001",
+                       "agent:claude/actual-writer", "agent:other-runtime/writer"):
+            with self.subTest(caller=caller):
+                fixture = self.fixture()
+                extras = {".gitleaks.toml": "# bounded scanner repair\n",
+                          "tests/test_operational_readiness.py": "# scanner regression\n"}
+                claim = self.repair_claim(fixture, extras)
+                claim["writer_ref"] = caller
+                decision = self.decision(fixture, claim, extras)
+                self.assertEqual("full", decision.disposition)
+                self.assertEqual("bounded required-check repair activation", decision.reason)
+                self.assertEqual(fixture.target, decision.target)
+                verify_coherence(decision.record("BuildJob"),
+                                 decision.record("InterviewStudioBrowserCI"), decision)
+
+    def test_classifier_and_test_only_repairs_use_full_not_control_shortcut(self):
+        for paths in (("scripts/classify_delivery_change.py",
+                       "tests/test_delivery_change_classification.py"),
+                      ("tests/test_operational_readiness.py",)):
+            with self.subTest(paths=paths):
+                fixture = self.fixture()
+                extras = {path: "# bounded gate repair\n" for path in paths}
+                self.assertEqual("full", self.decision(
+                    fixture, self.repair_claim(fixture, paths), extras).disposition)
+
+    def test_candidate_validator_cannot_execute_or_expand_target_repair_boundary(self):
+        fixture = self.fixture()
+        marker = fixture.root / "candidate_validator_executed"
+        candidate = ("from pathlib import Path\n"
+                     f"Path({str(marker)!r}).write_text('ran')\n"
+                     "REPAIR_SURFACES = frozenset({'app.py'})\n")
+        extras = {"scripts/delivery_preflight.py": candidate, "app.py": "# product\n"}
+        with self.assertRaises(InvalidChange):
+            self.decision(fixture, self.repair_claim(fixture, extras), extras)
+        self.assertFalse(marker.exists())
+
+    def test_weakened_stale_or_nonfresh_repair_claim_is_rejected(self):
+        cases = (
+            {"delivery_path": "Routine", "review_requirement": "self"},
+            {"repository_authority": "unrestricted"},
+            {"production_authority": "allowed"},
+            {"activated_from_main": "a" * 40},
+            {"state": "paused", "checkpoint_sha": "a" * 40},
+            {"handoff": {"from_ref": "agent:old", "to_ref": "agent:new"}},
+            {"scope_release": None},
+            {"checkpoint_sha": "a" * 40},
+            {"owner_outcome_ref": "session:00000000-0000-0000-0000-000000000001"},
+        )
+        for change in cases:
+            with self.subTest(change=change):
+                fixture = self.fixture()
+                extras = {".gitleaks.toml": "# scanner repair\n"}
+                claim = self.repair_claim(fixture, extras)
+                claim.update(change)
+                with self.assertRaises(InvalidChange):
+                    self.decision(fixture, claim, extras)
+
+    def test_surplus_missing_or_broad_reservation_is_rejected(self):
+        for surfaces in ((".gitleaks.toml", "START_HERE.md"), (), ("scripts",)):
+            with self.subTest(surfaces=surfaces):
+                fixture = self.fixture()
+                with self.assertRaises(InvalidChange):
+                    self.decision(fixture, self.repair_claim(fixture, surfaces),
+                                  {".gitleaks.toml": "# repair\n"})
+
+    def test_product_pipeline_or_evidence_tail_cannot_join_repair(self):
+        for forbidden in ("app.py", "azure-pipelines.yml",
+                          f"{CLAIMS}/receipts/PS-CI-SYNTHETIC-001.json",
+                          f"{CLAIMS}/evidence/PS-CI-SYNTHETIC-001.md"):
+            with self.subTest(forbidden=forbidden):
+                fixture = self.fixture()
+                extras = {".gitleaks.toml": "# repair\n", forbidden: "{}\n"}
+                claim = self.repair_claim(fixture, (".gitleaks.toml",))
+                if forbidden in ("app.py", "azure-pipelines.yml"):
+                    claim["surfaces"].append(forbidden)
+                with self.assertRaises(InvalidChange):
+                    self.decision(fixture, claim, extras)
+
+    def test_existing_claim_modification_cannot_become_repair_activation(self):
+        fixture = self.fixture()
+        claim = self.repair_claim(fixture, (".gitleaks.toml",))
+        self.advance_target(fixture, {f"{CLAIMS}/{claim['package']}.json": json.dumps(claim)})
+        claim.update(activated_from_main=fixture.target, outcome="Changed existing claim.")
+        with self.assertRaises(InvalidChange):
+            self.decision(fixture, claim, {".gitleaks.toml": "# repair\n"})
+
+    def test_full_target_and_candidate_claim_sets_still_reject_collisions(self):
+        for collision in ("path", "domain", "branch", "invalid_target"):
+            with self.subTest(collision=collision):
+                fixture = self.fixture()
+                prior = fixture.claim("PS-EXISTING-001")
+                prior["branch"] = "work/existing"
+                prior["domains"] = ["testing:existing"]
+                prior["surfaces"] = prior["surfaces"][:3] + ["unrelated.py"]
+                if collision == "path":
+                    prior["surfaces"][-1] = ".gitleaks.toml"
+                elif collision == "domain":
+                    prior["domains"] = ["testing:ci"]
+                elif collision == "branch":
+                    prior["branch"] = fixture.claim()["branch"]
+                else:
+                    prior["unknown_field"] = True
+                self.advance_target(fixture, {f"{CLAIMS}/{prior['package']}.json": json.dumps(prior)})
+                with self.assertRaises(InvalidChange):
+                    self.decision(fixture, self.repair_claim(fixture, (".gitleaks.toml",)),
+                                  {".gitleaks.toml": "# repair\n"})
+
+    def test_multiple_or_malformed_or_misnamed_claims_fail_in_mixed_delta(self):
+        for kind in ("multiple", "malformed", "misnamed"):
+            with self.subTest(kind=kind):
+                fixture = self.fixture()
+                claim = self.repair_claim(fixture, (".gitleaks.toml",))
+                extras = {".gitleaks.toml": "# repair\n"}
+                if kind == "multiple":
+                    extras[f"{CLAIMS}/PS-OTHER-001.json"] = json.dumps(fixture.claim("PS-OTHER-001"))
+                elif kind == "malformed":
+                    extras[f"{CLAIMS}/{claim['package']}.json"] = '{"package": "duplicate", "package": "other"}'
+                else:
+                    extras[f"{CLAIMS}/PS-WRONG-NAME-001.json"] = json.dumps(claim)
+                    claim = None
+                ctx, _ = fixture.finish([claim] if claim else [], extras)
+                with self.assertRaises(InvalidChange):
+                    classify(fixture.root, ctx, target_tip=lambda _: fixture.target)
+
+    def test_deleted_renamed_and_changed_file_modes_are_rejected(self):
+        for kind in ("delete", "rename", "executable", "claim_executable", "prior_executable"):
+            with self.subTest(kind=kind):
+                fixture = self.fixture()
+                # These fixtures set tree modes through the index. Do not let
+                # POSIX working-file permissions undo that setup at add -A.
+                command(fixture.root, "config", "core.filemode", "false")
+                if kind == "prior_executable":
+                    command(fixture.root, "checkout", "main")
+                    command(fixture.root, "update-index", "--chmod=+x", ".gitleaks.toml")
+                    command(fixture.root, "commit", "-m", "accepted executable fixture")
+                    fixture.target = command(fixture.root, "rev-parse", "HEAD")
+                    command(fixture.root, "checkout", "work/test-claim")
+                    command(fixture.root, "merge", "--ff-only", "main")
+                claim = self.repair_claim(fixture, (".gitleaks.toml", "START_HERE.md"))
+                extras = {"START_HERE.md": "# gate documentation\n"}
+                if kind == "rename":
+                    command(fixture.root, "mv", ".gitleaks.toml", "START_HERE.md")
+                elif kind == "delete":
+                    command(fixture.root, "rm", ".gitleaks.toml")
+                else:
+                    extras[".gitleaks.toml"] = "# repair\n"
+                if kind in ("executable", "claim_executable", "prior_executable"):
+                    fixture.write(f"{CLAIMS}/{claim['package']}.json", json.dumps(claim))
+                    command(fixture.root, "add", "-A")
+                    mode_path = f"{CLAIMS}/{claim['package']}.json" if kind == "claim_executable" else ".gitleaks.toml"
+                    command(fixture.root, "update-index", "--chmod=-x" if kind == "prior_executable" else "--chmod=+x", mode_path)
+                    command(fixture.root, "commit", "-m", "mode change")
+                ctx, _ = fixture.finish([claim], extras)
+                if kind in ("executable", "claim_executable", "prior_executable"):
+                    expected_mode = "100644" if kind == "prior_executable" else "100755"
+                    self.assertEqual(expected_mode, command(
+                        fixture.root, "ls-tree", ctx.merge, "--", mode_path).split()[0])
+                    if kind == "prior_executable":
+                        self.assertEqual("100755", command(
+                            fixture.root, "ls-tree", fixture.target, "--", mode_path).split()[0])
+                with self.assertRaises(InvalidChange):
+                    classify(fixture.root, ctx, target_tip=lambda _: fixture.target)
+
+
 class DeliveryChangeClassificationTests(unittest.TestCase):
     def setUp(self) -> None:
         self.fixture = RepositoryFixture()

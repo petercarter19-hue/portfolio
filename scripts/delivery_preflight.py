@@ -93,7 +93,8 @@ CONTROL_INTENTS = {
 REPAIR_INTENTS = {"repair-activate", "repair-merge"}
 REPAIR_SURFACES = frozenset({
     ".gitleaks.toml", "scripts/worktree_lifecycle.py",
-    "scripts/delivery_preflight.py", "tests/test_worktree_lifecycle.py",
+    "scripts/delivery_preflight.py", "scripts/classify_delivery_change.py",
+    "tests/test_delivery_change_classification.py", "tests/test_worktree_lifecycle.py",
     "tests/test_delivery_preflight.py", "tests/test_control_custody_recovery.py",
     "tests/test_repair_admission.py", "tests/test_operational_readiness.py",
     "AGENTS.md", "START_HERE.md", "docs/AI_WORKFLOW.md",

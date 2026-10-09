@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-REPAIR-CI-PARITY-001",
+  "candidate_sha": "3e3bfc709d89460361fa52835a3d090df72ce793",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/azure_reliability_review",
+  "result": "pass",
+  "reviewed_at": "2026-10-09T14:53:24Z",
+  "findings": [],
+  "evidence_ref": "X:/PeerSlate/ChatGPT/evidence/Azure-capacity-audit-2026-10-09/INDEPENDENT_REPAIR_PARITY_3e3bfc70.md"
+}
