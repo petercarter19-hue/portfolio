@@ -2241,18 +2241,26 @@ class CorrectionPathTests(unittest.TestCase):
 
     def test_a_change_typed_on_one_card_never_changes_another_entry(self):
         # R4T-2: on Sangamon's card the live model changed Northwind. Nothing is changed there, and the reply says so.
-        harness = self.harness()
-        northwind, sangamon = self.northwind(harness), self.sangamon(harness)
-        self.ask_about_northwind_end(harness, 'record:' + northwind)
-        result = self.say(harness, 'It ended in March 2022.', [lambda ctx: operation(
-            ctx, ref='record:' + northwind, values={'start_date': '2019-03', 'end_date': '2022-03'})],
-            ref='record:' + sangamon, response='March 2019–March 2022, using the start month you supplied earlier.')
-        self.assertEqual(result['proposals'], [])
-        self.assertIn("I didn't change Shift Lead, Northwind Bakery", result['response'])
-        self.assertIn('Quality Engineer, Sangamon Valley Foods', result['response'])
-        self.assertNotIn('March 2019', result['response'])
-        pending = [r for r in harness.intake.repository.load_owner(harness.owner)['proposals'].values() if r['state'] == 'pending']
-        self.assertEqual(pending, [])
+        # The member's own bare words on that card still change Sangamon, the card they were typed on (round 5b).
+        for words, sangamon_changes in (('It ended in March 2022.', True),
+                                        ('It ended in March 2022, when the plant closed.', False)):
+            with self.subTest(words=words):
+                harness = self.harness()
+                northwind, sangamon = self.northwind(harness), self.sangamon(harness)
+                self.ask_about_northwind_end(harness, 'record:' + northwind)
+                result = self.say(harness, words, [lambda ctx: operation(
+                    ctx, ref='record:' + northwind, values={'start_date': '2019-03', 'end_date': '2022-03'})],
+                    ref='record:' + sangamon, response='March 2019–March 2022, using the start month you supplied earlier.')
+                self.assertIn("I didn't change Shift Lead, Northwind Bakery", result['response'])
+                self.assertIn('Quality Engineer, Sangamon Valley Foods', result['response'])
+                self.assertNotIn('March 2019', result['response'])
+                pending = [r for r in harness.intake.repository.load_owner(harness.owner)['proposals'].values()
+                           if r['state'] == 'pending']
+                self.assertEqual([r['target_key'] for r in pending], [sangamon] if sangamon_changes else [])
+                if sangamon_changes:
+                    self.assertEqual(date_stored(self.merged(harness, sangamon, result['proposals'][0])),
+                                     ('2018-08-01', '2022-03-01', 'month'))
+                    self.assertIn('August 2018 – March 2022', result['response'])
 
     def test_the_card_the_change_was_typed_on_is_the_one_changed(self):
         # The same words on Sangamon's card, with the model on the right entry: only Sangamon changes, and the open
@@ -2277,10 +2285,15 @@ class CorrectionPathTests(unittest.TestCase):
         result = self.say(harness, 'Make the title Head Baker and Trainer.', [lambda ctx: operation(
             ctx, ref='record:' + northwind, values={'role_title': 'Head Baker and Trainer'})], ref=card)
         self.assertEqual(len(result['proposals']), 1)
-        result = self.say(harness, 'The end was March 2022.', [lambda ctx: operation(
+        result = self.say(harness, 'The end was March 2022, after the move.', [lambda ctx: operation(
             ctx, ref='record:' + sangamon, values={'end_date': '2022-03'})], ref=card)
         self.assertEqual(result['proposals'], [])
         self.assertIn("I didn't change Quality Engineer, Sangamon Valley Foods", result['response'])
+        # The bare words themselves change the card they were typed on: Northwind's waiting change.
+        result = self.say(harness, 'The end was March 2022.', [lambda ctx: operation(
+            ctx, ref='record:' + sangamon, values={'end_date': '2022-03'})], ref=card)
+        self.assertEqual([p['target_key'] for p in result['proposals']], [northwind])
+        self.assertEqual(result['proposals'][0]['proposed_values']['end_date'], '2022-03-01')
 
     def test_a_new_month_on_a_years_only_entry_asks_for_the_other_month_and_the_answer_completes_both(self):
         # R4T-5: "the start was March 2019" on a year-level entry was "Nothing changed ... less detail".
@@ -2306,6 +2319,96 @@ class CorrectionPathTests(unittest.TestCase):
         values = self.merged(harness, key, result['proposals'][0])
         self.assertEqual((values['start_date'], values['date_precision']), ('2019-03-01', 'month'))
         self.assertIn('March 2019 – Present', result['response'])
+
+    @staticmethod
+    def clarify(ctx):
+        # What the live model did on 2026-10-09: it asked about the month itself and proposed no change.
+        return {'operation': 'clarify', 'target_ref': None, 'record_type': 'role', 'values': [], 'explicit_clears': [],
+                'bullet_edits': [], 'source_refs': [], 'presentation_section': 'Experience'}
+
+    def test_when_the_live_model_asks_itself_the_guides_question_and_answer_still_complete_the_change(self):
+        # Round 5b, live smoke: "change the end date to 2022" got the model's own month question and no change, so no
+        # question was recorded and "March" / "just the years" had nothing to answer.
+        for answer, stored in (('March', ('2019-01-01', '2022-03-01', 'month')),
+                               ('just the years', ('2019-01-01', '2022-01-01', 'year'))):
+            with self.subTest(answer=answer):
+                harness = self.harness()
+                key = self.northwind(harness)
+                self.sangamon(harness)
+                result = self.say(harness, 'At Northwind Bakery, change the end date to 2022.', [self.clarify],
+                                  response='For 2022, which month should I use, or would you prefer years only?')
+                self.assertEqual(result['proposals'], [])
+                self.assertIn('Which month in 2022 did it end?', result['response'])
+                result = self.say(harness, answer, [self.clarify], response='Which month?')
+                values = self.merged(harness, key, result['proposals'][0])
+                self.assertEqual(date_stored(values), stored)
+                self.assertIn(date_shown(values), result['response'])
+
+    def test_a_bare_date_request_is_proposed_only_for_one_certain_entry(self):
+        # Review 5b: the server proposes a date the model did not, only for a bare request on one certain entry.
+        rows = (
+            ('At Northwind Bakery, change the end date to 2022.', None, 'ask'),
+            ('Change the end date to 2022.', 'northwind', 'ask'),
+            ('At Northwind Bakery, change the end date to March 2022.', None, 'January 2019 – March 2022'),
+            ('Should I change the end date to 2022?', 'northwind', None),
+            ("Don't change the end date to 2022.", 'northwind', None),
+            ('At Sangamon Valley Foods, change the end date to 2022.', 'northwind', None),
+            ('Change the end date to 2022.', None, None),
+            ('Change the end date to 2022 and the title to Head Baker.', 'northwind', None),
+            ('At Northwind Bakery, change the end date to 2022 or 2023.', None, None),
+            ('At Northwind Bakery, change the start and end dates to 2022.', None, None),
+            ('At Northwind Bakery, change the end date to 2022, I am not sure.', None, None),
+            # Manager's adversarial rows for 5b.
+            ('At Northwind Bakery and Sangamon Valley Foods, change the end date to 2022.', None, None),
+            ('At Northwind Bakery it started and ended in 2022.', None, None),
+            ('At Northwind Bakery, change the end date to 2019-2022.', None, None),
+            ('At Northwind Bakery, change the end date to 2019 to 2022.', None, None),
+            ('No, change the start date to 2018.', 'northwind', None),
+            ('I moved to Denver in 2022.', None, None),
+            ('At Northwind Bakery, did it end in 2022?', None, None),
+            ('At Northwind Bakery, never change the end date to 2022.', None, None),
+            ('At Northwind Bakery, change the end date to 2022, years only.', None, '2019 – 2022'),
+        )
+        for words, card, outcome in rows:
+            with self.subTest(words=words, card=card):
+                harness = self.harness()
+                keys = {'northwind': self.northwind(harness), 'sangamon': self.sangamon(harness)}
+                result = self.say(harness, words, [self.clarify], ref=('record:' + keys[card]) if card else None,
+                                  response='Which month?')
+                if outcome is None:
+                    self.assertEqual((result['proposals'], result['response']), ([], 'Which month?'))
+                elif outcome == 'ask':
+                    self.assertEqual(result['proposals'], [])
+                    self.assertIn('Which month in 2022 did it end?', result['response'])
+                else:
+                    self.assertEqual([p['target_key'] for p in result['proposals']], [keys['northwind']])
+                    self.assertIn(outcome, result['response'])
+
+    def test_a_change_of_detail_alone_never_changes_which_years_an_entry_shows(self):
+        # Manager's 5b guard, from the live smoke's step 4: the model sent only "years only", and 2019 became 2018.
+        harness = self.harness()
+        key = self.northwind(harness)
+        ref = 'record:' + key
+        detail_only = [lambda ctx: operation(ctx, ref=ref, values={'date_precision': 'year'})]
+        # No year in the words: the entry's own years, at year detail.
+        values = self.merged(harness, key, self.say(harness, 'just the years', detail_only)['proposals'][0])
+        self.assertEqual(date_stored(values), ('2019-01-01', '2021-01-01', 'year'))
+        for words, outcome in (('Just the years, it was 2022.', 'ask'),
+                               ('It ended in 2022, years only.', ('2019-01-01', '2022-01-01', 'year')),
+                               ('At Northwind Bakery, change the end date to 2022, years only.', ('2019-01-01', '2022-01-01', 'year'))):
+            with self.subTest(words=words):
+                harness = self.harness()
+                key = self.northwind(harness)
+                ref = 'record:' + key
+                result = self.say(harness, words, [lambda ctx, ref=ref: operation(ctx, ref=ref, values={'date_precision': 'year'})],
+                                  ref=ref)
+                if outcome == 'ask':
+                    self.assertEqual(result['proposals'], [])
+                    self.assertIn('Is 2022 when it started or when it ended?', result['response'])
+                else:
+                    values = self.merged(harness, key, result['proposals'][0])
+                    self.assertEqual(date_stored(values), outcome)
+                    self.assertIn('2019 – 2022', result['response'])
 
     def test_only_a_bare_reply_answers_the_guides_date_question(self):
         # Review R5-1: when in doubt it is not an answer. Whatever is not a bare reply goes to the model as an ordinary

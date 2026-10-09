@@ -382,9 +382,78 @@ def _change_reply(summaries):
     return ' '.join(lines)
 
 
+_REQUEST_WORDS = frozenset('change changed set update make the date dates to it was is in at on of my a for please from as '
+                           'i job role'.split())
+_YEARS_ONLY_WORDS = frozenset('just only years year show keep use instead without months'.split())
+
+
+def _name_words(values, record_type):
+    """The words of an entry's own name (employer, school, title), without a parenthetical."""
+    import re
+    names = {'role': ('employer_name', 'role_title'), 'education': ('institution_name', 'title', 'degree_name')}[record_type]
+    return [re.findall(r'[a-z0-9]+', re.sub(r'\([^)]*\)', ' ', str(values.get(name) or '')).lower())
+            for name in names if values.get(name)]
+
+
+def _date_request(statement, entries, selected):
+    """Read a bare request to change one date of one entry ("At Juniper Bakery, change the end date to 2022"):
+    ``(ref, patch)``, or ``None`` when the words are anything more.
+
+    Used only when the model proposed no change for that entry (the live model asked about the month itself instead of
+    proposing the year), so the date rule can ask its own question and record it, and the answer completes the change.
+    The entry must be certain: its own card, or the only entry whose name the words contain. The words hold one date
+    field, one year, at most one month and day, and otherwise only the entry's name and a few request words: no
+    question, no negation, no second field or entry.
+    """
+    import re
+    from services.my_data_extraction_adapter import _MONTH_FORMS
+    text = ' '.join(str(statement or '').split())
+    lowered = text.lower()
+    if not text or '?' in text or re.search(r"\b(?:don'?t|do not|not|never|no)\b", lowered):
+        return None
+    words = re.findall(r'[a-z]+|\d+', lowered)
+    fields = {'end_date' for word in words if word in _END_WORDS} | {'start_date' for word in words if word in _START_WORDS}
+    years = re.findall(r'(?<!\d)(?:19|20)\d\d(?!\d)', text)
+    months = {index for index, forms in enumerate(_MONTH_FORMS) for form in forms if form in words}
+    if len(fields) != 1 or len(years) != 1 or len(months) > 1:
+        return None
+
+    def named(ref):
+        tokens = ' ' + ' '.join(words) + ' '
+        return any(name and ' ' + ' '.join(name) + ' ' in tokens for name in _name_words(*entries[ref]))
+    matches = [ref for ref in entries if named(ref)]
+    if selected is not None:
+        if selected not in entries or any(ref != selected for ref in matches):
+            return None
+        ref = selected
+    elif len(matches) == 1:
+        ref = matches[0]
+    else:
+        return None
+    own = {word for name in _name_words(*entries[ref]) for word in name}
+    numbers = [word for word in words if word.isdigit() and word != years[0]]
+    # "years only" may come with the request ("It ended in 2019, years only"): then both dates show only years.
+    years_only = _chooses_less_date_detail(text, 'year')
+    allowed = _REQUEST_WORDS | _END_WORDS | _START_WORDS | own | (_YEARS_ONLY_WORDS if years_only else frozenset())
+    if (len(numbers) > 1 or (numbers and (not months or not 1 <= int(numbers[0]) <= 31))
+            or any(not word.isdigit() and word not in allowed
+                   and not any(word in forms for forms in _MONTH_FORMS) for word in words)):
+        return None
+    field = fields.pop()
+    value = years[0] + (f'-{months.pop() + 1:02d}' if months else '') + (f'-{int(numbers[0]):02d}' if numbers else '')
+    patch = {field: value, **({'date_precision': 'year'} if years_only else {})}
+    if field == 'end_date' and entries[ref][0].get('current_role') is True:
+        patch['current_role'] = False
+    return ref, patch
+
+
 def _date_question_text(ask):
     """The Guide's question when an entry's two dates would need different detail; nothing is changed until answered."""
     label = ask.get('label') or 'this entry'
+    if ask['kind'] == 'which_date':
+        year = ask['year']
+        return (f"I haven't changed {label} yet. Is {year} when it started or when it ended? Tell me \"It ended in "
+                f"{year}\" or \"It started in {year}\", and add \"years only\" if you want only the years shown.")
     if not ask['name']:
         level = 'months' if ask['detail'] == 'month' else 'years'
         return (f"I haven't changed {label} yet. To show only the {level} for both dates, say \"Show only the "
@@ -1647,6 +1716,39 @@ class ResumeIntakeService:
                         'role': 'Experience', 'education': 'Education', 'credential': 'Credentials'}.get(
                         target_map[question['target_ref']]['record_type'])})
                 evidence_for[question['target_ref']] = answer[1]
+        if not evidence_for:
+            # A bare request to change one date of one entry that the model did not turn into a change (the live model
+            # asks about the month itself): the server proposes exactly what was said, so the date rule can ask its own
+            # question, record it, and complete the change with the answer.
+            chosen = {}
+            for row in context['targets']:
+                if row['record_type'] in {'role', 'education'}:
+                    entry = self._entry_key(snapshot, row['target_ref'])
+                    if entry not in chosen or row['target_ref'].startswith('proposal:'):
+                        chosen[entry] = row['target_ref']
+            entries = {ref: (target_map[ref]['values'], target_map[ref]['record_type']) for ref in chosen.values()}
+            selected_ref = chosen.get(selected_entry) if selected_entry else None
+            request = (_date_request(command['statement'], entries, selected_ref)
+                       if selected_entry is None or selected_ref is not None else None)
+            def on_entry(row):
+                return (isinstance(row, dict) and row.get('operation') != 'add_content' and row.get('target_ref') in target_map
+                        and self._entry_key(snapshot, row['target_ref']) == self._entry_key(snapshot, request[0]))
+
+            def detail_only(row):
+                # The model's change holds no date: only the detail or the current-job flag ("years only" alone).
+                return (row.get('operation') == 'revise_content' and not row.get('bullet_edits') and not row.get('explicit_clears')
+                        and all(isinstance(pair, dict) and pair.get('field') in {'date_precision', 'current_role'}
+                                for pair in row.get('values') or []))
+            if request is not None and all(detail_only(row) for row in operations if on_entry(row)):
+                operations = [row for row in operations if not on_entry(row)]
+                operations.append({'operation': 'revise_content', 'target_ref': request[0],
+                    'record_type': target_map[request[0]]['record_type'],
+                    'values': [{'field': name, 'value': value} for name, value in request[1].items()],
+                    'explicit_clears': [], 'bullet_edits': [],
+                    'source_refs': [{'source_key': source['source_key'],
+                                     'unit_id': context['current_turn']['units'][0]['unit_id']}],
+                    'presentation_section': target_map[request[0]].get('presentation_section') or {
+                        'role': 'Experience', 'education': 'Education'}[target_map[request[0]]['record_type']]})
         for operation in operations:
             if not isinstance(operation, dict) or set(operation) != CONVERSATION_OPERATION_FIELDS:
                 raise conversation_rejection('invalid_output', 'operation_contract', 'operation_shape')
@@ -1813,6 +1915,17 @@ class ResumeIntakeService:
                 else:
                     changed = {name for name in names if name in patch and values.get(name)}
                     evidence = evidence_for.get(ref, command['statement'])
+                    import re
+                    named_years = set(re.findall(r'(?<!\d)(?:19|20)\d\d(?!\d)', evidence)) - {
+                        str(pre_patch_values.get(name) or '')[:4] for name in names}
+                    if record_type != 'credential' and not changed and 'date_precision' in patch and named_years:
+                        # A change of detail alone never changes which years an entry shows. Words that name a year the
+                        # entry does not hold ask for a date change, and which date is not clear: nothing is changed,
+                        # and the member is asked (the model once sent "years only" alone, and 2019 became 2018).
+                        result.setdefault('_ask_detail', []).append({
+                            'kind': 'which_date', 'name': None, 'detail': None, 'date': None,
+                            'year': sorted(named_years)[0], 'label': _entry_label(target['record_type'], target['values'])})
+                        continue
                     date_note, date_flags = normalize_record(record_type, values, evidence,
                                                              prior=dict(pre_patch_values), changed=changed)
                     if date_note in {'lowered', 'capped'} and _chooses_less_date_detail(evidence, values.get('date_precision')):

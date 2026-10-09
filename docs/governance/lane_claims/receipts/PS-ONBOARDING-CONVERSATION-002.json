@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-ONBOARDING-CONVERSATION-002",
-  "candidate_sha": "3c5874fcfd3632f288de4a3905519de95903cc01",
+  "candidate_sha": "01d5b2394c6f261ed7e74627ef99f59757218cd3",
   "review_type": "independent",
   "reviewer_ref": "agent:claude/2026-10-07/allowance-reviewer",
   "result": "pass",
-  "reviewed_at": "2026-10-09T18:14:37Z",
+  "reviewed_at": "2026-10-09T20:39:25Z",
   "findings": [],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-ONBOARDING-CONVERSATION-002.md"
 }

@@ -818,7 +818,10 @@ or null values. For bullet changes use bullet_edits against the supplied exact f
 index and expected_text; untouched wording remains verbatim. Include restores only
 a supplied excluded bullet. Never change dates, qualifiers, attribution or metrics
 unless the member specifically corrects them. Preserve month/year precision and
-unknown dates. New or changed facts require source_refs from supplied literal units
+unknown dates. When the member gives a new date with less detail than the entry keeps
+(a year for an entry kept to the month), send revise_content with that date exactly as
+stated; never ask about the detail yourself: the system asks the member, and keeps
+their answer. New or changed facts require source_refs from supplied literal units
 (including the current member turn); do not cite generated prose as evidence.
 For new content preserve every substantive supplied unit in its intended record,
 full bullets and limitations. Never shorten complete source material into a summary.
