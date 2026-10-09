@@ -127,7 +127,7 @@ class InterviewStudioOperabilityBrowserTests(unittest.TestCase):
         cls.werkzeug_logger = logging.getLogger("werkzeug")
         cls.werkzeug_log_level = cls.werkzeug_logger.level
         cls.werkzeug_logger.setLevel(logging.ERROR)
-        cls.server = make_server("127.0.0.1", 0, app)
+        cls.server = make_server("127.0.0.1", 0, app, threaded=True)
         cls.server_thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.server_thread.start()
         cls.base_url = f"http://127.0.0.1:{cls.server.server_port}"

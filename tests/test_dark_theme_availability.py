@@ -70,6 +70,13 @@ def read_repo_file(*parts):
         return handle.read()
 
 
+def _relative_luminance(css_rgb):
+    """WCAG relative luminance of a computed ``rgb(r, g, b)`` colour."""
+    channels = [int(value) / 255 for value in css_rgb[css_rgb.index('(') + 1:-1].split(',')[:3]]
+    linear = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+
 class DarkThemeAvailabilityTests(unittest.TestCase):
     CONFIG_KEY = CONFIG_KEY
 
@@ -307,7 +314,7 @@ class DarkThemeStaysLightInABrowserTests(unittest.TestCase):
     def setUpClass(cls):
         cls.original_testing = app.config.get('TESTING')
         app.config['TESTING'] = True
-        cls.server = make_server('127.0.0.1', 0, app)
+        cls.server = make_server('127.0.0.1', 0, app, threaded=True)
         cls.server_thread = threading.Thread(
             target=cls.server.serve_forever, daemon=True)
         cls.server_thread.start()
@@ -348,9 +355,9 @@ class DarkThemeStaysLightInABrowserTests(unittest.TestCase):
         self.assertIsNone(seen['gate'], route)
         self.assertEqual(seen['colorScheme'], 'light', route)
         self.assertEqual(seen['themeControls'], 0, route)
-        # Light-theme ink is the deep navy the shell has always used; a dark
-        # render would invert this to a near-white.
-        self.assertEqual(seen['bodyInk'], 'rgb(6, 26, 58)', route)
+        # Light-theme ink is dark (navy in the shell, green on the Sage Mist
+        # resume); a dark render would invert it to a near-white.
+        self.assertLess(_relative_luminance(seen['bodyInk']), 0.2, route)
         return seen
 
     def _control(self, route):

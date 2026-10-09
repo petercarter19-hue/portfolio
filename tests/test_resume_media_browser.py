@@ -93,14 +93,18 @@ class SyntheticPhotoProcedures:
         self.completed = set()
         self.rejected = False
         self._counter = 0
+        # The threaded test server can run two procedures at once; a real
+        # database serializes them, so this stand-in does too.
+        self._lock = threading.RLock()
 
     def reset(self):
-        self.calls.clear()
-        self.media_reads.clear()
-        self.created.clear()
-        self.completed.clear()
-        self.rejected = False
-        self._counter = 0
+        with self._lock:
+            self.calls.clear()
+            self.media_reads.clear()
+            self.created.clear()
+            self.completed.clear()
+            self.rejected = False
+            self._counter = 0
 
     @staticmethod
     def _params(parameters):
@@ -111,9 +115,14 @@ class SyntheticPhotoProcedures:
         return bytes([stage]) * 8
 
     def bound(self, procedure):
-        return [dict(params) for name, params in self.calls if name == procedure]
+        with self._lock:
+            return [dict(params) for name, params in self.calls if name == procedure]
 
     def first_row(self, procedure, parameters=None):
+        with self._lock:
+            return self._first_row(procedure, parameters)
+
+    def _first_row(self, procedure, parameters):
         bound = self._params(parameters)
         self.calls.append((procedure, list(parameters or [])))
         if procedure == "usp_CreatePhotoSource":
@@ -227,15 +236,17 @@ class SyntheticBoundaryStorage:
     def __init__(self):
         self.objects = {}
         self.uploads = []
+        self._lock = threading.Lock()
 
     def upload(self, ref, data, content_type):
-        etag = '"etag-%d"' % (len(self.uploads) + 1)
-        self.uploads.append(ref)
-        self.objects[ref] = {
-            "data": bytes(data),
-            "content_type": str(content_type),
-            "etag": etag,
-        }
+        with self._lock:
+            etag = '"etag-%d"' % (len(self.uploads) + 1)
+            self.uploads.append(ref)
+            self.objects[ref] = {
+                "data": bytes(data),
+                "content_type": str(content_type),
+                "etag": etag,
+            }
         return {"etag": etag}
 
     def download(self, ref):
@@ -285,18 +296,24 @@ class SyntheticDraftStore(InMemoryResumeDraftRepository):
         self.commit_entered = threading.Event()
         self.release_commit = threading.Event()
         self.command_calls = 0
+        # One-shot hooks are taken under a lock so that, on the threaded test
+        # server, exactly one concurrent request consumes each of them.
+        self._hook_lock = threading.Lock()
 
     def load_owner(self, owner_user_key):
-        delay = self.slow_next_load_seconds
-        if delay:
+        with self._hook_lock:
+            delay = self.slow_next_load_seconds
             self.slow_next_load_seconds = 0.0
+        if delay:
             time.sleep(delay)
         return super().load_owner(owner_user_key)
 
     def commit_owner_command(self, owner_user_key, *, expected_version, apply):
-        self.command_calls += 1
-        if self.block_next_commit:
+        with self._hook_lock:
+            self.command_calls += 1
+            block = self.block_next_commit
             self.block_next_commit = False
+        if block:
             self.commit_entered.set()
             if not self.release_commit.wait(timeout=10):
                 raise AssertionError("Timed out waiting to release blocked command.")
@@ -361,7 +378,7 @@ class ResumeMediaBrowserTests(unittest.TestCase):
         limiter.enabled = False
         cls.werkzeug_logger.setLevel(logging.ERROR)
 
-        server = make_server("127.0.0.1", 0, app)
+        server = make_server("127.0.0.1", 0, app, threaded=True)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         cls.addClassCleanup(_shutdown_server, server, thread)
         thread.start()

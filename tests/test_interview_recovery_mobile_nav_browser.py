@@ -206,7 +206,7 @@ class InterviewRecoveryMobileNavBrowserTests(unittest.TestCase):
         cls.addClassCleanup(_stop_started_patch, provider_patch)
 
         logging.getLogger("werkzeug").setLevel(logging.ERROR)
-        server = make_server("127.0.0.1", 0, app)
+        server = make_server("127.0.0.1", 0, app, threaded=True)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         cls.addClassCleanup(_shutdown_local_server, server, thread)
         thread.start()

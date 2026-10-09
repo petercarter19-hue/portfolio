@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "package": "PS-BROWSER-TEST-THREADED-SERVER-001",
+  "candidate_sha": "085f5fca22ac76289dded958d70e114632beed72",
+  "review_type": "self",
+  "reviewer_ref": "agent:claude/2026-10-09/browser-test-threading",
+  "result": "pass",
+  "reviewed_at": "2026-10-09T16:45:33Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "Self-review dropped a 2-second wall-clock assertion from the threaded page-load test: the 5-second client timeout already proves no stall (the single-threaded control never answers), and a tight timing bound would flake on a loaded CI host."
+    },
+    {
+      "status": "resolved",
+      "summary": "Onboarding round 4 (51f5033b) made the intake suite threaded before activation, so it was removed from the guard's known-holdouts list; only test_my_data_browser.py (onboarding claim) and the opt-in Workshop proof remain."
+    },
+    {
+      "status": "resolved",
+      "summary": "The package's own completion check required the red dark-theme baseline to pass. Root cause: DarkThemeStaysLightInABrowserTests hard-coded the shell's navy body ink rgb(6, 26, 58), but the Sage Mist public resume's light ink is green rgb(40, 79, 59), so /petec/resume failed on main too. Commit 085f5fca keeps the 'dark inputs change nothing versus a no-dark control' comparison and replaces the pinned colour with a relative-luminance < 0.2 check (navy 0.011, green 0.064, near-white >= 0.8). Test-only, same claimed file, no colour rule."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-BROWSER-TEST-THREADED-SERVER-001.md"
+}
