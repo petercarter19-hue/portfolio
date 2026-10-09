@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-CI-TELEMETRY-FIXTURE-SCAN-001",
+  "state": "active",
+  "outcome": "Repair the required full-history scanner failure caused by the exact synthetic query-string privacy canary introduced by the authorized Azure reliability work. Add one exact rule/path/line allowlist and explicit adversarial regression; preserve all other scan rules, CI policies, history, product, pipeline and production boundaries.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a11384-f656-73b3-b57a-ad2952f1ffad",
+  "branch": "codex/2026-10-09-telemetry-scan-repair-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "ec05a3b50642a66657a0fd6f89de84a386728fe4",
+  "owner_outcome_ref": "session:01a11384-f656-73b3-b57a-ad2952f1ffad/event:evt-b086cad6-30e9-494e-9e98-d022ee6094bc",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-CI-TELEMETRY-FIXTURE-SCAN-001.json",
+    "docs/governance/lane_claims/receipts/PS-CI-TELEMETRY-FIXTURE-SCAN-001.json",
+    "docs/governance/lane_claims/evidence/PS-CI-TELEMETRY-FIXTURE-SCAN-001.md",
+    ".gitleaks.toml",
+    "tests/test_operational_readiness.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-CI-TELEMETRY-FIXTURE-SCAN-001.md"
+  ],
+  "domains": [
+    "infrastructure:ci:telemetry-fixture-scan-repair"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
