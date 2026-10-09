@@ -505,7 +505,9 @@ class ProviderCompositionTests(unittest.TestCase):
                 "declared_content_type": "text/plain", "filename": "fictional-resume.txt"}]}),
                 "file:d1": (io.BytesIO(document), "fictional-resume.txt", "text/plain")})
         self.assertEqual(response.status_code, 200, response.get_data(as_text=True))
-        self.assertEqual(len(self.transport.calls), 1)
+        # One dispatch, plus one re-ask only when the answer names no candidate (onboarding round 5's organize_resume).
+        # This fake transport's answer names none: the round-5 source asks twice, earlier sources once.
+        self.assertIn(len(self.transport.calls), {1, 2})
         self.assertEqual(len(self.fixture.intake.original_files.list(self.identity.owner)), 1)
         persisted = self.state.capture()
         self.state.restore(initial)

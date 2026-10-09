@@ -444,3 +444,9 @@ The same recipe as the fix-round-3 binding, now scripted (`X:/PeerSlate/Claude/t
 ### Not yet true
 
 CI and merge of this change; the supported `update --candidate-state accepted-main --factory` promotion on a stopped, drained site; the explicit post-update probe; the $50 ledger read-back; restoring the owner's pre-retry checkpoint `20261008T181451Z-41111d20`; starting the site; and the re-run of the owner's retry with the structural cleanup metrics recorded.
+
+## Claude custody: the private upload test accepts onboarding round 5's one re-ask
+
+Onboarding round 5 (PR 1319, reviewed at `3c5874fcfd3632f288de4a3905519de95903cc01`) makes `organize_resume` ask once more, under its own request id, when an answer names no candidate at all. `ProviderCompositionTests.test_private_upload_persists_originals_and_never_logs_document_text` uploads a fictional document through a fake transport whose answer names no candidate, and asserted exactly one provider call, so PR 1319's build 4390 failed on it (2 != 1; the only failure of 7,750). The assertion now accepts one call (current main) or two (the round-5 source), with the reason beside it; every other assertion of the test is unchanged. The round-5 install binding tightens it to exactly two.
+
+Verification: the three local reviewer suites under the private runtime, 160 OK on this branch (main `9e53daed` after the journaled reconcile `bc970c88`); the same test module against the round-5 source, 82 OK.
