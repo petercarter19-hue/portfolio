@@ -898,6 +898,12 @@
         return Boolean(overview && (overview.batch.retry_available ||
             (overview.unplaced.count && !overview.groups.length)));
     }
+    // An upload that still needs attention (it could not be organized, or only loose details are left) is shown
+    // whenever the Guide opens on an empty screen, so its message and "Try organizing again" are never out of reach.
+    function entryScreen(name) {
+        return !proposals.length && batchNeedsAttention() && (!name || ['input', 'review', 'correction'].indexOf(name) !== -1)
+            ? 'review' : name;
+    }
     function groupFor(proposalKey) {
         var overview = batchOverview();
         return overview ? overview.groups.find(function (group) { return group.proposal_key === proposalKey; }) || null : null;
@@ -1143,7 +1149,7 @@
         if (pendingDecision && !proposals.some(function (p) { return p.proposal_key === pendingDecision.proposal.proposal_key; })) {
             proposals.unshift(pendingDecision.proposal);
         }
-        document.getElementById('resume-intake-review-pending').hidden = !proposals.length;
+        document.getElementById('resume-intake-review-pending').hidden = !proposals.length && !batchNeedsAttention();
         if (preserveScreen) return;
         proposalList.replaceChildren();
         var oldSuggestionOverview = document.getElementById('resume-intake-suggestion-overview');
@@ -1625,6 +1631,7 @@
                     throw new Error('Confirmation is not acknowledged. Retry the same decision.');
                 }
                 pendingDecision = null;
+                lastAcknowledgement = '';   // the reply was about the change just decided; it never stays over the next card
                 if (payload.restored_proposal) {
                     newestProposalKeys = [payload.restored_proposal.proposal_key];
                     selectedProposalKey = payload.restored_proposal.proposal_key;
@@ -2217,7 +2224,7 @@
             });
             syncDirectFields();
             if ((state.screen === 'review' || state.screen === 'correction') && proposals.length) renderProposals(proposals);
-            else showScreen(['review', 'correction'].indexOf(state.screen) !== -1 ? 'input' : state.screen || 'input', false);
+            else showScreen(entryScreen(['review', 'correction'].indexOf(state.screen) !== -1 ? 'input' : state.screen || 'input'), false);
             if (state.guide_hidden) hideGuide();
         } else if (replace) { syncDirectFields(); showScreen('input', false); }
         renderQueued(); renderAttachments(); restoringDraft = false;
@@ -2717,7 +2724,7 @@
         if (!root.open) root.showModal();
         renderActivity();
         if (heldRecording) setStatus('Your recording is kept here. Choose Transcribe recording when you’re ready.', 'ok');
-        showScreen(screen);
+        showScreen(entryScreen(screen));
         refreshActualPreview();
     }
     function setGuideStatus(status) {
@@ -2937,13 +2944,17 @@
         questionPrompt.textContent = frame.question; questionContext.textContent = frame.context; questionContext.hidden = !frame.context;
         if ((frame.screen === 'review' || frame.screen === 'correction') && proposals.length) {
             restoringDraft = true; renderProposals(proposals, false, frame.screen); restoringDraft = false;
-        } else showScreen(frame.screen === 'review' || frame.screen === 'correction' ? 'input' : frame.screen, true, true);
+        } else showScreen(entryScreen(frame.screen === 'review' || frame.screen === 'correction' ? 'input' : frame.screen), true, true);
         scheduleDraft();
     });
     on('next-question', function () { showScreen('input'); textarea.focus(); });
     on('new-question', nextQuestion);
     on('retry-guide', function () { if (pendingGuide) setGuideStatus(pendingGuide.status); });
-    on('review-pending', function () { if (interviewBusy) return; leaveCorrection(); renderProposals(proposals); });
+    on('review-pending', function () {
+        if (interviewBusy) return; leaveCorrection();
+        if (proposals.length) renderProposals(proposals);
+        else if (batchNeedsAttention()) { renderBatchOverview(); showScreen('review'); }
+    });
     on('skip-question', function () {
         seenQuestions.push(questionPrompt.textContent);
         if (correctionTarget && proposalInvitations[correctionTarget.proposal_key] === questionPrompt.textContent) {

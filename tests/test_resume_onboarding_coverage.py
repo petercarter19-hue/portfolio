@@ -568,6 +568,54 @@ class ResumeOrganizationTests(unittest.TestCase):
         result = self.organize({'candidates': []}, text, units)
         self.assertEqual(result.state, 'unavailable')
 
+    def test_an_empty_answer_is_asked_once_more_under_its_own_request_id(self):
+        # 2026-10-09: the model answered an unchanged, normal request for a full resume with an empty list, twice.
+        from uuid import UUID, uuid5
+        text, units, g = self.groups()
+        good = {'candidates': [g['a'], g['b'], g['sql'], g['python']]}
+        for answers, state, asked in (([{'candidates': []}, good], 'organized', 2),
+                                      ([{'candidates': []}, {'candidates': []}], 'unavailable', 2),
+                                      ([good], 'organized', 1)):
+            with self.subTest(answers=len(answers), state=state):
+                seen, queue = [], [copy.deepcopy(answer) for answer in answers]
+
+                def provider(request, **options):
+                    seen.append(request.request_id)
+                    return queue.pop(0)
+                first = str(uuid4())
+                result = MyDataExtractionAdapter(provider=provider).organize_resume(
+                    text, allowed_fields=EDITOR_FIELDS, source_units=units, request_id=first)
+                self.assertEqual((result.state, len(seen)), (state, asked))
+                self.assertEqual(seen[0], first)
+                if asked == 2:
+                    self.assertEqual(seen[1], str(uuid5(UUID(first), 'organize_resume_again')))
+
+    def test_an_answer_whose_candidates_break_the_rules_is_not_asked_again(self):
+        text, units, g = self.groups()
+        bad = copy.deepcopy(g['python'])
+        bad.update(unit_ids=['not-a-supplied-unit'])
+        seen = []
+
+        def provider(request, **options):
+            seen.append(request)
+            return {'candidates': [bad]}
+        result = MyDataExtractionAdapter(provider=provider).organize_resume(
+            text, allowed_fields=EDITOR_FIELDS, source_units=units)
+        self.assertEqual((result.state, len(seen)), ('unavailable', 1))
+
+    def test_a_failed_second_ask_reports_the_first_empty_answer(self):
+        text, units, g = self.groups()
+        seen = []
+
+        def provider(request, **options):
+            seen.append(request)
+            if len(seen) == 2:
+                raise ExtractionError('provider_failed')
+            return {'candidates': []}
+        result = MyDataExtractionAdapter(provider=provider).organize_resume(
+            text, allowed_fields=EDITOR_FIELDS, source_units=units)
+        self.assertEqual((result.state, len(seen)), ('unavailable', 2))
+
     def test_request_tells_the_model_every_rule_the_validator_enforces(self):
         from services.my_data_extraction_adapter import (
             EXTRACTION_INSTRUCTIONS, RESUME_REJECTION_RULES, RESUME_VALIDATOR_RULES)
@@ -847,6 +895,28 @@ class ResumeOrganizationTests(unittest.TestCase):
 
     def organize_command(self, source_key, mode='retry', request_id=None):
         return {'request_id': request_id or str(uuid4()), 'source_key': source_key, 'mode': mode}
+
+    def test_an_upload_and_a_retry_whose_first_answer_is_empty_are_asked_once_more(self):
+        # Both ways a resume is organized go through the one adapter call: an upload whose two answers are empty is
+        # honestly unavailable, and the member's retry, whose first answer is empty too, is organized by its second.
+        text = self.TEXT
+        empty = {'candidates': []}
+        queue = [empty, empty, empty, self.payload('a', 'b', 'sql', 'python')(text)]
+        calls = []
+
+        def provider(request, **options):
+            calls.append(request.request_id)
+            return copy.deepcopy(queue.pop(0))
+        service = build_service(document_pipeline=extracted_pipeline(text),
+                                extraction_adapter=MyDataExtractionAdapter(provider=provider))
+        owner = 'synthetic-empty-answer-owner'
+        self.upload(service, owner, text)
+        workspace = service.get_workspace(owner)
+        self.assertEqual((len(calls), workspace['review_overview']['batch']['organization']['state']), (2, 'unavailable'))
+        self.assertTrue(workspace['review_overview']['batch']['retry_available'])
+        result = service.organize_source(owner, self.organize_command(workspace['source_accounting'][0]['source_key']))
+        self.assertEqual((result['outcome'], len(result['proposal_keys']), len(calls)), ('organized', 4, 4))
+        self.assertEqual(len(set(calls)), 4)
 
     def test_retry_replaces_only_the_unorganized_items_and_a_repeat_dispatches_nothing(self):
         # A source organized before per-candidate organization existed: untouched unplaced items only.

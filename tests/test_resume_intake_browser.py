@@ -3031,6 +3031,29 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.assertEqual(page.get_by_role('button', name='Try organizing again').count(), 0)
         self.assertEqual(self.catalog.list_items(self.owner), [])
 
+    def test_an_unorganized_upload_is_shown_when_a_paused_guide_reopens(self):
+        # Tester R4T-1: after a pause on the add screen, "Guide me" opened on "What would you like to add?" and the
+        # message and its retry sat on a hidden screen.
+        service = self.batch_service(None)
+        self.batch_upload(service)
+        page = self.page()
+        page.locator('#resume-intake-review:visible').wait_for()
+        page.locator('[data-add-more]').click()
+        page.locator('#resume-intake-input:visible').wait_for()
+        page.get_by_role('button', name='Pause', exact=True).click()
+        page.locator('#resume-intake-pause-notice').get_by_text('Paused. Your draft is saved privately.', exact=True).wait_for()
+        page.reload()
+        page.locator('#resume-intake-reopen:visible').click()
+        page.locator('#resume-intake-review:visible').wait_for()
+        page.locator('#resume-intake-batch').get_by_text(
+            'I read your résumé but couldn’t organize it right now. Nothing is lost.').wait_for()
+        page.get_by_role('button', name='Try organizing again', exact=True).wait_for()
+        # From the add screen, the way back to it stays visible too.
+        page.locator('[data-add-more]').click()
+        page.locator('#resume-intake-input:visible').wait_for()
+        page.get_by_role('button', name='Review suggested details', exact=True).click()
+        page.get_by_role('button', name='Try organizing again', exact=True).wait_for()
+
     def test_the_same_file_is_not_stored_or_dispatched_twice(self):
         service = self.batch_service(self.batch_counting(self.batch_payload()))
         self.batch_upload(service)
@@ -3320,7 +3343,8 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.field(page, 'education_status').select_option('completed')
         page.get_by_label('Tell me what to change about this one').fill('Please add the field of study, Computer Science.')
         page.get_by_role('button', name='Send change', exact=True).click()
-        page.locator('#resume-intake-status').get_by_text('I can add the field of study', exact=False).wait_for()
+        # The reply about a change is built from the suggestion itself, not the model's own words (R4T-4).
+        page.locator('#resume-intake-status').get_by_text('field of study “Computer Science”', exact=False).wait_for()
         self.assertEqual(self.field(page, 'field_of_study').input_value(), 'Computer Science')
         self.assertEqual(self.field(page, 'education_status').input_value(), 'completed')
 
@@ -3537,7 +3561,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         page.get_by_label('Tell me what to change about this one').fill('Change the end date to 2022.')
         page.get_by_role('button', name='Send change', exact=True).click()
         page.locator('#resume-intake-status').get_by_text('Which month in 2022 did it end?', exact=False).wait_for()
-        self.assertIn("I haven't changed this entry yet.", page.locator('#resume-intake-status').inner_text())
+        self.assertIn("I haven't changed Product designer, Northstar Studio yet.", page.locator('#resume-intake-status').inner_text())
         cards = page.locator('#resume-intake-proposals').inner_text()
         self.assertIn('January 2019', cards)
         self.assertNotIn('2022', cards)

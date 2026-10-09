@@ -296,6 +296,175 @@ def _chooses_less_date_detail(statement, detail) -> bool:
     return detail in patterns and bool(re.search(patterns[detail], str(statement or ''), re.I))
 
 
+_MONTH_NAMES = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
+                'November', 'December')
+
+
+def _readable_date(value, precision):
+    """A stored date as a person reads it, at the entry's detail ("2016", "May 2016", "May 4, 2016")."""
+    import re
+    match = re.match(r'(\d{4})-(\d{2})(?:-(\d{2}))?', str(value or ''))
+    if not match:
+        return ''
+    year, month = match.group(1), _MONTH_NAMES[int(match.group(2)) - 1]
+    if precision == 'month':
+        return f'{month} {year}'
+    if precision == 'day' and match.group(3):
+        return f'{month} {int(match.group(3))}, {year}'
+    return ('About ' if precision == 'approximate' else '') + year
+
+
+def _readable_range(values):
+    """An entry's dates as its card shows them, so a reply about a change can never read differently from the card."""
+    precision = values.get('date_precision')
+    start, end = _readable_date(values.get('start_date'), precision), _readable_date(values.get('end_date'), precision)
+    if values.get('current_role') is True:
+        end = 'Present'
+    if start and end:
+        return start if start == end else f'{start} – {end}'
+    return start or (f'Until {end}' if end else '')
+
+
+def _entry_label(record_type, values):
+    """The entry in the member's own words: "Shift Lead, Northwind Bakery", "Python"."""
+    parts = {'role': ('role_title', 'employer_name'), 'education': ('degree_name', 'title', 'institution_name'),
+             'credential': ('name', 'issuer'), 'skill': ('name',), 'knowledge': ('title',),
+             'accomplishment': ('title',)}.get(record_type, ('name', 'title'))
+    words = [str(values[name]).strip() for name in parts if values.get(name) and str(values[name]).strip()]
+    return ', '.join(dict.fromkeys(words)) or {'role': 'this job', 'education': 'this education entry',
+                                               'credential': 'this credential', 'skill': 'this skill'}.get(record_type,
+                                                                                                         'this entry')
+
+
+_FIELD_WORDS = {'role_title': 'title', 'employer_name': 'employer', 'location': 'place', 'degree_name': 'degree',
+                'title': 'title', 'institution_name': 'school', 'name': 'name', 'issuer': 'issuer',
+                'education_status': 'status', 'completion_status': 'status', 'classification': 'kind'}
+_DESCRIPTION_FIELDS = {'summary', 'wording', 'text', 'resume_credential_wording'}
+_RANGE_FIELDS = {'start_date', 'end_date', 'date_precision', 'current_role'}
+
+
+def _change_reply(summaries):
+    """The Guide's words about the changes a turn made, built from the suggestions themselves.
+
+    A reply about a change is never the model's own text: the words and the card are made from the same stored values,
+    so they cannot disagree (the model once wrote "2019–2022" over a card that held 2019 – 2021).
+    """
+    lines = []
+    for item in summaries:
+        values, record_type, changed = item['values'], item['record_type'], set(item['changed'])
+        label = _entry_label(record_type, values)
+        dates = _readable_range(values) if record_type in {'role', 'education'} else ''
+        if item['op'] == 'add_content':
+            lines.append(f'Added for your review: {label}' + (f', {dates}' if dates else '') + '.')
+            continue
+        if item['op'] == 'exclude_content' and not item['bullets']:
+            lines.append(f'Ready for your review: leave {label} out of your résumé.')
+            continue
+        if item['op'] == 'restore_content' and not item['bullets']:
+            lines.append(f'Ready for your review: show {label} on your résumé again.')
+            continue
+        parts = []
+        if changed & _RANGE_FIELDS and record_type in {'role', 'education'}:
+            parts.append(f'dates {dates}' if dates else 'dates removed')
+        for name, word in (('issue_date', 'issued'), ('expiration_date', 'expires')):
+            if name in changed or name + '_precision' in changed:
+                when = _readable_date(values.get(name), values.get(name + '_precision'))
+                parts.append(f'{word} {when}' if when else f'{word} date removed')
+        for name in sorted(changed - _RANGE_FIELDS - _DESCRIPTION_FIELDS
+                           - {'issue_date', 'expiration_date', 'issue_date_precision', 'expiration_date_precision'}):
+            value = values.get(name)
+            word = _FIELD_WORDS.get(name, name.replace('_', ' '))
+            parts.append(f'{word} “{value}”' if isinstance(value, str) and value.strip() and len(value) <= 80
+                         else f'{word} changed')
+        if changed & _DESCRIPTION_FIELDS or item['bullets']:
+            parts.append('its description')
+        lines.append(f'Ready for your review: a change to {label}' + (': ' + ', '.join(parts) if parts else '') + '.')
+    return ' '.join(lines)
+
+
+def _date_question_text(ask):
+    """The Guide's question when an entry's two dates would need different detail; nothing is changed until answered."""
+    label = ask.get('label') or 'this entry'
+    if not ask['name']:
+        level = 'months' if ask['detail'] == 'month' else 'years'
+        return (f"I haven't changed {label} yet. To show only the {level} for both dates, say \"Show only the "
+                f"{level}\". You can also edit the dates directly.")
+    verb = 'end' if ask['name'] == 'end_date' else 'start'
+    said = 'It ended' if verb == 'end' else 'It started'
+    year = ask['date'][:4]
+    day = ask['detail'] == 'month'
+    month = _MONTH_NAMES[int(ask['date'][5:7]) - 1] if day else ''
+    unit, when, example = ('day', f'{month} {year}', f'{said} on {month} 15, {year}') if day else (
+        'month', year, f'{said} in March {year}')
+    choice, level = ('months only', 'months') if day else ('years only', 'years')
+    if ask['kind'] == 'capped':
+        given = 'end' if ask['changed'] == 'end_date' else 'start'
+        return (f"I haven't changed {label} yet. Your {given} date now has a {unit}, but the {verb} date doesn't, and an "
+                f"entry shows both dates the same way. Which {unit} in {when} did it {verb}? Tell me the {unit} (for "
+                f"example \"{example}\"), or say \"{choice}\" to show only the {level} for both dates.")
+    other = 'start' if verb == 'end' else 'end'
+    return (f"I haven't changed {label} yet. Which {unit} in {when} did it {verb}? Your {other} date keeps its "
+            f"{'exact day' if day else 'month'}, and an entry shows both dates the same way. Tell me the {unit} (for "
+            f"example \"{example}\"), or say \"{said} in {when}, {choice}\" to show only the {level} for both dates.")
+
+
+_END_WORDS = frozenset({'end', 'ended', 'ending', 'finished', 'finish', 'left', 'stopped'})
+_START_WORDS = frozenset({'start', 'started', 'began', 'begin', 'beginning', 'joined'})
+_ANSWER_WORDS = _END_WORDS | _START_WORDS | frozenset(
+    'it its in on of the was is a an i think believe about yes yeah ok okay sorry please actually just only show use '
+    'keep years year months month days day exact and that would be my answer without instead drop remove hide display '
+    'want have give list put'.split())
+
+
+def _date_answer(statement, question):
+    """Read a short answer to the Guide's own date question: ``(patch, evidence)``, or ``None`` when it is not one.
+
+    The question named an entry, the change the member had asked for, the date that is missing detail and that date's
+    year ("Which month in 2022 did it end?"). An answer gives the month ("March", "It ended in March"), the day when a
+    day was asked for, or a choice of less detail ("just the years"), and names no other year. Its evidence is the
+    member's earlier words plus the answer read in the question's year, so "March" counts as "March 2022".
+    """
+    import re
+    from services.my_data_extraction_adapter import _MONTH_FORMS
+    text = ' '.join(str(statement or '').split())
+    year, asked, detail, value = question['year'], question['asked'], question['detail'], question['asked_value']
+    if not text or len(text.split()) > 12 or set(re.findall(r'(?<!\d)(?:19|20)\d\d(?!\d)', text)) - {year}:
+        return None
+    # When in doubt it is not an answer: only a bare reply to the question counts. A question, a word for the other
+    # date ("the start was in March" when the end was asked), or any word beyond the date and a few filler words (a
+    # negation, a place, another job, a new sentence) goes to the model as an ordinary turn.
+    if '?' in text:
+        return None
+    words = re.findall(r'[a-z]+', text.lower())
+    if any(word in (_START_WORDS if asked == 'end_date' else _END_WORDS) for word in words):
+        return None
+    months = {form for forms in _MONTH_FORMS for form in forms}
+    if any(word not in _ANSWER_WORDS and word not in months and word not in {'st', 'nd', 'rd', 'th'} for word in words):
+        return None
+    patch = dict(question['patch'])
+    months = {index for index, forms in enumerate(_MONTH_FORMS)
+              if any(re.search(r'(?i)\b%s\b' % form, text) for form in forms)}
+    if _chooses_less_date_detail(text, detail):
+        # Both dates at the detail the date in question has; the date the member asked for is kept as they gave it.
+        patch['date_precision'] = detail
+        said = text
+    elif detail == 'year' and len(months) == 1:
+        month = months.pop()
+        patch[asked] = f'{year}-{month + 1:02d}'
+        patch['date_precision'] = 'month'
+        said = f'{_MONTH_NAMES[month]} {year}'
+    elif detail == 'month' and not months - {int(value[5:7]) - 1}:
+        day = re.search(r'(?<![\d-])([0-3]?\d)(?:st|nd|rd|th)?(?![\d-])', re.sub(r'(?:19|20)\d\d', ' ', text))
+        if not day or not 1 <= int(day.group(1)) <= 31:
+            return None
+        patch[asked] = f'{value[:7]}-{int(day.group(1)):02d}'
+        patch['date_precision'] = 'day'
+        said = f'{_MONTH_NAMES[int(value[5:7]) - 1]} {int(day.group(1))}, {year}'
+    else:
+        return None
+    return patch, question['statement'] + '\n' + said
+
+
 def _as_uuid(value, *, field):
     if not isinstance(value, str):
         raise ResumeIntakeValidationError(f"Invalid {field}.")
@@ -1356,42 +1525,38 @@ class ResumeIntakeService:
                     from services.resume_intake_runtime import conversation_rejection
                     raise conversation_rejection('changed', 'context_revalidation', 'authorized_context_changed')
                 proposals = self._conversation_proposals(owner, fresh, current, command, context, result, policy)
-                if result.get('_ask_detail'):
-                    # A date that would lower the other date's detail is not changed; the turn asks instead, and says so.
-                    ask = result['_ask_detail'][0]
-                    verb, other = ('end', 'start') if ask['name'] == 'end_date' else ('start', 'end')
-                    said = 'It ended' if verb == 'end' else 'It started'
-                    year = (ask['date'] or '')[:4]
-                    if not ask['name']:
-                        level = 'months' if ask['detail'] == 'month' else 'years'
-                        question = (f'To show only the {level} for both dates, say "Show only the {level}". '
-                                    f'You can also edit the dates directly.')
-                    elif ask['detail'] == 'month':
-                        month = datetime.strptime(ask['date'][:7], '%Y-%m').strftime('%B')
-                        question = (f"Which day in {month} {year} did it {verb}? Your {other} date keeps its exact day, "
-                                    f'and an entry shows both dates the same way. Tell me the day (for example "{said} on '
-                                    f'{month} 15, {year}"), or say "{said} in {month} {year}, months only" to show only '
-                                    f'the months for both dates.')
-                    else:
-                        question = (f"Which month in {year} did it {verb}? Your {other} date keeps its month, and an "
-                                    f'entry shows both dates the same way. Tell me the month (for example "{said} in '
-                                    f'March {year}"), or say "{said} in {year}, years only" to show only the years for '
-                                    f'both dates.')
-                    result['response'] = (('Your other changes are ready to review. ' if proposals else '')
-                                          + "I haven't changed this entry yet. " + question)
+                # Every word about a change is built from what the turn really did: the suggestions it made, the date
+                # it asks about, an entry it refused to change. The model's own text stays only for a turn that changes
+                # nothing (a question answered, a clarification asked).
+                said = []
+                if proposals:
+                    said.append(_change_reply(result.get('_summaries') or []))
+                for ask in (result.get('_ask_detail') or [])[:1]:
+                    said.append(_date_question_text(ask))
                     result['next_question'] = ''
-                elif result.get('_unchanged') and not proposals:
+                if result.get('_off_target'):
+                    chosen = next((row for row in context['targets'] if row['target_ref'] == command['selected_target']), None)
+                    here = _entry_label(chosen['record_type'], chosen['values']) if chosen else 'this entry'
+                    others = ' or '.join(dict.fromkeys(result['_off_target']))
+                    said.append(f"I didn't change {others}: from this card I only change {here}. Tell me again what to "
+                                f"change about {here}, or open the other entry's card.")
+                    result['next_question'] = ''
+                if said:
+                    result['response'] = ' '.join(said)
+                elif result.get('_unchanged'):
                     # A change that would leave the entry exactly as it is must not be reported as made.
                     about_dates = any(result['_unchanged'])
                     result['response'] = ('Nothing changed: what you said gives the same details the entry already has'
                                           + (', or less detail than it keeps' if about_dates else '')
                                           + '. Your entry is unchanged. You can edit its fields directly'
                                           + (', or tell me the full date.' if about_dates else '.'))
-                result.pop('_unchanged', None)
-                result.pop('_ask_detail', None)
+                question = next((ask['question'] for ask in result.get('_ask_detail') or [] if ask.get('question')), None)
+                for name in ('_unchanged', '_ask_detail', '_summaries', '_off_target'):
+                    result.pop(name, None)
                 topic_skipped = any(operation['operation'] == 'skip_topic' for operation in result['operations'])
                 meta = current['structured_values']['resume_conversation_v1']
                 meta.update({'turn_state': 'completed', 'response': result['response'],
+                    **({'date_question': question} if question else {}),
                     'next_question': '' if topic_skipped else result['next_question'],
                     'topic_skipped': topic_skipped, 'proposal_keys': [p['proposal_key'] for p in proposals],
                     'control_bindings': {'record_keys': sorted({target['target_ref'].split(':', 1)[1]
@@ -1416,6 +1581,29 @@ class ResumeIntakeService:
                         self.repository.save_owner(owner, fresh)
             raise
 
+    @staticmethod
+    def _entry_key(snapshot, ref):
+        """The entry a target stands for: a saved record, or a new suggestion of its own. A waiting change to a saved
+        record and the record itself are the same entry."""
+        kind, key = str(ref).split(':', 1)
+        if kind == 'record':
+            return 'record:' + key
+        row = snapshot['proposals'].get(key) or {}
+        saved = row.get('target_key') or row.get('saved_record_key')
+        return 'record:' + saved if saved else 'proposal:' + key
+
+    @staticmethod
+    def _open_date_question(snapshot, current):
+        """The Guide's date question from the turn just before this one, if that turn asked one; any later turn closes it."""
+        def meta(row):
+            return (row.get('structured_values') or {}).get('resume_conversation_v1') or {}
+        turns = [row for row in snapshot['sources'].values() if row is not current and row.get('state') == 'active'
+                 and meta(row).get('turn_state') == 'completed']
+        if not turns:
+            return None
+        latest = max(turns, key=lambda row: meta(row).get('turn_order') or 0)
+        return copy.deepcopy(meta(latest).get('date_question')) or None
+
     def _conversation_proposals(self, owner, snapshot, source, command, context, result, policy):
         from services.resume_intake_runtime import (
             SynthesisError, CONVERSATION_OPERATION_FIELDS, CONVERSATION_OPERATIONS,
@@ -1433,7 +1621,33 @@ class ResumeIntakeService:
             if candidate.get('operation') == 'add_content':
                 key = frozenset(b['unit_id'] for b in candidate.get('source_refs') or [] if isinstance(b, dict))
                 shared_units[key] = shared_units.get(key, 0) + 1
-        for operation in result['operations']:
+        # A turn sent from one entry's card changes only that entry, whatever the model chose (checked by record, so a
+        # waiting change to a saved record counts as that record).
+        selected_entry = self._entry_key(snapshot, command['selected_target']) if command['selected_target'] else None
+        # An answer to the Guide's own date question ("March", "just the years") is applied to the entry it asked
+        # about, through the same revision and the same date rule, with the member's earlier words as evidence. It does
+        # not depend on the model carrying the question's year forward.
+        evidence_for, operations = {}, list(result['operations'])
+        question = self._open_date_question(snapshot, source)
+        if (question and question['target_ref'] in target_map
+                and selected_entry in (None, self._entry_key(snapshot, question['target_ref']))):
+            answer = _date_answer(command['statement'], question)
+            if answer is not None:
+                entry = self._entry_key(snapshot, question['target_ref'])
+                operations = [row for row in operations if not (
+                    isinstance(row, dict) and row.get('operation') == 'revise_content' and row.get('target_ref')
+                    and row['target_ref'] in target_map and self._entry_key(snapshot, row['target_ref']) == entry)]
+                operations.append({'operation': 'revise_content', 'target_ref': question['target_ref'],
+                    'record_type': target_map[question['target_ref']]['record_type'],
+                    'values': [{'field': name, 'value': value} for name, value in answer[0].items()],
+                    'explicit_clears': [], 'bullet_edits': [],
+                    'source_refs': [{'source_key': source['source_key'],
+                                     'unit_id': context['current_turn']['units'][0]['unit_id']}],
+                    'presentation_section': target_map[question['target_ref']].get('presentation_section') or {
+                        'role': 'Experience', 'education': 'Education', 'credential': 'Credentials'}.get(
+                        target_map[question['target_ref']]['record_type'])})
+                evidence_for[question['target_ref']] = answer[1]
+        for operation in operations:
             if not isinstance(operation, dict) or set(operation) != CONVERSATION_OPERATION_FIELDS:
                 raise conversation_rejection('invalid_output', 'operation_contract', 'operation_shape')
             if operation['operation'] not in CONVERSATION_OPERATIONS:
@@ -1450,6 +1664,10 @@ class ResumeIntakeService:
                 raise conversation_rejection('invalid_output', 'operation_contract', 'target_binding')
             if ref and (ref in changed_targets or target['record_type'] != record_type):
                 raise conversation_rejection('invalid_output', 'operation_contract', 'record_type_or_duplicate_target')
+            if selected_entry is not None and op != 'add_content' and self._entry_key(snapshot, ref) != selected_entry:
+                # Never another entry from this card: nothing is changed there, and the reply says so.
+                result.setdefault('_off_target', []).append(_entry_label(target['record_type'], target['values']))
+                continue
             fields = CONVERSATION_FIELDS.get(record_type)
             if fields is None:
                 raise conversation_rejection('invalid_output', 'operation_contract', 'unsupported_record_type')
@@ -1594,21 +1812,31 @@ class ResumeIntakeService:
                     date_note, date_flags = normalize_record(record_type, values, literal)
                 else:
                     changed = {name for name in names if name in patch and values.get(name)}
-                    date_note, date_flags = normalize_record(record_type, values, command['statement'],
+                    evidence = evidence_for.get(ref, command['statement'])
+                    date_note, date_flags = normalize_record(record_type, values, evidence,
                                                              prior=dict(pre_patch_values), changed=changed)
-                    if date_note == 'lowered':
-                        if _chooses_less_date_detail(command['statement'], values.get('date_precision')):
-                            # Showing less detail is the member's own choice ("show only the years"), so it is made.
-                            date_note = None
-                        else:
-                            # A new date with less detail than the date the member left alone, or less detail the
-                            # member's words did not ask for: an entry keeps one detail for both dates, and nothing is
-                            # lowered without asking. No suggestion is made; the member is asked (see converse).
-                            name = next(iter(changed), None)
-                            result.setdefault('_ask_detail', []).append(
-                                {'name': name, 'date': values.get(name) if name else None,
-                                 'detail': values.get('date_precision')})
-                            continue
+                    if date_note in {'lowered', 'capped'} and _chooses_less_date_detail(evidence, values.get('date_precision')):
+                        # Showing less detail is the member's own choice ("show only the years"), so it is made.
+                        date_note = 'coarsened' if date_note == 'capped' else None
+                    elif date_note in {'lowered', 'capped'}:
+                        # The entry keeps one detail for both dates, and the two disagree: a new date with less detail
+                        # than the one the member left alone ("lowered"), a new date with more ("capped"), or less detail
+                        # the member's words did not ask for. Nothing is changed; the member is asked for the missing
+                        # detail (see converse), and the answer, on the next turn, completes this same change.
+                        given = next(iter(sorted(changed)), None)
+                        other = next((name for name in names if name not in changed and pre_patch_values.get(name)), None)
+                        asked = given if date_note == 'lowered' else other
+                        detail = values.get('date_precision')
+                        ask = {'kind': date_note, 'name': asked, 'changed': given, 'detail': detail,
+                               'label': _entry_label(target['record_type'], target['values']),
+                               'date': (values.get(asked) if date_note == 'lowered' else pre_patch_values.get(asked)) if asked else None}
+                        if asked and ask['date']:
+                            ask['question'] = {'target_ref': ref, 'statement': evidence, 'asked': asked, 'changed': given,
+                                'asked_value': ask['date'][:10], 'year': ask['date'][:4], 'detail': detail,
+                                'patch': {name: value for name, value in patch.items()
+                                          if name in {'start_date', 'end_date', 'current_role'}}}
+                        result.setdefault('_ask_detail', []).append(ask)
+                        continue
                 for name in value_fields:
                     if name not in values and name not in pre_patch_values:
                         patch.pop(name, None)
@@ -1709,6 +1937,12 @@ class ResumeIntakeService:
                         source_unit['proposal_key'] = proposal['proposal_key']
                         source_unit['proposal_keys'] = sorted(set(source_unit.get('proposal_keys') or []) | {proposal['proposal_key']})
                         source_unit['disposition'] = 'pending'
+            # What the reply may say about this change: exactly what the suggestion holds (see _change_reply).
+            before = (target or {}).get('values') or {}
+            result.setdefault('_summaries', []).append({
+                'op': op, 'record_type': record_type, 'values': {**before, **values},
+                'changed': sorted(name for name in values if op != 'add_content' and values.get(name) != before.get(name)),
+                'bullets': bool(operation['bullet_edits'])})
             proposals.append(proposal)
             if ref:
                 changed_targets.add(ref)

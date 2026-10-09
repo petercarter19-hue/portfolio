@@ -136,6 +136,7 @@ INTAKE_METHODS = (
     'test_overview_counts_one_complete_role_and_the_details_it_could_not_place',
     'test_loose_details_open_one_at_a_time_and_earlier_work_stays_behind_its_own_link',
     'test_unavailable_organizer_offers_retry_and_a_retry_regroups_the_stored_source',
+    'test_an_unorganized_upload_is_shown_when_a_paused_guide_reopens',
     'test_the_same_file_is_not_stored_or_dispatched_twice',
     'test_pause_waits_for_the_save_and_the_status_and_says_only_what_happened',
     'test_escape_and_the_close_button_are_the_same_truthful_pause',

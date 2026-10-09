@@ -810,9 +810,10 @@ def normalize_dates(values, evidence, *, whole=None, prior=None, changed=None):
       and is left as it is. An entry is never stored with dates and no detail.
 
     The note is ``None`` when nothing was trimmed, ``"coarsened"`` when a date lost detail its words did not state, and
-    ``"lowered"`` when a changed date with less detail would lower a date the write left alone. ``"lowered"`` is never
-    stored: the Guide makes no change and asks for the missing detail, unless the member's words choose less detail for
-    both dates. A cleared date takes its earlier value back when ``prior`` had one.
+    ``"lowered"`` when a changed date with less detail would lower a date the write left alone, and ``"capped"`` when a
+    changed date states more detail than the date the write left alone shows. Neither is stored: the Guide makes no
+    change and asks for the missing detail, unless the member's words choose less detail for both dates. A cleared date
+    takes its earlier value back when ``prior`` had one.
     """
     prior = prior or {}
     precision = values.get("date_precision")
@@ -873,7 +874,9 @@ def normalize_dates(values, evidence, *, whole=None, prior=None, changed=None):
             values.pop("date_precision", None)
         return None, cleared
     shared = min(stated.values(), key=_DETAIL_RANK.get)
-    asked = precision if precision in _DETAIL_RANK else "day"
+    # A changed date with the entry's earlier detail still in place: the member's words decide (a month given for an
+    # entry's only date is kept); the date they left alone, if any, still caps both through ``shared``.
+    asked = precision if precision in _DETAIL_RANK and not (changed and precision == held) else "day"
     goal = _finer(shared, asked)
     if goal != "day":
         length = {"year": 4, "month": 7}[goal]
@@ -883,6 +886,9 @@ def normalize_dates(values, evidence, *, whole=None, prior=None, changed=None):
     values["date_precision"] = goal
     if any(_DETAIL_RANK[detail] > _DETAIL_RANK[goal] for detail in untouched.values()):
         return "lowered", cleared
+    if untouched and any(_DETAIL_RANK[detail] > _DETAIL_RANK[goal] for name, detail in stated.items() if name not in untouched):
+        # The changed date says more than the date left alone shows, and the entry keeps one detail for both.
+        return "capped", cleared
     trimmed = any(values.get(name) != padded for name, padded in read.items() if name in stated)
     lowered_ask = precision in _DETAIL_RANK and _DETAIL_RANK[goal] < _DETAIL_RANK[precision]
     return ("coarsened" if trimmed or lowered_ask else None), cleared
@@ -1309,10 +1315,23 @@ class MyDataExtractionAdapter:
     def organize_resume(self, text, *, allowed_fields, source_units, shortlist=None, request_id=None):
         """Use the same selected provider/model/allowance with a resume profile.
 
-        One dispatch, no second call and no fallback on invalid output. A flawed
+        One dispatch, and one more only when the answer names no candidate at all for a resume that has lines to
+        organize: the same request is asked once again under its own request id (the model has answered an unchanged,
+        normal request with an empty list). An answer whose candidates break the rules is not asked again. There is no
+        fallback model, effort or free-form mode, and a second empty answer is reported as unavailable. A flawed
         candidate is rejected alone; see ``organize_resume_extraction``.
         """
         payload = self._resume_payload(text, source_units=source_units, shortlist=shortlist, request_id=request_id)
+        organization = organize_resume_extraction(payload, text=text, source_units=source_units,
+                                                  allowed_fields=allowed_fields, shortlist=shortlist)
+        if organization.state != "unavailable" or payload["candidates"]:
+            return organization
+        from uuid import UUID, uuid5
+        again = str(uuid5(UUID(request_id), "organize_resume_again")) if request_id else None
+        try:
+            payload = self._resume_payload(text, source_units=source_units, shortlist=shortlist, request_id=again)
+        except ExtractionError:
+            return organization
         return organize_resume_extraction(payload, text=text, source_units=source_units,
                                           allowed_fields=allowed_fields, shortlist=shortlist)
 
