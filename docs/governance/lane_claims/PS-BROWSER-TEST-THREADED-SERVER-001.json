@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-BROWSER-TEST-THREADED-SERVER-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Stop intermittent browser-suite CI timeouts caused by single-threaded local test servers: an idle or preconnected browser socket blocks every later request for about 20 s. Start the Flask test server with make_server(..., threaded=True) in six Playwright suites (dark theme, Interview recovery/mobile nav, Interview review HTTP, Interview Studio operability, Journal frontend, Resume media), lock the Resume media synthetic stores and one-shot hooks for concurrent requests, and add one browser-free regression test proving an idle open connection does not stall a page load plus a guard that test servers stay threaded. Test-only: no runtime, CI configuration, deployment or product change.",
   "assignment": "implementation",
   "writer_ref": "agent:claude/2026-10-09/browser-test-threading",
@@ -32,6 +32,6 @@
   "review_requirement": "self",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "c5e076ab7032cb4d5a0a112bea98f35ac05eced8",
+  "closed_at": "2026-10-09T17:00:04Z"
 }
