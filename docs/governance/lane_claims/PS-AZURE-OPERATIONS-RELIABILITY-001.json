@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "package": "PS-AZURE-OPERATIONS-RELIABILITY-001",
+  "state": "active",
+  "outcome": "Implement Pete-approved Azure operational reliability recommendations: reviewed subscription Service Health coverage using existing operations recipients, safe monitoring usage controls, bounded aggregate demo diagnosis and isolated recovery evidence. Prepare privacy-safe application telemetry for a coordinated later release. Preserve Claude onboarding priority, existing content and owners, qualification workloads, specific production holds and current release identity. No AI routing, public indexing, schema change, destructive cleanup, or blanket main deployment.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a11384-f656-73b3-b57a-ad2952f1ffad",
+  "branch": "codex/2026-10-09-azure-operations-reliability-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "5b030fdc28564b23ba2974f599c8da9973c0a4be",
+  "owner_outcome_ref": "session:01a11384-f656-73b3-b57a-ad2952f1ffad/event:evt-0cdcaa0a-8499-433b-a0d9-77ccf6ef78ad",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-AZURE-OPERATIONS-RELIABILITY-001.json",
+    "docs/governance/lane_claims/receipts/PS-AZURE-OPERATIONS-RELIABILITY-001.json",
+    "docs/governance/lane_claims/evidence/PS-AZURE-OPERATIONS-RELIABILITY-001.md",
+    "scripts/azure_operations.py",
+    "tests/test_azure_operations.py",
+    "docs/initiatives/PS-AZURE-OPERATIONS-RELIABILITY-001/README.md",
+    "services/operational_telemetry.py",
+    "tests/test_operational_telemetry.py",
+    "app.py",
+    "requirements.txt"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-AZURE-OPERATIONS-RELIABILITY-001.md"
+  ],
+  "domains": [
+    "operations:azure-reliability",
+    "operations:privacy-safe-telemetry"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
