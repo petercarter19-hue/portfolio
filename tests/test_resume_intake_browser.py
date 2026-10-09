@@ -14,6 +14,7 @@ This is not SQL engine proof, live identity proof or live provider proof.
 from __future__ import annotations
 
 import logging
+import re
 import json
 import os
 import threading
@@ -195,6 +196,36 @@ def start_browser(cls):
 
 
 
+def throttle_browser_cpu_if_requested():
+    """Opt in to a slow runner: ``PEERSLATE_BROWSER_CPU_THROTTLE=2`` (or 4) slows every page's CPU by that factor.
+
+    Chrome's own throttling imitates a slow CI machine far better than background load does. A rate of 2 is the
+    closest stand-in for CI; 4 is a harsh stress. Unset or 1 changes nothing.
+    """
+    try:
+        rate = float(os.environ.get('PEERSLATE_BROWSER_CPU_THROTTLE') or 0)
+    except ValueError:
+        return
+    if rate <= 1:
+        return
+    from playwright.sync_api import BrowserContext
+    if getattr(BrowserContext.new_page, 'throttled', None) == rate:
+        return
+    original = getattr(BrowserContext.new_page, 'original', BrowserContext.new_page)
+
+    def new_page(self, *args, **kwargs):
+        page = original(self, *args, **kwargs)
+        self.new_cdp_session(page).send('Emulation.setCPUThrottlingRate', {'rate': rate})
+        # Up to 2x the real wait limits are kept (2x is the stand-in for CI, which runs with the real limits). Only a
+        # harsher stress rate stretches them, in proportion to what is beyond 2x: a diagnostic, never a CI proxy.
+        if rate > 2:
+            set_default_timeout = page.set_default_timeout
+            page.set_default_timeout = lambda milliseconds: set_default_timeout(milliseconds * rate / 2)
+        return page
+    new_page.throttled, new_page.original = rate, original
+    BrowserContext.new_page = new_page
+
+
 @unittest.skipUnless(sync_playwright is not None and CHROME_EXECUTABLE,
                      "Playwright and Google Chrome are required for the browser proof")
 class ResumeIntakeBrowserTests(unittest.TestCase):
@@ -208,6 +239,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
     def setUpClass(cls):
         install_intake_runtime_fixtures(cls)
         start_browser(cls)
+        throttle_browser_cpu_if_requested()
 
     def setUp(self):
         self.owner = 'onboarding-' + self._testMethodName
@@ -1416,7 +1448,11 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
             route.continue_()
         page.route('**/api/resume-media/me/library**', hold)
         search.fill('slow-empty')
-        page.wait_for_timeout(350)
+        # wait on the real condition (the slow query reached the server and is held), not on a fixed pause
+        for _ in range(200):
+            if held:
+                break
+            page.wait_for_timeout(50)
         self.assertEqual(len(held), 1); self.assertTrue(empty.is_hidden())
         self.assertIn('Loading', page.locator('#resume-media-library-loading').inner_text())
         self.assertEqual(page.locator('#resume-media-library-results').get_attribute('aria-busy'), 'true')
@@ -1748,7 +1784,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         cards = page.locator('#resume-editor-lists article'); cards.first.wait_for()
         self.assertEqual(cards.locator('h3').all_text_contents(), ['Current position','Past position','Unknown position'])
         current = cards.filter(has=page.get_by_role('heading', name='Current position', exact=True))
-        self.assertIn('2022-03 – Present', current.inner_text())
+        self.assertIn('March 2022 – Present', current.inner_text())
         self.assertNotIn('2022-03-01', current.inner_text())
         current.locator('summary').click()
         current.get_by_label('Date detail', exact=True).select_option('year')
@@ -1968,12 +2004,12 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.typed_service(rows)
         page = self.page(); self.submit(page,'Three strengths in the source.')
         self.assertEqual(page.locator('#resume-intake-proposals > li').count(),1)
-        self.assertIn('3 groups',page.locator('#resume-intake-review-position').inner_text())
+        self.assertIn('3 suggestions',page.locator('#resume-intake-review-position').inner_text())
         page.get_by_role('button',name='Leave this out',exact=True).click()
-        page.locator('#resume-intake-review-position').get_by_text('2 groups',exact=False).wait_for()
+        page.locator('#resume-intake-review-position').get_by_text('2 suggestions',exact=False).wait_for()
         self.assertEqual(len(self.catalog.list_items(self.owner)),0)
         self.confirm(page)
-        self.assertIn('One group',page.locator('#resume-intake-review-position').inner_text())
+        self.assertIn('One suggestion',page.locator('#resume-intake-review-position').inner_text())
         self.confirm(page)
         self.assertEqual(len(self.catalog.list_items(self.owner)),2)
 
@@ -2643,14 +2679,27 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.field(page,'employer_name').fill('');page.get_by_role('button',name='Confirm details',exact=True).click()
         self.assertIn('employer',page.locator('#resume-intake-status').inner_text())
         self.input(page);self.finish_input(page)
-        self.assertEqual(page.locator('#resume-intake-status').inner_text(),'')
+        # wait on the real state (the old message cleared, the new screen shown), not on how fast the page is
+        page.wait_for_function("() => document.getElementById('resume-intake-status').innerText === ''")
         page.locator('#resume-intake-add-story').click()
-        self.assertIn('outside work',page.locator('#resume-intake-question').inner_text())
-        self.assertFalse(page.locator('#resume-intake-new-question').is_visible())
-        self.assertTrue(page.locator('#resume-intake-input').is_visible())
+        page.locator('#resume-intake-question').get_by_text('outside work',exact=False).wait_for()
+        page.locator('#resume-intake-input').wait_for(state='visible')
+        page.locator('#resume-intake-new-question').wait_for(state='hidden')
         self.finish_input(page)
-        self.assertTrue(page.locator('#resume-intake-optional').is_visible())
+        page.locator('#resume-intake-optional').wait_for(state='visible')
         self.assertEqual(self.catalog.list_items(self.owner),[])
+
+    def test_a_credential_the_resume_calls_active_is_read_as_completed(self):
+        for word in ('active',):
+            with self.subTest(word=word):
+                self.typed_service([{'kind': 'inferred_wording', 'record_type': 'credential', 'confidence': 'uncertain',
+                                     'values': {'name': 'Certified Quality Auditor ' + word, 'issuer': 'Example Society', 'completion_status': word,
+                                                'issue_date': '2019-05-01', 'issue_date_precision': 'month'}}])
+                page = self.page(); self.submit(page, 'Certified Quality Auditor, Example Society, ' + word + ', since May 2019.')
+                page.get_by_role('button', name='Edit fields manually', exact=True).click()
+                self.assertEqual(self.field(page, 'completion_status').input_value(), 'completed')
+                self.confirm(page)
+                self.assertEqual(self.catalog.list_items(self.owner)[-1]['values']['completion_status'], 'completed')
 
     def test_private_local_credential_months_survive_confirmation_editor_and_direct_preview(self):
         import copy
@@ -3035,6 +3084,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
             self.assertTrue(where['x'] >= 0 and where['x'] + where['width'] <= width, width)
             self.assertEqual(retry.evaluate("el => getComputedStyle(el).pointerEvents"), 'auto')
             self.assertEqual(self.errors, [])
+            page.context.close()   # the next viewport starts from a fresh context, not one sharing this page's timers
 
     def test_a_save_that_never_answers_never_leaves_close_and_retry_stuck(self):
         service = self.batch_service(self.batch_counting(self.batch_payload()))
@@ -3085,6 +3135,45 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
                 self.assertTrue(seen[-1]['selected_target'].startswith('proposal:'))
                 self.assertEqual(self.errors, [])
 
+    def test_a_kept_recording_does_not_ride_along_with_a_change_to_one_role(self):
+        from uuid import uuid4
+        self.owner = 'quick-change-recording'
+        app.config.update(PEERSLATE_DEV_USER_KEY=self.owner)
+        service = self.batch_service(self.batch_counting(self.batch_payload()))
+        self.batch_upload(service)
+        self.conversation_service(service, lambda ctx: {'response': 'Which detail should change?', 'next_question': '', 'operations': []})
+        service.save_draft(self.owner, {'request_id': str(uuid4()), 'expected_version': None, 'text': ''})
+        recording_key = str(uuid4())
+
+        def with_recording(route):
+            if route.request.method != 'GET':
+                route.continue_(); return
+            response = route.fetch()
+            body = response.json()
+            body['draft']['attachments'] = [{'client_key': 'old-recording', 'kind': 'recording', 'filename': 'Earlier voice note',
+                                             'declared_content_type': 'audio/webm', 'source_key': recording_key, 'duration_seconds': 12}]
+            route.fulfill(response=response, json=body)
+        context = self.browser.new_context(viewport={'width': 1440, 'height': 1000})
+        self.addCleanup(context.close)
+        page = context.new_page(); page.set_default_timeout(7000)
+        page.route('https://fonts.**', lambda route: route.abort())
+        page.route('**/api/resume-intake/me/draft', with_recording)
+        page.goto(self.base_url + '/app/resume')
+        page.locator('#resume-intake[open]').wait_for()
+        page.locator('#resume-intake-review:visible').wait_for()
+        box = page.get_by_label('Tell me what to change about this one')
+        box.wait_for(state='visible')
+        box.fill('Please add the location Duluth, MN to this role.')
+        with page.expect_request(lambda request: request.method == 'POST' and request.url.endswith('/api/resume-interview/me/turn')) as sent:
+            page.get_by_role('button', name='Send change', exact=True).click()
+        payload = sent.value.post_data_json
+        self.assertEqual(payload['source_keys'], [])
+        self.assertTrue(payload['selected_target'].startswith('proposal:'))
+        # The recording is still kept for the next general turn.
+        page.locator('#resume-intake-status').get_by_text('Which detail should change', exact=False).wait_for()
+        self.assertEqual(page.locator('#resume-intake-attachments li').count(), 1)
+        self.assertIn('Earlier voice note', page.locator('#resume-intake-attachments').text_content())
+
     def test_choice_values_with_a_hyphen_or_space_match_the_forms_own_choices_and_confirm(self):
         row = self.role_proposal(); row['values'] = dict(row['values'], employment_type='Full-time')
         self.typed_service([row])
@@ -3118,6 +3207,38 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.confirm(page)
         saved = self.catalog.list_items(self.owner)[0]['values']
         self.assertEqual((saved['start_date'], saved['end_date'], saved['date_precision']), ('2012-01-01', '2016-01-01', 'year'))
+
+    def test_a_role_with_a_month_start_and_a_year_end_saves_at_the_year_the_member_chose(self):
+        row = self.role_proposal()
+        row['values'] = dict(row['values'], role_title='Planner', employer_name='Alpha Labs', start_date='2007-08-01',
+                             end_date='2010-01-01', date_precision='month', current_role=False)
+        self.typed_service([row])
+        page = self.page(); self.submit(page, 'Planner at Alpha Labs from August 2007 to 2010.')
+        page.get_by_role('button', name='Edit fields manually', exact=True).click()
+        self.assertEqual((self.field(page, 'start_date').input_value(), self.field(page, 'end_date').input_value()), ('2007-08', '2010-01'))
+        self.field(page, 'end_date').fill('2010')
+        self.field(page, 'date_precision').select_option('year')
+        self.confirm(page)
+        saved = self.catalog.list_items(self.owner)[0]['values']
+        self.assertEqual((saved['start_date'], saved['end_date'], saved['date_precision']), ('2007-01-01', '2010-01-01', 'year'))
+
+    def test_a_role_with_mixed_dates_and_month_detail_says_what_it_did_and_keeps_both_at_the_year(self):
+        row = self.role_proposal()
+        row['values'] = dict(row['values'], role_title='Planner', employer_name='Alpha Labs', start_date='2007-08-01',
+                             end_date='2010-01-01', date_precision='month', current_role=False)
+        self.typed_service([row])
+        page = self.page(); self.submit(page, 'Planner at Alpha Labs from August 2007 to 2010.')
+        page.get_by_role('button', name='Edit fields manually', exact=True).click()
+        self.field(page, 'end_date').fill('2010')
+        page.get_by_role('button', name='Confirm details', exact=True).click()
+        status = page.locator('#resume-intake-status')
+        status.get_by_text('did not guess the rest', exact=False).wait_for()
+        self.assertEqual(self.field(page, 'date_precision').input_value(), 'year')
+        self.assertEqual((self.field(page, 'start_date').input_value(), self.field(page, 'end_date').input_value()), ('2007', '2010'))
+        self.assertEqual(len(self.catalog.list_items(self.owner)), 0)
+        self.confirm(page)
+        saved = self.catalog.list_items(self.owner)[0]['values']
+        self.assertEqual((saved['start_date'], saved['end_date'], saved['date_precision']), ('2007-01-01', '2010-01-01', 'year'))
 
     def test_a_role_confirmed_a_moment_ago_is_already_on_the_list_a_following_contribution_chooses_from(self):
         self.typed_service([self.role_proposal(), {'kind': 'inferred_wording', 'record_type': 'accomplishment', 'confidence': 'uncertain',
@@ -3178,6 +3299,37 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.assertEqual(service.get_draft(self.owner)['draft']['text'], 'Words typed during the busy moment.')
         page.get_by_role('button', name='Pause', exact=True).click()
         page.locator('#resume-intake-pause-notice').get_by_text('Paused. Your draft is saved privately.', exact=True).wait_for()
+
+    def test_a_page_load_that_meets_a_busy_site_is_retried_and_never_says_saving_is_not_enabled(self):
+        service = self.batch_service(self.batch_counting(self.batch_payload()))
+        self.batch_upload(service)
+        state = {'workspace': 0, 'guide': 0}
+
+        def busy_workspace(route):
+            if state['workspace'] < 2:
+                state['workspace'] += 1
+                route.fulfill(status=503, json={'success': False, 'code': 'unavailable', 'message': 'The composer is unavailable.'})
+            else:
+                route.continue_()
+
+        def busy_guide(route):
+            if state['guide'] < 1:
+                state['guide'] += 1
+                route.abort()
+            else:
+                route.continue_()
+        context = self.browser.new_context(viewport={'width': 1440, 'height': 1000})
+        self.addCleanup(context.close)
+        page = context.new_page(); page.set_default_timeout(15000)
+        page.route('https://fonts.**', lambda route: route.abort())
+        page.route(re.compile(r'.*/api/resume-intake/me$'), busy_workspace)
+        page.route(re.compile(r'.*/api/resume-intake/me/guide$'), busy_guide)
+        page.goto(self.base_url + '/app/resume')
+        page.locator('#resume-intake[open]').wait_for()
+        page.locator('#resume-intake-review:visible').wait_for()
+        self.assertEqual(state['workspace'], 2)
+        self.assertNotIn('Saving is not enabled', page.locator('#resume-intake-status').inner_text())
+        self.assertNotIn('Saving is not enabled', page.inner_text('body'))
 
     def test_a_late_draft_load_never_overwrites_saved_words_the_member_has_not_seen(self):
         # The first loads fail as busy, the member types, then the saved draft loads and says something else. The saved

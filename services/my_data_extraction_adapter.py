@@ -207,7 +207,8 @@ def _unbindable_unit(unit):
     from services.resume_onboarding_document_reader import _CONTACT_LINE, _NAME_LINE
     text = str(unit.get("text") or "")
     return bool(_CONTACT_LINE.search(text)
-                or (unit.get("section") is None and _NAME_LINE.match(text.strip())))
+                or (unit.get("section") is None
+                    and (_NAME_LINE.match(text.strip()) or re.fullmatch(r"[A-Z]{8,}", text.strip()))))
 
 
 def _all_resume_content_units(source_units):
@@ -628,13 +629,231 @@ def _description_units(selected, values, record_type):
                 or (current and word in {"present", "current"}))
 
     kept = list(selected)
-    while len(kept) > 1:
-        words = re.findall(r"[a-z0-9]+", kept[0]["text"].casefold())
-        if words and all(covered_word(word) for word in words):
-            kept.pop(0)
-        else:
+    # An education line that is the school name followed by its place is the entry's header line too, and so is a
+    # lone state abbreviation after it.
+    dropped_header = False
+
+    def header_line(text):
+        words = re.findall(r"[a-z0-9]+", text.casefold())
+        if not words:
+            return False
+        if all(covered_word(word) for word in words):
+            return True
+        if dropped_header and re.fullmatch(r"[A-Z]{2}", text.strip()):
+            return True
+        # Only an education line; the extras must be place words (capitalized, none a number) that follow the school
+        # name after a comma, slash or dash ("Kennesaw State University / Kennesaw, GA"), never wording that runs on
+        # from the name itself ("Example University Honors Program").
+        if record_type != "education" or len(words) > 24 or not values.get("institution_name"):
+            return False
+        lowered, school = text.casefold(), str(values["institution_name"]).casefold()
+        at = lowered.find(school)
+        if at < 0:
+            return False
+        before, after = text[:at], text[at + len(school):]
+        extra_before = [t for t in re.findall(r"[A-Za-z0-9]+", before) if not covered_word(t.casefold())]
+        extra_after = [t for t in re.findall(r"[A-Za-z0-9]+", after) if not covered_word(t.casefold())]
+        extras = extra_before + extra_after
+        if extra_before or len(extras) > 4 or not all(t[0].isupper() and not re.search(r"\d", t) for t in extras):
+            return False
+        return not extra_after or re.match(r"\s*[,/|–—-]\s*\S", after) is not None
+
+    while kept:
+        first_line, _, rest = kept[0]["text"].partition(chr(10))
+        if not (len(kept) > 1 or rest.strip()) or not header_line(first_line):
             break
+        if rest.strip():
+            kept[0] = {**kept[0], "text": rest}
+        else:
+            kept.pop(0)
+        dropped_header = True
     return kept
+
+
+def _strip_title_dates(values):
+    """A title or role name does not carry the dates the entry already holds: "B.S., Electrical Engineering July 2020"."""
+    held = {match for name in ("start_date", "end_date") for match in re.findall(r"\b(?:19|20)\d\d\b", str(values.get(name) or ""))}
+    if not held:
+        return
+    month = r"(?:%s)\.?" % "|".join(sorted(_MONTH_WORDS, key=len, reverse=True))
+    when = r"(?:%s\s+)?(?:19|20)\d\d" % month
+    tail = re.compile(r"[\s,;:(–—-]*\(?\b%s(?:\s*(?:-|–|—|to)\s*(?:%s|present|current))?\)?\s*$" % (when, when), re.IGNORECASE)
+    for name in ("title", "role_title"):
+        value = values.get(name)
+        found = tail.search(value) if value else None
+        if found and found.start() > 0 and set(re.findall(r"\b(?:19|20)\d\d\b", found.group(0))) <= held:
+            values[name] = value[:found.start()].rstrip(" ,;:(–—-")
+
+
+_MONTH_FORMS = (("january", "jan"), ("february", "feb"), ("march", "mar"), ("april", "apr"), ("may",), ("june", "jun"),
+                ("july", "jul"), ("august", "aug"), ("september", "sept", "sep"), ("october", "oct"),
+                ("november", "nov"), ("december", "dec"))
+_DETAIL_RANK = {"year": 1, "month": 2, "day": 3}
+_ALL_MONTH_WORDS = "|".join(sorted({form for forms in _MONTH_FORMS for form in forms}, key=len, reverse=True))
+
+
+def _stated_date_detail(full, value):
+    """How much of this date the résumé's own words state: ``day``, ``month``, ``year`` or ``None`` (not found there)."""
+    match = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", str(value))
+    if not match:
+        return None
+    year, month, day = match.group(1), int(match.group(2)), int(match.group(3))
+    if not re.search(r"(?<!\d)%s(?!\d)" % year, full):
+        return None
+    word = r"(?:%s)\.?" % "|".join(_MONTH_FORMS[month - 1])
+    number, day_number = "0?%d" % month, "0?%d" % day
+    day_forms = (
+        r"(?i)\b%s\s*%s(?:st|nd|rd|th)?,?\s*%s\b" % (word, day_number, year),
+        r"(?i)\b%s(?:st|nd|rd|th)?\s+(?:of\s+)?%s,?\s*%s\b" % (day_number, word, year),
+        r"\b%s-%02d-%02d\b" % (year, month, day),
+        r"\b%s[/.]%s[/.]%s\b" % (number, day_number, year),
+    )
+    month_forms = (
+        r"(?i)\b%s,?\s*(?:of\s+)?%s\b" % (word, year),
+        # "June through August 2025": a month named shortly before the year, with no number or sentence end between.
+        r"(?i)\b%s\b(?:[\s,&–—-]|\b(?:through|thru|to|until|and|or|%s)\b\.?){1,12}\b%s\b" % (word, _ALL_MONTH_WORDS, year),
+        r"\b%s[-/.]%02d\b" % (year, month),
+        r"\b%s[/.]%s\b" % (number, year),
+    )
+    if any(re.search(form, full) for form in day_forms):
+        return "day"
+    if any(re.search(form, full) for form in month_forms):
+        return "month"
+    return "year"
+
+
+_DATE_FIELDS = ("start_date", "end_date")
+
+
+def normalize_dates(values, evidence, *, whole=None, prior=None, changed=None):
+    """The one place a role's or education entry's dates are made true before they are stored; returns ``(coarsened, cleared)``.
+
+    Every path that writes ``start_date``, ``end_date`` or ``date_precision`` for a suggestion (organizing an upload, adding
+    from the Guide, revising one date, changing only the detail) calls this, so the same rules hold everywhere:
+
+    * a date is kept only at the detail the member's own words (``evidence``) state; a month or day they did not say is
+      trimmed, and a date whose year is not in them is left out (cleared, and reported) unless ``whole`` (the entire source)
+      has the year, in which case it is kept at year detail;
+    * ``changed`` names the dates this write changes (``None``: all of them). A date it leaves alone is not re-proven; it
+      counts at the detail the entry had before (``prior``), or the year when none is on record;
+    * both dates end at the coarsest detail either one states, and the stored detail never exceeds it, so a change of
+      detail alone can never raise what the words support;
+    * a missing or "unknown" detail becomes the detail the words state; "approximate" (education) is the member's own
+      and is left as it is. An entry is never stored with dates and no detail.
+
+    A cleared date takes its earlier value back when ``prior`` had one.
+    """
+    prior = prior or {}
+    precision = values.get("date_precision")
+    if precision == "approximate":
+        # The member's own "around" detail is kept, but a year they never said is still not stored.
+        cleared = []
+        for name in _DATE_FIELDS:
+            value = values.get(name)
+            if not value or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(value)) or (changed is not None and name not in changed):
+                continue
+            if _stated_date_detail(evidence, value) is None and not (whole is not None and _stated_date_detail(whole, value) is not None):
+                cleared.append(name)
+                if prior.get(name):
+                    values[name] = prior[name]
+                else:
+                    values.pop(name, None)
+            else:
+                values[name] = value[:4] + "-01-01"
+        if not any(values.get(name) for name in _DATE_FIELDS):
+            values.pop("date_precision", None)
+        return False, cleared
+    if precision not in _DETAIL_RANK and precision not in (None, "", "unknown"):
+        return False, []
+    held = prior.get("date_precision")
+    held = held if held in _DETAIL_RANK else None
+    before = {name: values.get(name) for name in _DATE_FIELDS + ("date_precision",)}
+    stated, cleared = {}, []
+    for name in _DATE_FIELDS:
+        value = values.get(name)
+        if not value or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(value)):
+            continue
+        if changed is not None and name not in changed:
+            stated[name] = held or "year"
+            continue
+        detail = _stated_date_detail(evidence, value)
+        if detail is None and whole is not None and _stated_date_detail(whole, value) is not None:
+            detail = "year"
+        if detail is None:
+            cleared.append(name)
+        else:
+            stated[name] = detail
+    for name in cleared:
+        if prior.get(name):
+            values[name] = prior[name]
+        else:
+            values.pop(name, None)
+    if not stated:
+        if not any(values.get(name) for name in _DATE_FIELDS):
+            values.pop("date_precision", None)
+        return False, cleared
+    shared = min(stated.values(), key=_DETAIL_RANK.get)
+    asked = precision if precision in _DETAIL_RANK else "day"
+    goal = shared if _DETAIL_RANK[shared] < _DETAIL_RANK[asked] else asked
+    if goal != "day":
+        length = {"year": 4, "month": 7}[goal]
+        for name in _DATE_FIELDS:
+            if values.get(name):
+                values[name] = values[name][:length] + ("-01-01" if goal == "year" else "-01")
+    values["date_precision"] = goal
+    return before != {name: values.get(name) for name in before}, cleared
+
+
+_CREDENTIAL_DATES = (("issue_date", "issue_date_precision"), ("expiration_date", "expiration_date_precision"))
+
+
+def normalize_credential_dates(values, evidence, *, whole=None, prior=None, changed=None):
+    """The same rules for a credential's two dates, each with its own detail field; returns ``(coarsened, cleared)``.
+
+    Each date is kept at the detail the member's words state for it (a missing detail becomes that detail), a date whose year
+    is not in them is left out, a date a write leaves alone is not re-proven, and a change of detail alone cannot raise
+    it above what that date had.
+    """
+    prior = prior or {}
+    cleared, coarsened = [], False
+    for date_name, precision_name in _CREDENTIAL_DATES:
+        value = values.get(date_name)
+        if not value or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(value)):
+            continue
+        asked = values.get(precision_name)
+        before = (value, asked)
+        if changed is not None and date_name not in changed:
+            held = prior.get(precision_name) if prior.get(precision_name) in _DETAIL_RANK else "year"
+            if asked in _DETAIL_RANK and _DETAIL_RANK[asked] > _DETAIL_RANK[held]:
+                asked = held
+            elif asked not in _DETAIL_RANK:
+                asked = held
+            goal = asked
+        else:
+            detail = _stated_date_detail(evidence, value)
+            if detail is None and whole is not None and _stated_date_detail(whole, value) is not None:
+                detail = "year"
+            if detail is None:
+                cleared.append(date_name)
+                if prior.get(date_name):
+                    values[date_name] = prior[date_name]
+                else:
+                    values.pop(date_name, None)
+                    values.pop(precision_name, None)
+                continue
+            asked = asked if asked in _DETAIL_RANK else "day"
+            goal = detail if _DETAIL_RANK[detail] < _DETAIL_RANK[asked] else asked
+        if goal != "day":
+            values[date_name] = values[date_name][:{"year": 4, "month": 7}[goal]] + ("-01-01" if goal == "year" else "-01")
+        values[precision_name] = goal
+        coarsened = coarsened or (values[date_name], values[precision_name]) != before and before[1] in _DETAIL_RANK
+    return coarsened, cleared
+
+
+def check_stated_dates(values, evidence, whole=None, trusted=(), trusted_precision=None):
+    """Compatibility wrapper over :func:`normalize_dates` (``trusted`` are the dates a write leaves alone)."""
+    changed = None if not trusted else {name for name in _DATE_FIELDS if name not in trusted}
+    return normalize_dates(values, evidence, whole=whole, prior={"date_precision": trusted_precision}, changed=changed)
 
 
 def _resume_draft(raw, ids, anchor, section, *, text, units, source_units, fields, index):
@@ -656,7 +875,8 @@ def _resume_draft(raw, ids, anchor, section, *, text, units, source_units, field
     # supplied a shorter summary. An explicit later rewrite belongs to a separate
     # conversation proposal and member confirmation.
     full = "\n".join(unit["text"] for unit in selected)
-    lossless = "\n".join(unit["text"] for unit in _description_units(selected, values, candidate.record_type))
+    from services.resume_onboarding_document_reader import strip_bullet_marks
+    lossless = "\n".join(strip_bullet_marks(unit["text"]) for unit in _description_units(selected, values, candidate.record_type))
     description = "wording" if candidate.record_type == "knowledge" else "summary"
     if candidate.record_type in {"role", "education", "skill", "knowledge"}:
         values[description] = lossless
@@ -668,7 +888,15 @@ def _resume_draft(raw, ids, anchor, section, *, text, units, source_units, field
         raise ExtractionError("field_limit")
     # An identity field the selected units do not support is cleared, not trusted: the
     # grouping evidence stays valid and the member supplies the missing value.
+    date_note, no_date = None, []
     cleared, confidence = [], candidate.confidence
+    if candidate.record_type in {"role", "education", "credential"}:
+        coarsened, no_date = (normalize_credential_dates if candidate.record_type == "credential" else normalize_dates)(
+            values, full, whole=text)
+        date_note = "coarsened" if coarsened else None
+        _strip_title_dates(values)
+        if no_date:
+            confidence = "uncertain"
     for name in RESUME_IDENTITY_FIELDS.get(candidate.record_type, ()):
         value = values.get(name)
         if value and re.sub(r"\s+", " ", value).casefold().strip(". ") not in re.sub(r"\s+", " ", full).casefold():
@@ -682,7 +910,8 @@ def _resume_draft(raw, ids, anchor, section, *, text, units, source_units, field
             "provided_fields": list(values), "suggested_category": candidate.suggested_category,
             "parent_reference": candidate.parent_reference, "unit_ids": ids,
             "record_anchor": anchor, "presentation_section": section,
-            "uncertain_fields": cleared, "_cleared_identity": cleared}
+            "uncertain_fields": cleared + no_date, "_cleared_identity": cleared,
+            **({"date_note": date_note} if date_note else {})}
 
 
 def organize_resume_extraction(payload, *, text, source_units, allowed_fields, shortlist=None):

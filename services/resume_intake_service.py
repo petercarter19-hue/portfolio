@@ -851,8 +851,24 @@ class ResumeIntakeService:
             view['targets'] = [row for row in view['targets']
                                if row['target_ref'] == selected_ref or row['target_ref'].startswith('record:')]
 
+        def trim_source_lines():
+            # A large upload can be the whole room. Keep the lines the selected record cites, and give up the other
+            # lines of the sources, from the end, a few at a time, until the whole fits.
+            needed = {ref.get('unit_id') for target in view['targets'] if target['target_ref'] == selected_ref
+                      for ref in target.get('source_refs') or []}
+            for row in view['materials']:
+                kept = [unit for unit in row['units'] if unit['unit_id'] in needed]
+                others = [unit for unit in row['units'] if unit['unit_id'] not in needed]
+                row['units'] = kept
+                row['_others'] = others
+            while size() > budget and any(row['_others'] for row in view['materials']):
+                for row in view['materials']:
+                    del row['_others'][-5:]
+            for row in view['materials']:
+                row['units'] = sorted(row['units'] + row.pop('_others'), key=lambda unit: unit.get('span_start', 0))
+
         for step in (lambda: keep_turns(6), lambda: keep_turns(2), lambda: keep_turns(0),
-                     only_needed_materials, only_needed_targets):
+                     only_needed_materials, trim_source_lines, only_needed_targets):
             if size() <= budget:
                 break
             step()
@@ -1451,6 +1467,7 @@ class ResumeIntakeService:
                             raise conversation_rejection('invalid_output', 'operation_contract', 'bullet_revision_replacement')
                         lines[index] = edit['replacement']
                 values[name] = '\n'.join(lines); edited_fields.add(name)
+            pre_patch_values = dict(values)
             values.update(patch)
             for name in clears:
                 values[name] = _empty_value(name)
@@ -1514,6 +1531,32 @@ class ResumeIntakeService:
                     values[body_field] = literal
                 if len(literal.encode('utf-8')) > 8000:
                     raise conversation_rejection('invalid_output', 'operation_contract', 'literal_size')
+            # Dates keep only the detail the member's own words state: a month or day the model supplied on its own is
+            # trimmed (both dates to the coarsest detail they share), and a date whose year is not in those words is
+            # left out and flagged, never stored as if the member had said it.
+            date_flags, date_note = [], None
+            date_fields = ('start_date', 'end_date', 'date_precision', 'issue_date', 'expiration_date',
+                           'issue_date_precision', 'expiration_date_precision')
+            if record_type in {'role', 'education', 'credential'} and (op == 'add_content' or set(date_fields) & set(patch)):
+                # Every date a suggestion stores goes through one rule (see normalize_dates): only the detail the member's
+                # words state, a date whose year they never said left out, the dates a revision leaves alone not re-proven,
+                # and a change of detail alone never raising what is supported.
+                from services.my_data_extraction_adapter import normalize_credential_dates, normalize_dates
+                normalize = normalize_credential_dates if record_type == 'credential' else normalize_dates
+                names = ('issue_date', 'expiration_date') if record_type == 'credential' else ('start_date', 'end_date')
+                if op == 'add_content':
+                    coarsened, date_flags = normalize(values, literal)
+                else:
+                    changed = {name for name in names if name in patch and values.get(name)}
+                    coarsened, date_flags = normalize(values, command['statement'], prior=pre_patch_values, changed=changed)
+                date_note = 'coarsened' if coarsened else None
+                for name in date_fields:
+                    if name not in values and name not in pre_patch_values:
+                        patch.pop(name, None)
+                    elif values.get(name) is None:
+                        patch.pop(name, None)
+                    elif name in patch or values[name] != pre_patch_values.get(name):
+                        patch[name] = values[name]
             section = operation['presentation_section'] or (target or {}).get('presentation_section')
             if section not in RESUME_SECTIONS:
                 raise conversation_rejection('invalid_output', 'operation_contract', 'presentation_section')
@@ -1566,7 +1609,7 @@ class ResumeIntakeService:
                         if old['proposal_key'] in (source_unit.get('proposal_keys') or []):
                             source_unit['proposal_keys'] = sorted((set(source_unit['proposal_keys']) - {old['proposal_key']}) | {proposal['proposal_key']})
             proposal['requires_member_wording'] = False
-            if op == 'add_content' and unsupported_identity:
+            if (op == 'add_content' and unsupported_identity) or date_flags:
                 proposal['confidence'] = 'uncertain'
             proposal['resume_conversation_v1'] = {'unit_ids': [b['unit_id'] for b in source_refs],
                 'source_refs': copy.deepcopy(source_refs), 'source_bindings': dependencies,
@@ -1576,7 +1619,9 @@ class ResumeIntakeService:
                     if k != 'resume_credential_wording'}) if canonical_target and not old else
                     ((old or {}).get('resume_conversation_v1', {}).get('target_values_digest') or
                         (_json_digest({**canonical_target['values'], **(canonical_target.get('proposed_values') or {})}) if canonical_target else None)),
-                **({'uncertain_fields': list(unsupported_identity)} if op == 'add_content' and unsupported_identity else {}),
+                **({'uncertain_fields': (list(unsupported_identity) if op == 'add_content' else []) + date_flags}
+                   if (op == 'add_content' and unsupported_identity) or date_flags else {}),
+                **({'date_note': date_note} if date_note else {}),
                 'resume_exclusion': op == 'exclude_content' and not operation['bullet_edits'],
                 'resume_restoration': bool(canonical_target) and op == 'restore_content' and not operation['bullet_edits']}
             if record_type == 'credential' and canonical_target:
@@ -3953,6 +3998,7 @@ class ResumeIntakeService:
         batch_source = self._batch_source(snapshot, documents, pending)
         overview = {"schema_version": 1, "batch": None,
                     "counts": {"experience": 0, "education": 0, "credentials": 0, "skills": 0, "other": 0, "unplaced": 0},
+                    "typed_counts": {"experience": 0, "education": 0, "credentials": 0, "skills": 0, "other": 0},
                     "groups": [], "unplaced": {"count": 0, "proposal_keys": []}, "earlier": {"count": 0},
                     "duplicate_source_keys": []}
         if batch_source is None:
@@ -4000,7 +4046,9 @@ class ResumeIntakeService:
                 overview["earlier"]["count"] += 1
                 continue
             section = conversation.get("presentation_section") or "Other"
-            overview["counts"][bucket.get(section, "other")] += 1
+            # What the member typed or said themselves is counted on its own, never as part of the upload.
+            from_upload = (row.get("binding") or {}).get("source_key") == key
+            overview["counts" if from_upload else "typed_counts"][bucket.get(section, "other")] += 1
             groups.append(self._overview_group(row, conversation, section, units))
         order = ["Experience", "Education", "Credentials", "Skills"]
         groups.sort(key=lambda g: g["heading"]["start_date"] or "", reverse=True)
@@ -4022,8 +4070,9 @@ class ResumeIntakeService:
                                       values, record_type)
         # Lines come from the effective wording. A unit id is attached only while that wording
         # is still exactly the joined source text, so an edited or amended item never shows stale source lines.
-        if selected and "\n".join(u["text"] for u in selected) == effective:
-            lines = [{"text": u["text"], "unit_id": u["unit_id"],
+        from services.resume_onboarding_document_reader import strip_bullet_marks
+        if selected and "\n".join(strip_bullet_marks(u["text"]) for u in selected) == effective:
+            lines = [{"text": strip_bullet_marks(u["text"]), "unit_id": u["unit_id"],
                       "role": "header" if u["unit_id"] == conversation.get("record_anchor") else "line"}
                      for u in selected]
         else:
@@ -4042,6 +4091,7 @@ class ResumeIntakeService:
                         "date_precision": values.get("date_precision"),
                         "current": values.get("current_role") is True},
             "uncertain_fields": list(conversation.get("uncertain_fields") or []),
+            **({"date_note": conversation["date_note"]} if conversation.get("date_note") else {}),
             "requires_member_wording": bool(row.get("requires_member_wording")),
             "lines": lines,
             "source": {"source_key": (row.get("provenance") or {}).get("source_key"), "unit_ids": ids,
@@ -4120,6 +4170,8 @@ class ResumeIntakeService:
                 }
                 if draft.get("uncertain_fields"):
                     proposal["resume_conversation_v1"]["uncertain_fields"] = list(draft["uncertain_fields"])
+                if draft.get("date_note"):
+                    proposal["resume_conversation_v1"]["date_note"] = draft["date_note"]
                 if draft.get("placement"):
                     proposal["resume_conversation_v1"]["placement"] = draft["placement"]
                 if target and proposal['record_type'] == 'credential':
@@ -4175,20 +4227,35 @@ class ResumeIntakeService:
                 kind = "contradiction"
             else:
                 kind = "inferred_wording"
+            values = dict(candidate.values)
+            provided = list(candidate.provided_fields)
+            date_flags, date_note = [], None
+            if record_type in {"role", "education", "credential"}:
+                # Same rule as every other path: only the date detail the member's words state.
+                from services.my_data_extraction_adapter import normalize_credential_dates, normalize_dates
+                coarsened, date_flags = (normalize_credential_dates if record_type == "credential" else normalize_dates)(values, text)
+                date_note = "coarsened" if coarsened else None
+                provided = [name for name in provided if name in values] + [
+                    name for name in ("date_precision", "issue_date_precision", "expiration_date_precision")
+                    if name in values and name not in provided]
             drafts.append({
                 "kind": kind,
                 "record_type": record_type,
-                "values": dict(candidate.values),
+                "values": values,
                 "confidence": candidate.confidence,
                 "outcome": candidate.outcome,
                 "match_reference": candidate.match_reference,
-                "provided_fields": list(candidate.provided_fields),
+                "provided_fields": provided,
                 "quote": candidate.quote,
                 "span_start": candidate.span_start,
                 "span_end": candidate.span_end,
                 "suggested_category": candidate.suggested_category,
                 "parent_reference": candidate.parent_reference,
+                **({"uncertain_fields": list(date_flags)} if date_flags else {}),
+                **({"date_note": date_note} if date_note else {}),
             })
+            if date_flags:
+                drafts[-1]["confidence"] = "uncertain"
         return drafts, None, None
 
     def _resolve_equivalent(self, owner, draft):

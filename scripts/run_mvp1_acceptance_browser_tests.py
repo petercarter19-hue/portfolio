@@ -153,6 +153,11 @@ INTAKE_METHODS = (
     'test_a_change_keeps_the_dropdown_choice_the_member_already_made',
     'test_a_late_draft_load_never_overwrites_saved_words_the_member_has_not_seen',
     'test_a_late_draft_with_the_same_number_of_items_but_different_content_is_not_treated_as_the_same',
+    'test_a_kept_recording_does_not_ride_along_with_a_change_to_one_role',
+    'test_a_page_load_that_meets_a_busy_site_is_retried_and_never_says_saving_is_not_enabled',
+    'test_a_role_with_a_month_start_and_a_year_end_saves_at_the_year_the_member_chose',
+    'test_a_role_with_mixed_dates_and_month_detail_says_what_it_did_and_keeps_both_at_the_year',
+    'test_a_credential_the_resume_calls_active_is_read_as_completed',
 )
 
 

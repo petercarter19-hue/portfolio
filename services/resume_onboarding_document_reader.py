@@ -132,19 +132,59 @@ def load_ocr_configuration(configuration):
 
 
 _BULLET_GLYPHS = "\u2022\u25aa\u25e6\u25cf\u25a0\u25a1\u25ab\u25b8\u25ba\u2023\u2043\u2219\u00b7*"
+# A line that starts with any bullet mark the reader knows (not only the round one), a hyphen or dash, or a number is a
+# new item: a "▪" bullet must not be joined to the employer line above it.
+_BULLET_START = re.compile(r"[" + re.escape(_BULLET_GLYPHS) + r"\-–—]|\d+[.)]")
 _DOUBLE_BULLET = re.compile(r"(?m)^([ \t]*)(?:[" + re.escape(_BULLET_GLYPHS) + r"][ \t]+){2,}")
-_SPACED_LETTERS = re.compile(r"^[ \t]*(?:[A-Za-z][ \t]){3,}[A-Za-z](?:[ \t]{2,}(?:[A-Za-z][ \t])*[A-Za-z])*[ \t]*$")
+_HEADING_KEY_STRIP = re.compile(r"[^a-z]+")
+
+
+def _heading_key(text):
+    return _HEADING_KEY_STRIP.sub("", str(text).lower().replace("&", " and "))
+
+
+def _collapse_spaced(line):
+    """Read "S K I L L S", "S  K  I  L  L  S" or "C L E A R A N C E & K E Y …" as words; ``None`` if the line is not spaced out.
+
+    Word gaps are taken from the wider gaps when the spacing shows them. A known section heading comes back under its
+    own name, so letters spaced evenly all the way through still read as "SKILLS" or "PROFESSIONAL SUMMARY".
+    """
+    tokens = line.split()
+    if len(tokens) < 5 or any(len(token) != 1 for token in tokens) or not any(token.isalpha() for token in tokens):
+        return None
+    gaps = [len(match.group(0)) for match in re.finditer(r"[ \t]+", line.strip())]
+    common = max(set(gaps), key=gaps.count)
+    words, current = [], []
+    for index, token in enumerate(tokens):
+        if token == "&":
+            if current:
+                words.append("".join(current)); current = []
+            words.append("&")
+            continue
+        current.append(token)
+        if index < len(gaps) and gaps[index] > common and current:
+            words.append("".join(current)); current = []
+    if current:
+        words.append("".join(current))
+    known = _SECTION_BY_KEY.get(_heading_key("".join(tokens)))
+    return known[0] if known else " ".join(words)
+
+
+_LEADING_BULLET = re.compile(r"(?m)^[ 	]*[" + re.escape(_BULLET_GLYPHS) + r"]+[ 	]*")
+
+
+def strip_bullet_marks(text):
+    """The words of a unit without the bullet mark that starts each of its lines (the page draws its own list mark)."""
+    return _LEADING_BULLET.sub("", str(text))
 
 
 def _tidy_line_marks(text):
-    """Reader normalisation that never changes the words: one bullet mark, and spaced-out headings read as words."""
+    """Reader normalisation that never changes the words: one bullet mark, and spaced-out text read as words."""
     text = _DOUBLE_BULLET.sub(lambda m: m.group(1) + "\u2022 ", text)
     lines = []
     for line in text.split("\n"):
-        if _SPACED_LETTERS.match(line):
-            words = re.split(r"[ \t]{2,}", line.strip())
-            line = " ".join(word.replace(" ", "").replace("\t", "") for word in words)
-        lines.append(line)
+        collapsed = _collapse_spaced(line)
+        lines.append(collapsed if collapsed is not None else line)
     return "\n".join(lines)
 
 
@@ -171,7 +211,17 @@ _SECTION_NAMES = {
     "profile": "Professional summary", "career objective": "Professional summary", "objective": "Professional summary",
     "core skills": "Skills", "key skills": "Skills", "skills and strengths": "Skills", "languages": "Skills",
     "honors": "Awards", "honors and awards": "Awards", "accomplishments": "Awards", "projects": "Independent Project",
+    "clearance and key qualifications": "Qualifications", "clearance and qualifications": "Qualifications",
+    "certifications and skills": "Skills", "certifications skills and tools": "Skills", "skills and tools": "Skills",
+    "technical skills and tools": "Skills", "core competencies": "Skills", "areas of expertise": "Skills",
+    "skills and certifications": "Skills", "tools and technologies": "Skills", "technologies": "Skills",
+    "summary of qualifications": "Qualifications", "career summary": "Professional summary",
+    "certifications and skills and tools": "Skills",
 }
+# Looked up with punctuation, "&" and spacing ignored: "CERTIFICATIONS & SKILLS, & TOOLS" is the same heading.
+_SECTION_BY_KEY = {}
+for _name, _section in _SECTION_NAMES.items():
+    _SECTION_BY_KEY[re.sub(r"[^a-z]+", "", _name.lower().replace("&", " and "))] = (_name.upper(), _section)
 
 
 # A line that ends in a date or "Present" is a job or school heading, not a wrapped sentence.
@@ -225,6 +275,8 @@ def inventory_source(text, *, pages=None, document=False):
         if not stripped:
             continue
         heading = _SECTION_NAMES.get(re.sub(r"\s+", " ", stripped.strip(":")).casefold())
+        if not heading and len(stripped) <= 60 and re.fullmatch(r"[A-Za-z &,/:\-]+", stripped):
+            heading = (_SECTION_BY_KEY.get(_heading_key(stripped)) or (None, None))[1]
         if heading:
             section = heading
         # Continuations are only joined within one paragraph. A line that
@@ -232,7 +284,7 @@ def inventory_source(text, *, pages=None, document=False):
         continuation = (rows and not heading and rows[-1]["kind"] == "content"
                         and rows[-1]["section"] == section
                         and start - rows[-1]["span_end"] <= 2
-                        and not re.match(r"[•*\-]|\d+[.)]", stripped)
+                        and not _BULLET_START.match(stripped)
                         and not _HEADING_DATE_END.search(stripped)
                         and not _HEADING_DATE_END.search(rows[-1]["text"])
                         and not _HEADING_DATE_START.match(stripped)
@@ -247,7 +299,8 @@ def inventory_source(text, *, pages=None, document=False):
         else:
             instruction = bool(re.search(r"(?:ignore (?:all |the |previous )?(?:instructions|rules)|^system:|^assistant:|^publish (?:everything|this)|send (?:all |the )?(?:password|credentials))", stripped, re.I))
             kind = ("heading" if heading else "untrusted_instruction" if instruction else
-                    "presentation" if document and not rows and has_resume_heading and not _NAME_LINE.match(stripped) else "content")
+                    "presentation" if document and not rows and has_resume_heading and not _NAME_LINE.match(stripped)
+                    and not re.fullmatch(r"[A-Z]{8,}", stripped) else "content")
             row = {"kind": kind, "section": section,
                    "span_start": start, "span_end": end, "text": text[start:end]}
             rows.append(row)

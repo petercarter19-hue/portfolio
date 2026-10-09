@@ -392,6 +392,105 @@ class ResumeOrganizationTests(unittest.TestCase):
         self.assertEqual(result.rejections, [{'candidate_index': 0, 'code': 'unsupported_record_identity',
                                               'field': 'employer_name', 'action': 'field_cleared'}])
 
+    def test_mixed_precision_dates_never_invent_a_month_for_the_year_only_date(self):
+        text = 'Experience\nPlanner, Alpha Labs, 2012 to May 2016.\nPlanned shipments.'
+        units = inventory_source(text, document=True)
+        content = [u for u in units if u['kind'] == 'content']
+        cases = (('role', {'role_title': 'Planner', 'employer_name': 'Alpha Labs'}, 'Experience'),
+                 ('education', {'institution_name': 'Alpha Labs'}, 'Education'))
+        for record_type, identity, section in cases:
+            with self.subTest(record_type=record_type):
+                raw = complete_resume_candidate(
+                    record_type, {**identity, 'start_date': '2012-01-01', 'end_date': '2016-05-01',
+                                  'date_precision': 'month'}, content[0]['text'], content, section)
+                draft = self.organize({'candidates': [raw]}, text, units).drafts[0]
+                values = draft['values']
+                self.assertEqual((values['start_date'], values['end_date'], values['date_precision']),
+                                 ('2012-01-01', '2016-01-01', 'year'))
+                self.assertEqual(draft['date_note'], 'coarsened')
+
+    def _cited_dates(self, text, cited, values):
+        units = inventory_source(text, document=True)
+        content = [u for u in units if u['kind'] == 'content']
+        raw = complete_resume_candidate('role', {'role_title': 'Planner', 'employer_name': 'Alpha Labs', **values},
+                                        content[cited[0]]['text'], [content[i] for i in cited], 'Experience')
+        return self.organize({'candidates': [raw]}, text, units).drafts[0]
+
+    def test_dates_whose_year_is_elsewhere_in_the_source_are_kept_at_year_only(self):
+        # A date cell the model did not cite: the year is in the source, the month is not stated anywhere it cited.
+        text = 'Experience\nPlanner, Alpha Labs.\nPlanned shipments.\n2019 - 2021'
+        draft = self._cited_dates(text, [0, 1], {'start_date': '2019-03-01', 'end_date': '2021-07-01', 'date_precision': 'month'})
+        values = draft['values']
+        self.assertEqual((values['start_date'], values['end_date'], values['date_precision']), ('2019-01-01', '2021-01-01', 'year'))
+        self.assertEqual(draft['date_note'], 'coarsened')
+
+    def test_dates_whose_year_is_nowhere_in_the_source_are_left_out_and_flagged(self):
+        text = 'Experience\nPlanner, Alpha Labs.\nPlanned shipments.'
+        draft = self._cited_dates(text, [0, 1], {'start_date': '2019-03-01', 'end_date': '2021-07-01', 'date_precision': 'month'})
+        self.assertNotIn('start_date', draft['values'])
+        self.assertNotIn('end_date', draft['values'])
+        self.assertNotIn('date_precision', draft['values'])
+        self.assertEqual(sorted(draft['uncertain_fields']), ['end_date', 'start_date'])
+        self.assertEqual(draft['confidence'], 'uncertain')
+
+    def _education(self, text, values):
+        units = inventory_source(text, document=True)
+        content = [u for u in units if u['kind'] == 'content']
+        raw = complete_resume_candidate('education', values, content[0]['text'], content, 'Education')
+        return self.organize({'candidates': [raw]}, text, units).drafts[0]['values']
+
+    def test_education_titles_do_not_carry_dates_and_the_school_line_is_not_repeated(self):
+        cases = (
+            # Pete's shape
+            ('Education@@B.S., Electrical Engineering July 2020@@Kennesaw State University / Kennesaw, GA@@Graduated with honors.',
+             {'title': 'B.S., Electrical Engineering July 2020', 'institution_name': 'Kennesaw State University',
+              'end_date': '2020-07-01', 'date_precision': 'month'},
+             'B.S., Electrical Engineering', 'Graduated with honors.'),
+            # Jules's shape
+            ('Education@@2013 Certificate in Baking and Pastry, Champlain Culinary Institute, Essex@@VT@@Hands-on pastry practice.',
+             {'title': 'Certificate in Baking and Pastry', 'institution_name': 'Champlain Culinary Institute',
+              'start_date': '2013-01-01', 'date_precision': 'year'},
+             'Certificate in Baking and Pastry', 'Hands-on pastry practice.'),
+            # Marisol's shape
+            ('Education@@Associate of Applied Science, Business 2014-2016@@Example Community College@@Dean' + chr(39) + 's list.',
+             {'title': 'Associate of Applied Science, Business 2014-2016', 'institution_name': 'Example Community College',
+              'start_date': '2014-01-01', 'end_date': '2016-01-01', 'date_precision': 'year'},
+             'Associate of Applied Science, Business', 'Dean' + chr(39) + 's list.'),
+        )
+        for text, given, title, summary in cases:
+            with self.subTest(title=title):
+                values = self._education(text.replace('@@', chr(10)), given)
+                self.assertEqual(values['title'], title)
+                self.assertEqual(values['summary'].strip(), summary)
+
+    def test_a_school_line_that_runs_on_into_a_program_name_is_not_a_header(self):
+        values = self._education('Education@@Example University@@Example University Honors Program@@Graduated with honors.'.replace('@@', chr(10)),
+                                 {'title': 'Example University', 'institution_name': 'Example University'})
+        self.assertIn('Example University Honors Program', values['summary'])
+
+    def test_a_line_with_real_content_after_the_school_name_is_not_taken_for_a_header(self):
+        values = self._education('Education@@Example College@@Studied at Example College under a scholarship.'.replace('@@', chr(10)),
+                                 {'title': 'Example College', 'institution_name': 'Example College'})
+        self.assertIn('Studied at Example College under a scholarship.', values['summary'])
+
+    def test_a_title_keeps_a_year_the_entry_does_not_hold_as_a_date(self):
+        values = self._education('Education@@Analyst Program 2005@@Example College@@Notes.'.replace('@@', chr(10)),
+                                 {'title': 'Analyst Program 2005', 'institution_name': 'Example College',
+                                  'start_date': '2019-01-01', 'date_precision': 'year'})
+        self.assertIn('Analyst Program 2005', values['title'])
+
+    def test_dates_the_resume_states_in_full_are_left_exactly_as_given(self):
+        text = 'Experience\nPlanner, Alpha Labs, March 2012 to May 2016.\nPlanned shipments.'
+        units = inventory_source(text, document=True)
+        content = [u for u in units if u['kind'] == 'content']
+        raw = complete_resume_candidate(
+            'role', {'role_title': 'Planner', 'employer_name': 'Alpha Labs', 'start_date': '2012-03-01',
+                     'end_date': '2016-05-01', 'date_precision': 'month'}, content[0]['text'], content, 'Experience')
+        draft = self.organize({'candidates': [raw]}, text, units).drafts[0]
+        self.assertEqual((draft['values']['start_date'], draft['values']['end_date'], draft['values']['date_precision']),
+                         ('2012-03-01', '2016-05-01', 'month'))
+        self.assertNotIn('date_note', draft)
+
     def test_unusable_envelope_raises_and_no_usable_group_is_unavailable_without_fragments_flag(self):
         text, units, g = self.groups()
         with self.assertRaisesRegex(ExtractionError, 'malformed_payload'):
@@ -614,6 +713,9 @@ class ResumeOrganizationTests(unittest.TestCase):
         after = second.get_workspace(owner)['review_overview']
         self.assertEqual(after['earlier']['count'], 4)
         self.assertIn(addition['proposal_key'], [group['proposal_key'] for group in after['groups']])
+        # What the member added themselves is counted on its own, not inside the upload's sentence.
+        self.assertEqual((after['counts']['experience'], after['counts']['skills']), (1, 1))
+        self.assertEqual(sum(after['typed_counts'].values()), 1)
 
     def test_batch_scope_follows_stored_time_not_the_order_rows_load_in(self):
         # A database may return rows in key order. Older pending work must stay out of the new

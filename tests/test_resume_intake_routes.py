@@ -1281,14 +1281,14 @@ class TypedExtractionReviewBrowserTests(unittest.TestCase):
         proposals = page.locator('#resume-intake-proposals > li:not(.resume-intake__hint)')
         proposals.first.wait_for()
         self.assertEqual(proposals.count(), 1)
-        self.assertIn('2 groups', page.locator('#resume-intake-review-position').inner_text())
+        self.assertIn('2 suggestions', page.locator('#resume-intake-review-position').inner_text())
         self.assertEqual(self.catalog.list_items(owner), [])  # Review is not a canonical save.
         for kind in ('role', 'education'):
             proposal = proposals.first
             self.assertEqual(proposal.get_by_role('combobox', name='Save this as', exact=True).count(), 0)
             proposal.get_by_role('button', name='Confirm details', exact=True).click()
             if kind == 'role':
-                page.locator('#resume-intake-review-position').get_by_text('One group of details', exact=False).wait_for()
+                page.locator('#resume-intake-review-position').get_by_text('One suggestion to review', exact=False).wait_for()
             else:
                 page.locator('#resume-intake-next:visible').wait_for()
             confirmed = confirmations[-1]['confirmed_values']

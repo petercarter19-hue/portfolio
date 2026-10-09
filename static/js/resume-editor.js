@@ -196,6 +196,17 @@
         return String(value).slice(0, precision === "year" ? 4 : precision === "month" ? 7 : 10);
     }
 
+    const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    // The words a person reads on a saved card ("May 2016"); the edit fields keep the exact YYYY-MM form.
+    function readableDate(value, precision) {
+        const raw = dateText(value, precision);
+        const match = /^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?$/.exec(raw);
+        if (!match || !match[2]) return raw;
+        const month = MONTH_NAMES[parseInt(match[2], 10) - 1];
+        if (!month) return raw;
+        return match[3] ? month + " " + parseInt(match[3], 10) + ", " + match[1] : month + " " + match[1];
+    }
+
     function setField(field, value, source) {
         if (field.type === "checkbox") field.checked = value === true;
         else if (["start_date", "end_date"].includes(field.name)) {
@@ -300,8 +311,8 @@
         if (["role", "education"].includes(item.record_type)) {
             const dates = document.createElement("p");
             dates.className = "resume-editor__entry-detail";
-            const start = dateText(values.start_date, values.date_precision);
-            const end = dateText(values.end_date, values.date_precision);
+            const start = readableDate(values.start_date, values.date_precision);
+            const end = readableDate(values.end_date, values.date_precision);
             dates.textContent = [start, values.current_role === true ? "Present" : end].filter(Boolean).join(" – ");
             if (!start && !end) dates.textContent = (values.current_role === true ? "Current role · " : "") + "Dates not supplied";
             card.appendChild(dates);
@@ -309,7 +320,7 @@
         if (item.record_type === 'credential') {
             const dates = document.createElement('p'); dates.className = 'resume-editor__entry-detail';
             dates.textContent = ['issue_date', 'expiration_date'].filter(function (name) { return values[name]; }).map(function (name) {
-                return (name === 'issue_date' ? 'Issued ' : 'Expires ') + dateText(values[name], values[name + '_precision'] || 'day');
+                return (name === 'issue_date' ? 'Issued ' : 'Expires ') + readableDate(values[name], values[name + '_precision'] || 'day');
             }).join(' · ');
             if (dates.textContent) card.appendChild(dates);
         }

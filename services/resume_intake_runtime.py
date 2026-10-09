@@ -575,8 +575,8 @@ def model_facing_context(context, *, budget=None):
 
     def brief(target):
         item = once(target)
-        item.pop('bullets', None)
-        item.pop('excluded_bullets', None)
+        for name in ('bullets', 'excluded_bullets', 'source_refs', 'binding'):
+            item.pop(name, None)   # a pending suggestion cites many source lines; the identity is what a reference needs
         item['brief'] = True
         return item
 

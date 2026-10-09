@@ -999,6 +999,8 @@
             region.appendChild(node('p', !sentence ? (savedCount ? 'Everything from your résumé is reviewed.' : 'Your résumé is organized.')
                 : savedCount ? 'You have saved ' + savedCount + (savedCount === 1 ? ' item' : ' items') + ' from your résumé. Left to review: ' + sentence + '.'
                 : 'I organized your résumé: ' + sentence + '.'));
+            var typedSentence = countSentence(overview.typed_counts || {});
+            if (typedSentence) region.appendChild(node('p', 'Added by you, not from the upload: ' + typedSentence + '.', 'resume-intake__hint'));
             if ((batch.uncovered || []).length) {
                 region.appendChild(node('p', batch.uncovered.length + (batch.uncovered.length === 1 ? ' line' : ' lines') +
                     ' of your original résumé ' + (batch.uncovered.length === 1 ? 'is' : 'are') +
@@ -1191,6 +1193,8 @@
                 });
                 if (value !== undefined && value !== null && value !== '') {
                     var raw = String(value), normalized = raw.toLowerCase().trim().replace(/[\s-]+/g, '_');
+                    // A credential the résumé calls "active", "current" or "valid" is one the member holds: completed.
+                    if (name === 'completion_status' && ['active', 'current', 'valid', 'held', 'earned', 'obtained', 'certified', 'licensed', 'complete'].indexOf(normalized) !== -1) normalized = 'completed';
                     if (Array.from(input.options).some(function (o) { return o.value === normalized; })) input.value = normalized;
                     else { var unsupported = new Option('Source: ' + raw + ' — choose a value', raw); unsupported.disabled = true; input.appendChild(unsupported); input.value = raw; }
                 }
@@ -1297,12 +1301,14 @@
         if (groupedDates && (proposed.start_date || proposed.end_date || typeof proposed.current_role === 'boolean')) {
             function reviewDate(name) {
                 if (!proposed[name]) return '';
-                if (!proposed.date_precision || proposed.date_precision === 'unknown') return 'Date unknown';
+                if (proposed.date_precision === 'unknown') return 'Date unknown';
+                // No stated detail: only the year is ever claimed (the stored month or day may be padding).
+                if (!proposed.date_precision) return humanDate(proposed[name], 'year') || 'Date unknown';
                 if (proposed.date_precision === 'approximate') return 'Around ' + displayValue(name, proposed[name], proposed);
                 return humanDate(proposed[name], proposed.date_precision) || displayValue(name, proposed[name], proposed);
             }
             var start = reviewDate('start_date'), end = proposed.current_role === true ? 'Present' : reviewDate('end_date');
-            var dates = start && end ? start + ' – ' + end : start ? 'From ' + start : end ? (end === 'Present' ? 'Current role' : 'Until ' + end) : 'Past role';
+            var dates = start === 'Date unknown' && end === 'Date unknown' ? 'Dates unknown' : start && end ? start + ' – ' + end : start ? 'From ' + start : end ? (end === 'Present' ? 'Current role' : 'Until ' + end) : 'Past role';
             var dateRow = node('div'); dateRow.append(node('dt', 'Dates'), node('dd', dates)); facts.appendChild(dateRow);
         }
         (proposal.explicit_clears || []).forEach(function (name) {
@@ -1321,6 +1327,9 @@
                 group.appendChild(node('p', 'Please check the ' + overviewGroup.uncertain_fields.map(function (name) {
                     return FIELD_LABELS[name] || name;
                 }).join(' and ').toLowerCase() + '. I could not read it reliably from your résumé.', 'resume-intake__hint resume-intake__uncertain'));
+            }
+            if (overviewGroup.date_note === 'coarsened') {
+                group.appendChild(node('p', 'Your résumé gives one of these dates with less detail (for example only a year), so I kept both at that level instead of guessing a month or day.', 'resume-intake__hint'));
             }
             var original = node('button', 'View original text', 'resume-intake__quiet'); original.type = 'button';
             original.addEventListener('click', function () {
@@ -1478,7 +1487,7 @@
             }
             position.textContent = reviewScope === 'earlier'
                 ? proposals.length + (proposals.length === 1 ? ' earlier item' : ' earlier items') + ' from before your latest upload'
-                : proposals.length === 1 ? 'One group of details to review' : proposals.length + ' groups to review · one at a time';
+                : proposals.length === 1 ? 'One suggestion to review' : proposals.length + ' suggestions to review · one at a time';
         })();
         function syncCorrection() {
             correction.hidden = !correcting; facts.hidden = correcting;
@@ -1532,17 +1541,27 @@
             var detail = {4: 'year', 7: 'month', 10: 'day'};
             var lengths = spans.map(function (name) { return String(values[name]).length; });
             if (type !== 'credential' && inputs.date_precision && spans.length && lengths.every(function (n) { return detail[n]; })) {
+                // Dates of different detail ("2012" and "2016-05") are kept at the detail both really have. Nothing is
+                // invented to match, and a finer detail the member chose is only trimmed, never made up.
                 var shared = Math.min.apply(null, lengths), expected = {year: 4, month: 7, day: 10}[values.date_precision];
-                if (expected && expected !== shared && lengths.some(function (n) { return n !== expected; })) {
+                var goal = expected ? Math.min(shared, expected) : shared;
+                var uneven = lengths.some(function (n) { return n !== goal; });
+                // 'Unknown' and 'approximate' (education) keep their own rules below; only a chosen or a blank detail is evened out.
+                if (expected || !values.date_precision) {
                     spans.forEach(function (name) {
-                        var shortened = String(values[name]).slice(0, shared);
+                        var shortened = String(values[name]).slice(0, goal);
                         values[name] = shortened;
                         if (inputs[name]) { inputs[name].value = shortened; inputs[name].dispatchEvent(new Event('change')); }
                     });
-                    inputs.date_precision.value = detail[shared];
+                    values.date_precision = detail[goal];
+                    inputs.date_precision.value = detail[goal];
                     inputs.date_precision.dispatchEvent(new Event('change'));
-                    throw new Error('A start and an end date need the same detail, so I set both to ' + detail[shared] +
-                        ' and invented nothing. Check them, then confirm again.');
+                    // The member asked for exactly this detail, or the dates already agreed: nothing more to say.
+                    var asked = expected && goal === expected;
+                    if (!asked && uneven) {
+                        throw new Error('A start and an end date need the same detail. One of yours has only the ' + detail[goal] +
+                            ', so I set both to ' + detail[goal] + ' and did not guess the rest. Check them, then confirm again.');
+                    }
                 }
             }
             ['start_date', 'end_date'].forEach(function (name) {
@@ -1805,18 +1824,35 @@
             if (generation === previewGeneration) region.setAttribute('aria-busy', 'false');
         });
     }
-    function load() {
-        return fetch(urls.workspace, {credentials: 'same-origin'})
-            .then(function (response) {
+    // A page-load read that meets a busy site or a dropped connection is tried again a few times, with a short wait
+    // between tries, before anything is said about it. Only the answer that is still unusable after that is shown.
+    var LOAD_RETRIES = 4;
+    function getWithRetry(url) {
+        var attempt = 0;
+        function once() {
+            return fetch(url, {credentials: 'same-origin'}).then(function (response) {
                 return response.json().catch(function () { return {}; }).then(function (payload) {
                     return {response: response, payload: payload};
                 });
-            })
+            }, function () { return {response: {ok: false, status: 0}, payload: {}}; }).then(function (result) {
+                var status = result.response.status;
+                var transient = status === 0 || status === 502 || status === 504 ||
+                    (status === 503 && result.payload.code !== 'policy_not_selected');
+                if (!transient || attempt >= LOAD_RETRIES) return result;
+                attempt += 1;
+                setStatus('The site is busy for a moment. Trying again…', 'ok');
+                return new Promise(function (resolve) { window.setTimeout(resolve, 300 * Math.pow(2, attempt - 1)); }).then(once);
+            });
+        }
+        return once();
+    }
+    function load() {
+        return getWithRetry(urls.workspace)
             .then(function (result) {
-                if (result.response.status === 503) {
+                if (result.response.status === 0 || result.response.status === 502 || result.response.status === 503 || result.response.status === 504) {
                     if (!initialized) showScreen('input', false);
                     setStatus(result.payload.message ||
-                        'Saving is not enabled yet. Your typing stays here, unsent.', 'error');
+                        'The site is busy right now, so your saved information could not be loaded. Your typing stays here, unsent. Reload the page in a moment.', 'error');
                     return null;
                 }
                 if (!result.response.ok) {
@@ -1844,9 +1880,10 @@
                 renderBatchOverview();
                 if (!initialized) renderReceipt(result.payload.last_receipt || null);
                 renderCoverage(result.payload.source_accounting || []);
-                return fetch(urls.guide, {credentials: 'same-origin'})
-                    .then(function (response) {
-                        return response.json().catch(function () { return {}; });
+                return getWithRetry(urls.guide)
+                    .then(function (answer) {
+                        if (answer.response.status === 0) throw new Error('guide unreachable');
+                        return answer.payload;
                     })
                     .then(function (guide) {
                         var initial = !initialized;
@@ -2232,7 +2269,10 @@
             if (!result.response.ok || !Number.isInteger(result.payload.draft_version)) throw new Error('Your private context is unavailable. Your words are kept.');
             pendingConversation = {request_id: requestId(), expected_draft_version: result.payload.draft_version,
                 statement: statement, selected_target: selected,
-                source_keys: attachments.filter(function (row) { return row.kind === 'recording' && row.source_key; }).map(function (row) { return row.source_key; })};
+                // A correction to one saved or suggested record carries only its own words. A recording kept for the next
+                // general turn stays kept; it does not ride along (and is not consumed) with a per-role change.
+                source_keys: (target || options.statement || options.selectedTarget) ? [] :
+                    attachments.filter(function (row) { return row.kind === 'recording' && row.source_key; }).map(function (row) { return row.source_key; })};
             undispatchedConversationKey = pendingConversation.request_id;
             return pendingConversation;
         });

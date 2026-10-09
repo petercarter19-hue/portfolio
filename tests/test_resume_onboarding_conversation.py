@@ -472,6 +472,54 @@ class ConversationTests(unittest.TestCase):
         self.assertEqual(text.count('Marker5Start'), 2)                       # the selected record: its values and its numbered lines
         self.assertNotIn('sources', sent['canonical'])
 
+    def test_a_large_upload_on_screen_plus_thirty_saved_items_still_gets_a_turn(self):
+        # The tester hit "too much to read" at about 24 saved items while a large uploaded résumé was the review on screen:
+        # the upload's own lines were not counted against the room. They are now trimmed, the selected record first.
+        from services.resume_intake_runtime import _json_size
+        sentence = 'Led the unit through a staffing change and kept every patient and family informed and safe. '
+        keys = []
+        for index in range(6):
+            keys.append(self.seed('role', role_title='Nurse role %d' % index, employer_name='Hospital %d' % index, location_text='City',
+                                  summary='Marker%dStart. ' % index + sentence * 8 + 'Marker%dEnd.' % index,
+                                  start_date='2004-01-01', end_date='2008-01-01', date_precision='month', current_role=False))
+        for index in range(4):
+            self.seed('education', title='Degree %d' % index, institution_name='School %d' % index, education_status='completed',
+                      summary='Education text %d. ' % index + sentence * 2, end_date='2011-01-01', date_precision='year')
+        for index in range(20):
+            self.seed('skill', name='Skill %d' % index, summary='Skill text %d. ' % index + sentence * 2)
+        lines = '\n'.join('Upload line %d describes one more duty with a long enough sentence to count towards the room. ' % n * 2
+                          for n in range(330))
+        self.upload_document('Experience\nEngineer, Big Upload Employer.\n' + lines, 'Big Upload Employer')
+        snapshot = self.intake._load(self.owner)
+        canonical = self.assistance._context(self.owner, [], allow_empty=True)
+        whole = self.intake._conversation_view(snapshot, canonical)
+        self.assertGreater(_json_size(whole), 2 * self.assistance.limits['maximum_input_bytes'])
+        self.behavior = lambda ctx: {'response': 'Which detail should change?', 'next_question': '', 'operations': []}
+        self.turn('Please add the location Portland to this role.', 'record:' + keys[5])
+        sent = self.calls[-1]['context']
+        self.assertLess(_json_size(sent), self.assistance.limits['maximum_input_bytes'])
+        text = json.dumps(sent, ensure_ascii=False)
+        self.assertEqual(text.count('Marker5Start'), 2)          # the selected record is still in full
+        self.assertEqual(len([t for t in sent['targets'] if t['target_ref'].startswith('record:')]), 30)
+        sent_lines = sum(len(row['units']) for row in sent['materials'])
+        self.assertLess(sent_lines, 330)                          # the upload's own lines were trimmed to fit
+
+    def test_many_pending_suggestions_that_each_cite_many_source_lines_shrink_to_fit(self):
+        # A large upload leaves many pending suggestions, each carrying a long list of the source lines it cites. Those
+        # lists are what filled the room, so the shrunken form must not carry them.
+        from services.resume_intake_runtime import model_facing_context, _json_size
+        long_text = 'word ' * 300
+        refs = [{'source_key': 'source-key-0001', 'unit_id': 'unit-%024d' % n} for n in range(60)]
+        targets = [{'target_ref': 'proposal:%d' % n, 'record_type': 'role', 'binding': {'source_key': 'source-key-0001', 'submission_key': 'x' * 36},
+                    'source_refs': refs, 'values': {'role_title': 'Role %d' % n, 'employer_name': 'Employer %d' % n, 'summary': long_text},
+                    'bullets': {'summary': [{'index': i, 'text': long_text[:200]} for i in range(10)]}, 'excluded_bullets': []}
+                   for n in range(40)]
+        context = {'canonical': {'draft_version': 1}, 'targets': targets, 'selected_target': None, 'materials': [], 'prior_turns': []}
+        self.assertGreater(_json_size(context), 150000)
+        packed = model_facing_context(context, budget=60000)
+        self.assertLessEqual(_json_size(packed), 60000)
+        self.assertEqual([t['values']['role_title'] for t in packed['targets']], ['Role %d' % n for n in range(40)])
+
     def test_when_the_budget_is_tight_the_selected_record_stays_full_and_the_rest_shrink_to_identity(self):
         from services.resume_intake_runtime import model_facing_context, _json_size
         long_text = 'word ' * 400
@@ -1088,6 +1136,127 @@ class ConversationTests(unittest.TestCase):
         stored = self.intake.repository.load_owner(self.owner)['proposals'][proposal['proposal_key']]
         self.assertNotIn('uncertain_fields', stored['resume_conversation_v1'])
 
+    def _typed_dates(self, text, record_type, section, values):
+        def add(ctx):
+            return {'response': 'Review.', 'next_question': '', 'operations': [operation(
+                ctx, op='add_content', record_type=record_type, section=section, values=values)]}
+        self.behavior = add
+        proposal = self.turn(text)['proposals'][0]
+        stored = self.intake.repository.load_owner(self.owner)['proposals'][proposal['proposal_key']]
+        return proposal['proposed_values'], stored['resume_conversation_v1']
+
+    def test_typed_dates_never_keep_a_month_or_day_the_member_did_not_say(self):
+        for record_type, section, extra in (('education', 'Education', {'title': 'BS in Computer Science', 'institution_name': 'Example University'}),
+                                            ('role', 'Experience', {'role_title': 'Analyst', 'employer_name': 'Example University'})):
+            with self.subTest(record_type=record_type):
+                values, context = self._typed_dates(
+                    'I was an analyst and earned a BS in Computer Science at Example University, 2012 to May 2016.',
+                    record_type, section, {**extra, 'start_date': '2012-03-14', 'end_date': '2016-05-20', 'date_precision': 'day'})
+                self.assertEqual((values['start_date'], values['end_date'], values['date_precision']),
+                                 ('2012-01-01', '2016-01-01', 'year'))
+                self.assertEqual(context['date_note'], 'coarsened')
+
+    def _revise_dates(self, patch_values, statement):
+        self.upload_document('Experience' + chr(10) + 'Engineer, Alpha Labs, 2019-2021' + chr(10) + 'Built data pipelines for the planning team.', 'Alpha Labs')
+        snapshot = self.intake.repository.load_owner(self.owner)
+        pending = next(r for r in snapshot['proposals'].values() if r['state'] == 'pending' and r['record_type'] == 'role')
+        # As organizing leaves it: the header line is not in the summary, the dates are held in the fields.
+        pending['proposed_values'].update(start_date='2019-01-01', end_date='2021-01-01', date_precision='year', current_role=False,
+                                          summary='Built data pipelines for the planning team.')
+        self.intake.repository.save_owner(self.owner, snapshot)
+        ref = 'proposal:' + pending['proposal_key']
+        self.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+            ctx, ref=ref, record_type='role', values=patch_values, section='Experience')]}
+        proposals = self.turn(statement, ref)['proposals']
+        if not proposals:
+            return None, {}
+        proposal = proposals[0]
+        stored = self.intake.repository.load_owner(self.owner)['proposals'][proposal['proposal_key']]
+        return proposal['proposed_values'], stored.get('resume_conversation_v1', {})
+
+    def _revise_end_date(self, new_end, statement):
+        return self._revise_dates({'end_date': new_end}, statement)
+
+    def _assert_revision_stays_at_year(self, patch_values, statement):
+        values, context = self._revise_dates(patch_values, statement)
+        self.assertEqual((values['start_date'], values['end_date'], values['date_precision']), ('2019-01-01', '2022-01-01', 'year'))
+        self.assertEqual(context.get('date_note'), 'coarsened')
+
+    def test_a_new_exact_day_is_brought_down_to_the_year_the_unchanged_date_has(self):
+        self._assert_revision_stays_at_year({'end_date': '2022-05-20', 'date_precision': 'day'}, 'Change the end date to May 20, 2022.')
+
+    def test_a_new_month_is_brought_down_to_the_year_the_unchanged_date_has(self):
+        self._assert_revision_stays_at_year({'end_date': '2022-05-01', 'date_precision': 'month'}, 'Change the end date to May 2022.')
+
+    def test_a_precision_only_revision_cannot_raise_the_detail_of_dates_stated_as_years(self):
+        values, context = self._revise_dates({'date_precision': 'month'}, 'Show the months.')
+        # Nothing the member said gives a month, so the revision changes nothing and no new suggestion replaces the earlier one.
+        self.assertIsNone(values)
+
+    def test_changing_one_date_keeps_the_other_and_flags_nothing(self):
+        values, context = self._revise_end_date('2022-01-01', 'Change the end date to 2022.')
+        self.assertEqual((values['start_date'], values['end_date'], values['date_precision']), ('2019-01-01', '2022-01-01', 'year'))
+        self.assertNotIn('uncertain_fields', context)
+
+    def test_a_changed_date_is_brought_down_to_the_detail_the_unchanged_one_has(self):
+        values, context = self._revise_end_date('2022-05-20', 'Change the end date to May 2022.')
+        self.assertEqual((values['start_date'], values['end_date'], values['date_precision']), ('2019-01-01', '2022-01-01', 'year'))
+        self.assertEqual(context.get('date_note'), 'coarsened')
+
+    def test_a_changed_date_the_member_never_said_leaves_the_earlier_value_in_place(self):
+        self.upload_document('Experience' + chr(10) + 'Engineer, Alpha Labs, 2019-2021' + chr(10) + 'Built data pipelines for the planning team.', 'Alpha Labs')
+        snapshot = self.intake.repository.load_owner(self.owner)
+        pending = next(r for r in snapshot['proposals'].values() if r['state'] == 'pending' and r['record_type'] == 'role')
+        pending['proposed_values'].update(start_date='2019-01-01', end_date='2021-01-01', date_precision='year', current_role=False,
+                                          summary='Built data pipelines for the planning team.')
+        self.intake.repository.save_owner(self.owner, snapshot)
+        ref = 'proposal:' + pending['proposal_key']
+        self.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+            ctx, ref=ref, record_type='role', values={'end_date': '2025-01-01'}, section='Experience')]}
+        self.turn('Please fix the end date.', ref)
+        # Nothing the member said supports 2025, so no revision replaces the earlier value.
+        kept = self.intake.repository.load_owner(self.owner)['proposals'][pending['proposal_key']]
+        self.assertEqual((kept['state'], kept['proposed_values']['end_date']), ('pending', '2021-01-01'))
+
+    def test_an_entry_is_never_stored_with_dates_and_no_detail(self):
+        values, _ = self._typed_dates(
+            'I was an Engineer at Alpha Labs from 2012 to 2016.', 'role', 'Experience',
+            {'role_title': 'Engineer', 'employer_name': 'Alpha Labs', 'start_date': '2012-01-01', 'end_date': '2016-01-01'})
+        self.assertEqual((values['start_date'], values['end_date'], values['date_precision']), ('2012-01-01', '2016-01-01', 'year'))
+
+    def test_a_later_exact_day_cannot_raise_the_detail_of_an_entry_first_stated_as_years(self):
+        self._typed_dates(
+            'I was an Engineer at Alpha Labs from 2012 to 2016.', 'role', 'Experience',
+            {'role_title': 'Engineer', 'employer_name': 'Alpha Labs', 'start_date': '2012-01-01', 'end_date': '2016-01-01'})
+        stored = self.intake.repository.load_owner(self.owner)['proposals']
+        first = next(row for row in stored.values() if row['state'] == 'pending' and row['record_type'] == 'role')
+        ref = 'proposal:' + first['proposal_key']
+        self.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+            ctx, ref=ref, record_type='role', values={'end_date': '2016-05-20', 'date_precision': 'day'}, section='Experience')]}
+        proposals = self.turn('Change the end date to May 20, 2016.', ref)['proposals']
+        # The start is only known to the year, so the new day cannot be kept; nothing replaces the earlier suggestion.
+        self.assertEqual(proposals, [])
+        kept = self.intake.repository.load_owner(self.owner)['proposals'][first['proposal_key']]
+        self.assertEqual((kept['state'], kept['proposed_values']['start_date'], kept['proposed_values']['date_precision']),
+                         ('pending', '2012-01-01', 'year'))
+
+    def test_typed_dates_the_member_states_in_full_are_kept(self):
+        values, context = self._typed_dates(
+            'I earned a BS in Computer Science at Example University, January 2012 to May 2016.', 'education', 'Education',
+            {'title': 'BS in Computer Science', 'institution_name': 'Example University', 'start_date': '2012-01-01',
+             'end_date': '2016-05-01', 'date_precision': 'month'})
+        self.assertEqual((values['start_date'], values['end_date'], values['date_precision']), ('2012-01-01', '2016-05-01', 'month'))
+        self.assertNotIn('date_note', context)
+
+    def test_a_typed_date_whose_year_the_member_never_said_is_left_out_and_flagged(self):
+        values, context = self._typed_dates(
+            'I earned a BS in Computer Science at Example University.', 'education', 'Education',
+            {'title': 'BS in Computer Science', 'institution_name': 'Example University', 'start_date': '2012-01-01',
+             'end_date': '2016-05-01', 'date_precision': 'month'})
+        self.assertNotIn('start_date', values)
+        self.assertNotIn('end_date', values)
+        self.assertEqual(sorted(context['uncertain_fields']), ['end_date', 'start_date'])
+
     def test_diagnostic_failure_after_one_valid_operation_keeps_all_unapproved(self):
         self.seed()
         def output(ctx):
@@ -1429,5 +1598,238 @@ class ConversationTests(unittest.TestCase):
         self.assertEqual(self.intake.draft_service.catalog.list_items(self.owner), [])
         self.assertEqual(self.calls, [])
 
+from services.my_data_extraction_adapter import MyDataExtractionAdapter as _DateAdapter, organize_resume_extraction as _organize_resume
+from services.resume_onboarding_document_reader import inventory_source
+
+
+def _complete_resume_candidate(*args, **kwargs):
+    from tests.test_resume_onboarding_coverage import complete_resume_candidate
+    return complete_resume_candidate(*args, **kwargs)
+
+
+DATE_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
+          "November", "December"]
+
+
+def date_shown(values, current=False):
+    """What the review card reads for these dates (the same rules as the page's review and the saved card)."""
+    precision = values.get("date_precision")
+
+    def one(value):
+        if not value:
+            return ""
+        year, month, day = value[:4], int(value[5:7]), int(value[8:10])
+        if precision == "year":
+            return year
+        if precision == "month":
+            return "%s %s" % (DATE_MONTHS[month - 1], year)
+        if precision == "day":
+            return "%s %d, %s" % (DATE_MONTHS[month - 1], day, year)
+        return year  # no stated detail: only the year is ever claimed
+    start, end = one(values.get("start_date")), "Present" if current else one(values.get("end_date"))
+    return " – ".join(part for part in (start, end) if part)
+
+
+# text, the dates the model gave, then the stored (start, end, detail) and what the review shows
+DATE_ADD_CASES = {
+    "mixed detail": ("I was an Engineer at Alpha Labs from 2012 to May 2016.",
+                     {"start_date": "2012-03-14", "end_date": "2016-05-20", "date_precision": "day"},
+                     ("2012-01-01", "2016-01-01", "year"), "2012 – 2016"),
+    "a lone year": ("I was an Engineer at Alpha Labs in 2016.",
+                    {"start_date": "2016-06-15", "date_precision": "day"},
+                    ("2016-01-01", None, "year"), "2016"),
+    "month to present": ("I am an Engineer at Alpha Labs, from Jan 2019 to present.",
+                         {"start_date": "2019-01-01", "date_precision": "month", "current_role": True},
+                         ("2019-01-01", None, "month"), "January 2019 – Present"),
+    "months named once": ("I was an Engineer at Alpha Labs from June through August 2025.",
+                          {"start_date": "2025-06-01", "end_date": "2025-08-01", "date_precision": "month"},
+                          ("2025-06-01", "2025-08-01", "month"), "June 2025 – August 2025"),
+    "no detail given": ("I was an Engineer at Alpha Labs from 2012 to 2016.",
+                        {"start_date": "2012-01-01", "end_date": "2016-01-01"},
+                        ("2012-01-01", "2016-01-01", "year"), "2012 – 2016"),
+    "a year not in the words": ("I was an Engineer at Alpha Labs.",
+                                {"start_date": "2019-03-01", "end_date": "2021-07-01", "date_precision": "month"},
+                                (None, None, None), ""),
+}
+DATE_CREDENTIAL_CASES = {
+    "a lone year": ("I earned a CPR certificate from Example Society in 2019.",
+                    {"issue_date": "2019-06-11", "issue_date_precision": "day"}, ("2019-01-01", "year")),
+    "a month": ("I earned a CPR certificate from Example Society in June 2019.",
+                {"issue_date": "2019-06-11", "issue_date_precision": "day"}, ("2019-06-01", "month")),
+    "no detail given": ("I earned a CPR certificate from Example Society in 2019.",
+                        {"issue_date": "2019-01-01"}, ("2019-01-01", "year")),
+}
+DATE_ROLE = {"role_title": "Engineer", "employer_name": "Alpha Labs", "current_role": False}
+
+
+def date_stored(values):
+    return (values.get("start_date"), values.get("end_date"), values.get("date_precision"))
+
+
+class DateTruthTests(unittest.TestCase):
+    """One table of date cases, run through every path that stores a suggestion's dates (see the evidence file)."""
+    def harness(self):
+        harness = ConversationTests("test_a_name_whose_words_are_all_in_the_members_words_is_accepted")
+        harness.setUp()
+        self.addCleanup(harness.tearDown)
+        return harness
+
+    # -- uploaded résumé ---------------------------------------------------------
+    def test_every_case_through_organizing_an_upload(self):
+        for name, (text, given, stored, display) in DATE_ADD_CASES.items():
+            with self.subTest(path="upload", case=name):
+                doc = "Experience\n" + text.replace("I was an ", "").replace("I am an ", "")
+                units = inventory_source(doc, document=True)
+                content = [u for u in units if u["kind"] == "content"]
+                raw = _complete_resume_candidate("role", {**DATE_ROLE, **given}, content[0]["text"], content, "Experience")
+                draft = _organize_resume({"candidates": [raw]}, text=doc, source_units=units,
+                                                   allowed_fields=EDITOR_FIELDS).drafts[0]
+                values = draft["values"]
+                self.assertEqual(date_stored(values), stored)
+                self.assertEqual(date_shown(values, values.get("current_role") is True), display)
+                if name == "a year not in the words":
+                    self.assertEqual(sorted(draft["uncertain_fields"]), ["end_date", "start_date"])
+
+    def test_credential_dates_through_organizing_an_upload(self):
+        for name, (text, given, (issued, detail)) in DATE_CREDENTIAL_CASES.items():
+            with self.subTest(path="upload", case=name):
+                doc = "Credentials\n" + text.replace("I earned a ", "")
+                units = inventory_source(doc, document=True)
+                content = [u for u in units if u["kind"] == "content"]
+                raw = _complete_resume_candidate("credential", {"name": "CPR certificate", "issuer": "Example Society",
+                                                               "completion_status": "completed", **given},
+                                                content[0]["text"], content, "Credentials")
+                values = _organize_resume({"candidates": [raw]}, text=doc, source_units=units,
+                                                    allowed_fields=EDITOR_FIELDS).drafts[0]["values"]
+                self.assertEqual((values.get("issue_date"), values.get("issue_date_precision")), (issued, detail))
+
+    # -- typed or recorded Add ---------------------------------------------------
+    def typed_add(self, harness, record_type, text, values):
+        def extract(*args, **kwargs):
+            full = {name: None for name in __import__("services.my_data_extraction_adapter", fromlist=["x"]).EXTRACTION_VALUE_FIELDS[record_type]}
+            full.update(values)
+            return {"candidates": [{"record_type": record_type, "values": full, "quote": text, "outcome": "new",
+                                    "match_reference": None, "confidence": "certain"}]}
+        harness.intake._extraction_adapter = _DateAdapter(provider=extract)
+
+        class Plan:
+            source_text, kind, dispatch_id = text, "text", None
+        drafts, issue, _ = harness.intake._extract_with_adapter(harness.owner, Plan())
+        self.assertIsNone(issue)
+        return drafts[0]
+
+    def test_every_case_through_the_typed_or_recorded_add(self):
+        for name, (text, given, stored, display) in DATE_ADD_CASES.items():
+            with self.subTest(path="typed add", case=name):
+                draft = self.typed_add(self.harness(), "role", text, {**DATE_ROLE, **given})
+                self.assertEqual(date_stored(draft["values"]), stored)
+                self.assertEqual(date_shown(draft["values"], draft["values"].get("current_role") is True), display)
+                if name == "a year not in the words":
+                    self.assertEqual(sorted(draft["uncertain_fields"]), ["end_date", "start_date"])
+
+    def test_credential_dates_through_the_typed_or_recorded_add(self):
+        for name, (text, given, (issued, detail)) in DATE_CREDENTIAL_CASES.items():
+            with self.subTest(path="typed add", case=name):
+                draft = self.typed_add(self.harness(), "credential", text, {
+                    "name": "CPR certificate", "issuer": "Example Society", "completion_status": "completed", **given})
+                self.assertEqual((draft["values"].get("issue_date"), draft["values"].get("issue_date_precision")), (issued, detail))
+
+    # -- the Guide ---------------------------------------------------------------
+    def test_every_case_through_the_guides_add(self):
+        for name, (text, given, stored, display) in DATE_ADD_CASES.items():
+            with self.subTest(path="guide add", case=name):
+                harness = self.harness()
+                harness.behavior = lambda ctx, given=given: {"response": "Review.", "next_question": "", "operations": [operation(
+                    ctx, op="add_content", record_type="role", section="Experience", values={**DATE_ROLE, **given})]}
+                proposal = harness.turn(text)["proposals"][0]
+                values = proposal["proposed_values"]
+                self.assertEqual(date_stored(values), stored)
+                self.assertEqual(date_shown(values, values.get("current_role") is True), display)
+
+    def test_credential_dates_through_the_guides_add(self):
+        for name, (text, given, (issued, detail)) in DATE_CREDENTIAL_CASES.items():
+            with self.subTest(path="guide add", case=name):
+                harness = self.harness()
+                harness.behavior = lambda ctx, given=given: {"response": "Review.", "next_question": "", "operations": [operation(
+                    ctx, op="add_content", record_type="credential", section="Credentials",
+                    values={"name": "CPR certificate", "issuer": "Example Society", "completion_status": "completed", **given})]}
+                values = harness.turn(text)["proposals"][0]["proposed_values"]
+                self.assertEqual((values.get("issue_date"), values.get("issue_date_precision")), (issued, detail))
+
+    def test_revising_one_end_of_a_range_and_changing_only_the_detail(self):
+        rows = {
+            "one end changed": ({"end_date": "2022-01-01"}, "Change the end date to 2022.",
+                                ("2019-01-01", "2022-01-01", "year")),
+            "a new exact day under year detail": ({"end_date": "2022-05-20", "date_precision": "day"},
+                                                  "Change the end date to May 20, 2022.", ("2019-01-01", "2022-01-01", "year")),
+            "detail alone raised": ({"date_precision": "month"}, "Show the months.", None),
+            "a date the words never gave": ({"end_date": "2025-01-01"}, "Please fix the end date.", None),
+        }
+        for name, (patch, statement, stored) in rows.items():
+            with self.subTest(path="guide revision", case=name):
+                harness = self.harness()
+                harness.upload_document("Experience\nEngineer, Alpha Labs, 2019-2021\nBuilt data pipelines for the planning team.", "Alpha Labs")
+                snapshot = harness.intake.repository.load_owner(harness.owner)
+                pending = next(r for r in snapshot["proposals"].values() if r["state"] == "pending" and r["record_type"] == "role")
+                pending["proposed_values"].update(start_date="2019-01-01", end_date="2021-01-01", date_precision="year",
+                                                  current_role=False, summary="Built data pipelines for the planning team.")
+                harness.intake.repository.save_owner(harness.owner, snapshot)
+                ref = "proposal:" + pending["proposal_key"]
+                harness.behavior = lambda ctx, patch=patch: {"response": "Updated.", "next_question": "", "operations": [operation(
+                    ctx, ref=ref, record_type="role", values=patch, section="Experience")]}
+                proposals = harness.turn(statement, ref)["proposals"]
+                if stored is None:
+                    # Nothing the member said supports a change, so nothing replaces the earlier suggestion.
+                    self.assertEqual(proposals, [])
+                    kept = harness.intake.repository.load_owner(harness.owner)["proposals"][pending["proposal_key"]]
+                    self.assertEqual(date_stored(kept["proposed_values"]), ("2019-01-01", "2021-01-01", "year"))
+                else:
+                    values = proposals[0]["proposed_values"]
+                    self.assertEqual(date_stored(values), stored)
+                    self.assertEqual(date_shown(values), "%s – %s" % (stored[0][:4], stored[1][:4]))
+
+    def test_revising_a_credential_date_cannot_raise_its_detail(self):
+        harness = self.harness()
+        harness.behavior = lambda ctx: {"response": "Review.", "next_question": "", "operations": [operation(
+            ctx, op="add_content", record_type="credential", section="Credentials",
+            values={"name": "CPR certificate", "issuer": "Example Society", "completion_status": "completed",
+                    "issue_date": "2019-06-11", "issue_date_precision": "day"})]}
+        first = harness.turn("I earned a CPR certificate from Example Society in 2019.")["proposals"][0]
+        ref = "proposal:" + first["proposal_key"]
+        harness.behavior = lambda ctx: {"response": "Updated.", "next_question": "", "operations": [operation(
+            ctx, ref=ref, record_type="credential", values={"issue_date_precision": "day"}, section="Credentials")]}
+        proposals = harness.turn("Show the exact day.", ref)["proposals"]
+        self.assertEqual(proposals, [])
+        kept = harness.intake.repository.load_owner(harness.owner)["proposals"][first["proposal_key"]]
+        self.assertEqual((kept["proposed_values"]["issue_date"], kept["proposed_values"]["issue_date_precision"]), ("2019-01-01", "year"))
+
+    def test_approximate_education_dates_keep_only_years_the_words_state(self):
+        rows = (("I studied nursing around 2009 to 2013 at Example College.", ("2009-01-01", "2013-01-01", "approximate")),
+                ("I studied nursing at Example College.", (None, None, None)))
+        for text, expected in rows:
+            with self.subTest(text=text):
+                harness = self.harness()
+                harness.behavior = lambda ctx: {"response": "Review.", "next_question": "", "operations": [operation(
+                    ctx, op="add_content", record_type="education", section="Education",
+                    values={"title": "Nursing", "institution_name": "Example College", "start_date": "2009-03-01",
+                            "end_date": "2013-05-01", "date_precision": "approximate"})]}
+                values = harness.turn(text)["proposals"][0]["proposed_values"]
+                self.assertEqual(date_stored(values), expected)
+
+    def test_a_month_word_far_from_the_year_by_ordinary_words_is_not_that_months_date(self):
+        from services.my_data_extraction_adapter import normalize_dates
+        values = {"start_date": "2012-05-01", "date_precision": "month"}
+        normalize_dates(values, "May I add that in 2012 I was at Alpha Labs.")
+        self.assertEqual(date_stored(values), ("2012-01-01", None, "year"))
+
+    # -- the canonical store -----------------------------------------------------
+    def test_the_canonical_editor_keeps_no_detail_the_precision_does_not_carry(self):
+        from services.living_resume_editor_service import _role_values
+        values = _role_values({"role_title": "Engineer", "employer_name": "Alpha Labs", "start_date": "2012-03-14",
+                               "end_date": "2016-05-20", "date_precision": "year"})
+        self.assertEqual(date_stored(values), ("2012-01-01", "2016-01-01", "year"))
+        # A missing detail is never read as an exact day: the entry is stored as "unknown" and shows no date.
+        unknown = _role_values({"role_title": "Engineer", "employer_name": "Alpha Labs", "start_date": "2012-03-14"})
+        self.assertEqual(unknown["date_precision"], "unknown")
 
 if __name__ == '__main__': unittest.main()

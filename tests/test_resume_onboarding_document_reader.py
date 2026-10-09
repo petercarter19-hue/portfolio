@@ -169,6 +169,57 @@ class ResumeOnboardingDocumentReaderTests(unittest.TestCase):
         self.assertEqual([u['text'] for u in units if u['kind'] == 'content'],
                          ['Engineer, Alpha Labs, 2019-2021', 'Built data pipelines.'])
 
+    def test_a_square_bullet_line_is_a_new_item_not_a_continuation_of_the_employer_line(self):
+        # The owner's real source marks its bullets with U+25AA. Joining the first one to the employer line above made a
+        # mixed unit, so the employer line was never trimmed from the description and the bullet looked doubled.
+        from services.resume_onboarding_document_reader import inventory_source
+        for mark in ('▪', '•', '◦', '●', '–'):
+            with self.subTest(mark=mark):
+                text = ('PROFESSIONAL EXPERIENCE\nNorthwind Cold Storage - Duluth, MN\n' + mark + ' Led a team of 24 associates\n'
+                        + mark + ' Cut spoilage by 18%')
+                texts = [u['text'] for u in inventory_source(text, document=True) if u['kind'] == 'content']
+                self.assertEqual(texts, ['Northwind Cold Storage - Duluth, MN', mark + ' Led a team of 24 associates',
+                                         mark + ' Cut spoilage by 18%'])
+
+    def test_letter_spaced_headings_are_headings_and_never_swallow_the_content_around_them(self):
+        # The tester's Marisol layout spaces every letter two apart, word gaps included, so the words cannot be read from
+        # the gaps: a known heading is read by its letters. Skills and the college above it were once one "couldn't place".
+        from services.resume_onboarding_document_reader import _literal_text, inventory_source
+        spaced = lambda word: '  '.join(word)
+        text = _literal_text('\n'.join([
+            spaced('MARISOLTEAGUE'), 'Fictional test candidate • Tulsa, OK • marisol.teague@example.test',
+            spaced('PROFESSIONALSUMMARY'), 'Customer support lead with nine years.',
+            spaced('PROFESSIONALEXPERIENCE'), 'Contact Center Team Lead 2021-Present', 'Redbud Utilities • Tulsa, OK',
+            '▪ Team Leadership: Lead 14 agents.', '▪ Volume: Handled 300-1200 calls per day.',
+            spaced('EDUCATION'), 'Associate of Applied Science, Business 2014-2016', 'Tulsa Community College • Tulsa, OK',
+            spaced('SKILLS'), 'Call de-escalation • Salesforce Service Cloud']))
+        units = inventory_source(text, document=True)
+        headings = [(u['text'], u['section']) for u in units if u['kind'] == 'heading']
+        self.assertEqual(headings, [('PROFESSIONAL SUMMARY', 'Professional summary'), ('PROFESSIONAL EXPERIENCE', 'Experience'),
+                                    ('EDUCATION', 'Education'), ('SKILLS', 'Skills')])
+        content = [u for u in units if u['kind'] == 'content']
+        college = next(u for u in content if 'Tulsa Community College' in u['text'])
+        self.assertNotIn('SKILLS', college['text'])
+        skills = next(u for u in content if 'Salesforce' in u['text'])
+        self.assertEqual(skills['section'], 'Skills')
+        # the person's name stays a visible unit (never silently dropped as a heading)
+        self.assertEqual(content[0]['text'], 'MARISOLTEAGUE')
+        # each square bullet is its own item, not glued to the employer line
+        self.assertTrue(any(u['text'] == '▪ Team Leadership: Lead 14 agents.' for u in content))
+        self.assertTrue(any(u['text'] == 'Redbud Utilities • Tulsa, OK' for u in content))
+
+    def test_a_spaced_heading_with_an_ampersand_and_a_differently_punctuated_heading_are_known_headings(self):
+        from services.resume_onboarding_document_reader import _literal_text, inventory_source
+        self.assertEqual(_literal_text('C L E A R A N C E & K E Y Q U A L I F I C A T I O N S'), 'CLEARANCE AND KEY QUALIFICATIONS')
+        units = inventory_source('Experience\nEngineer, Alpha Labs.\nCERTIFICATIONS & SKILLS, & TOOLS\nPMP, Python', document=True)
+        self.assertEqual([(u['kind'], u['section']) for u in units],
+                         [('heading', 'Experience'), ('content', 'Experience'), ('heading', 'Skills'), ('content', 'Skills')])
+
+    def test_bullet_marks_are_not_saved_into_a_description_the_page_draws_its_own(self):
+        from services.resume_onboarding_document_reader import strip_bullet_marks
+        self.assertEqual(strip_bullet_marks('▪ Team Leadership: Lead 14 agents.\n• Volume: 300-1200 calls.\nPlain line.'),
+                         'Team Leadership: Lead 14 agents.\nVolume: 300-1200 calls.\nPlain line.')
+
     def test_spaced_out_headings_and_doubled_bullet_marks_are_tidied_without_changing_words(self):
         from services.resume_onboarding_document_reader import _literal_text, inventory_source
         text = _literal_text('P R O F E S S I O N A L  S U M M A R Y\nA short summary.\n• ▪ Led a team of four.\n• Kept one mark.')
