@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-REPAIR-CI-PARITY-001",
+  "state": "active",
+  "outcome": "Make the documented hash-bound required-check repair path compatible with target-trusted Azure classification for either Claude or Codex. Admit only a structurally valid Protected repair activation within accepted target repair surfaces to full CI, never the control-only shortcut. Preserve target-only validation, collision and provenance checks, normal server policies, external owner and independent review proofs, and all product/production boundaries.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a11384-f656-73b3-b57a-ad2952f1ffad",
+  "branch": "codex/2026-10-09-delivery-repair-ci-parity-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "b831da50e3385f0fef7e6a02da8f7b567ece0a5f",
+  "owner_outcome_ref": "session:01a11384-f656-73b3-b57a-ad2952f1ffad/event:evt-b086cad6-30e9-494e-9e98-d022ee6094bc",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-DELIVERY-REPAIR-CI-PARITY-001.json",
+    "docs/governance/lane_claims/receipts/PS-DELIVERY-REPAIR-CI-PARITY-001.json",
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-REPAIR-CI-PARITY-001.md",
+    "START_HERE.md",
+    "scripts/classify_delivery_change.py",
+    "scripts/delivery_preflight.py",
+    "tests/test_delivery_change_classification.py",
+    "tests/test_delivery_preflight.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-REPAIR-CI-PARITY-001.md"
+  ],
+  "domains": [
+    "infrastructure:delivery:required-check-repair-parity"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
