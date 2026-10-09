@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "package": "PS-BROWSER-TEST-THREADED-SERVER-001",
+  "state": "active",
+  "outcome": "Stop intermittent browser-suite CI timeouts caused by single-threaded local test servers: an idle or preconnected browser socket blocks every later request for about 20 s. Start the Flask test server with make_server(..., threaded=True) in six Playwright suites (dark theme, Interview recovery/mobile nav, Interview review HTTP, Interview Studio operability, Journal frontend, Resume media), lock the Resume media synthetic stores and one-shot hooks for concurrent requests, and add one browser-free regression test proving an idle open connection does not stall a page load plus a guard that test servers stay threaded. Test-only: no runtime, CI configuration, deployment or product change.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude/2026-10-09/browser-test-threading",
+  "branch": "work/2026-10-09-browser-test-threaded-server-001",
+  "delivery_path": "Routine",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "8cb268553afb7cacd1feaa23cfc22439adefb447",
+  "owner_outcome_ref": "agent:claude/2026-10-09/browser-test-threading/owner-decision/2026-10-09-threaded-browser-test-servers",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-BROWSER-TEST-THREADED-SERVER-001.json",
+    "docs/governance/lane_claims/receipts/PS-BROWSER-TEST-THREADED-SERVER-001.json",
+    "docs/governance/lane_claims/evidence/PS-BROWSER-TEST-THREADED-SERVER-001.md",
+    "tests/test_dark_theme_availability.py",
+    "tests/test_interview_recovery_mobile_nav_browser.py",
+    "tests/test_interview_review_http_browser.py",
+    "tests/test_interview_studio_operability_browser.py",
+    "tests/test_journal_frontend.py",
+    "tests/test_resume_media_browser.py",
+    "tests/test_browser_test_server_threading.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-BROWSER-TEST-THREADED-SERVER-001.md"
+  ],
+  "domains": [
+    "tooling:browser-tests:threaded-server"
+  ],
+  "review_requirement": "self",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
