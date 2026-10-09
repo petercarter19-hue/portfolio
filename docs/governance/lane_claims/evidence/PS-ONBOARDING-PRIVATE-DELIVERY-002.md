@@ -424,3 +424,23 @@ The same recipe as the tester-round binding (`PRIVATE_TESTER_ROUND_FACTORY.json`
 ### Not yet true
 
 CI and merge of this change; the supported `update --candidate-state accepted-main --factory` promotion on a stopped, drained site; the explicit post-update probe; the $50 ledger read-back; restoring the owner's pre-retry checkpoint `20261008T181451Z-41111d20`; starting the site; and the re-run of the owner's retry (reader changed) with the source-version bump and the structural cleanup metrics recorded.
+
+## Claude custody: reviewed private factory interface for the accepted fix-round-4 source
+
+The same recipe as the fix-round-3 binding, now scripted (`X:/PeerSlate/Claude/tools/make_round_factory.py`; replaying it on the round-3 inputs reproduces `PRIVATE_ROUND3_FACTORY.json` byte for byte apart from the timestamp), for the accepted fix-round-4 source (independent PASS at `ca26075d26ffb0ae89c0ceca3c59e5eec099f7f6`; accepted as main `51f5033b4385e07c535fcf1c0f3095e23fb22ab0` through PR 1313, build 4377).
+
+### What this binds
+
+- New interface `X:/PeerSlate/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002/round4/PRIVATE_ROUND4_FACTORY.json`, sha256 `67228b7f211b06628ed63915b878113dd3514b95fc5a2501e5f3d950d33294b2`. Only the candidate sha, condition text, timestamp, the 13 pinned file hashes below and the qualification entry change. Factory signature, requirements, profiles, prices, limits, allocation and ongoing-budget contracts are byte-for-byte the round-3 interface's.
+- The 13 changed pins (Git bytes at the accepted commit; exactly the pinned files `git diff 5b030fdc 51f5033b` changes, the rest being governance and delivery tooling): `scripts/run_mvp1_acceptance_browser_tests.py`, `services/my_data_extraction_adapter.py`, `services/resume_intake_runtime.py`, `services/resume_intake_service.py`, `static/css/resume-intake.css`, `static/js/resume-editor.js`, `static/js/resume-intake.js`, `static/js/resume-publication.js`, `templates/resume_publication.html`, `tests/test_resume_intake_browser.py`, `tests/test_resume_onboarding_conversation.py`, `tests/test_resume_onboarding_coverage.py`, `tests/test_resume_publication_browser.py`.
+- `tools/local_reviewer/providers.py`: the new interface hash joins the allowed set, and `PRIVATE_ROUND4_ONBOARDING_QUALIFICATION` (chained on the round-3 entry) carries reviewed source `ca26075d26ffb0ae89c0ceca3c59e5eec099f7f6`, accepted source `51f5033b4385e07c535fcf1c0f3095e23fb22ab0` and the sha256 `f12853a2c1804287820020e45cc474a5bfacabc9c056822602597fe1ec8935bd` of the merged receipt file. Declared behaviors unchanged. `tests/test_local_reviewer_providers.py`: the new pair joins the integrity test.
+- App archive for the supported update (not part of this diff): `X:/PeerSlate/evidence/PS-ONBOARDING-PRIVATE-DELIVERY-002/round4/accepted-source-51f5033b.zip`, a `git archive` of main `51f5033b`, sha256 `a6794c3d4aec1fc8efec2db39af87b5172dbe28b65d44787e5a36213faf42801`, 4612 entries, no `.env`/`.git` names.
+- The branch was first brought to main `51f5033b` by the journaled `reconcile-main` (operation `64cbcdb4b747f48738b671eecd6928ddb1f82f490ade3c2bcd04a0732e8db5d0`, result `cb0b949278fe6e8e56ca612a0ed22948b492819a`), since main had taken the round-3 binding by squash merge.
+
+### Verification (source only)
+
+`-B -m unittest tests.test_local_reviewer tests.test_local_reviewer_identity tests.test_local_reviewer_providers` under the private Python 3.12 runtime: 160 tests, 0 failures. The interface's qualification equals `PRIVATE_ROUND4_ONBOARDING_QUALIFICATION`, `onboarding_qualification` accepts it, and `bound_factory(..., for_promotion=True)` accepts its bytes. No provider call, no installation read or write, no ledger access.
+
+### Not yet true
+
+CI and merge of this change; the supported `update --candidate-state accepted-main --factory` promotion on a stopped, drained site; the explicit post-update probe; the $50 ledger read-back; restoring the owner's pre-retry checkpoint `20261008T181451Z-41111d20`; starting the site; and the re-run of the owner's retry with the structural cleanup metrics recorded.

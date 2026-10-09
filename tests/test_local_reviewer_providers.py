@@ -139,7 +139,8 @@ class PrivateFactoryIntegrityTests(unittest.TestCase):
                 ("PRIVATE_SLICE_1A_DELIVERY_FACTORY_SHA256", "PRIVATE_SLICE_1A_ONBOARDING_QUALIFICATION"),
                 ("PRIVATE_TESTER_ROUND_DELIVERY_FACTORY_SHA256", "PRIVATE_TESTER_ROUND_ONBOARDING_QUALIFICATION"),
                 ("PRIVATE_ROUND2_DELIVERY_FACTORY_SHA256", "PRIVATE_ROUND2_ONBOARDING_QUALIFICATION"),
-                ("PRIVATE_ROUND3_DELIVERY_FACTORY_SHA256", "PRIVATE_ROUND3_ONBOARDING_QUALIFICATION")):
+                ("PRIVATE_ROUND3_DELIVERY_FACTORY_SHA256", "PRIVATE_ROUND3_ONBOARDING_QUALIFICATION"),
+                ("PRIVATE_ROUND4_DELIVERY_FACTORY_SHA256", "PRIVATE_ROUND4_ONBOARDING_QUALIFICATION")):
             with self.subTest(factory=factory_name):
                 successor_source = ("synthetic independently reviewed source " + factory_name).encode("utf-8")
                 (self.source / "service.py").write_bytes(successor_source)
