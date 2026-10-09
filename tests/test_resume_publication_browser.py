@@ -108,7 +108,7 @@ class ResumePublicationBrowserTests(unittest.TestCase):
         page.locator("#resume-publication-review-button").click()
         page.locator("#resume-publication-digest:not([hidden])").wait_for()
         self.assertNotIn("2022-03-01",page.locator(f'[data-entry-key="{key}"]').inner_text())
-        self.assertIn("2022-03",page.locator(f'[data-entry-key="{key}"]').inner_text())
+        self.assertIn("March 2022",page.locator(f'[data-entry-key="{key}"]').inner_text())
         page.locator(f'[data-entry-key="{key}"] [data-permission="resume_display"]').check()
         page.locator("#resume-publication-review-button").click()
         page.locator("#resume-publication-digest:not([hidden])").wait_for()

@@ -282,6 +282,20 @@ def _json_digest(payload) -> str:
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
+def _chooses_less_date_detail(statement, detail) -> bool:
+    """Whether the member's own words choose ``detail`` (year or month) for both of an entry's dates ("2022, years
+    only", "just the years", "March 2022, months only")."""
+    import re
+    # "just show the years", "only use years": a verb may come between, but never a number ("just two years" is a length).
+    verb = r"(?:(?:show|use|keep|list|give|put|display|want|have)\s+)?(?:the\s+)?"
+    patterns = {'year': r"\b(?:only|just)\s+" + verb + r"years?\b|\byears?\s+only\b|\byears?\s+instead\b"
+                        r"|\b(?:without|not)\s+(?:the\s+)?months?\b|\bno\s+months?\b|\b(?:drop|remove|hide)\s+(?:the\s+)?months?\b",
+                'month': r"\b(?:only|just)\s+" + verb + r"months?\b|\bmonths?\s+only\b|\bmonths?\s+instead\b"
+                         r"|\b(?:without|not)\s+(?:the\s+|exact\s+)*days?\b|\bno\s+(?:exact\s+)?days?\b"
+                         r"|\b(?:drop|remove|hide)\s+(?:the\s+|exact\s+)*days?\b"}
+    return detail in patterns and bool(re.search(patterns[detail], str(statement or ''), re.I))
+
+
 def _as_uuid(value, *, field):
     if not isinstance(value, str):
         raise ResumeIntakeValidationError(f"Invalid {field}.")
@@ -1342,6 +1356,39 @@ class ResumeIntakeService:
                     from services.resume_intake_runtime import conversation_rejection
                     raise conversation_rejection('changed', 'context_revalidation', 'authorized_context_changed')
                 proposals = self._conversation_proposals(owner, fresh, current, command, context, result, policy)
+                if result.get('_ask_detail'):
+                    # A date that would lower the other date's detail is not changed; the turn asks instead, and says so.
+                    ask = result['_ask_detail'][0]
+                    verb, other = ('end', 'start') if ask['name'] == 'end_date' else ('start', 'end')
+                    said = 'It ended' if verb == 'end' else 'It started'
+                    year = (ask['date'] or '')[:4]
+                    if not ask['name']:
+                        level = 'months' if ask['detail'] == 'month' else 'years'
+                        question = (f'To show only the {level} for both dates, say "Show only the {level}". '
+                                    f'You can also edit the dates directly.')
+                    elif ask['detail'] == 'month':
+                        month = datetime.strptime(ask['date'][:7], '%Y-%m').strftime('%B')
+                        question = (f"Which day in {month} {year} did it {verb}? Your {other} date keeps its exact day, "
+                                    f'and an entry shows both dates the same way. Tell me the day (for example "{said} on '
+                                    f'{month} 15, {year}"), or say "{said} in {month} {year}, months only" to show only '
+                                    f'the months for both dates.')
+                    else:
+                        question = (f"Which month in {year} did it {verb}? Your {other} date keeps its month, and an "
+                                    f'entry shows both dates the same way. Tell me the month (for example "{said} in '
+                                    f'March {year}"), or say "{said} in {year}, years only" to show only the years for '
+                                    f'both dates.')
+                    result['response'] = (('Your other changes are ready to review. ' if proposals else '')
+                                          + "I haven't changed this entry yet. " + question)
+                    result['next_question'] = ''
+                elif result.get('_unchanged') and not proposals:
+                    # A change that would leave the entry exactly as it is must not be reported as made.
+                    about_dates = any(result['_unchanged'])
+                    result['response'] = ('Nothing changed: what you said gives the same details the entry already has'
+                                          + (', or less detail than it keeps' if about_dates else '')
+                                          + '. Your entry is unchanged. You can edit its fields directly'
+                                          + (', or tell me the full date.' if about_dates else '.'))
+                result.pop('_unchanged', None)
+                result.pop('_ask_detail', None)
                 topic_skipped = any(operation['operation'] == 'skip_topic' for operation in result['operations'])
                 meta = current['structured_values']['resume_conversation_v1']
                 meta.update({'turn_state': 'completed', 'response': result['response'],
@@ -1535,28 +1582,47 @@ class ResumeIntakeService:
             # trimmed (both dates to the coarsest detail they share), and a date whose year is not in those words is
             # left out and flagged, never stored as if the member had said it.
             date_flags, date_note = [], None
-            date_fields = ('start_date', 'end_date', 'date_precision', 'issue_date', 'expiration_date',
-                           'issue_date_precision', 'expiration_date_precision')
-            if record_type in {'role', 'education', 'credential'} and (op == 'add_content' or set(date_fields) & set(patch)):
-                # Every date a suggestion stores goes through one rule (see normalize_dates): only the detail the member's
-                # words state, a date whose year they never said left out, the dates a revision leaves alone not re-proven,
-                # and a change of detail alone never raising what is supported.
-                from services.my_data_extraction_adapter import normalize_credential_dates, normalize_dates
-                normalize = normalize_credential_dates if record_type == 'credential' else normalize_dates
+            value_fields = ('start_date', 'end_date', 'date_precision', 'issue_date', 'expiration_date',
+                            'issue_date_precision', 'expiration_date_precision', 'completion_status')
+            if record_type in {'role', 'education', 'credential'} and (op == 'add_content' or set(value_fields) & set(patch)):
+                # Every value a suggestion stores goes through one rule (normalize_record): dates only at the detail the
+                # member's words state, a completed program's year where the words put it, a credential's status as one of
+                # the form's choices.
+                from services.my_data_extraction_adapter import normalize_record
                 names = ('issue_date', 'expiration_date') if record_type == 'credential' else ('start_date', 'end_date')
                 if op == 'add_content':
-                    coarsened, date_flags = normalize(values, literal)
+                    date_note, date_flags = normalize_record(record_type, values, literal)
                 else:
                     changed = {name for name in names if name in patch and values.get(name)}
-                    coarsened, date_flags = normalize(values, command['statement'], prior=pre_patch_values, changed=changed)
-                date_note = 'coarsened' if coarsened else None
-                for name in date_fields:
+                    date_note, date_flags = normalize_record(record_type, values, command['statement'],
+                                                             prior=dict(pre_patch_values), changed=changed)
+                    if date_note == 'lowered':
+                        if _chooses_less_date_detail(command['statement'], values.get('date_precision')):
+                            # Showing less detail is the member's own choice ("show only the years"), so it is made.
+                            date_note = None
+                        else:
+                            # A new date with less detail than the date the member left alone, or less detail the
+                            # member's words did not ask for: an entry keeps one detail for both dates, and nothing is
+                            # lowered without asking. No suggestion is made; the member is asked (see converse).
+                            name = next(iter(changed), None)
+                            result.setdefault('_ask_detail', []).append(
+                                {'name': name, 'date': values.get(name) if name else None,
+                                 'detail': values.get('date_precision')})
+                            continue
+                for name in value_fields:
                     if name not in values and name not in pre_patch_values:
                         patch.pop(name, None)
                     elif values.get(name) is None:
                         patch.pop(name, None)
                     elif name in patch or values[name] != pre_patch_values.get(name):
                         patch[name] = values[name]
+                # A change to a date always carries the detail it was stored at, so confirming it can never apply an
+                # older detail to the new value (a year-only "2022" read at the entry's earlier month detail).
+                details = ({'issue_date': 'issue_date_precision', 'expiration_date': 'expiration_date_precision'}
+                           if record_type == 'credential' else {'start_date': 'date_precision', 'end_date': 'date_precision'})
+                for name, detail in details.items():
+                    if name in patch and values.get(detail):
+                        patch[detail] = values[detail]
             section = operation['presentation_section'] or (target or {}).get('presentation_section')
             if section not in RESUME_SECTIONS:
                 raise conversation_rejection('invalid_output', 'operation_contract', 'presentation_section')
@@ -1566,6 +1632,8 @@ class ResumeIntakeService:
                     raise conversation_rejection('invalid_output', 'operation_contract', 'knowledge_classification')
                 values['classification'] = expected_class
             if op != 'add_content' and values == target['values'] and op not in {'exclude_content', 'restore_content'}:
+                # Nothing changes. The reply must not claim a change: the turn says so instead (see converse).
+                result.setdefault('_unchanged', []).append(bool(set(patch) & set(value_fields)))
                 continue
             canonical_target = None
             if ref and ref.startswith('record:'):
@@ -4231,12 +4299,12 @@ class ResumeIntakeService:
             provided = list(candidate.provided_fields)
             date_flags, date_note = [], None
             if record_type in {"role", "education", "credential"}:
-                # Same rule as every other path: only the date detail the member's words state.
-                from services.my_data_extraction_adapter import normalize_credential_dates, normalize_dates
-                coarsened, date_flags = (normalize_credential_dates if record_type == "credential" else normalize_dates)(values, text)
-                date_note = "coarsened" if coarsened else None
+                # Same rule as every other path (normalize_record).
+                from services.my_data_extraction_adapter import normalize_record
+                date_note, date_flags = normalize_record(record_type, values, text)
                 provided = [name for name in provided if name in values] + [
-                    name for name in ("date_precision", "issue_date_precision", "expiration_date_precision")
+                    name for name in ("start_date", "end_date", "date_precision", "issue_date", "expiration_date",
+                                      "issue_date_precision", "expiration_date_precision", "completion_status")
                     if name in values and name not in provided]
             drafts.append({
                 "kind": kind,

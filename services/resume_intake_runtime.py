@@ -828,7 +828,8 @@ a name the member did not write in these units (an employer or school mentioned 
 full product name), do not expand or correct abbreviations, and if the units do not name the employer, school
 or issuer, omit that field instead of guessing it.
 Set education_status completed only when the member says they finished, earned or graduated; set a credential's
-completion_status completed only when the member says they hold or earned it; leave both out otherwise.
+completion_status completed only when the member says they hold or earned it, or calls it active, current or valid;
+leave both out otherwise.
 For a degree or certificate the member says they finished, a single year is the completion (end_date), never the
 start_date.
 Genuine credentials belong in Credentials; courses belong in Education. Ask when

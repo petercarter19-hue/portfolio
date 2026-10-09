@@ -91,6 +91,43 @@ def _stop_patch(patcher):
         return
 
 
+OWNER_HEADER = "X-PeerSlate-Test-Owner"
+
+
+class _OwnerPinnedApp:
+    """Test server only: each browser context's requests act as the owner that context was created for.
+
+    The signed-in owner in these tests is one app-wide setting. A draft save that a page sent just before its test
+    ended could otherwise be handled after the next test switched the owner, and land in the new owner's workspace.
+    Every context carries its owner in a test-only header (see start_browser); this wrapper applies it for exactly
+    that request. Requests run through the app one at a time, as they did on the single-threaded server, while the
+    server itself reads connections in parallel so an idle one cannot stall the others. Production never has this
+    wrapper; it exists only in the test harness.
+    """
+
+    def __init__(self, app):
+        self.app, self.lock = app, threading.Lock()
+
+    def __call__(self, environ, start_response):
+        owner = environ.get("HTTP_" + OWNER_HEADER.upper().replace("-", "_"))
+        with self.lock:
+            config = self.app.config
+            previous = config.get("PEERSLATE_DEV_USER_KEY")
+            if owner:
+                config["PEERSLATE_DEV_USER_KEY"] = owner
+            try:
+                result = self.app(environ, start_response)
+                try:
+                    return list(result)
+                finally:
+                    if hasattr(result, "close"):
+                        result.close()   # Flask ends the request here; the WSGI contract requires it
+            finally:
+                # Put back what the test set, unless the test changed it meanwhile.
+                if owner and config.get("PEERSLATE_DEV_USER_KEY") == owner:
+                    config["PEERSLATE_DEV_USER_KEY"] = previous
+
+
 def _shutdown_server(server, thread):
     try:
         if thread.is_alive():
@@ -173,7 +210,9 @@ def install_intake_runtime_fixtures(cls):
     limiter.enabled = False
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
-    server = make_server("127.0.0.1", 0, app)
+    # Threaded, like the acceptance suite's server and every real one: a single-threaded server is stalled by one idle
+    # connection (a browser preconnect from the previous test's page), which left the next page waiting for 20 seconds.
+    server = make_server("127.0.0.1", 0, _OwnerPinnedApp(app), threaded=True)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     cls.addClassCleanup(_shutdown_server, server, thread)
     thread.start()
@@ -192,6 +231,21 @@ def start_browser(cls):
         args=["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"],
     )
     cls.addClassCleanup(_close_browser, browser)
+    # Each new context is stamped with the owner the test has selected when it is created (see _OwnerPinnedApp).
+    create = browser.new_context
+
+    def new_context(*args, **kwargs):
+        # Read under the wrapper's lock: while a late request runs, the setting holds that request's owner, not the test's.
+        lock = getattr(getattr(getattr(cls, "server", None), "app", None), "lock", None)
+        if lock is None:
+            owner = app.config.get("PEERSLATE_DEV_USER_KEY")
+        else:
+            with lock:
+                owner = app.config.get("PEERSLATE_DEV_USER_KEY")
+        if owner:
+            kwargs["extra_http_headers"] = {**(kwargs.get("extra_http_headers") or {}), OWNER_HEADER: owner}
+        return create(*args, **kwargs)
+    browser.new_context = new_context
     cls.browser = browser
 
 
@@ -2715,7 +2769,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
             'expiration_date':'2027-06-01','expiration_date_precision':'month'}
         self.typed_service([{'kind':'inferred_wording','record_type':'credential','values':values}])
         page=self.page();self.submit(page,'My credential was issued June 2022 and expires June 2027.')
-        self.assertIn('2022-06',page.locator('#resume-intake-proposals').inner_text())
+        self.assertIn('June 2022',page.locator('#resume-intake-proposals').inner_text())
         self.assertNotIn('2022-06-01',page.locator('#resume-intake-proposals').inner_text())
         self.assertEqual(shared.policy.list_entries(self.owner)['entries'],[])
         page.get_by_role('button',name='Edit fields manually',exact=True).click()
@@ -2745,7 +2799,7 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
                 guest_width:guest.getBoundingClientRect().width};
         }""").json_value()
         content=page.locator('#resume-intake-document-content').inner_text()
-        self.assertIn('Issued 2022-06',content);self.assertIn('Expires 2027-06',content)
+        self.assertIn('Issued June 2022',content);self.assertIn('Expires June 2027',content)
         self.assertNotIn('2022-06-01',content);self.assertNotIn('2027-06-01',content)
         self.assertGreater(geometry['document_width'],850)
         self.assertGreater(geometry['guest_width'],500)
@@ -3330,6 +3384,164 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         self.assertEqual(state['workspace'], 2)
         self.assertNotIn('Saving is not enabled', page.locator('#resume-intake-status').inner_text())
         self.assertNotIn('Saving is not enabled', page.inner_text('body'))
+        # Once a retry succeeded, its "busy" notice is not left on screen (tester round 3, R3-3).
+        page.wait_for_function("() => !document.getElementById('resume-intake-status').textContent.includes('busy for a moment')")
+
+    def test_a_page_keeps_acting_as_its_own_owner_after_the_test_switches_owner(self):
+        # A save that a closing page sent late used to be handled as whichever owner the next test had selected.
+        page = self.page(); self.input(page)
+        first_owner, next_owner = self.owner, self.owner + '-next'
+        app.config['PEERSLATE_DEV_USER_KEY'] = next_owner
+        with page.expect_response(lambda response: response.url.endswith('/draft') and response.request.method == 'PUT'
+                                  and response.status == 200):
+            page.locator('#resume-intake-text').fill('Words from the earlier page.')
+        service = app.config['RESUME_INTAKE_SERVICE']
+        self.assertEqual(service.get_draft(first_owner)['draft']['text'], 'Words from the earlier page.')
+        self.assertIsNone(service.get_draft(next_owner)['draft'])
+
+    def test_a_context_created_while_a_late_request_runs_belongs_to_the_test_owner(self):
+        # While a late request from an earlier page runs, the shared setting briefly holds that page's owner. A context
+        # created in that moment must still be stamped with the owner the test selected.
+        import time
+        import urllib.request
+        service = app.config['RESUME_INTAKE_SERVICE']
+        original_get_draft, seen = service.get_draft, []
+
+        def slow_get_draft(owner, *args, **kwargs):
+            seen.append(owner)
+            if owner == 'late-owner':
+                time.sleep(1.5)
+            return original_get_draft(owner, *args, **kwargs)
+        service.get_draft = slow_get_draft
+        self.addCleanup(setattr, service, 'get_draft', original_get_draft)
+
+        def late():
+            request = urllib.request.Request(self.base_url + '/api/resume-intake/me/draft',
+                                             headers={OWNER_HEADER: 'late-owner', 'X-PeerSlate-Request': 'same-origin'})
+            urllib.request.urlopen(request, timeout=15).read()
+        worker = threading.Thread(target=late)
+        worker.start()
+        deadline = time.monotonic() + 10
+        while 'late-owner' not in seen:   # wait until the late request is inside the app
+            if time.monotonic() > deadline or not worker.is_alive():
+                self.fail('The late request never reached the app: %r' % seen)
+            time.sleep(0.02)
+        context = self.browser.new_context()
+        self.addCleanup(context.close)
+        worker.join()
+        context.new_page().goto(self.base_url + '/api/resume-intake/me/draft')
+        self.assertEqual(seen[-1], self.owner, seen)
+
+    def test_an_idle_connection_from_another_client_does_not_hold_up_the_page(self):
+        # A browser opens connections ahead of need. One that says nothing used to stall the test server for every
+        # other client, so a page opened next waited 20 seconds for its start-up reads (Azure builds 4325 and 4336).
+        import socket
+        idle = socket.create_connection(('127.0.0.1', self.server.server_port))
+        self.addCleanup(idle.close)
+        self.page()
+
+    def test_a_start_up_read_that_never_answers_is_given_up_and_tried_again(self):
+        state = {'held': 0}
+
+        def never_answer_once(route):
+            if state['held'] < 1:
+                state['held'] += 1
+                return   # left unanswered: the connection stalls
+            route.continue_()
+        context = self.browser.new_context(viewport={'width': 1440, 'height': 1000})
+        self.addCleanup(context.close)
+        page = context.new_page(); page.set_default_timeout(20000)
+        page.route('https://fonts.**', lambda route: route.abort())
+        page.route(re.compile(r'.*/api/resume-intake/me$'), never_answer_once)
+        page.goto(self.base_url + '/app/resume')
+        page.locator('#resume-intake[open]').wait_for()
+        self.assertEqual(state['held'], 1)
+        self.assertNotIn('Saving is not enabled', page.inner_text('body'))
+
+    def test_a_start_up_answer_whose_body_stalls_is_tried_again_not_shown_as_empty(self):
+        # Review R4-4: the answer starts (200, headers) but its body never finishes. The time limit gives up on it, and the
+        # read is tried again; the member with suggestions to review never sees an empty welcome or a fixture policy line.
+        stall_once = """(() => {
+          const original = window.fetch;
+          window.__stalls = 0;
+          window.fetch = function (url, options) {
+            const path = new URL(String(url), location.href).pathname;
+            if (path === '/api/resume-intake/me' && window.__stalls === 0) {
+              window.__stalls += 1;
+              const signal = options && options.signal;
+              const body = new ReadableStream({start(controller) {
+                controller.enqueue(new TextEncoder().encode('{"policy": {"selected": tr'));
+                if (signal) signal.addEventListener('abort', () => controller.error(new DOMException('aborted', 'AbortError')));
+              }});
+              return Promise.resolve(new Response(body, {status: 200, headers: {'Content-Type': 'application/json'}}));
+            }
+            return original.apply(this, arguments);
+          };
+        })();"""
+        service = self.batch_service(self.batch_counting(self.batch_payload()))
+        self.batch_upload(service)
+        context = self.browser.new_context(viewport={'width': 1440, 'height': 1000})
+        self.addCleanup(context.close)
+        context.add_init_script(stall_once)
+        page = context.new_page(); page.set_default_timeout(30000)
+        page.route('https://fonts.**', lambda route: route.abort())
+        page.goto(self.base_url + '/app/resume')
+        page.locator('#resume-intake-review:visible').wait_for()
+        self.assertEqual(page.evaluate('window.__stalls'), 1)
+        self.assertNotIn('Synthetic fixture policy', page.locator('#resume-intake-policy').text_content() or '')
+
+    def test_keyboard_focus_stays_inside_the_open_guide(self):
+        # B12: Tab from the Guide's last control returns to its first, and Shift+Tab from the first goes to the last.
+        page = self.page()
+        inside = "() => document.getElementById('resume-intake').contains(document.activeElement)"
+        stops = page.evaluate("""() => [...document.querySelectorAll('#resume-intake a[href], #resume-intake button:not([disabled]), '
+            + '#resume-intake input:not([disabled]):not([type=hidden]), #resume-intake select:not([disabled]), '
+            + '#resume-intake textarea:not([disabled]), #resume-intake summary')].filter(el => el.getClientRects().length).length""")
+        self.assertGreater(stops, 1)
+        for key in ('Tab', 'Shift+Tab'):
+            with self.subTest(key=key):
+                for _ in range(stops * 2 + 3):
+                    page.keyboard.press(key)
+                    self.assertTrue(page.evaluate(inside), key)
+
+    def test_the_guide_button_never_sits_on_the_bottom_tab_bar(self):
+        # B10: at 200% zoom on a laptop (720x450) and on a phone, the floating "Guide me" button clears the site's tab bar.
+        for index, (width, height) in enumerate(((720, 450), (390, 844))):
+            with self.subTest(width=width):
+                page = self.page(width, height, expect_guide=index == 0)
+                if index == 0:
+                    page.keyboard.press('Escape')
+                page.locator('#resume-intake-reopen').wait_for(state='visible')
+                boxes = page.evaluate("""() => {
+                    const r = el => el && el.getClientRects().length ? el.getBoundingClientRect() : null;
+                    const reopen = r(document.querySelector('#resume-intake-reopen')), tab = r(document.querySelector('#mobile-tabbar'));
+                    return {reopen: reopen && [reopen.top, reopen.bottom], tab: tab && [tab.top, tab.bottom]};
+                }""")
+                self.assertIsNotNone(boxes['tab'], 'the tab bar shows at this width')
+                self.assertLessEqual(boxes['reopen'][1], boxes['tab'][0], boxes)
+
+    def test_a_change_that_would_lower_the_other_date_is_asked_about_and_the_card_is_unchanged(self):
+        # R3-1 and R4c-1: a year-only new end date on a month-level entry is not made; the Guide asks for the month, and
+        # the waiting card keeps its dates.
+        from tests.test_resume_onboarding_conversation import operation
+        row = self.role_proposal()
+        row['values'] = dict(row['values'], start_date='2019-01-01', date_precision='month')
+        service = self.typed_service([row])
+
+        def revise(ctx):
+            return {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+                ctx, ref=ctx['selected_target'], record_type='role', values={'end_date': '2022-01', 'current_role': False},
+                section='Experience')]}
+        page = self.pending_conversation_page(service, revise)
+        page.locator('#resume-intake-review:visible').wait_for()
+        page.get_by_label('Tell me what to change about this one').fill('Change the end date to 2022.')
+        page.get_by_role('button', name='Send change', exact=True).click()
+        page.locator('#resume-intake-status').get_by_text('Which month in 2022 did it end?', exact=False).wait_for()
+        self.assertIn("I haven't changed this entry yet.", page.locator('#resume-intake-status').inner_text())
+        cards = page.locator('#resume-intake-proposals').inner_text()
+        self.assertIn('January 2019', cards)
+        self.assertNotIn('2022', cards)
+        self.assertEqual(page.locator('.resume-intake__date-note').count(), 0)
 
     def test_a_late_draft_load_never_overwrites_saved_words_the_member_has_not_seen(self):
         # The first loads fail as busy, the member types, then the saved draft loads and says something else. The saved

@@ -15,8 +15,16 @@
 
 {% block content %}
 {% macro resume_date(value, precision) -%}
+{#- Dates read as words ("June 2022", "June 1, 2022"); only the detail the entry holds is shown. -#}
+{%- set months = ['January','February','March','April','May','June','July','August','September','October','November','December'] -%}
 {%- if value and precision != 'unknown' -%}
-{{- 'About ' if precision == 'approximate' else '' -}}{{- value[:4] if precision == 'year' else (value[:7] if precision == 'month' else value) -}}
+{%- set text = value|string -%}
+{%- set month = (text[5:7]|int) if text|length >= 7 else 0 -%}
+{{- 'About ' if precision == 'approximate' else '' -}}
+{%- if precision in ('year', 'approximate') or month < 1 or month > 12 -%}{{ text[:4] }}
+{%- elif precision == 'month' or text|length < 10 -%}{{ months[month - 1] }} {{ text[:4] }}
+{%- else -%}{{ months[month - 1] }} {{ text[8:10]|int }}, {{ text[:4] }}
+{%- endif -%}
 {%- endif -%}
 {%- endmacro %}
 
@@ -26,7 +34,7 @@
     <h3>{{ words.role_title or words.title or words.name or words.skill_name or words.credential_name or words.degree_name or words.institution_name or ('Achievement' if words.wording else 'Shared information') }}</h3>
     {% if words.employer_name or words.institution_name or words.issuer or words.issuer_name %}<p class="resume-publication__organization">{{ words.employer_name or words.institution_name or words.issuer or words.issuer_name }}</p>{% endif %}
     {% if words.issue_date or words.expiration_date %}<p class="resume-publication__dates">{% if words.issue_date %}Issued {{ resume_date(words.issue_date, words.issue_date_precision) }}{% endif %}{% if words.expiration_date %}{% if words.issue_date %} · {% endif %}Expires {{ resume_date(words.expiration_date, words.expiration_date_precision) }}{% endif %}</p>
-    {% elif words.date_precision != 'unknown' and (words.start_date or words.end_date) %}<p class="resume-publication__dates">{{ resume_date(words.start_date, words.date_precision) }}{% if words.current_role %} – Present{% elif words.end_date %}{% if words.start_date %} – {% endif %}{{ resume_date(words.end_date, words.date_precision) }}{% endif %}</p>{% endif %}
+    {% elif words.date_precision != 'unknown' and (words.start_date or words.end_date) %}{% set shown_start = resume_date(words.start_date, words.date_precision) %}{% set shown_end = resume_date(words.end_date, words.date_precision) %}<p class="resume-publication__dates">{{ shown_start }}{% if words.current_role %} – Present{% elif words.end_date and shown_end != shown_start %}{% if words.start_date %} – {% endif %}{{ shown_end }}{% endif %}</p>{% endif %}
     {% if words.date_precision == 'unknown' %}<p class="resume-publication__dates">{% if words.current_role %}Current role · {% endif %}Dates not supplied</p>{% endif %}
     {% if words.education_status %}<p class="resume-publication__education-status">{{ {'planned': 'Planned', 'in_progress': 'In progress', 'completed': 'Completed', 'incomplete': 'Incomplete', 'withdrawn': 'Withdrawn'}.get(words.education_status, words.education_status | replace('_', ' ') | capitalize) }}</p>{% endif %}
     {% if words.location_text %}<p>{{ words.location_text }}</p>{% endif %}

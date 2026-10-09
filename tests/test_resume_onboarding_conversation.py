@@ -1822,6 +1822,315 @@ class DateTruthTests(unittest.TestCase):
         normalize_dates(values, "May I add that in 2012 I was at Alpha Labs.")
         self.assertEqual(date_stored(values), ("2012-01-01", None, "year"))
 
+    # -- one date changed on a saved, month-level entry (tester round 3, R3-1) -----------------
+    def _saved_month_role(self, harness):
+        return harness.seed('role', role_title='Shift Supervisor', employer_name='Northwind Bakery', start_date='2019-01-01',
+                            end_date=None, date_precision='month', current_role=True, summary='Ran the morning shift.')
+
+    def _with_saved(self, harness, key, proposal):
+        # A suggestion against a saved entry holds only what it changes; this is what the card reads.
+        item = next(row for row in harness.intake.draft_service.get_workspace(harness.owner)['items'] if row['record_key'] == key)
+        return {**item['values'], **(proposal.get('proposed_values') or {})}
+
+    def _no_change_and_asked(self, harness, result, question):
+        # Nothing is lowered without asking: no suggestion is made, the Guide says so, and asks for the missing detail.
+        self.assertEqual(result['proposals'], [])
+        self.assertIn("I haven't changed this entry yet.", result['response'])
+        self.assertIn(question, result['response'])
+        self.assertEqual([r for r in harness.intake.repository.load_owner(harness.owner)['proposals'].values()
+                          if r['state'] == 'pending'], [])
+
+    def test_a_year_only_end_date_on_a_saved_month_level_role_invents_no_month_in_any_shape(self):
+        # The model sent the new end date in month shape ("2022-01") with no detail in its change; the rule once skipped
+        # that shape, and confirming applied the entry's month detail to it: "January 2022". Review R4c-1: the start's
+        # month is not lowered either; the Guide asks, and "years only" in the member's words is their choice.
+        for patch in ({'end_date': '2022-01', 'current_role': False}, {'end_date': '2022', 'current_role': False},
+                      {'end_date': '2022-01-01', 'current_role': False}, {'end_date': '2022-01-01', 'date_precision': 'month', 'current_role': False},
+                      {'end_date': '2022-01-01', 'date_precision': 'year', 'current_role': False}):
+            with self.subTest(patch=patch):
+                harness = self.harness()
+                key = self._saved_month_role(harness)
+                ref = 'record:' + key
+                harness.behavior = lambda ctx, patch=patch: {'response': 'I changed the end date.', 'next_question': 'What next?',
+                    'operations': [operation(ctx, ref=ref, record_type='role', values=patch, section='Experience')]}
+                result = harness.turn('At Northwind Bakery, change the end date to 2022.', ref)
+                self._no_change_and_asked(harness, result, 'Which month in 2022 did it end?')
+                self.assertIn('"It ended in 2022, years only"', result['response'])
+                proposal = harness.turn('It ended in 2022, years only.', ref)['proposals'][0]
+                stored = harness.intake.repository.load_owner(harness.owner)['proposals'][proposal['proposal_key']]
+                values = proposal['proposed_values']
+                # The change carries the detail it was stored at, so confirming cannot apply the older month detail.
+                self.assertEqual((values['end_date'], values['date_precision']), ('2022-01-01', 'year'))
+                self.assertIn('end_date', stored['provided_fields'])
+                self.assertIn('date_precision', stored['provided_fields'])
+                self.assertIsNone(stored['resume_conversation_v1'].get('date_note'))
+                harness.confirm(proposal)
+                item = next(row for row in harness.intake.draft_service.get_workspace(harness.owner)['items'] if row['record_key'] == key)
+                merged = {**item['values'], **(item.get('proposed_values') or {})}
+                self.assertEqual(date_stored(merged), ('2019-01-01', '2022-01-01', 'year'))
+                self.assertEqual(date_shown(merged), '2019 – 2022')
+
+    def test_a_year_only_start_date_on_a_month_level_range_is_asked_about_too(self):
+        harness = self.harness()
+        ref = 'record:' + self._saved_range_role(harness)
+        harness.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+            ctx, ref=ref, record_type='role', values={'start_date': '2018'}, section='Experience')]}
+        result = harness.turn('The start was 2018.', ref)
+        self._no_change_and_asked(harness, result, 'Which month in 2018 did it start?')
+        self.assertIn('"It started in March 2018"', result['response'])
+
+    def test_a_month_only_date_beside_an_exact_day_asks_for_the_day(self):
+        harness = self.harness()
+        key = harness.seed('role', role_title='Shift Supervisor', employer_name='Northwind Bakery', start_date='2019-08-14',
+                           end_date=None, date_precision='day', current_role=True, summary='Ran the morning shift.')
+        ref = 'record:' + key
+        harness.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+            ctx, ref=ref, record_type='role', values={'end_date': '2022-03', 'current_role': False}, section='Experience')]}
+        result = harness.turn('Change the end date to March 2022.', ref)
+        self._no_change_and_asked(harness, result, 'Which day in March 2022 did it end?')
+        values = harness.turn('It ended in March 2022, months only.', ref)['proposals'][0]['proposed_values']
+        self.assertEqual(date_stored(values), ('2019-08-01', '2022-03-01', 'month'))
+
+    def test_the_question_and_both_answers_on_every_revise_path(self):
+        # A saved entry (record) and a waiting suggestion (proposal): the lowering change is asked about, never made, and
+        # each answer then goes through the same revision and the same rule.
+        answers = {'month': ('It ended in March 2022.', {'end_date': '2022-03', 'current_role': False}, ('2019-08-01', '2022-03-01', 'month')),
+                   'years only': ('It ended in 2022, years only.', {'end_date': '2022', 'current_role': False}, ('2019-01-01', '2022-01-01', 'year'))}
+        for path in ('record', 'proposal'):
+            for answer, (words, patch, stored) in answers.items():
+                with self.subTest(path=path, answer=answer):
+                    harness = self.harness()
+                    if path == 'record':
+                        key = harness.seed('role', role_title='Shift Supervisor', employer_name='Northwind Bakery',
+                                           start_date='2019-08-01', end_date=None, date_precision='month', current_role=True,
+                                           summary='Ran the morning shift.')
+                        ref = 'record:' + key
+                    else:
+                        harness.behavior = lambda ctx: {'response': 'Review.', 'next_question': '', 'operations': [operation(
+                            ctx, op='add_content', record_type='role', section='Experience',
+                            values={**DATE_ROLE, 'start_date': '2019-08', 'current_role': True,
+                                    'date_precision': 'month'})]}
+                        ref = 'proposal:' + harness.turn('I was an Engineer at Alpha Labs from August 2019.')['proposals'][0]['proposal_key']
+                    harness.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+                        ctx, ref=ref, record_type='role', values={'end_date': '2022-01', 'current_role': False}, section='Experience')]}
+                    result = harness.turn('Change the end date to 2022.', ref)
+                    self.assertEqual(result['proposals'], [])
+                    self.assertIn('Which month in 2022 did it end?', result['response'])
+                    rows = harness.intake.repository.load_owner(harness.owner)['proposals'].values()
+                    self.assertEqual(sum(r['state'] == 'pending' for r in rows), 0 if path == 'record' else 1)
+                    harness.behavior = lambda ctx, patch=patch: {'response': 'Updated.', 'next_question': '', 'operations': [
+                        operation(ctx, ref=ref, record_type='role', values=patch, section='Experience')]}
+                    proposal = harness.turn(words, ref)['proposals'][0]
+                    values = self._with_saved(harness, key, proposal) if path == 'record' else proposal['proposed_values']
+                    self.assertEqual(date_stored(values), stored)
+                    self.assertNotIn('date_note', harness.intake.repository.load_owner(harness.owner)['proposals'][
+                        proposal['proposal_key']]['resume_conversation_v1'])
+
+    def test_less_detail_the_members_words_did_not_ask_for_is_never_made(self):
+        # The model setting years by itself (here on a change of title) lowers nothing; the member's own words do.
+        harness = self.harness()
+        key = self._saved_range_role(harness)
+        ref = 'record:' + key
+        harness.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+            ctx, ref=ref, record_type='role', values={'role_title': 'Shift Lead', 'date_precision': 'year'}, section='Experience')]}
+        result = harness.turn('My title was Shift Lead.', ref)
+        self._no_change_and_asked(harness, result, 'say "Show only the years"')
+        for words in ('Drop the months.', 'Just the years, please.', 'Use years instead.', 'Just show the years.',
+                      'Only show years, not the months.'):
+            with self.subTest(words=words):
+                harness.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+                    ctx, ref=ref, record_type='role', values={'date_precision': 'year'}, section='Experience')]}
+                values = self._with_saved(harness, key, harness.turn(words, ref)['proposals'][0])
+                self.assertEqual(date_stored(values), ('2019-01-01', '2021-01-01', 'year'))
+        # A length of time is not a choice of detail.
+        from services.resume_intake_service import _chooses_less_date_detail
+        for words in ('I was there just two years.', 'Only 3 years in that job.', 'I stayed only a few months.'):
+            with self.subTest(words=words):
+                self.assertFalse(_chooses_less_date_detail(words, 'year') or _chooses_less_date_detail(words, 'month'))
+
+    def test_a_change_to_another_date_after_the_question_never_invents_a_month(self):
+        # Review R4c-1 (d): "January 2022" must never appear, whichever way the member answers.
+        harness = self.harness()
+        key = self._saved_month_role(harness)
+        ref = 'record:' + key
+        harness.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+            ctx, ref=ref, record_type='role', values={'end_date': '2022', 'current_role': False}, section='Experience')]}
+        self._no_change_and_asked(harness, harness.turn('Change the end date to 2022.', ref), 'Which month in 2022 did it end?')
+        harness.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+            ctx, ref=ref, record_type='role', values={'start_date': '2019-03'}, section='Experience')]}
+        values = self._with_saved(harness, key, harness.turn('The start was March 2019.', ref)['proposals'][0])
+        self.assertEqual(date_stored(values), ('2019-03-01', None, 'month'))
+        self.assertNotIn('January', date_shown(values, True))
+        # Answered with years only first, then the start's month on that card: both stay years, and the card says why.
+        harness = self.harness()
+        ref = 'record:' + self._saved_month_role(harness)
+        harness.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+            ctx, ref=ref, record_type='role', values={'end_date': '2022', 'current_role': False}, section='Experience')]}
+        card = harness.turn('It ended in 2022, years only.', ref)['proposals'][0]
+        pref = 'proposal:' + card['proposal_key']
+        harness.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+            ctx, ref=pref, record_type='role', values={'start_date': '2018-03'}, section='Experience')]}
+        proposal = harness.turn('The start was March 2018.', pref)['proposals'][0]
+        stored = harness.intake.repository.load_owner(harness.owner)['proposals'][proposal['proposal_key']]
+        self.assertEqual(date_stored(proposal['proposed_values']), ('2018-01-01', '2022-01-01', 'year'))
+        self.assertEqual(date_shown(proposal['proposed_values']), '2018 – 2022')
+        self.assertEqual(stored['resume_conversation_v1'].get('date_note'), 'coarsened')
+
+    def test_a_change_to_something_else_after_the_question_keeps_the_dates_and_the_month_still_answers(self):
+        # Review R4c-1 (g): no lowered card exists to carry forward; the entry's months stay, and a month answers.
+        harness = self.harness()
+        key = harness.seed('role', role_title='Shift Supervisor', employer_name='Northwind Bakery', start_date='2019-08-01',
+                           end_date=None, date_precision='month', current_role=True, summary='Ran the morning shift.')
+        ref = 'record:' + key
+        harness.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+            ctx, ref=ref, record_type='role', values={'end_date': '2022', 'current_role': False}, section='Experience')]}
+        self._no_change_and_asked(harness, harness.turn('Change the end date to 2022.', ref), 'Which month in 2022 did it end?')
+        harness.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+            ctx, ref=ref, record_type='role', values={'role_title': 'Shift Lead'}, section='Experience')]}
+        card = harness.turn('My title was Shift Lead.', ref)['proposals'][0]
+        stored = harness.intake.repository.load_owner(harness.owner)['proposals'][card['proposal_key']]
+        self.assertEqual(date_stored(self._with_saved(harness, key, card)), ('2019-08-01', None, 'month'))
+        self.assertIsNone(stored['resume_conversation_v1'].get('date_note'))
+        pref = 'proposal:' + card['proposal_key']
+        harness.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+            ctx, ref=pref, record_type='role', values={'end_date': '2022-03', 'current_role': False}, section='Experience')]}
+        values = harness.turn('The end month was March 2022.', pref)['proposals'][0]['proposed_values']
+        self.assertEqual(date_stored(values), ('2019-08-01', '2022-03-01', 'month'))
+        self.assertEqual(values['role_title'], 'Shift Lead')
+
+    def test_a_month_given_for_the_new_end_date_keeps_both_dates_at_months(self):
+        harness = self.harness()
+        key = self._saved_month_role(harness)
+        ref = 'record:' + key
+        harness.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [
+            operation(ctx, ref=ref, record_type='role', values={'end_date': '2022-03', 'current_role': False},
+                                    section='Experience')]}
+        proposal = harness.turn('At Northwind Bakery, change the end date to March 2022.', ref)['proposals'][0]
+        stored = harness.intake.repository.load_owner(harness.owner)['proposals'][proposal['proposal_key']]
+        self.assertEqual((proposal['proposed_values']['end_date'], proposal['proposed_values']['date_precision']), ('2022-03-01', 'month'))
+        self.assertIsNone(stored['resume_conversation_v1'].get('date_note'))
+
+    def test_every_date_shape_is_read_by_the_rule_on_the_add_paths(self):
+        # The same month-shaped value on the Guide's add and the typed Add: read, checked against the words, never skipped.
+        harness = self.harness()
+        harness.behavior = lambda ctx: {'response': 'Review.', 'next_question': '', 'operations': [operation(
+            ctx, op='add_content', record_type='role', section='Experience',
+            values={**DATE_ROLE, 'start_date': '2012-03', 'end_date': '2016-05', 'date_precision': 'month'})]}
+        values = harness.turn('I was an Engineer at Alpha Labs from 2012 to May 2016.')['proposals'][0]['proposed_values']
+        self.assertEqual(date_stored(values), ('2012-01-01', '2016-01-01', 'year'))
+        draft = self.typed_add(self.harness(), 'role', 'I was an Engineer at Alpha Labs from 2012 to May 2016.',
+                               {**DATE_ROLE, 'start_date': '2012-03', 'end_date': '2016-05', 'date_precision': 'month'})
+        self.assertEqual(date_stored(draft['values']), ('2012-01-01', '2016-01-01', 'year'))
+
+    def test_the_month_given_after_the_question_keeps_both_months(self):
+        # Review R4-2: the question must be answerable by the month alone.
+        for start in ('2019-01-01', '2019-08-01'):
+            with self.subTest(start=start):
+                harness = self.harness()
+                key = harness.seed('role', role_title='Shift Supervisor', employer_name='Northwind Bakery', start_date=start,
+                                   end_date=None, date_precision='month', current_role=True, summary='Ran the morning shift.')
+                ref = 'record:' + key
+                harness.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+                    ctx, ref=ref, record_type='role', values={'end_date': '2022-01', 'current_role': False}, section='Experience')]}
+                self._no_change_and_asked(harness, harness.turn('At Northwind Bakery, change the end date to 2022.', ref),
+                                          'Which month in 2022 did it end?')
+                harness.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+                    ctx, ref=ref, record_type='role', values={'end_date': '2022-03', 'current_role': False}, section='Experience')]}
+                values = self._with_saved(harness, key, harness.turn('It ended in March 2022.', ref)['proposals'][0])
+                self.assertEqual(date_stored(values), (start, '2022-03-01', 'month'))
+
+    def _saved_range_role(self, harness):
+        return harness.seed('role', role_title='Shift Supervisor', employer_name='Northwind Bakery', start_date='2019-08-01',
+                            end_date='2021-06-01', date_precision='month', current_role=False, summary='Ran the morning shift.')
+
+    def _two_turns(self, harness, first_patch, first_words, second_patch, second_words):
+        ref = 'record:' + self._saved_range_role(harness)
+        harness.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+            ctx, ref=ref, record_type='role', values=first_patch, section='Experience')]}
+        first = harness.turn(first_words, ref)['proposals'][0]
+        pref = 'proposal:' + first['proposal_key']
+        harness.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+            ctx, ref=pref, record_type='role', values=second_patch, section='Experience')]}
+        return first['proposed_values'], harness.turn(second_words, pref)['proposals'][0]['proposed_values']
+
+    def test_a_correction_the_member_made_on_a_card_survives_a_later_change_on_that_card(self):
+        # Review R4b-1 (a): a later change on a card never undoes what the member changed on it.
+        _, values = self._two_turns(self.harness(), {'start_date': '2019-03'}, 'The start was March 2019, not August.',
+                                    {'end_date': '2021-09'}, 'And the end was September 2021.')
+        self.assertEqual((values['start_date'], values['end_date'], values['date_precision']), ('2019-03-01', '2021-09-01', 'month'))
+
+    def test_a_years_only_choice_on_a_card_survives_a_later_change_on_that_card(self):
+        # Review R4b-1 (b2): the member's own choice of years is kept; it is not taken for a lowering to undo.
+        first, values = self._two_turns(self.harness(), {'date_precision': 'year'}, 'Show only the years.',
+                                        {'end_date': '2022-09'}, 'And the end was September 2022.')
+        self.assertEqual(first['date_precision'], 'year')
+        self.assertEqual((values['start_date'], values['end_date'], values['date_precision']), ('2019-01-01', '2022-01-01', 'year'))
+
+    def test_a_change_to_something_other_than_dates_that_changes_nothing_does_not_mention_dates(self):
+        harness = self.harness()
+        ref = 'record:' + self._saved_range_role(harness)
+        harness.behavior = lambda ctx: {'response': 'I changed the title.', 'next_question': '', 'operations': [operation(
+            ctx, ref=ref, record_type='role', values={'role_title': 'Shift Supervisor'}, section='Experience')]}
+        result = harness.turn('My title was Shift Supervisor.', ref)
+        self.assertIn('Nothing changed', result['response'])
+        self.assertNotIn('date', result['response'])
+
+    def test_a_change_that_changes_nothing_is_never_reported_as_made(self):
+        harness = self.harness()
+        key = harness.seed('role', role_title='Shift Supervisor', employer_name='Northwind Bakery', start_date='2019-01-01',
+                           end_date='2021-01-01', date_precision='year', current_role=False, summary='Ran the morning shift.')
+        ref = 'record:' + key
+        harness.behavior = lambda ctx: {'response': 'I changed the end date.', 'next_question': '', 'operations': [operation(
+            ctx, ref=ref, record_type='role', values={'end_date': '2021'}, section='Experience')]}
+        result = harness.turn('The end date is 2021.', ref)
+        self.assertEqual(result['proposals'], [])
+        self.assertIn('Nothing changed', result['response'])
+
+    def test_a_year_the_member_calls_a_start_is_never_made_a_completion(self):
+        # Review R4-3, on both add paths: the words decide where a completed program's single year belongs.
+        rows = (('I completed an MBA at Emory University. I started it in 2018.', ('2018-01-01', None)),
+                ('I began my MBA at Emory University in 2018 and I have finished it.', ('2018-01-01', None)),
+                ('I earned an MBA from Emory University in 2018.', (None, '2018-01-01')))
+        given = {'title': 'MBA', 'institution_name': 'Emory University', 'education_status': 'completed',
+                 'start_date': '2018-01-01', 'date_precision': 'year'}
+        for text, (start, end) in rows:
+            with self.subTest(path='guide add', text=text):
+                harness = self.harness()
+                harness.behavior = lambda ctx: {'response': 'Review.', 'next_question': '', 'operations': [operation(
+                    ctx, op='add_content', record_type='education', section='Education', values=dict(given))]}
+                values = harness.turn(text)['proposals'][0]['proposed_values']
+                self.assertEqual((values.get('start_date'), values.get('end_date')), (start, end))
+            with self.subTest(path='typed add', text=text):
+                draft = self.typed_add(self.harness(), 'education', text, dict(given))
+                self.assertEqual((draft['values'].get('start_date'), draft['values'].get('end_date')), (start, end))
+                if end:
+                    self.assertIn('end_date', draft['provided_fields'])
+
+    def test_a_credential_revision_that_says_active_can_be_confirmed(self):
+        # Review R4-5: a status word in a revision becomes the form's choice, so confirming never fails on it.
+        harness = self.harness()
+        harness.behavior = lambda ctx: {'response': 'Review.', 'next_question': '', 'operations': [operation(
+            ctx, op='add_content', record_type='credential', section='Credentials',
+            values={'name': 'CPR certification', 'issuer': 'Example Society'})]}
+        first = harness.turn('I have a CPR certification from Example Society.')['proposals'][0]
+        pref = 'proposal:' + first['proposal_key']
+        harness.behavior = lambda ctx: {'response': 'Updated.', 'next_question': '', 'operations': [operation(
+            ctx, ref=pref, record_type='credential', values={'completion_status': 'active'}, section='Credentials')]}
+        values = harness.turn('It is active.', pref)['proposals'][0]['proposed_values']
+        self.assertEqual(values['completion_status'], 'completed')
+
+    def test_padding_a_credential_date_is_not_reported_as_trimmed(self):
+        # Review R4-6: "2019" at year detail and "2019-06" at month detail lose nothing.
+        for given in ({'issue_date': '2019', 'issue_date_precision': 'year'}, {'issue_date': '2019-06', 'issue_date_precision': 'month'}):
+            with self.subTest(given=given):
+                harness = self.harness()
+                harness.behavior = lambda ctx, given=given: {'response': 'Review.', 'next_question': '', 'operations': [operation(
+                    ctx, op='add_content', record_type='credential', section='Credentials',
+                    values={'name': 'CPR certification', 'issuer': 'Example Society', 'completion_status': 'completed', **given})]}
+                proposal = harness.turn('I earned a CPR certification from Example Society in June 2019.')['proposals'][0]
+                stored = harness.intake.repository.load_owner(harness.owner)['proposals'][proposal['proposal_key']]
+                self.assertIsNone((stored.get('resume_conversation_v1') or {}).get('date_note'))
+
     # -- the canonical store -----------------------------------------------------
     def test_the_canonical_editor_keeps_no_detail_the_precision_does_not_carry(self):
         from services.living_resume_editor_service import _role_values

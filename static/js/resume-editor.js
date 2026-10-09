@@ -313,7 +313,8 @@
             dates.className = "resume-editor__entry-detail";
             const start = readableDate(values.start_date, values.date_precision);
             const end = readableDate(values.end_date, values.date_precision);
-            dates.textContent = [start, values.current_role === true ? "Present" : end].filter(Boolean).join(" – ");
+            const finish = values.current_role === true ? "Present" : (end === start ? "" : end);   // one year reads once, not "2015 – 2015"
+            dates.textContent = [start, finish].filter(Boolean).join(" – ");
             if (!start && !end) dates.textContent = (values.current_role === true ? "Current role · " : "") + "Dates not supplied";
             card.appendChild(dates);
         }

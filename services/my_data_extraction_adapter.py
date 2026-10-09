@@ -198,17 +198,58 @@ RESUME_EXTRACTION_RESPONSE_SCHEMA = _closed_object({"candidates": {
         {**EXTRACTION_VALUE_FIELDS, "knowledge": tuple(sorted(RESUME_KNOWLEDGE_FIELDS))}.items()
     ]}}})
 
-def _unbindable_unit(unit):
-    """A line of contact detail (email, phone, web address), or the person's name above the first section heading.
+# A headline above the first section: short title phrases joined by bars ("SYSTEMS ENGINEER | PROJECT MANAGEMENT").
+_HEADLINE_LINE = re.compile(r"[^!?|\n\u2022]{2,60}(?:\s*[|\u2502\u2022]\s*[^!?|\n\u2022]{2,60}){1,8}")
 
-    Such a line is never bound into a role, education, credential, skill, knowledge or accomplishment: it would be
-    saved into a description that can later be shared. It stays visible among the details nobody placed.
+
+def _unbindable_unit(unit):
+    """A line of contact detail (email, phone, web address), or the person's name or headline above the first section
+    heading.
+
+    Such a line is never bound into a role, education, credential, skill, knowledge or accomplishment: contact detail
+    would be saved into a description that can later be shared, and a name or a headline is not a record of any of those
+    kinds (a headline is not a skill). It stays visible among the details nobody placed.
     """
     from services.resume_onboarding_document_reader import _CONTACT_LINE, _NAME_LINE
     text = str(unit.get("text") or "")
+    stripped = " ".join(text.split())
     return bool(_CONTACT_LINE.search(text)
                 or (unit.get("section") is None
-                    and (_NAME_LINE.match(text.strip()) or re.fullmatch(r"[A-Z]{8,}", text.strip()))))
+                    and (_NAME_LINE.match(stripped) or re.fullmatch(r"[A-Z]{8,}", stripped))))
+
+
+def _opening_headlines(source_units):
+    """The headline in a résumé's opening lines ("SYSTEMS ENGINEER | PROJECT MANAGEMENT | CAM & EVMS"): one of the first
+    three content lines before the first recognised section heading, title phrases joined by bars or bullets, with no
+    year or "Present" and no bullets under it. A line with dates ("Graduate Research Assistant | Example University |
+    2019 - 2021") or with bullets after it is a role, wherever it sits, and is never held back."""
+    from services.resume_onboarding_document_reader import strip_bullet_marks
+    opening = []
+    for unit in source_units:
+        if unit["kind"] == "heading":
+            break
+        if unit["kind"] == "content":
+            opening.append(unit)
+    content = [unit for unit in source_units if unit["kind"] == "content"]
+    ordered = [unit for unit in source_units if unit["kind"] in {"content", "heading"}]
+    found = set()
+    for unit in opening[:3]:
+        stripped = " ".join(str(unit.get("text") or "").split())
+        # A headline is followed straight away by a recognised section heading. A line followed by its dates, its place
+        # or its bullets ("Software Engineer | Acme Corp" then "Jan 2019 - Present") is a role.
+        position = ordered.index(unit)
+        if position + 1 >= len(ordered) or ordered[position + 1]["kind"] != "heading":
+            continue
+        # At most the name and the headline itself; a block that runs on into a sentence is a role with its description.
+        if len([line for line in str(unit.get("text") or "").split(chr(10)) if line.strip()]) > 2 or stripped.endswith("."):
+            continue
+        if (not _HEADLINE_LINE.fullmatch(stripped) or re.search(r"(?<!\d)(?:19|20)\d\d(?!\d)|(?i:\bpresent\b)", stripped)):
+            continue
+        following = content[content.index(unit) + 1] if content.index(unit) + 1 < len(content) else None
+        if following and strip_bullet_marks(following["text"]) != following["text"]:
+            continue
+        found.add(unit["unit_id"])
+    return found
 
 
 def _all_resume_content_units(source_units):
@@ -217,8 +258,9 @@ def _all_resume_content_units(source_units):
 
 def _resume_content_units(source_units):
     """The units a candidate may bind. The same definition serves validation and model control."""
+    headlines = _opening_headlines(source_units)
     return {identity: unit for identity, unit in _all_resume_content_units(source_units).items()
-            if not _unbindable_unit(unit)}
+            if not _unbindable_unit(unit) and identity not in headlines}
 
 
 def resume_source_unit_contract(source_units):
@@ -613,11 +655,15 @@ def _description_units(selected, values, record_type):
     (title, employer, place, dates) are left out, so the description starts at the first bullet.
 
     Only a unit whose every word is covered by those fields, by a date the entry actually holds, or by a filler
-    word is a heading line. Nothing is left out unless the fields already say it, and never every unit.
+    word is a heading line. Nothing is left out unless the fields already say it. When every line is such a header line
+    (a one-line school entry, "Kennesaw State University / Kennesaw, GA"), the description is empty: repeating the header
+    as the description says nothing new. The lines stay bound to the entry, so nothing is lost or uncounted.
     """
-    if record_type not in {"role", "education"}:
+    if record_type not in {"role", "education", "skill"}:
         return selected
-    covered = set(re.findall(r"[a-z0-9]+", " ".join(str(values[name]) for name in _HEADER_VALUE_FIELDS if values.get(name)).casefold()))
+    # A skill group's own name is its heading ("Project Management" above its lines); for the others, their header fields.
+    fields = ("name",) if record_type == "skill" else _HEADER_VALUE_FIELDS
+    covered = set(re.findall(r"[a-z0-9]+", " ".join(str(values[name]) for name in fields if values.get(name)).casefold()))
     dates = " ".join(str(values.get(name) or "") for name in ("start_date", "end_date"))
     has_dates = bool(dates.strip())
     current = values.get("current_role") is True
@@ -660,7 +706,7 @@ def _description_units(selected, values, record_type):
 
     while kept:
         first_line, _, rest = kept[0]["text"].partition(chr(10))
-        if not (len(kept) > 1 or rest.strip()) or not header_line(first_line):
+        if not header_line(first_line):
             break
         if rest.strip():
             kept[0] = {**kept[0], "text": rest}
@@ -725,23 +771,48 @@ def _stated_date_detail(full, value):
 _DATE_FIELDS = ("start_date", "end_date")
 
 
+_DATE_SHAPE = re.compile(r"(\d{4})(?:-(\d{1,2}))?(?:-(\d{1,2}))?")
+
+
+def _read_date(value):
+    """``(YYYY-MM-DD, shape)`` for a date in any of the shapes a model or a member writes (2016, 2016-05, 2016-05-20), or
+    ``(None, None)`` when it is not a date at all. The shape is an upper bound on its detail: "2022-01" is at most a month."""
+    match = _DATE_SHAPE.fullmatch(str(value).strip()) if value else None
+    if not match:
+        return None, None
+    year, month, day = match.group(1), match.group(2), match.group(3)
+    if (month and not 1 <= int(month) <= 12) or (day and not 1 <= int(day) <= 31):
+        return None, None
+    shape = "day" if day else "month" if month else "year"
+    return "%s-%02d-%02d" % (year, int(month or 1), int(day or 1)), shape
+
+
+def _finer(detail, cap):
+    """The less detailed of two details."""
+    return detail if _DETAIL_RANK[detail] <= _DETAIL_RANK[cap] else cap
+
+
 def normalize_dates(values, evidence, *, whole=None, prior=None, changed=None):
-    """The one place a role's or education entry's dates are made true before they are stored; returns ``(coarsened, cleared)``.
+    """The one place a role's or education entry's dates are made true before they are stored; returns ``(note, cleared)``.
 
     Every path that writes ``start_date``, ``end_date`` or ``date_precision`` for a suggestion (organizing an upload, adding
     from the Guide, revising one date, changing only the detail) calls this, so the same rules hold everywhere:
 
+    * every date shape is read (2016, 2016-05, 2016-05-20), and its shape is the most detail it can carry;
     * a date is kept only at the detail the member's own words (``evidence``) state; a month or day they did not say is
       trimmed, and a date whose year is not in them is left out (cleared, and reported) unless ``whole`` (the entire source)
       has the year, in which case it is kept at year detail;
     * ``changed`` names the dates this write changes (``None``: all of them). A date it leaves alone is not re-proven; it
       counts at the detail the entry had before (``prior``), or the year when none is on record;
-    * both dates end at the coarsest detail either one states, and the stored detail never exceeds it, so a change of
-      detail alone can never raise what the words support;
+    * both dates end at the coarsest detail either one states (the stored entry has one detail for both), and the stored
+      detail never exceeds it, so a change of detail alone can never raise what the words support;
     * a missing or "unknown" detail becomes the detail the words state; "approximate" (education) is the member's own
       and is left as it is. An entry is never stored with dates and no detail.
 
-    A cleared date takes its earlier value back when ``prior`` had one.
+    The note is ``None`` when nothing was trimmed, ``"coarsened"`` when a date lost detail its words did not state, and
+    ``"lowered"`` when a changed date with less detail would lower a date the write left alone. ``"lowered"`` is never
+    stored: the Guide makes no change and asks for the missing detail, unless the member's words choose less detail for
+    both dates. A cleared date takes its earlier value back when ``prior`` had one.
     """
     prior = prior or {}
     precision = values.get("date_precision")
@@ -750,39 +821,48 @@ def normalize_dates(values, evidence, *, whole=None, prior=None, changed=None):
         cleared = []
         for name in _DATE_FIELDS:
             value = values.get(name)
-            if not value or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(value)) or (changed is not None and name not in changed):
+            if not value or (changed is not None and name not in changed):
                 continue
-            if _stated_date_detail(evidence, value) is None and not (whole is not None and _stated_date_detail(whole, value) is not None):
+            padded, _ = _read_date(value)
+            if padded is None or (_stated_date_detail(evidence, padded) is None
+                                  and not (whole is not None and _stated_date_detail(whole, padded) is not None)):
                 cleared.append(name)
                 if prior.get(name):
                     values[name] = prior[name]
                 else:
                     values.pop(name, None)
             else:
-                values[name] = value[:4] + "-01-01"
+                values[name] = padded[:4] + "-01-01"
         if not any(values.get(name) for name in _DATE_FIELDS):
             values.pop("date_precision", None)
-        return False, cleared
+        return None, cleared
     if precision not in _DETAIL_RANK and precision not in (None, "", "unknown"):
-        return False, []
+        return None, []
     held = prior.get("date_precision")
     held = held if held in _DETAIL_RANK else None
-    before = {name: values.get(name) for name in _DATE_FIELDS + ("date_precision",)}
-    stated, cleared = {}, []
+    read = {}   # each date as written, in full YYYY-MM-DD form: padding a shape is not a loss of detail
+    stated, cleared, untouched = {}, [], {}
     for name in _DATE_FIELDS:
         value = values.get(name)
-        if not value or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(value)):
+        if not value:
             continue
+        padded, shape = _read_date(value)
         if changed is not None and name not in changed:
-            stated[name] = held or "year"
+            if padded is None:
+                continue   # an earlier value this write does not touch is left exactly as it is
+            values[name] = read[name] = padded
+            stated[name] = untouched[name] = _finer(held or "year", shape)
             continue
-        detail = _stated_date_detail(evidence, value)
-        if detail is None and whole is not None and _stated_date_detail(whole, value) is not None:
-            detail = "year"
+        detail = None
+        if padded is not None:
+            values[name] = read[name] = padded
+            detail = _stated_date_detail(evidence, padded)
+            if detail is None and whole is not None and _stated_date_detail(whole, padded) is not None:
+                detail = "year"
         if detail is None:
             cleared.append(name)
         else:
-            stated[name] = detail
+            stated[name] = _finer(detail, shape)
     for name in cleared:
         if prior.get(name):
             values[name] = prior[name]
@@ -791,48 +871,56 @@ def normalize_dates(values, evidence, *, whole=None, prior=None, changed=None):
     if not stated:
         if not any(values.get(name) for name in _DATE_FIELDS):
             values.pop("date_precision", None)
-        return False, cleared
+        return None, cleared
     shared = min(stated.values(), key=_DETAIL_RANK.get)
     asked = precision if precision in _DETAIL_RANK else "day"
-    goal = shared if _DETAIL_RANK[shared] < _DETAIL_RANK[asked] else asked
+    goal = _finer(shared, asked)
     if goal != "day":
         length = {"year": 4, "month": 7}[goal]
         for name in _DATE_FIELDS:
             if values.get(name):
                 values[name] = values[name][:length] + ("-01-01" if goal == "year" else "-01")
     values["date_precision"] = goal
-    return before != {name: values.get(name) for name in before}, cleared
+    if any(_DETAIL_RANK[detail] > _DETAIL_RANK[goal] for detail in untouched.values()):
+        return "lowered", cleared
+    trimmed = any(values.get(name) != padded for name, padded in read.items() if name in stated)
+    lowered_ask = precision in _DETAIL_RANK and _DETAIL_RANK[goal] < _DETAIL_RANK[precision]
+    return ("coarsened" if trimmed or lowered_ask else None), cleared
 
 
 _CREDENTIAL_DATES = (("issue_date", "issue_date_precision"), ("expiration_date", "expiration_date_precision"))
 
 
 def normalize_credential_dates(values, evidence, *, whole=None, prior=None, changed=None):
-    """The same rules for a credential's two dates, each with its own detail field; returns ``(coarsened, cleared)``.
+    """The same rules for a credential's two dates, each with its own detail field; returns ``(note, cleared)``.
 
-    Each date is kept at the detail the member's words state for it (a missing detail becomes that detail), a date whose year
-    is not in them is left out, a date a write leaves alone is not re-proven, and a change of detail alone cannot raise
-    it above what that date had.
+    Each date is read in any shape, kept at the detail the member's words state for it (a missing detail becomes that
+    detail), a date whose year is not in them is left out, a date a write leaves alone is not re-proven, and a change of
+    detail alone cannot raise it above what that date had.
     """
     prior = prior or {}
     cleared, coarsened = [], False
     for date_name, precision_name in _CREDENTIAL_DATES:
         value = values.get(date_name)
-        if not value or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(value)):
+        if not value:
             continue
+        padded, shape = _read_date(value)
         asked = values.get(precision_name)
-        before = (value, asked)
+        before = (padded or value, asked)   # padding a shape ("2019" -> 2019-01-01) is not a loss of detail
         if changed is not None and date_name not in changed:
+            if padded is None:
+                continue
+            values[date_name] = padded
             held = prior.get(precision_name) if prior.get(precision_name) in _DETAIL_RANK else "year"
-            if asked in _DETAIL_RANK and _DETAIL_RANK[asked] > _DETAIL_RANK[held]:
-                asked = held
-            elif asked not in _DETAIL_RANK:
-                asked = held
-            goal = asked
+            asked = _finer(asked, held) if asked in _DETAIL_RANK else held
+            goal = _finer(asked, shape)
         else:
-            detail = _stated_date_detail(evidence, value)
-            if detail is None and whole is not None and _stated_date_detail(whole, value) is not None:
-                detail = "year"
+            detail = None
+            if padded is not None:
+                values[date_name] = padded
+                detail = _stated_date_detail(evidence, padded)
+                if detail is None and whole is not None and _stated_date_detail(whole, padded) is not None:
+                    detail = "year"
             if detail is None:
                 cleared.append(date_name)
                 if prior.get(date_name):
@@ -842,12 +930,76 @@ def normalize_credential_dates(values, evidence, *, whole=None, prior=None, chan
                     values.pop(precision_name, None)
                 continue
             asked = asked if asked in _DETAIL_RANK else "day"
-            goal = detail if _DETAIL_RANK[detail] < _DETAIL_RANK[asked] else asked
+            goal = _finer(_finer(detail, shape), asked)
         if goal != "day":
             values[date_name] = values[date_name][:{"year": 4, "month": 7}[goal]] + ("-01-01" if goal == "year" else "-01")
         values[precision_name] = goal
-        coarsened = coarsened or (values[date_name], values[precision_name]) != before and before[1] in _DETAIL_RANK
-    return coarsened, cleared
+        coarsened = coarsened or ((values[date_name], values[precision_name]) != before and before[1] in _DETAIL_RANK)
+    return ("coarsened" if coarsened else None), cleared
+
+
+_HELD_CREDENTIAL_WORDS = frozenset({"active", "current", "valid", "held", "earned", "obtained", "certified", "licensed",
+                                    "complete", "completed"})
+
+
+def normalize_credential_status(values):
+    """A credential the member calls active, current or valid is one they hold: its status is "completed" (the only
+    held-credential choice). Any other word the form cannot take is left out for the member to choose, never kept."""
+    status = values.get("completion_status")
+    if isinstance(status, str):
+        word = status.strip().lower().replace("-", "_").replace(" ", "_")
+        if word in _HELD_CREDENTIAL_WORDS:
+            values["completion_status"] = "completed"
+        elif word in {"in_progress", "planned"}:
+            values["completion_status"] = word
+        else:
+            values.pop("completion_status", None)
+
+
+_START_WORDS = r"(?:start|started|starting|began|begin|beginning|since|enrolled|entered|joined)"
+
+
+def _marks_a_start(evidence, value):
+    """Whether the member's words call this date's year a start ("I started it in 2018", "since 2018", "from 2018",
+    "2018 start"). "From" counts only right before the date: "a certificate from the institute in 2013" is not a start."""
+    year = str(value)[:4]
+    text = evidence or ""
+    month = r"(?:%s)\.?\s+" % _ALL_MONTH_WORDS
+    return bool(re.search(r"(?i)\b%s\b[^.;\n]{0,40}(?<!\d)%s(?!\d)" % (_START_WORDS, year), text)
+                or re.search(r"(?i)\bfrom\s+(?:%s)?%s(?!\d)" % (month, year), text)
+                or re.search(r"(?i)(?<!\d)%s(?!\d)[^.;\n]{0,20}\b%s\b" % (year, _START_WORDS), text))
+
+
+def place_completed_education_year(values, evidence=None):
+    """A completed program with a single date ("2013 Certificate in Baking and Pastry") finished then: the date is its end,
+    not a start that would read "From 2013". The member's words decide: a year they call a start stays a start.
+    Returns True when it moved the date."""
+    if (values.get("education_status") == "completed" and values.get("start_date") and not values.get("end_date")
+            and not _marks_a_start(evidence, values["start_date"])):
+        values["end_date"] = values.pop("start_date")
+        return True
+    return False
+
+
+def normalize_record(record_type, values, evidence, *, whole=None, prior=None, changed=None):
+    """The one place a suggestion's values are made true before they are stored, on every add and revise path (an upload
+    and its retry, the typed or recorded Add, the Guide's add, the Guide's revision of a suggestion or a saved entry).
+    Returns ``(note, cleared)`` as the date rules do.
+
+    * dates: :func:`normalize_dates` (roles, education) or :func:`normalize_credential_dates` (credentials);
+    * education: a completed program's single date is its end, unless the member's words call it a start;
+    * credentials: a status word the form cannot take is turned into its choice or left for the member to choose.
+    """
+    note, cleared = None, []
+    if record_type in {"role", "education"}:
+        note, cleared = normalize_dates(values, evidence, whole=whole, prior=prior, changed=changed)
+    elif record_type == "credential":
+        note, cleared = normalize_credential_dates(values, evidence, whole=whole, prior=prior, changed=changed)
+    if record_type == "education" and (changed is None or "start_date" in changed):
+        place_completed_education_year(values, evidence)
+    if record_type == "credential":
+        normalize_credential_status(values)
+    return note, cleared
 
 
 def check_stated_dates(values, evidence, whole=None, trusted=(), trusted_precision=None):
@@ -891,9 +1043,7 @@ def _resume_draft(raw, ids, anchor, section, *, text, units, source_units, field
     date_note, no_date = None, []
     cleared, confidence = [], candidate.confidence
     if candidate.record_type in {"role", "education", "credential"}:
-        coarsened, no_date = (normalize_credential_dates if candidate.record_type == "credential" else normalize_dates)(
-            values, full, whole=text)
-        date_note = "coarsened" if coarsened else None
+        date_note, no_date = normalize_record(candidate.record_type, values, full, whole=text)
         _strip_title_dates(values)
         if no_date:
             confidence = "uncertain"

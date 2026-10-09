@@ -158,6 +158,14 @@ INTAKE_METHODS = (
     'test_a_role_with_a_month_start_and_a_year_end_saves_at_the_year_the_member_chose',
     'test_a_role_with_mixed_dates_and_month_detail_says_what_it_did_and_keeps_both_at_the_year',
     'test_a_credential_the_resume_calls_active_is_read_as_completed',
+    'test_an_idle_connection_from_another_client_does_not_hold_up_the_page',
+    'test_a_page_keeps_acting_as_its_own_owner_after_the_test_switches_owner',
+    'test_a_context_created_while_a_late_request_runs_belongs_to_the_test_owner',
+    'test_a_start_up_read_that_never_answers_is_given_up_and_tried_again',
+    'test_keyboard_focus_stays_inside_the_open_guide',
+    'test_the_guide_button_never_sits_on_the_bottom_tab_bar',
+    'test_a_change_that_would_lower_the_other_date_is_asked_about_and_the_card_is_unchanged',
+    'test_a_start_up_answer_whose_body_stalls_is_tried_again_not_shown_as_empty',
 )
 
 

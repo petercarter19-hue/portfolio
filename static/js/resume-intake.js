@@ -852,6 +852,10 @@
             document.getElementById('resume-intake-title').focus({preventScroll: true});
         }
     }
+    // Why a suggestion's dates have less detail than may be expected; nothing is ever guessed to fill the gap.
+    var DATE_NOTES = {
+        coarsened: 'Your words give a date here with less detail (for example only a year), so it is kept at that level instead of guessing a month or day.'
+    };
     var MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     // "2016-05" reads as "May 2016" wherever a person reads a date (the fields keep the exact YYYY-MM form).
     function humanDate(value, precision) {
@@ -862,6 +866,13 @@
         if (precision === 'month' && month) return month + ' ' + match[1];
         if (precision === 'day' && month && match[3]) return month + ' ' + parseInt(match[3], 10) + ', ' + match[1];
         return '';
+    }
+    // The words a card shows: dates read as words; every other value as the fields show it.
+    function readableValue(name, value, values) {
+        var precision = (name === 'issue_date' || name === 'expiration_date') ? (values[name + '_precision'] || 'day')
+            : (name === 'start_date' || name === 'end_date') ? values.date_precision : null;
+        if (precision && value) return humanDate(value, precision) || displayValue(name, value, values);
+        return displayValue(name, value, values);
     }
     function displayValue(name, value, values) {
         if (value === null || value === undefined || value === '') return 'Not supplied';
@@ -1296,7 +1307,7 @@
             if (overviewGroup && ['summary', 'wording', 'resume_credential_wording'].indexOf(name) !== -1) return;
             if (groupedDates && ['start_date', 'end_date', 'date_precision', 'current_role'].indexOf(name) !== -1) return;
             if (proposed[name] === undefined || proposed[name] === null || proposed[name] === '') return;
-            var row = node('div'); row.append(node('dt', fieldLabel(name)), node('dd', displayValue(name, proposed[name], proposed))); facts.appendChild(row);
+            var row = node('div'); row.append(node('dt', fieldLabel(name)), node('dd', readableValue(name, proposed[name], proposed))); facts.appendChild(row);
         });
         if (groupedDates && (proposed.start_date || proposed.end_date || typeof proposed.current_role === 'boolean')) {
             function reviewDate(name) {
@@ -1308,7 +1319,7 @@
                 return humanDate(proposed[name], proposed.date_precision) || displayValue(name, proposed[name], proposed);
             }
             var start = reviewDate('start_date'), end = proposed.current_role === true ? 'Present' : reviewDate('end_date');
-            var dates = start === 'Date unknown' && end === 'Date unknown' ? 'Dates unknown' : start && end ? start + ' – ' + end : start ? 'From ' + start : end ? (end === 'Present' ? 'Current role' : 'Until ' + end) : 'Past role';
+            var dates = start === 'Date unknown' && end === 'Date unknown' ? 'Dates unknown' : start && end === start ? start : start && end ? start + ' – ' + end : start ? 'From ' + start : end ? (end === 'Present' ? 'Current role' : 'Until ' + end) : 'Past role';
             var dateRow = node('div'); dateRow.append(node('dt', 'Dates'), node('dd', dates)); facts.appendChild(dateRow);
         }
         (proposal.explicit_clears || []).forEach(function (name) {
@@ -1328,9 +1339,7 @@
                     return FIELD_LABELS[name] || name;
                 }).join(' and ').toLowerCase() + '. I could not read it reliably from your résumé.', 'resume-intake__hint resume-intake__uncertain'));
             }
-            if (overviewGroup.date_note === 'coarsened') {
-                group.appendChild(node('p', 'Your résumé gives one of these dates with less detail (for example only a year), so I kept both at that level instead of guessing a month or day.', 'resume-intake__hint'));
-            }
+            if (DATE_NOTES[overviewGroup.date_note]) group.appendChild(node('p', DATE_NOTES[overviewGroup.date_note], 'resume-intake__hint resume-intake__date-note'));
             var original = node('button', 'View original text', 'resume-intake__quiet'); original.type = 'button';
             original.addEventListener('click', function () {
                 var details = document.getElementById('resume-intake-source-review');
@@ -1383,6 +1392,8 @@
         item.appendChild(node('p', proposal.target_key ? 'Suggested change to an existing entry' : fixedType ? 'Suggested ' + labelFor(type).toLowerCase() + ' · not saved yet' : 'Your words · choose where they belong', 'resume-intake__proposal-source'));
         if (proposal.quote) item.appendChild(node('p', '“' + proposal.quote + '”', 'resume-intake__proposal-quote'));
         var revision = proposal.resume_conversation_v1 || {};
+        // A suggestion outside the upload's own groups says why its dates have less detail too (typed, corrected, changed).
+        if (!overviewGroup && DATE_NOTES[revision.date_note]) item.appendChild(node('p', DATE_NOTES[revision.date_note], 'resume-intake__hint resume-intake__date-note'));
         if (revision.history_review) {
             item.appendChild(node('p', 'Confirm the saved Resume choice below. Your approved entry stays unchanged.', 'resume-intake__hint'));
             if (revision.history_review.effect === 'section') item.appendChild(node('p', 'Place this entry in ' + revision.presentation_section + '.'));
@@ -1826,21 +1837,36 @@
     }
     // A page-load read that meets a busy site or a dropped connection is tried again a few times, with a short wait
     // between tries, before anything is said about it. Only the answer that is still unusable after that is shown.
-    var LOAD_RETRIES = 4;
+    var LOAD_RETRIES = 4, LOAD_TIMEOUT = 8000, BUSY_NOTICE = 'The site is busy for a moment. Trying again…';
     function getWithRetry(url) {
         var attempt = 0;
         function once() {
-            return fetch(url, {credentials: 'same-origin'}).then(function (response) {
-                return response.json().catch(function () { return {}; }).then(function (payload) {
+            // A read that gets no answer at all is given up after a while and tried again, like a busy answer: a stalled
+            // connection must not leave the page waiting forever.
+            var settings = {credentials: 'same-origin'}, timer = null;
+            if (typeof AbortController === 'function') {
+                var controller = new AbortController();
+                settings.signal = controller.signal;
+                timer = window.setTimeout(function () { controller.abort(); }, LOAD_TIMEOUT);
+            }
+            return fetch(url, settings).then(function (response) {
+                // A start-up answer whose body cannot be read (cut off, or given up after the time limit) is a failed
+                // read and is tried again; it must never be taken as an empty workspace.
+                return response.json().then(function (payload) {
                     return {response: response, payload: payload};
-                });
+                }, function () { return {response: {ok: false, status: 0}, payload: {}}; });
             }, function () { return {response: {ok: false, status: 0}, payload: {}}; }).then(function (result) {
+                if (timer !== null) window.clearTimeout(timer);
                 var status = result.response.status;
                 var transient = status === 0 || status === 502 || status === 504 ||
                     (status === 503 && result.payload.code !== 'policy_not_selected');
-                if (!transient || attempt >= LOAD_RETRIES) return result;
+                if (!transient || attempt >= LOAD_RETRIES) {
+                    // The busy moment is over: its notice must not stay on screen afterwards.
+                    if (attempt && statusBox && statusBox.textContent === BUSY_NOTICE) setStatus('', 'ok');
+                    return result;
+                }
                 attempt += 1;
-                setStatus('The site is busy for a moment. Trying again…', 'ok');
+                setStatus(BUSY_NOTICE, 'ok');
                 return new Promise(function (resolve) { window.setTimeout(resolve, 300 * Math.pow(2, attempt - 1)); }).then(once);
             });
         }
@@ -2664,6 +2690,25 @@
         reopenButton.focus({preventScroll: true});
         scheduleDraft();
     }
+    // Keyboard focus stays inside the open Guide: Tab from its last control returns to its first, and Shift+Tab from the
+    // first goes to the last, instead of leaving to the page or the browser behind it (WCAG 2.2: focus order, no trap
+    // the member cannot leave, since Escape and the close button still pause the Guide).
+    var FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), ' +
+        'textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
+    function focusableInGuide() {
+        return Array.prototype.filter.call(root.querySelectorAll(FOCUSABLE), function (el) {
+            return el.getClientRects().length && !el.closest('[hidden], [inert]') && getComputedStyle(el).visibility !== 'hidden';
+        });
+    }
+    root.addEventListener('keydown', function (event) {
+        if (event.key !== 'Tab' || !root.open) return;
+        var stops = focusableInGuide();
+        if (!stops.length) return;
+        var first = stops[0], last = stops[stops.length - 1], active = document.activeElement;
+        var inside = root.contains(active);
+        if (event.shiftKey && (active === first || !inside)) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && (active === last || !inside)) { event.preventDefault(); first.focus(); }
+    });
     function reopenGuide() {
         if (window.PeerSlateResumeFieldVoice) window.PeerSlateResumeFieldVoice.stop();
         guideHidden = false; root.hidden = false; reopenButton.hidden = true;

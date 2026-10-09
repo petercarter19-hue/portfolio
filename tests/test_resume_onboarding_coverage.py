@@ -463,6 +463,76 @@ class ResumeOrganizationTests(unittest.TestCase):
                 self.assertEqual(values['title'], title)
                 self.assertEqual(values['summary'].strip(), summary)
 
+    def test_a_one_line_school_entry_has_no_repeated_description(self):
+        # Pete's shape: the entry's only line is its school and place, already held in its own fields.
+        values = self._education('Education\nKennesaw State University / Kennesaw, GA',
+                                 {'title': 'B.S., Electrical Engineering', 'institution_name': 'Kennesaw State University',
+                                  'end_date': '2020-07-01', 'date_precision': 'month'})
+        self.assertFalse(values.get('summary'))
+
+    def test_a_completed_program_with_one_year_ends_that_year(self):
+        # Jules's shape: "2013 Certificate in Baking and Pastry ..." finished in 2013; it did not start then.
+        values = self._education('Education\n2013 Certificate in Baking and Pastry, Champlain Culinary Institute, Essex\nVT',
+                                 {'title': 'Certificate in Baking and Pastry', 'institution_name': 'Champlain Culinary Institute',
+                                  'education_status': 'completed', 'start_date': '2013-01-01', 'date_precision': 'year'})
+        self.assertEqual((values.get('start_date'), values.get('end_date')), (None, '2013-01-01'))
+        self.assertFalse(values.get('summary'))   # the header and the lone state line are not a description
+
+    def test_a_headline_above_the_first_section_is_never_filed_as_a_skill(self):
+        # Pete's headline: title phrases joined by bars, above the first heading. It is not a skill; it stays visible
+        # among the details nobody placed.
+        text = 'Dana Example\nSYSTEMS ENGINEER | PROJECT MANAGEMENT | CAM & EVMS\nProfessional Summary\nLed teams.'
+        units = inventory_source(text, document=True)
+        content = [u for u in units if u['kind'] == 'content']
+        headline = next(u for u in content if '|' in u['text'])
+        raw = complete_resume_candidate('skill', {'name': 'Project Management'}, headline['text'], [headline], 'Skills')
+        result = self.organize({'candidates': [raw]}, text, units)
+        self.assertFalse(any(d['record_type'] == 'skill' for d in result.drafts))
+        self.assertIn(headline['unit_id'], result.unplaced_unit_ids)
+        self.assertEqual([r['code'] for r in result.rejections], ['contact_unit_not_bindable'])
+
+    def test_a_job_line_with_bars_and_dates_is_a_role_wherever_it_sits(self):
+        # Review R4-1: under an unrecognised heading, or in a résumé with no headings, "Title | Employer | Dates" is a role.
+        for text in ('Dana Example\ndana@example.com\nResearch Experience\nGraduate Research Assistant | Example University | 2019 - 2021\n'
+                     'Built a sensor data pipeline for the lab.',
+                     'Graduate Research Assistant | Example University | 2019 - 2021\nBuilt a sensor data pipeline for the lab.'):
+            with self.subTest(text=text[:30]):
+                units = inventory_source(text, document=True)
+                content = [u for u in units if u['kind'] == 'content']
+                cited = [u for u in content if 'Graduate Research Assistant' in u['text'] or 'sensor data' in u['text']]
+                raw = complete_resume_candidate('role', {'role_title': 'Graduate Research Assistant', 'employer_name': 'Example University',
+                                                         'start_date': '2019-01-01', 'end_date': '2021-01-01', 'date_precision': 'year'},
+                                                cited[0]['text'], cited, 'Experience')
+                result = self.organize({'candidates': [raw]}, text, units)
+                self.assertEqual([d['record_type'] for d in result.drafts if d.get('placement') != 'unplaced'], ['role'])
+                self.assertEqual([r['code'] for r in result.rejections], [])
+
+    def test_an_opening_job_line_with_its_dates_or_place_below_it_is_a_role(self):
+        # Review R4b-2: only a line followed straight away by a recognised heading is a headline.
+        from services.my_data_extraction_adapter import _opening_headlines
+        rows = {
+            'dates after an unrecognised heading': 'Dana Example\nResearch Experience\nGraduate Research Assistant | Example University\n2019 - 2021\nBuilt a pipeline.',
+            'headingless, dates below': 'Dana Example\nSoftware Engineer | Acme Corp\nJan 2019 - Present\nBuilt services.',
+            'place below': 'Dana Example\nProject Manager | Northwind Bakery\nDenver, CO\nRan projects.\nSkills\nSQL.',
+        }
+        for name, text in rows.items():
+            with self.subTest(name):
+                units = inventory_source(text, document=True)
+                held = [u['text'] for u in units if u['unit_id'] in _opening_headlines(units)]
+                self.assertFalse([t for t in held if '|' in t], held)
+        headline = inventory_source('Dana Example\nSYSTEMS ENGINEER | PROJECT MANAGEMENT | CAM & EVMS\nProfessional Summary\nLed teams.',
+                                    document=True)
+        self.assertEqual(len(_opening_headlines(headline)), 1)
+
+    def test_a_credential_the_member_calls_active_is_held(self):
+        from services.my_data_extraction_adapter import normalize_credential_status
+        for word, expected in (('active', 'completed'), ('Current', 'completed'), ('valid', 'completed'),
+                               ('in progress', 'in_progress'), ('planned', 'planned'), ('expired', None)):
+            with self.subTest(word=word):
+                values = {'completion_status': word}
+                normalize_credential_status(values)
+                self.assertEqual(values.get('completion_status'), expected)
+
     def test_a_school_line_that_runs_on_into_a_program_name_is_not_a_header(self):
         values = self._education('Education@@Example University@@Example University Honors Program@@Graduated with honors.'.replace('@@', chr(10)),
                                  {'title': 'Example University', 'institution_name': 'Example University'})
@@ -613,9 +683,9 @@ class ResumeOrganizationTests(unittest.TestCase):
         no_dates = {k: v for k, v in full.items() if k not in ('start_date', 'current_role')}
         self.assertEqual([u['text'] for u in _description_units(units, no_dates, 'role')][0],
                          'Distribution Operations Manager June 2021 - Present')
-        # a skill or credential is never trimmed, and a lone unit is never emptied
+        # a skill or credential is never trimmed; an entry whose only line is its header has an empty description
         self.assertEqual(_description_units(units, full, 'skill'), units)
-        self.assertEqual(_description_units(units[:1], full, 'role'), units[:1])
+        self.assertEqual(_description_units(units[:1], full, 'role'), [])
 
     def test_a_normal_resume_with_year_span_headings_is_organized_not_refused_as_contact_lines(self):
         # A year span such as "2019-2021" once looked like a phone number, so every role that cited its heading line was
@@ -1254,7 +1324,7 @@ class ResumeSourceBindingContractTests(unittest.TestCase):
             self.assertEqual(actual['presentation_section'], section)
             description = 'resume_credential_wording' if record_type == 'credential' else 'wording' if record_type == 'knowledge' else 'summary'
             # A leading heading line already held in the entry's own fields is not repeated in the description.
-            expected = wording.split('\n', 1)[1] if record_type in ('role', 'education') else wording
+            expected = wording.split('\n', 1)[1] if record_type in ('role', 'education', 'skill') else wording
             self.assertEqual(actual['values'][description], expected)
             self.assertEqual(actual['record_anchor'], actual['unit_ids'][0])
         self.assertEqual(len({identity for row in result for identity in row['unit_ids']}),

@@ -63,15 +63,25 @@
         return node;
     }
 
+    const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    // Dates read as words ("June 2022", "June 1, 2022"); only the detail the entry holds is shown.
+    function readableDate(value, precision) {
+        const text = String(value);
+        const month = MONTH_NAMES[parseInt(text.slice(5, 7), 10) - 1];
+        if (precision === "approximate") return "About " + text.slice(0, 4);
+        if (precision === "year" || !month) return text.slice(0, 4);
+        if (precision === "month" || text.length < 10) return month + " " + text.slice(0, 4);
+        return month + " " + parseInt(text.slice(8, 10), 10) + ", " + text.slice(0, 4);
+    }
+
     function reviewValue(field, value, values) {
         if (["start_date", "end_date"].includes(field)) {
             const precision = values.date_precision;
             if (!value || !precision || precision === "unknown") return null;
-            return String(value).slice(0, precision === "year" ? 4 : precision === "month" ? 7 : 10);
+            return readableDate(value, precision);
         }
         if (["issue_date", "expiration_date"].includes(field) && value) {
-            const precision = values[field + '_precision'] || 'day';
-            return String(value).slice(0, precision === 'year' ? 4 : precision === 'month' ? 7 : 10);
+            return readableDate(value, values[field + '_precision'] || 'day');
         }
         if (field === "date_precision") return {unknown:"Not supplied",year:"Year",month:"Month",day:"Exact day",approximate:"Approximate"}[value] || value;
         if (field === "current_role" && typeof value === "boolean") return value ? "Current role" : "Past role";
