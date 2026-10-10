@@ -421,6 +421,19 @@ class ProductTrustTests(unittest.TestCase):
                     r"standing bounded Workshop .{0,120}?expired when its parent claim closed",
                 )
 
+    def test_browser_changes_are_load_tested_before_pr(self):
+        agents = " ".join(_read("AGENTS.md").split())
+        for term in (
+            "run the affected browser suite normally and once under load",
+            "Rely on Playwright actionability",
+            "never fixed sleeps",
+            "Fix flaky tests or slow product paths instead of re-queueing",
+            "must also skip cleanly when Playwright is unavailable",
+            "Documentation-only and control-only changes keep their existing shortcuts",
+        ):
+            with self.subTest(term=term):
+                self.assertIn(term, agents)
+
     def test_release_approval_is_case_by_case_with_exact_mechanics(self):
         for parts in (
             ("docs", "AI_WORKFLOW.md"),

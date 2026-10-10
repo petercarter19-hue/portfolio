@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-LOAD-TEST-RULE-001",
+  "candidate_sha": "8d9c676787e2bc68b21faddca315ff8731382389",
+  "review_type": "self",
+  "reviewer_ref": "agent:claude/2026-10-07/peerslate-manager",
+  "result": "pass",
+  "reviewed_at": "2026-10-10T04:40:00Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "Self-review mutation-checked the pointer test: removing 'never fixed sleeps', 'Rely on Playwright actionability' or the shortcuts sentence from AGENTS.md each fails test_browser_changes_are_load_tested_before_pr; the unmutated text passes."
+    },
+    {
+      "status": "resolved",
+      "summary": "The plan's third criterion first said every governance suite reading AGENTS.md must pass; locally test_worktree_lifecycle has one Windows-only failure (test_ephemeral_invocation_lease_blocks_concurrent_retirement: the venv launcher PID differs from the interpreter PID) that fails identically on the pre-change plan commit. Before publishing the plan, the criterion was restated as 'no outcome change versus pre-change bytes, plus Azure CI', which is what the package can honestly prove."
+    },
+    {
+      "status": "resolved",
+      "summary": "AGENTS.md stays under its 750-word cap; the bullet adds no new gate for documentation-only or control-only changes, and adds no CI configuration."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-DELIVERY-LOAD-TEST-RULE-001.md"
+}

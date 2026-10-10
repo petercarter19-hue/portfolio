@@ -65,6 +65,14 @@ gates. Read only the package and specialist authority the chosen path triggers.
   technical privilege. Its [capability-use guidance](docs/AI_MODEL_AND_ROLE_ROUTING.md#capability-use)
   covers the local session-health advisory: treat it as approximate,
   non-gating context evidence, not an automatic handoff or authority change.
+- Before a PR that changes browser-facing code or browser tests, run the
+  affected browser suite normally and once under load (a parallel run or a
+  throttled CPU). Rely on Playwright actionability; add explicit waits only
+  for real application state, never fixed sleeps. Fix flaky tests or slow
+  product paths instead of re-queueing. A changed browser-test module must
+  also skip cleanly when Playwright is unavailable, as in the application-test
+  job. Documentation-only and control-only changes keep their existing
+  shortcuts.
 
 ## Triggered authority
 
