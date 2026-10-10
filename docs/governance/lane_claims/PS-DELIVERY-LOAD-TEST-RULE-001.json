@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-DELIVERY-LOAD-TEST-RULE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Record Pete's 2026-10-08 delivery rule, refined with Codex feedback, in the shared agent instructions: before a PR that changes browser-facing code or browser tests, run the affected browser suite normally and once under load; rely on Playwright actionability and add explicit waits only for real application state; fix flaky tests or slow product paths rather than re-queueing. Documentation-only and control-only changes keep their existing shortcuts. Add a pointer test. No runtime, lifecycle tooling, CI configuration, deployment or product change.",
   "assignment": "implementation",
   "writer_ref": "agent:claude/2026-10-07/peerslate-manager",
@@ -27,6 +27,6 @@
   "review_requirement": "self",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "c8230e83f3b437f604aefd0c76aa1ff926850922",
+  "closed_at": "2026-10-10T01:17:00Z"
 }
