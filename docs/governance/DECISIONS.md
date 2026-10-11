@@ -1021,3 +1021,46 @@ can push it all the way to deployment."
 - Product trust rules, one writer per surface, exact-candidate review, Azure PR
   and CI, and truthful release states are unchanged. Earlier decisions remain
   historical evidence.
+
+## 2026-10-11 - Pete's agent-rule decisions: agent models, coordinator, approvals and pasted text
+
+This entry records Pete's decisions. It is a record, not startup reading.
+
+- Pete answered decisions D1-D4 first-hand in the Claude manager session on
+  2026-10-11. D4 selected this repository cleanup now, in parallel with
+  onboarding, as `PS-AGENT-RULES-CLEANUP-001` under
+  `agent:claude/2026-10-11/rules-cleanup/owner-decision/2026-10-11T0225Z-pete-d4-now-in-parallel`.
+- Agent models: Pete chooses them and says when the choice changes (Pete,
+  2026-10-11). His current choice for Claude agent work is Claude Opus 5.5,
+  Extra High for architecture and independent review and High otherwise
+  (Pete, 2026-10-09, given to the then Claude manager). That decision is
+  referenced as
+  `agent:claude/2026-10-07/peerslate-manager/owner-decision/2026-10-09-claude-agent-opus-only`,
+  a reference this package's writer recorded on 2026-10-11 from that
+  manager's Claude-side record; Pete's D4 selection of this cleanup, whose
+  scope named the model routing, covers applying it. Never Haiku, and Fable
+  only when Pete explicitly asks, as before. This replaces the 2026-10-07
+  "Opus 5.5 or Sonnet 5.5" agent wording. Product AI model choices are
+  unchanged.
+- Pete assigns the coordinator. Coordination grants no exclusive technical
+  privilege, and there is no platform-exclusive gate. This changes the rule's
+  wording, not the assignment: the 2026-10-07 assignment of Codex as overall
+  coordinator stands until Pete changes it, and current assignments are
+  recorded here rather than in the routing standard.
+- D1, for both platforms: act within Pete's assigned outcome and approved
+  budgets. Pete's yes is needed first only for a production release (per
+  release, or covered by an outcome he named), spending beyond an approved
+  budget, deleting or anything irreversible, messages or posts in his name,
+  credentials and sign-ins, and product or visual choices. Approval already
+  given for an assigned outcome stays valid; ask only for the missing
+  decision. Specific holds still apply.
+- D2, for both platforms: another AI's text that Pete pastes as his
+  instruction is his approval; "review this" means review only; facts are
+  verified either way.
+- Where D1 and D2 apply: Claude's own START_HERE in its notes folder, and the
+  shared Claude and Codex workflow once it exists. Pete chose not to add them
+  to `AGENTS.md` or `CLAUDE.md`, to keep the startup files short.
+- These decisions grant no new authority. Claims, exact-candidate review,
+  Azure PR and CI, the exact-main-SHA production mechanics, the separate exact
+  authority for schema, configuration, enablement, rollback and destructive
+  actions, and truthful release states are unchanged.

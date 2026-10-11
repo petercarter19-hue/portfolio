@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "package": "PS-AGENT-RULES-CLEANUP-002",
+  "candidate_sha": "3b4c708ecca9d0274b2d7496f07e17b8d82a9dcf",
+  "review_type": "independent",
+  "reviewer_ref": "agent:claude/2026-10-11/rules-cleanup-reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-10-11T17:00:00Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "F1 and F2 (D1 refinement and scope of the no-authority sentence in AGENTS.md) resolved by removal under Pete's 2026-10-11 no-additions direction; DECISIONS.md records D1 with the refinement."
+    },
+    {
+      "status": "resolved",
+      "summary": "F3 inline @import guard, F4 provenance of the 2026-10-09 reference and N1 second coordinator word order fixed; F5 recorded as a deferred row."
+    },
+    {
+      "status": "informational",
+      "summary": "N4: the DECISIONS entry cites the D4 owner reference but not the second owner reference (2026-10-11T0500Z no-additions/models); the claim and evidence carry it. Left for a later docs touch to avoid an unreviewed content change."
+    },
+    {
+      "status": "informational",
+      "summary": "D1/D2 reach Codex only once the shared workflow lands (tracked as open, Codex); the Claude START_HERE line-break issue is outside the repository."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-AGENT-RULES-CLEANUP-002.md"
+}

@@ -1,6 +1,6 @@
 # PeerSlate AI Model and Role Routing
 
-**Operational standard:** September 12, 2026; owner decisions applied October 7, 2026
+**Operational standard:** September 12, 2026; owner decisions applied October 7 and October 11, 2026
 
 This is the central authority for model versions and stable delivery roles.
 Packages name roles, not model versions. Verify the available model and resolved
@@ -75,11 +75,11 @@ preference.
 
 Every assigned, access-verified capable platform has equal standing: it may
 architect, build, review, merge, and, with Pete's release authorization,
-release within its assignment. There is no platform-exclusive gate. Codex
-remains the overall coordinator for now (Pete, 2026-10-07); coordination grants
-no exclusive technical privilege. Whether review must cross companies is
-undecided, so no provider pairing is required; risk-based independent review
-still applies.
+release within its assignment. There is no platform-exclusive gate. Pete
+assigns the coordinator; coordination grants no exclusive technical privilege.
+The current assignment lives in `docs/governance/DECISIONS.md`, not in this
+standard. Whether review must cross companies is undecided, so no provider
+pairing is required; risk-based independent review still applies.
 
 For packages assigned to OpenAI, Codex is the default manager when the primary
 outcome is repository truth. This default does not require an external-platform
@@ -410,14 +410,15 @@ Recheck changing availability and pricing when a decision depends on them.
 | Stable role | Current choice | Use |
 |---|---|---|
 | Architecture or independent review | **Claude Opus 5.5, Extra High** | New or materially changed architecture, and exact-SHA review or audit |
-| Management or known-cause implementation | **Claude Opus 5.5, High** | Package management, Claude Code implementation, tests, debugging, self-review, corrections, and closeout |
-| Small or routine change | **Claude Sonnet 5.5, Medium** | Bounded documentation, small fixes, and evidence collection |
+| Management, implementation, merge, install or testing | **Claude Opus 5.5, High** | Package management, Claude Code implementation of any size, tests, debugging, self-review, corrections, merge, installation, evidence collection, and closeout |
 
-Claude assignments use Claude Opus 5.5 or Claude Sonnet 5.5 only. Never use
+Pete chooses the models for Claude agent assignments. The table shows his
+current choice (Pete, 2026-10-09), which stands until Pete changes it. Never use
 Claude Haiku. Use Claude Fable only when Pete explicitly asks for it (Pete,
-2026-10-07). In Claude Code, confirm the resolved model with `/model` and
-`/status` before a major package or audit. Do not treat a remembered marketing
-nickname or an `opusplan` alias as evidence that the required role is active.
+2026-10-07). Product AI model choices are separate (see Product AI direction).
+In Claude Code, confirm the resolved model with `/model` and `/status` before a
+major package or audit. Do not treat a remembered marketing nickname or an
+`opusplan` alias as evidence that the required role is active.
 
 ## Product AI direction
 

@@ -51,10 +51,23 @@ class LeanStartupTests(unittest.TestCase):
             self.assertIn(term, body)
         self.assertIn("--intent read", body)
         claude = _read("CLAUDE.md")
-        self.assertIn("@AGENTS.md", claude)
-        self.assertIn("@docs/AI_WORKFLOW.md", claude)
         self.assertIn("MANDATORY PRE-WORK GATE", claude)
         self.assertLess(len(claude.split()), 300)
+        # Claude loads every @import in full at startup, so only the shared
+        # entry file is imported; the larger records are read-when-needed
+        # pointers resolved from fetched origin/main.
+        imports = re.findall(r"(?m)^@(\S+)\s*$", claude)
+        self.assertIn("AGENTS.md", imports)
+        for pointer in (
+            "docs/AI_WORKFLOW.md",
+            "docs/governance/CURRENT_BASELINE.yaml",
+            "docs/governance/DOCUMENT_CONTROL.md",
+        ):
+            with self.subTest(pointer=pointer):
+                self.assertIn(pointer, claude)
+                self.assertNotIn(pointer, imports)
+                self.assertNotIn("@" + pointer, claude)
+                self.assertTrue(os.path.isfile(_path(*pointer.split("/"))))
 
     def test_manager_and_specialist_routing_is_visible_at_startup(self):
         body = _read("AGENTS.md")
@@ -409,7 +422,24 @@ class ProductTrustTests(unittest.TestCase):
             "Claude has the same standing as any other assigned platform", claude)
         self.assertIn("without a Codex supervisor", claude)
         self.assertIn("There is no platform-exclusive gate", routing)
-        self.assertIn("Codex remains the overall coordinator for now", routing)
+        # Pin the durable control (Pete assigns the coordinator, who gains no
+        # exclusive privilege), never a named platform's current assignment.
+        self.assertIn("Pete assigns the coordinator", routing)
+        for body in (agents, routing):
+            self.assertIn(
+                "coordination grants no exclusive technical privilege",
+                body.lower(),
+            )
+        platform = r"\b(?:Codex|Claude|Cursor|ChatGPT)\b"
+        for body in (agents, claude, routing):
+            self.assertNotRegex(
+                body,
+                r"(?i)" + platform + r"[^.]{0,40}\b"
+                r"(?:remains|is) the (?:overall )?coordinator",
+            )
+            self.assertNotRegex(
+                body, r"(?i)\bcoordinator (?:remains|is) " + platform)
+        self.assertNotIn("coordinator for now", routing)
         self.assertIn("no provider pairing is required", routing)
         self.assertIn("risk-based independent review still applies", routing)
         for parts in (("AGENTS.md",), ("START_HERE.md",)):
@@ -508,22 +538,29 @@ class WorkflowEfficiencyTests(unittest.TestCase):
 
     def test_claude_routing_is_current_and_excludes_haiku(self):
         body = " ".join(_read("docs", "AI_MODEL_AND_ROLE_ROUTING.md").split())
-        for route in (
-            "Architecture or independent review | **Claude Opus 5.5, Extra High**",
-            "Management or known-cause implementation | **Claude Opus 5.5, High**",
-            "Small or routine change | **Claude Sonnet 5.5, Medium**",
-            "Claude assignments use Claude Opus 5.5 or Claude Sonnet 5.5 only",
+        for stale in ("**Claude Fable 5**", "**Claude Sonnet 5**", "**Claude Opus 5**"):
+            self.assertNotIn(stale, body)
+        # The Claude agent section only; Product AI direction is separate.
+        section = body.split("## Current Claude routing", 1)[1].split(
+            "## Product AI direction", 1)[0]
+        for term in (
+            "Pete chooses the models for Claude agent assignments",
+            "until Pete changes it",
             "Never use Claude Haiku",
             "Use Claude Fable only when Pete explicitly asks for it",
         ):
-            with self.subTest(route=route):
-                self.assertIn(route, body)
-        for stale in ("**Claude Fable 5**", "**Claude Sonnet 5**", "**Claude Opus 5**"):
-            self.assertNotIn(stale, body)
+            with self.subTest(term=term):
+                self.assertIn(term, section)
+        self.assertNotIn("Sonnet", section)
         claude = " ".join(_read("CLAUDE.md").split())
-        self.assertIn(
-            "Use Claude Opus 5.5 or Claude Sonnet 5.5 only. Never use Haiku.", claude)
-        self.assertIn("Use Fable only when Pete explicitly asks", claude)
+        for term in (
+            "Pete chooses Claude agent models",
+            "Never use Haiku.",
+            "Use Fable only when Pete explicitly asks",
+        ):
+            with self.subTest(term=term):
+                self.assertIn(term, claude)
+        self.assertNotIn("Sonnet", claude)
 
     def test_product_ai_direction_is_direction_only(self):
         raw = _read("docs", "AI_MODEL_AND_ROLE_ROUTING.md")

@@ -13,9 +13,8 @@
 > to change its claim. New work requires Pete's selected outcome and the
 > one-claim activation flow.
 
-The 2026-08-27 standing bounded Workshop decision in
-[DECISIONS.md](docs/governance/DECISIONS.md) expired when its parent claim
-closed; it no longer satisfies that selection gate.
+The 2026-08-27 standing bounded Workshop decision expired when its parent
+claim closed.
 
 ## Authority and trust
 
