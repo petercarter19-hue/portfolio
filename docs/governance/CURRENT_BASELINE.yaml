@@ -4,19 +4,19 @@
 # Fetch origin before relying on any recorded SHA.
 
 schema_version: 5
-updated_at: "2026-10-07"
+updated_at: "2026-10-11"
 
 authority:
   remote: origin
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "27d6fdb165acfd610b21e86079944e956aae3fdc"
-  deployed_pipeline: 4259
-  live_release: "f4e77a0ff29a68053e2b4b2e"
-  application_behavior_commit: "27d6fdb165acfd610b21e86079944e956aae3fdc"
-  application_behavior_pipeline: 4259
-  note: "Production serves application commit 27d6fdb165acfd610b21e86079944e956aae3fdc from manual run 4259 (20261007.31, finished 2026-10-07T17:13:54Z) with /healthz release f4e77a0ff29a68053e2b4b2e, verified on 2026-10-07 against the live endpoint, Azure, and scripts/release_identity.py. That run succeeded with forceProductionDeploy=true, the exact manual source, an authorization reference, and schemaAction=none. It released the approved Sage Mist public resume and Ask Pete AI integration. Workshop authenticated private two-member live proof remains pending. docs/governance/PRODUCTION_SCHEMA_STATE.md is the generated live-ledger record. Repository PR and automatic main runs are CI-only; deployment remains a separate manual exact-main-SHA operation. This record is not a substitute for fetching Azure and verifying live identity."
+  deployed_main_commit: "24a2be074bed391a76e0dcac4184d8defbbb8c18"
+  deployed_pipeline: 4451
+  live_release: "6d0ddde1dbaab328719487cc"
+  application_behavior_commit: "24a2be074bed391a76e0dcac4184d8defbbb8c18"
+  application_behavior_pipeline: 4451
+  note: "Production serves application commit 24a2be074bed391a76e0dcac4184d8defbbb8c18 from manual run 4451 (20261011.10, finished 2026-10-11T04:05:50Z) with /healthz release 6d0ddde1dbaab328719487cc, verified on 2026-10-11 against the live endpoint, Azure, and scripts/release_identity.py. That run succeeded with forceProductionDeploy=true, the exact manual source, an authorization reference, and schemaAction=none. It released the Sage Mist compact-window Ask Pete fix (PR 1318); onboarding code on main stays flag-dormant. Workshop authenticated private two-member live proof remains pending. docs/governance/PRODUCTION_SCHEMA_STATE.md is the generated live-ledger record. Repository PR and automatic main runs are CI-only; deployment remains a separate manual exact-main-SHA operation. This record is not a substitute for fetching Azure and verifying live identity."
 
 authenticated_workshop_fg_proof:
   state: "pending"

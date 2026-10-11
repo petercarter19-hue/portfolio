@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-RESUME-SAGE-MIST-001",
-  "candidate_sha": "559d91f1629cb71e48b9bc538369eef7e8203487",
+  "candidate_sha": "7b820a94fbd0513cf35e6cf7d85b8e019b9eba45",
   "review_type": "independent",
-  "reviewer_ref": "agent:claude/2026-10-07/allowance-reviewer",
+  "reviewer_ref": "agent:claude/2026-10-11/sage-mist-record-reviewer",
   "result": "pass",
-  "reviewed_at": "2026-10-08T22:15:06Z",
+  "reviewed_at": "2026-10-11T15:50:54Z",
   "findings": [],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-RESUME-SAGE-MIST-001.md"
 }

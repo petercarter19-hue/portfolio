@@ -111,7 +111,7 @@ exact-SHA delta review and current-target CI before merge.
   "schema_version": 1,
   "package": "PS-RESUME-SAGE-MIST-001",
   "plan_sha": "806ba94328c859e8e34c9a65cd0d914dd11ac93c",
-  "candidate_sha": "559d91f1629cb71e48b9bc538369eef7e8203487",
+  "candidate_sha": "7b820a94fbd0513cf35e6cf7d85b8e019b9eba45",
   "baseline": [
     {
       "command": "test-runtime/python -B -m unittest tests.test_resume2 tests.test_member_overview_public_integration tests.test_member_overview_renderer tests.test_member_overview_accessibility tests.ask_pete.test_resume_evidence_companion tests.ask_pete_direct.test_companion_answer_order (test-only key, Flask 3.1.3, Werkzeug 3.1.9)",
@@ -151,9 +151,9 @@ exact-SHA delta review and current-target CI before merge.
       "criterion_id": "approved_composition",
       "result": "pass",
       "kind": "browser",
-      "candidate_sha": "559d91f1629cb71e48b9bc538369eef7e8203487",
+      "candidate_sha": "7b820a94fbd0513cf35e6cf7d85b8e019b9eba45",
       "source_ref": "X:\\PeerSlate\\Claude\\reviews\\2026-10-08_sage-mist-compact-review.md",
-      "observed": "The approved Sage Mist composition is unchanged outside the short-window rail: the independent reviewer compared screenshots and found the 1440x900 answered rail and the 390x844 phone sheet pixel-identical to the base. The only visible changes are inside the compact rail at 1024x500 and 1280x500 (answer heading and text in view, source-note line hidden visually, two-line input).",
+      "observed": "The approved Sage Mist composition is unchanged outside the short-window rail: the independent reviewer compared screenshots and found the 1440x900 answered rail and the 390x844 phone sheet pixel-identical to the base. The only visible changes are inside the compact rail at 1024x500 and 1280x500 (answer heading and text in view, source-note line hidden visually, two-line input). Rebound to release-record candidate 7b820a94: every claimed runtime and test surface is byte-identical to 559d91f1 (git diff empty), the candidate changes only CURRENT_BASELINE.yaml and its pointer test, and production run 4451 serves those exact bytes (sha256 match in X:/PeerSlate/evidence/PS-RESUME-SAGE-MIST-001/release-4451/live-proof.json).",
       "provenance": {
         "observer_ref": "agent:claude/2026-10-07/allowance-reviewer",
         "captured_at": "2026-10-08T22:15:06Z",
@@ -164,17 +164,17 @@ exact-SHA delta review and current-target CI before merge.
       "criterion_id": "connected_ai",
       "result": "pass",
       "kind": "automated",
-      "candidate_sha": "559d91f1629cb71e48b9bc538369eef7e8203487",
+      "candidate_sha": "7b820a94fbd0513cf35e6cf7d85b8e019b9eba45",
       "source_ref": "X:\\PeerSlate\\evidence\\PS-RESUME-SAGE-MIST-001\\claude-compact-correction-2026-10-08\\comparison-summary.json",
-      "observed": "One companion keeps its history, unsent draft, focus and sources across rail, sheet and resize. All 9 Sage Mist browser tests pass normally and in 12 of 12 runs under 4x parallel load on the merged tree, including relocation/draft/historical-source, cancellation/recovery and the three new short-rail tests (resize route, opened directly short, reader viewing earlier messages). The new tests fail on the shipped code, and the reader test fails with the reader guard removed. Browser requests use controlled responses with the provider boundary blocked."
+      "observed": "One companion keeps its history, unsent draft, focus and sources across rail, sheet and resize. All 9 Sage Mist browser tests pass normally and in 12 of 12 runs under 4x parallel load on the merged tree, including relocation/draft/historical-source, cancellation/recovery and the three new short-rail tests (resize route, opened directly short, reader viewing earlier messages). The new tests fail on the shipped code, and the reader test fails with the reader guard removed. Browser requests use controlled responses with the provider boundary blocked. Rebound to release-record candidate 7b820a94: every claimed runtime and test surface is byte-identical to 559d91f1 (git diff empty), the candidate changes only CURRENT_BASELINE.yaml and its pointer test, and production run 4451 serves those exact bytes (sha256 match in X:/PeerSlate/evidence/PS-RESUME-SAGE-MIST-001/release-4451/live-proof.json)."
     },
     {
       "criterion_id": "responsive_accessibility",
       "result": "pass",
       "kind": "browser",
-      "candidate_sha": "559d91f1629cb71e48b9bc538369eef7e8203487",
+      "candidate_sha": "7b820a94fbd0513cf35e6cf7d85b8e019b9eba45",
       "source_ref": "X:\\PeerSlate\\evidence\\PS-RESUME-SAGE-MIST-001\\claude-compact-correction-2026-10-08\\screenshots\\1-1024x500-after-resize.png",
-      "observed": "At 1024x500 and 1280x500 after relocation to the rail and a resize with an unsent draft, the transcript grows from 22px to 130px and from 55px to 148px (measured against the shipped code), with the latest answer heading and its first lines visible beside the full draft; at 1440x900 and in the 390x844 sheet the layout is unchanged. The status line keeps aria-live=polite and the input keeps aria-describedby for the visually hidden source note; the independent reviewer verified that keyboard focus is never scrolled away by the re-alignment after any user input, with no loop. No physical-device or screen-reader run is claimed.",
+      "observed": "At 1024x500 and 1280x500 after relocation to the rail and a resize with an unsent draft, the transcript grows from 22px to 130px and from 55px to 148px (measured against the shipped code), with the latest answer heading and its first lines visible beside the full draft; at 1440x900 and in the 390x844 sheet the layout is unchanged. The status line keeps aria-live=polite and the input keeps aria-describedby for the visually hidden source note; the independent reviewer verified that keyboard focus is never scrolled away by the re-alignment after any user input, with no loop. No physical-device or screen-reader run is claimed. Rebound to release-record candidate 7b820a94: every claimed runtime and test surface is byte-identical to 559d91f1 (git diff empty), the candidate changes only CURRENT_BASELINE.yaml and its pointer test, and production run 4451 serves those exact bytes (sha256 match in X:/PeerSlate/evidence/PS-RESUME-SAGE-MIST-001/release-4451/live-proof.json).",
       "provenance": {
         "observer_ref": "agent:claude/2026-10-08/sage-mist-compact",
         "captured_at": "2026-10-08T16:17:31Z",
@@ -185,17 +185,17 @@ exact-SHA delta review and current-target CI before merge.
       "criterion_id": "adaptive_content",
       "result": "pass",
       "kind": "automated",
-      "candidate_sha": "559d91f1629cb71e48b9bc538369eef7e8203487",
+      "candidate_sha": "7b820a94fbd0513cf35e6cf7d85b8e019b9eba45",
       "source_ref": "X:\\PeerSlate\\evidence\\PS-RESUME-SAGE-MIST-001\\claude-compact-correction-2026-10-08\\full-discover-on-559d91f1.log",
-      "observed": "Optional photos, story and credential groups still release their space and skill counts 1/15/16/17 still balance without filler: test_optional_groups_long_copy_and_balanced_skill_counts passes in the 9/9 browser suite and the 149 focused non-browser tests pass. This correction changes no content, template or balancing code, only the compact-rail AI layout."
+      "observed": "Optional photos, story and credential groups still release their space and skill counts 1/15/16/17 still balance without filler: test_optional_groups_long_copy_and_balanced_skill_counts passes in the 9/9 browser suite and the 149 focused non-browser tests pass. This correction changes no content, template or balancing code, only the compact-rail AI layout. Rebound to release-record candidate 7b820a94: every claimed runtime and test surface is byte-identical to 559d91f1 (git diff empty), the candidate changes only CURRENT_BASELINE.yaml and its pointer test, and production run 4451 serves those exact bytes (sha256 match in X:/PeerSlate/evidence/PS-RESUME-SAGE-MIST-001/release-4451/live-proof.json)."
     },
     {
       "criterion_id": "source_contracts",
       "result": "pass",
       "kind": "manual",
-      "candidate_sha": "559d91f1629cb71e48b9bc538369eef7e8203487",
+      "candidate_sha": "7b820a94fbd0513cf35e6cf7d85b8e019b9eba45",
       "source_ref": "X:\\PeerSlate\\Claude\\reviews\\2026-10-08_sage-mist-compact-review.md",
-      "observed": "Independent exact-SHA review PASS with no findings. The change is three files within the claim (rail stylesheet, companion script, browser test); no backend, provider, identity, schema, flag, private-publication or content change and no sample data. In the full repository run 47 tests do not pass; every one also fails on untouched main da2e34fd except one slow worktree-lifecycle test that was not compared on base. Onboarding intake changes on main stay dormant while the intake flags are unset.",
+      "observed": "Independent exact-SHA review PASS with no findings. The change is three files within the claim (rail stylesheet, companion script, browser test); no backend, provider, identity, schema, flag, private-publication or content change and no sample data. In the full repository run 47 tests do not pass; every one also fails on untouched main da2e34fd except one slow worktree-lifecycle test that was not compared on base. Onboarding intake changes on main stay dormant while the intake flags are unset. Rebound to release-record candidate 7b820a94: every claimed runtime and test surface is byte-identical to 559d91f1 (git diff empty), the candidate changes only CURRENT_BASELINE.yaml and its pointer test, and production run 4451 serves those exact bytes (sha256 match in X:/PeerSlate/evidence/PS-RESUME-SAGE-MIST-001/release-4451/live-proof.json).",
       "provenance": {
         "observer_ref": "agent:claude/2026-10-07/allowance-reviewer",
         "captured_at": "2026-10-08T22:15:06Z",
@@ -242,3 +242,15 @@ Independent review: `agent:claude/2026-10-07/allowance-reviewer` returned PASS o
 Release scope (read-only check against main, 2026-10-08): the résumé-intake and onboarding code on main stays dormant in production while `PEERSLATE_RESUME_INTAKE_ENABLED` and the editor flag are unset; the production app settings were observed read-only with both unset. No public résumé, Ask Pete, authentication or schema code outside this package changes. Re-check what ships immediately before any production run, because main will carry later onboarding rounds.
 
 Limits: all browser proof uses controlled public-answer fixtures and installed Chrome with the provider boundary blocked; no live provider, physical device or screen-reader run is claimed. Merge, deployment and live verification are separate states and are still pending; nothing is deployed by this evidence.
+
+## Release, record and incident (2026-10-11)
+
+Writer `agent:claude/2026-10-11/sage-mist-release-owner` (Claude Code, Opus 5.5). Custody arrived by owner reassignment (PR 1332, main 24a2be07) from the retired, unavailable session `agent:claude/2026-10-08/sage-mist-compact`, on its exact pushed checkpoint 3adf12ee, using Pete's first-hand release decision `agent:claude/2026-10-08/sage-mist-compact/owner-decision/2026-10-10T0234Z-pete-yes-sage-mist-release` (kept valid by his D1 rule; Pete gave no separate writer-replacement decision). Before preparation, two stale generated `services/__pycache__/*.pyc` files in the old checkout were deleted because the tool refused on that residue; nothing else in it changed. The surface extension for the release record is PR 1335 (main 3f712a24), after Codex released `tests/test_operational_readiness.py` (PR 1334).
+
+Scope check before release: since e350b9a5 (the source of the failed run 4417 that Pete approved), main gained only claim files (943f26b7, 24a2be07); nothing visitor-visible.
+
+Release: manual production run 4451 (20261011.10) on main 24a2be074bed391a76e0dcac4184d8defbbb8c18, forceProductionDeploy=true, schemaAction=none, the reference above; queued 03:47Z with no other run active, succeeded 04:05:50Z. The service-connection step that failed in 4417 passed after Codex's workload-identity repair. Live proof (GET only, nothing typed into Ask AI): /healthz moved from f4e77a0ff29a68053e2b4b2e to 6d0ddde1dbaab328719487cc, which equals `release_id_for_build(24a2be07, 4451)`; /petec/resume returns 200 and serves `ask-pete-evidence-companion.js`, `resume-sage-mist.css` and `resume-sage-mist.js` byte-identical to main (contains `keepCompactAnswerInView`; absent before the release); homepage 200; /auth/sign-in redirects to the members sign-in. Records: `X:/PeerSlate/evidence/PS-RESUME-SAGE-MIST-001/release-4451/` (live-proof.json, run-4451.json). No browser screenshot, physical device or provider call is claimed.
+
+Release record: candidate 7b820a94 changes only CURRENT_BASELINE.yaml (846 words) and tests/test_operational_readiness.py in lockstep. Independent review `agent:claude/2026-10-11/sage-mist-record-reviewer`: PASS at 2026-10-11T15:50:54Z, no findings (scope, run facts, release id, note wording, word cap; 140 pointer/registry/site-rules/control-room tests OK). Focused resume suites on 7b820a94: 106 tests ran with 11 subtest failures, all in `tests.test_member_overview_renderer.IPv6LoopbackCompatibilityTests`. They come from this machine's Werkzeug 3.1.8, where requirements pin 3.1.9. Those test bytes are identical on main, so the failures don't come from this change (log: release-4451/focused-on-7b820a94.log).
+
+Incident: an unauthorized production run, 4468, was queued at 2026-10-11T15:33:26Z, on the same source and with this package's authorization reference. A helper's script imported this writer's leftover scratchpad `queue.py`, which queued a run at import time. It was cancelled during Build, the production deploy stage was skipped, and it finished canceled at 15:46:24Z; live stayed 6d0ddde1 (record: release-4451/run-4468.json). `queue.py` is disarmed, and this writer's other scratchpad scripts were renamed to inert `.txt` files. In future, scripts act only under `if __name__ == "__main__"` with explicit arguments, and they run from a unique subfolder, never from the shared scratchpad root.
