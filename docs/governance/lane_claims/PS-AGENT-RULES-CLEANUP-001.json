@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-AGENT-RULES-CLEANUP-001",
-  "state": "active",
+  "state": "paused",
   "outcome": "Apply Pete's agent-rule decisions to the repository rule files and their tests: Claude agent work uses Claude Opus 5.5 only (Extra High for architecture and independent review, High otherwise; no Sonnet, never Haiku, Fable only when Pete asks; Pete, 2026-10-09); Pete assigns the coordinator; one short common rule set for both platforms in AGENTS.md (D1 ask-Pete-first list, D2 pasted AI text; Pete, 2026-10-11); a DECISIONS.md entry; CLAUDE.md slimmed to its required imports with read-when-needed pointers; prior audit dispositions recorded once in the evidence. Tests pin durable controls, not temporary wording. Docs and tests only: no runtime, product-AI model, lifecycle tooling, CI, baseline, deployment or production change.",
   "assignment": "implementation",
   "writer_ref": "agent:claude/2026-10-11/rules-cleanup-writer",
@@ -30,7 +30,7 @@
   ],
   "review_requirement": "independent",
   "handoff": null,
-  "checkpoint_sha": null,
+  "checkpoint_sha": "6bf6c87dbb42edff074576f4efd2ceed2fae8dfb",
   "merged_sha": null,
   "closed_at": null
 }
