@@ -32,7 +32,9 @@
     "docs/governance/lane_claims/PS-RESUME-SAGE-MIST-001.json",
     "docs/governance/lane_claims/receipts/PS-RESUME-SAGE-MIST-001.json",
     "docs/governance/lane_claims/evidence/PS-RESUME-SAGE-MIST-001.md",
-    "tests/test_living_resume_preview.py"
+    "tests/test_living_resume_preview.py",
+    "docs/governance/CURRENT_BASELINE.yaml",
+    "tests/test_operational_readiness.py"
   ],
   "domains": [
     "runtime:resume:public:sage-mist-composition"
