@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-AZURE-OPERATIONS-RELIABILITY-001",
-  "state": "active",
+  "state": "paused",
   "outcome": "Implement Pete-approved Azure operational reliability recommendations: reviewed subscription Service Health coverage using existing operations recipients, safe monitoring usage controls, bounded aggregate demo diagnosis and isolated recovery evidence. Prepare privacy-safe application telemetry for a coordinated later release. Preserve Claude onboarding priority, existing content and owners, qualification workloads, specific production holds and current release identity. No AI routing, public indexing, schema change, destructive cleanup, or blanket main deployment.",
   "assignment": "implementation",
   "writer_ref": "session:01a11384-f656-73b3-b57a-ad2952f1ffad",
@@ -34,7 +34,7 @@
   ],
   "review_requirement": "independent",
   "handoff": null,
-  "checkpoint_sha": null,
+  "checkpoint_sha": "3b45134c42c31793fd45b8ee856fca2e308648f0",
   "merged_sha": null,
   "closed_at": null
 }
