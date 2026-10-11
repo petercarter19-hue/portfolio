@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "package": "PS-AGENT-RULES-CLEANUP-002",
+  "state": "active",
+  "outcome": "Apply Pete's agent-rule decisions to the repository rule files and their tests. D4: do this cleanup now, in parallel with onboarding. Nothing is added to CLAUDE.md or AGENTS.md; CLAUDE.md imports only AGENTS.md, with read-when-needed pointers. Agent models: Pete chooses; Claude Opus 5.5 for now (Extra High for architecture and review, High otherwise), never Haiku, Fable only when Pete asks. Pete assigns the coordinator. D1 and D2 are recorded in DECISIONS.md and applied outside the startup files. Prior audit dispositions are recorded once in the evidence. Tests pin durable controls, not temporary wording. Successor to paused PS-AGENT-RULES-CLEANUP-001 with criteria that match these directions. Docs and tests only: no runtime, product-AI model, lifecycle tooling, CI, baseline, deployment or production change.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude/2026-10-11/rules-cleanup-writer",
+  "branch": "work/2026-10-11-agent-rules-cleanup-002",
+  "delivery_path": "Routine",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "ca28ae3f0e8a78ac92b4fd309fafd61e06c75017",
+  "owner_outcome_ref": "agent:claude/2026-10-11/rules-cleanup/owner-decision/2026-10-11T0225Z-pete-d4-now-in-parallel + agent:claude/2026-10-11/rules-cleanup/owner-decision/2026-10-11T0500Z-pete-no-additions-models-pete-chooses",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-AGENT-RULES-CLEANUP-002.json",
+    "docs/governance/lane_claims/receipts/PS-AGENT-RULES-CLEANUP-002.json",
+    "docs/governance/lane_claims/evidence/PS-AGENT-RULES-CLEANUP-002.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/AI_MODEL_AND_ROLE_ROUTING.md",
+    "docs/governance/DECISIONS.md",
+    "tests/test_governance_pointers.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-AGENT-RULES-CLEANUP-002.md"
+  ],
+  "domains": [
+    "governance:agent-rules"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
