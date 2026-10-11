@@ -15,8 +15,7 @@
     "docs/governance/lane_claims/PS-CI-TELEMETRY-FIXTURE-SCAN-001.json",
     "docs/governance/lane_claims/receipts/PS-CI-TELEMETRY-FIXTURE-SCAN-001.json",
     "docs/governance/lane_claims/evidence/PS-CI-TELEMETRY-FIXTURE-SCAN-001.md",
-    ".gitleaks.toml",
-    "tests/test_operational_readiness.py"
+    ".gitleaks.toml"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-CI-TELEMETRY-FIXTURE-SCAN-001.md"
@@ -28,5 +27,46 @@
   "handoff": null,
   "checkpoint_sha": null,
   "merged_sha": null,
-  "closed_at": null
+  "closed_at": null,
+  "scope_release": {
+    "checkpoint_sha": "9ae574be904a799960d8fdebc0e48adbe47b8d96",
+    "control_branch": "work/2026-10-11-delivery-release-surfaces-scanner-readiness",
+    "control_lease_sha256": "62598515a1467b8e77d6717c25d504ed165d04eb7bfa989206fd565802e45a67",
+    "fixed_evidence_ref": "docs/governance/lane_claims/evidence/PS-CI-TELEMETRY-FIXTURE-SCAN-001.md",
+    "index_schema": 4,
+    "new_domains": [
+      "infrastructure:ci:telemetry-fixture-scan-repair"
+    ],
+    "operation_id": "58a6ce1f534a8ca5c5bce2c663d8ddfbf57c4ad242151cf51c64ae98d290e114",
+    "prepared_from_main": "9ae574be904a799960d8fdebc0e48adbe47b8d96",
+    "prior_claim_sha256": "e3eb3cd1a7b1e7573810afcb8457dc4a511cf2a66a615e5aabe19a22a4443f61",
+    "prior_domains": [
+      "infrastructure:ci:telemetry-fixture-scan-repair"
+    ],
+    "quiescence_ref": "session:01a11384-f656-73b3-b57a-ad2952f1ffad/sage-mist-record/2026-10-11/scanner-no-unpublished-test-work",
+    "reduction_sha256": "d7b522af948b6eae5957ab3282e1325120d8e10a484670dda260947172db2ce7",
+    "registry_schema": 2,
+    "release_rationale": "Release the already-delivered, unchanged operational-readiness test file so the Sage Mist release owner can reserve and update its production record assertions together with CURRENT_BASELINE.yaml. Scanner proof closeout remains with Codex; no test bytes or product behavior change.",
+    "released_file_proofs": [
+      {
+        "accepted_introduction": null,
+        "checkpoint_blob": "85ca747fc2b64daf4e5cf98e6ae32ea4d3bc3ab2",
+        "checkpoint_mode": "100644",
+        "main_blob": "85ca747fc2b64daf4e5cf98e6ae32ea4d3bc3ab2",
+        "main_mode": "100644",
+        "path": "tests/test_operational_readiness.py",
+        "unpublished_delta": false
+      }
+    ],
+    "released_surfaces": [
+      "tests/test_operational_readiness.py"
+    ],
+    "retained_responsibilities": [
+      {
+        "domain": "infrastructure:ci:telemetry-fixture-scan-repair",
+        "responsibility": "Retain the exact scanner exception and complete its fixed review/evidence closeout; no further writes to operational-readiness tests."
+      }
+    ],
+    "schema_version": 1
+  }
 }
