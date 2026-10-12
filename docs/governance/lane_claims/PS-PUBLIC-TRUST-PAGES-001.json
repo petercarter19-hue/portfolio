@@ -71,7 +71,14 @@
     "templates/partials/workshop/_use_elsewhere_card.html",
     "static/js/living-resume-v2.js",
     "static/data/resume_data.json",
-    "static/data/story_data.json"
+    "static/data/story_data.json",
+    "tests/test_journal_frontend.py",
+    "tests/test_member_overview_accessibility.py",
+    "tests/test_member_overview_public_integration.py",
+    "tests/test_member_overview_renderer.py",
+    "tests/test_owner_voice_ui.py",
+    "tests/test_resume2.py",
+    "safe_return.py"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-PUBLIC-TRUST-PAGES-001.md"
