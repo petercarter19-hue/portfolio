@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-ONBOARDING-PRIVATE-DELIVERY-002",
-  "state": "active",
+  "state": "closed",
   "outcome": "Qualify and install the accepted conversational onboarding application on the existing private local-reviewer installation through an independently reviewed exact app/controller/factory/OCR pair. Correct typed durable snapshot publication recovery, qualify both namespaces with all29 bindings, preserve approved credential details and monotonic composer revision behavior, and refuse behaviorally incompatible rollback targets while preserving current content and provider ledger. Bind the staged seven-key219-pin OCR manifest as an absolute path string after isolation before lazy reader capture. Preserve the existing37constructor interface, owner/signing/allocation, selected workspace, configuration/model/budget contracts, original snapshots and rollback lineage. Use normal Protected source review, current-target CI/accepted-main promotion, stopped/drained lifetime custody and independent installed acceptance. No app-owned edits, persistence module expansion, schema/identity/model/budget changes, cloud/public deployment or content/ledger rewind.",
   "assignment": "implementation",
   "writer_ref": "agent:claude/2026-10-12/mvp1-custody",
@@ -31,8 +31,8 @@
   ],
   "review_requirement": "independent",
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null,
+  "merged_sha": "a512a8525a04d69892b2bbea962a79c6a97be01f",
+  "closed_at": "2026-10-12T22:28:02Z",
   "handoff": {
     "type": "owner_reassignment",
     "from_ref": "agent:claude/2026-10-07/onboarding-private-delivery",
