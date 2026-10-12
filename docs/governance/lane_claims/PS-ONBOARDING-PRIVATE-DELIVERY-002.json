@@ -4,8 +4,8 @@
   "state": "active",
   "outcome": "Qualify and install the accepted conversational onboarding application on the existing private local-reviewer installation through an independently reviewed exact app/controller/factory/OCR pair. Correct typed durable snapshot publication recovery, qualify both namespaces with all29 bindings, preserve approved credential details and monotonic composer revision behavior, and refuse behaviorally incompatible rollback targets while preserving current content and provider ledger. Bind the staged seven-key219-pin OCR manifest as an absolute path string after isolation before lazy reader capture. Preserve the existing37constructor interface, owner/signing/allocation, selected workspace, configuration/model/budget contracts, original snapshots and rollback lineage. Use normal Protected source review, current-target CI/accepted-main promotion, stopped/drained lifetime custody and independent installed acceptance. No app-owned edits, persistence module expansion, schema/identity/model/budget changes, cloud/public deployment or content/ledger rewind.",
   "assignment": "implementation",
-  "writer_ref": "agent:claude/2026-10-07/onboarding-private-delivery",
-  "branch": "codex/2026-10-06-onboarding-private-delivery-002-restart",
+  "writer_ref": "agent:claude/2026-10-12/mvp1-custody",
+  "branch": "work/2026-10-12-onboarding-private-delivery-002-custody",
   "delivery_path": "Protected",
   "repository_authority": "through_merge",
   "production_authority": "withheld",
@@ -34,9 +34,12 @@
   "merged_sha": null,
   "closed_at": null,
   "handoff": {
-    "from_ref": "session:01a1128b-90fb-79b3-945a-dc09d702ca88",
-    "to_ref": "agent:claude/2026-10-07/onboarding-private-delivery",
-    "checkpoint_sha": "14e8f2bf4488c015c1e0d6c3e7578c49dfbee9fd",
-    "relinquished": true
+    "type": "owner_reassignment",
+    "from_ref": "agent:claude/2026-10-07/onboarding-private-delivery",
+    "to_ref": "agent:claude/2026-10-12/mvp1-custody",
+    "from_branch": "codex/2026-10-06-onboarding-private-delivery-002-restart",
+    "to_branch": "work/2026-10-12-onboarding-private-delivery-002-custody",
+    "checkpoint_sha": "25d57fb5096c4a993576decd87e7d4f72ceaa4a2",
+    "owner_authorization_ref": "role:owner/pete-chat-2026-10-12/claude-manager-local_4fefa9f6/mvp1-build-start"
   }
 }
