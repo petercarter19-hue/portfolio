@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-FIXTURE-PARENTKEY-001",
+  "candidate_sha": "88b701448bfba15fb5624c784b29f2cb828bae98",
+  "review_type": "independent",
+  "reviewer_ref": "session:9fb18da7-d312-4e90-a956-7f3718e5969f",
+  "result": "pass",
+  "reviewed_at": "2026-10-13T13:40:00Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MVP1-FIXTURE-PARENTKEY-001.md"
+}

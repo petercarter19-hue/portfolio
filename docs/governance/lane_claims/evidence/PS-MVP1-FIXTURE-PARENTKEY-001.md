@@ -1,0 +1,55 @@
+# MVP1 acceptance fixture: parent and catalog fidelity
+
+Owner outcome: Pete's MVP1 builder assignment, `role:owner/pete-chat-2026-10-12/claude-manager-local_4fefa9f6/mvp1-build-codex-writer`. Writer: `session:01a132fe-1f81-77f3-8821-d53d157ca025`. Claude PC independently reviews the exact pushed candidate. Manager routing is coordination `87af06452b29dec79463b3d371e260ee8c8b53bc`, `Shared/handoffs/2026-10-13_claude-pc_to-codex-pc_D4-routing-confirmed.md`.
+
+Activation PR1361 merged at `2127405cef1d920d67cc5d6206a85971d1dcf7cc`; required CI4555 passed. C14 released only the unchanged fixture surface through its supported journal and retains its full runtime checkpoint and acceptance plan. This separate Bounded slice owns the fixture, one dedicated guard module and its fixed evidence/receipt. No production, SQL, paid provider, installed-site or private-cutover proof is claimed.
+
+## Pre-code plan
+
+1. Preserve `parent_key` in `EntryPolicyCanonicalFixture.list_items`, without altering the source policy, runtime services or schema.
+2. Guard the actual `Mvp1AcceptanceServer` catalog with fictional owned role, child accomplishment and knowledge records: exact identity/type/parent/version/token/access/value/classification and existing permission/eligibility fields. Exercise a real private draft save and verify its overlay without changing original canonical values. Do not invent `presentation_section`; n2 belongs to B2.
+3. Verify the failed reproduction becomes green, run the focused guards and existing affected MVP1 route/browser regressions, self-review the complete narrow diff, freeze/push and request Claude's exact-SHA review. Only after PASS, add the fixed receipt/evidence mapping, pass acceptance/merge checks, then normal Azure CI, merge and close. Restore the fixture to C14 through its ordinary tracked-file extension; B1 journal import and genuine HTTP nesting/count/no-unplaced proof remain subsequent work.
+
+Baseline used the development runtime, process-local CI placeholder key and `PYTHONDONTWRITEBYTECODE=1`. The initial sparse checkout lacked services and could not import; materializing this same registered durable worktree resolved that environment issue. The unchanged accepted main then reproduced D4: `d4_parent_preserved=false`, exit1, fake providers, no real-site contact. Readiness's unrelated registry observations grant no authority; the actual package write preflight passed.
+
+Jev checkpoints: the reproduction, exact one-line correction, catalog field table, independent-review focus and ordinary delivery route are explicitly settled by Claude's D4 routing, leaving no unresolved choice that advisory inference could change. Existing browser regression execution follows repository requirements. No inference attempt; prior eligible status `d72f93d2-0833-4ae3-b50f-6d6c129c311b` was unavailable (`ongoing_paused_transport_failure`), and no retry or settings change is made.
+
+```package-acceptance-json
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-FIXTURE-PARENTKEY-001",
+  "plan_sha": "821efbfedb81b104a8364892ef881a8c56ee6a6f",
+  "baseline": [
+    {"command":"X:\\PeerSlate\\runtimes\\development\\Scripts\\python.exe -B X:\\PeerSlate\\ChatGPT\\evidence\\mvp1-fixture-parentkey-2026-10-13\\catalog_baseline.py","exit_code":1,"observation":"Accepted main 2127405c on the actual synthetic Mvp1AcceptanceServer drops the accomplishment parent: d4_parent_preserved=false; provider calls zero, real-site contact false."}
+  ],
+  "criteria": [
+    {"id":"catalog_fidelity","expected":"The actual 8444-shaped catalog preserves exact role, child bullet and knowledge identity/type/parent, numeric content_version, opaque content_token, access_revision, values and classification, existing permissions and owner isolation.","verification":"Explicit presence, exact-type and exact-value field table plus foreign-owner denial and the same failed baseline command turning green."},
+    {"id":"draft_overlay_fidelity","expected":"A real draft save exposes has_draft and proposed_values while retaining original canonical values and version/access fences; the draft version advances exactly once.","verification":"Real ResumeDraftService save_item through the actual synthetic server and subsequent catalog/workspace assertions."},
+    {"id":"bounded_reviewed_delivery","expected":"Only the fixture parent carry-through, dedicated guards and fixed evidence/receipt change; focused and required regressions pass, Claude independently passes the exact pushed candidate and ordinary acceptance/merge/CI controls are honored.","verification":"Complete owned diff, local regression results, exact-SHA independent receipt, package acceptance check, merge preflight and Azure CI. Installation, SQL, paid calls and production remain unclaimed."}
+  ],
+  "candidate_sha": "88b701448bfba15fb5624c784b29f2cb828bae98",
+  "checks": [
+    {"criterion_id":"catalog_fidelity","result":"pass","kind":"automated","candidate_sha":"88b701448bfba15fb5624c784b29f2cb828bae98","source_ref":"X:/PeerSlate/coordination/codex-pc-mvp1-build/Shared/handoffs/2026-10-13_claude-pc_to-codex-pc_REVIEW_PS-MVP1-FIXTURE-PARENTKEY-001_round1.md:27","observed":"Independent candidate guard passed; the same guard on main2127405c failed exactly three parent_key subcases. Actual synthetic-server role, child accomplishment and knowledge preserve the explicit catalog presence/type/value table, numeric version versus opaque token, classification and owner-B denial. Writer's exact failed baseline also returned parent-preserved true and exit0 after the one-line read-through.","resolves_baseline_command":"X:\\PeerSlate\\runtimes\\development\\Scripts\\python.exe -B X:\\PeerSlate\\ChatGPT\\evidence\\mvp1-fixture-parentkey-2026-10-13\\catalog_baseline.py"},
+    {"criterion_id":"draft_overlay_fidelity","result":"pass","kind":"automated","candidate_sha":"88b701448bfba15fb5624c784b29f2cb828bae98","source_ref":"X:/PeerSlate/coordination/codex-pc-mvp1-build/Shared/handoffs/2026-10-13_claude-pc_to-codex-pc_REVIEW_PS-MVP1-FIXTURE-PARENTKEY-001_round1.md:34","observed":"Independent guard exercised a real draft save: complete normalized proposed_values and has_draft are visible, original canonical values/token/access remain unchanged and draft_version advances once. Candidate guard2 and related non-browser124 passed independently; writer focused30 also passed."},
+    {"criterion_id":"bounded_reviewed_delivery","result":"pass","kind":"automated","candidate_sha":"88b701448bfba15fb5624c784b29f2cb828bae98","source_ref":"https://dev.azure.com/peerslate19/portfolio-site/_build/results?buildId=4559","observed":"Exact independent PASS plus candidate-bound behavioral guards, unchanged required browser runner152 normal and152each concurrent, and only fixedreceipt/evidence after review. Ordinary PR1362 CI4559 succeeded at2026-10-13T14:29:59.577082Z on validation5b5c7818fff2c68349256fcebe4664f2a87f7ef7, sourcea3dfaa3adc22ccbde5cf0748d0fc8d34b7639a77 and target2127405cef1d920d67cc5d6206a85971d1dcf7cc; all required policies approved. Required delivery dispositions passed; production/candidate deployment and schema stages skipped. Full acceptance and merge checks run on this evidence tail; final current-head policy remains required before merge."}
+  ]
+}
+```
+
+## Writer verification
+
+- The dedicated guard was observed RED before the fixture edit: all three record types lacked `parent_key`. Its first draft-overlay assertion incorrectly expected only the submitted patch. Source inspection of `ResumeDraftService._save_item` confirmed the existing merge/normalization contract; the guard now explicitly expects the complete normalized role and independently verifies unchanged original catalog values. With that test assumption corrected, only the three missing-parent assertions failed before the one-line fixture correction.
+- After the fixture edit, `python -B -m unittest tests.test_mvp1_acceptance_catalog tests.test_mvp1_profile_routes tests.test_resume_draft_service -q` passed **30 tests in 3.085 seconds**. The exact baseline command then returned exit0, `d4_parent_preserved=true`, provider calls zero and real-site contact false.
+- The unchanged required runner, `python -B scripts/run_mvp1_acceptance_browser_tests.py`, passed **152/152 in 358.587 seconds**, zero failures/errors/skips. Full log: `X:/PeerSlate/ChatGPT/evidence/mvp1-fixture-parentkey-2026-10-13/browser-normal.log`. The count is this accepted-main runner's 152; the older B1 checkpoint's 127 count does not describe this checkout.
+- The required load validation passed in two simultaneous executions of that same runner in separate processes, with isolated synthetic servers and fake providers: **152/152 in 338.483 seconds** and **152/152 in 336.968 seconds**, zero failures/errors/skips in either. Full logs are `browser-load-1.log` and `browser-load-2.log` in the same evidence directory. No deadlines, selected methods, required-runner source or browser-test source were changed.
+- Complete self-review found no outstanding finding: fixture change is exactly one field; the new catalog module exercises the actual synthetic server and real draft service; runtime services, source schemas, canonical data and C14/B1 branches are unchanged. `git diff --check` and acceptance-plan shape/parent checks passed. Independent review and repository delivery remain pending.
+
+## Independent review and delivery
+
+Claude PC independently **PASSed** exact pushed candidate `88b701448bfba15fb5624c784b29f2cb828bae98`, with no findings, at coordination `4ecb39f441d5127df3cd28126ae710971292a4f7`. Full report is the source referenced in the acceptance mapping. Reviewer: `session:9fb18da7-d312-4e90-a956-7f3718e5969f`; reported review window is approximately 13:10–13:40Z on 2026-10-13, not precise timing telemetry. The receipt records that reported ending minute.
+
+Independent evidence: new guard2 PASS and intended RED on accepted main; related non-browser124 PASS; whole no-Playwright discovery7,606 with271 skipped and the same35 known failures/errors as base, zero new. That comparison is regression evidence, not a claim of a green whole local suite or Azure CI. The reviewer accepted the writer's normal152 and two simultaneous152 browser results without repeating them.
+
+The optional skill/credential alias coverage note is informational, for B2/C2 if those consumers start reading those fields; no change to the frozen fixture candidate is required. Jev review-triage skip: no unresolved finding or scope choice remains; required independent PASS and existing CI/delivery controls determine the next action. No inference call or transport retry.
+
+Current state: independent receipt and all three criteria are mapped after ordinary CI4559 succeeded. Only the fixed receipt/evidence tail changes after review. Run full acceptance/merge checks on this tail, then allow its final current-head policy to finish before accepted merge/close. No implementation merge or close is claimed yet. Pete confirmed this exact next sequence in this chat and reiterated pulling coordination before every reply check.

@@ -26,6 +26,7 @@ class EntryPolicyCanonicalFixture:
     def list_items(self, owner):
         return [{
             "record_key": row["entry_key"],
+            "parent_key": row.get("parent_key"),
             "record_type": "accomplishment" if row["canonical_type"] == "achievement" else row["canonical_type"],
             "content_token": self.token_for_version(row["content_version"]),
             "content_version": row["content_version"], "access_revision": row["access_revision"],
