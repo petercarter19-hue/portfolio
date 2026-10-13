@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "package": "PS-ONBOARDING-PRIVATE-SITES-001",
+  "state": "active",
+  "outcome": "Implement approved C14 two-process private-site isolation: preserve the personal root, historical onboarding state and old ledger; prepare a fresh onboarding-only root with reviewed factory/allocation pins, separate ledgers, bounded accounting and settle-on-failure/operator resolution. Commit acceptance criteria first, complete the full zero-paid-call two-site cutover rehearsal and independent exact-SHA review before the one authorized announced personal/shared stop. Restore prior personal running intent and prove installed isolation/rollback. Maintain the accepted onboarding installation through later Guide rounds. No production release, schema application, credential/identity-account changes, historical data migration or destructive cleanup.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a132fe-1f81-77f3-8821-d53d157ca025",
+  "branch": "codex/2026-10-13-onboarding-private-sites-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "f79ef30b86ffba242327dfdb4263db4edd6fcebe",
+  "owner_outcome_ref": "role:owner/pete-chat-2026-10-12/claude-manager-local_4fefa9f6/mvp1-build-codex-writer",
+  "surfaces": [
+    "tools/local_reviewer/manager.py",
+    "tools/local_reviewer/runtime.py",
+    "tools/local_reviewer/providers.py",
+    "tools/local_reviewer/provider_budget.py",
+    "tools/local_reviewer/private_identity.py",
+    "tools/local_reviewer/persistence.py",
+    "tools/local_reviewer/site_isolation.py",
+    "tools/local_reviewer/onboarding_allocation.py",
+    "scripts/rehearse_private_site_split.py",
+    "tests/test_local_reviewer.py",
+    "tests/test_local_reviewer_providers.py",
+    "tests/test_local_reviewer_identity.py",
+    "tests/test_local_reviewer_isolation.py",
+    "tests/mvp1_acceptance_support.py",
+    "docs/LOCAL_REVIEWER.md",
+    "docs/governance/lane_claims/PS-ONBOARDING-PRIVATE-SITES-001.json",
+    "docs/governance/lane_claims/receipts/PS-ONBOARDING-PRIVATE-SITES-001.json",
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-PRIVATE-SITES-001.md"
+  ],
+  "domains": [
+    "tooling:local-reviewer:onboarding-isolation",
+    "privacy:local-reviewer:payer-ledgers"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-PRIVATE-SITES-001.md"
+  ],
+  "review_requirement": "independent",
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null,
+  "handoff": null
+}
