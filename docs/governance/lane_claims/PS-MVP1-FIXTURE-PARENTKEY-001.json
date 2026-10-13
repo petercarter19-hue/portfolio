@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-FIXTURE-PARENTKEY-001",
+  "state": "active",
+  "outcome": "Deliver the bounded Lane A D4 acceptance-fixture correction under the existing MVP1 builder assignment: carry parent_key through EntryPolicyCanonicalFixture, guard real 8444-shaped catalog identity/parent/version/token/access/value/classification and draft-overlay fields, then obtain Claude exact-SHA independent review, normal CI, merge and close. Manager routing coordination87af064. No C14 runtime, source reset, new design, paid calls, private cutover, schema or production release; C14 full checkpoint and criteria stay preserved.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a132fe-1f81-77f3-8821-d53d157ca025",
+  "branch": "codex/2026-10-13-mvp1-fixture-parentkey-001",
+  "delivery_path": "Bounded",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "896d5d1e50ff03403594bbdb5094de3101d14ecc",
+  "owner_outcome_ref": "role:owner/pete-chat-2026-10-12/claude-manager-local_4fefa9f6/mvp1-build-codex-writer",
+  "surfaces": [
+    "tests/mvp1_acceptance_support.py",
+    "tests/test_mvp1_acceptance_catalog.py",
+    "docs/governance/lane_claims/PS-MVP1-FIXTURE-PARENTKEY-001.json",
+    "docs/governance/lane_claims/receipts/PS-MVP1-FIXTURE-PARENTKEY-001.json",
+    "docs/governance/lane_claims/evidence/PS-MVP1-FIXTURE-PARENTKEY-001.md"
+  ],
+  "domains": [
+    "testing:mvp1:acceptance-catalog"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MVP1-FIXTURE-PARENTKEY-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
