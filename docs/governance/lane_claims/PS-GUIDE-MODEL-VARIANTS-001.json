@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-GUIDE-MODEL-VARIANTS-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Add the approved named Sol 6.1 owner-only Guide turn and extraction variant contracts with negative tests first. Preserve the incumbent no-variant requests and envelopes byte-for-byte, narrow purposes/audiences/efforts, and keep synthesis high unchanged. Publish fixed variant records for the server and local installation consumers without a global model switch. Server adapter/composition work belongs to PS-GUIDE-SERVER-001 and local factory/allocation composition belongs to PS-ONBOARDING-PRIVATE-SITES-001. Fake providers only; no paid calls or production release.",
   "assignment": "implementation",
   "writer_ref": "session:01a132fe-1f81-77f3-8821-d53d157ca025",
@@ -24,6 +24,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "d593cb3a4e15ce82e5550a6769366c0b4a6b341d",
+  "closed_at": "2026-10-13T06:36:20Z"
 }
