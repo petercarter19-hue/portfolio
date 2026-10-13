@@ -42,10 +42,17 @@
     "tests/test_resume_entity_match.py",
     "docs/governance/lane_claims/PS-GUIDE-SERVER-001.json",
     "docs/governance/lane_claims/receipts/PS-GUIDE-SERVER-001.json",
+    "docs/governance/lane_claims/evidence/PS-GUIDE-SERVER-001.md",
+    "services/resume_publication_service.py",
+    "tests/test_resume_publication_service.py"
+  ],
+  "domains": [
+    "consequential-ai:resume-guide:server",
+    "canonical:resume-draft:guide"
+  ],
+  "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-GUIDE-SERVER-001.md"
   ],
-  "domains": ["consequential-ai:resume-guide:server", "canonical:resume-draft:guide"],
-  "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-GUIDE-SERVER-001.md"],
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
