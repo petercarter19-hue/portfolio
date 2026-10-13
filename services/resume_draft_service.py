@@ -426,8 +426,10 @@ class ResumeDraftService:
     def _present_item(self, item: dict, overlay: dict | None) -> dict:
         presented = {
             "record_key": item["record_key"],
+            "parent_key": item.get("parent_key"),
             "record_type": item["record_type"],
             "content_token": item["content_token"],
+            "content_version": item.get("content_version"),
             "access_revision": item["access_revision"],
             "editable": bool(item.get("editable")),
             "blocked_reason": item.get("blocked_reason"),

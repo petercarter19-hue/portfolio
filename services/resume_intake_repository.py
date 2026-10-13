@@ -532,6 +532,12 @@ class InMemoryResumeIntakeRepository:
             # boundary as every whole-owner replacement.
             current = self._owners.get(owner_user_key)
             replacement = copy.deepcopy(snapshot)
+            from services.resume_guide_contract import bind_item_identities
+            try:
+                bind_item_identities(owner_user_key,replacement,
+                    privacy_repair=bool(command and command.get('procedure') == COMMAND_PROCEDURES['purge_source']))
+            except (ValueError,TypeError,KeyError) as error:
+                raise ResumeIntakeStoreUnavailable("Guide item identity could not be preserved") from error
             if command is not None:
                 replacement["drafts"] = copy.deepcopy(
                     (current or {}).get("drafts") or {}

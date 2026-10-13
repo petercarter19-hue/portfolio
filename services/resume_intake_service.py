@@ -737,6 +737,37 @@ class ResumeIntakeService:
 
     # -- reads ----------------------------------------------------------
 
+    def working_set(self, owner):
+        """One owner-scoped read projection; never an ingestion or save action."""
+        if not isinstance(owner,str) or not owner.strip():
+            raise ResumeIntakeNotFoundError()
+        if not getattr(self.repository,"supports_resume_conversation",False):
+            raise ResumeIntakeUnavailableError()
+        from services.resume_guide_contract import project_working_set
+        with self.repository.owner_guard(owner):
+            snapshot = self._load(owner)
+            items,draft_version = self._canonical_view(owner)
+            try:
+                return project_working_set(owner,snapshot,items,draft_version,history=self._resume_history(snapshot))
+            except (ValueError,TypeError,KeyError) as error:
+                raise ResumeIntakeUnavailableError() from error
+
+    def working_item(self, owner, item_ref):
+        working = self.working_set(owner)
+        def find(items):
+            for item in items:
+                if item_ref==item["item_ref"] or item_ref in item["identity_aliases"]:
+                    return item
+                child = find(item["children"])
+                if child is not None:
+                    return child
+            return None
+        for items in [*(section["items"] for section in working["sections"]),working["unplaced"],working["non_tab_items"]]:
+            found = find(items)
+            if found is not None:
+                return found
+        raise ResumeIntakeNotFoundError()
+
     def get_workspace(self, owner):
         snapshot = self._load(owner)
         history = self._resume_history(snapshot)

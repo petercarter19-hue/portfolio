@@ -56,6 +56,7 @@ PLANNED_RATE_LIMITS = MappingProxyType(
         "resume_intake.delete_original_file": "30 per hour",
         "resume_intake.get_intake_workspace": "60 per minute",
         "resume_intake.get_guide_state": "60 per minute",
+        "resume_intake.get_guide_working_set": "60 per minute",
         "resume_intake.post_submission": "30 per hour",
         "resume_intake.post_recording": "20 per hour",
         "resume_intake.post_proposal_decision": "60 per hour",
@@ -474,6 +475,29 @@ def get_guide_state():
         state = _guide_service().unavailable_state()
         return jsonify({"success": False, "code": "unavailable", **state}), 503
     return jsonify({"success": True, **result})
+
+
+@resume_intake.get("/api/resume-intake/me/guide/working-set")
+def get_guide_working_set():
+    identity = _identity_or_not_found()
+    if identity is None:
+        return jsonify({"success":False,"message":"Not found."}),404
+    if request.args:
+        return jsonify({"success":False,"code":"invalid","message":"Invalid request."}),400
+    try:
+        result = _service().working_set(identity.user_key)
+    except ResumeIntakeUnavailableError as error:
+        return jsonify({**_unavailable(error,"The Guide is unavailable right now."),"load_state":"unavailable"}),503
+    publication = current_app.config.get("RESUME_PUBLICATION_SERVICE")
+    if publication is not None:
+        from services.resume_guide_contract import guide_publication_state
+        try:
+            result["publication_state"] = guide_publication_state(result,publication.owner_preview(identity.user_key))
+        except Exception:
+            result["publication_state"] = "unknown"
+    from services.resume_guide_contract import refresh_working_set_token
+    refresh_working_set_token(identity.user_key,result)
+    return jsonify({"success":True,**result})
 
 
 @resume_intake.post("/api/resume-intake/me/guide/status")

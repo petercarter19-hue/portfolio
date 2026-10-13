@@ -825,6 +825,67 @@ class GuideHttpTests(IntakeRoutesTestCase):
         self.assertNotIn("Traceback", response.get_data(as_text=True))
 
 
+class GuideWorkingSetHttpTests(IntakeRoutesTestCase):
+    def seed(self):
+        return self.service.submit("member-a",{"type":"add_submission","request_id":str(uuid4()),
+            "text":"Fictional member-a source"})
+
+    def test_working_set_read_is_private_read_only_and_does_not_extract(self):
+        from unittest.mock import patch
+        self.seed()
+        before = self.repository.load_owner("member-a")
+        with patch.object(self.service,"_canonical_items",side_effect=AssertionError("Do not perform a second catalog read")):
+            response = self.client().get("/api/resume-intake/me/guide/working-set")
+        self.assertEqual(response.status_code,200,response.get_data(as_text=True)[:512])
+        result = response.get_json()
+        self.assertTrue(result["success"])
+        self.assertEqual(result["counts"]["waiting"],1)
+        self.assertIn("no-store",response.headers["Cache-Control"])
+        self.assertEqual(self.repository.load_owner("member-a"),before)
+
+    def test_working_set_never_uses_a_client_owner_selector(self):
+        self.seed()
+        app.config["PEERSLATE_DEV_USER_KEY"] = "member-b"
+        client = self.client()
+        response = client.get("/api/resume-intake/me/guide/working-set?owner_user_key=member-a")
+        self.assertEqual(response.status_code,400)
+        own = client.get("/api/resume-intake/me/guide/working-set")
+        self.assertEqual(own.status_code,200)
+        self.assertEqual(own.get_json()["counts"]["waiting"],0)
+        self.assertNotIn("Fictional member-a source",own.get_data(as_text=True))
+
+    def test_working_set_outage_is_unavailable_not_new_member(self):
+        from unittest.mock import patch
+        with patch.object(self.repository,"load_owner",side_effect=ResumeIntakeStoreUnavailable("fictional outage")):
+            response = self.client().get("/api/resume-intake/me/guide/working-set")
+        self.assertEqual(response.status_code,503)
+        self.assertEqual(response.get_json()["load_state"],"unavailable")
+        self.assertNotIn("counts",response.get_json())
+
+    def test_working_set_stays_behind_existing_feature_gate(self):
+        app.config["PEERSLATE_RESUME_INTAKE_ENABLED"] = False
+        self.assertEqual(self.client().get("/api/resume-intake/me/guide/working-set").status_code,404)
+
+    def test_privacy_state_reads_the_current_owner_publication_without_publishing(self):
+        from unittest.mock import Mock,patch
+        publication = Mock()
+        publication.owner_preview.return_value = {"read_state":"current","sharing_enabled":True,
+            "current":{"revision":1,"evidence":{}}}
+        with patch.dict(app.config,{"RESUME_PUBLICATION_SERVICE":publication}):
+            initial=self.client().get("/api/resume-intake/me/guide/working-set").get_json()
+            self.assertEqual(initial["publication_state"],"published")
+            self.seed()
+            self.assertEqual(self.client().get("/api/resume-intake/me/guide/working-set").get_json()["publication_state"],"published")
+            publication.owner_preview.side_effect = RuntimeError("fictional publication read outage")
+            before_outage=self.client().get("/api/resume-intake/me/guide/working-set").get_json()
+            self.assertEqual(before_outage["publication_state"],"unknown")
+            publication.owner_preview.side_effect = None
+            restored=self.client().get("/api/resume-intake/me/guide/working-set").get_json()
+            self.assertNotEqual(restored["working_set_token"],before_outage["working_set_token"])
+        publication.owner_preview.assert_called_with("member-a")
+        publication.commit.assert_not_called()
+
+
 class DraftHttpTests(IntakeRoutesTestCase):
     HEADERS = {"X-PeerSlate-Request": "same-origin"}
 

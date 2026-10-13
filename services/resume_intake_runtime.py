@@ -115,9 +115,47 @@ def _settle_ongoing_result(port, owner, request, scope, result, *, bounds,
         raise ProviderUnavailableError("Ongoing settlement is unavailable.") from None
 
 
+def _configure_guide_provider(instance, profile, settings, *, token_provider, transport, ongoing_budget_port, purpose):
+    """Opt-in local/evaluation composition; hosted and absent-variant paths stay unchanged."""
+    if ongoing_budget_port is None or profile not in {"extraction","interview"}:
+        raise ValueError("Named Guide variants require an explicit ongoing allocation port")
+    from services.resume_guide_model import validate_guide_settings,guide_budget_ceiling
+    from services.ai_foundation.azure_foundry import SolSynthesisSafetyPriceSchedule,SolExtractionPriceSchedule
+    from services.ai_foundation.contracts import ExtractionPurpose,STRUCTURED_MODEL_SOL61
+    record = validate_guide_settings(profile,settings,purpose=purpose)
+    price_type = (SolSynthesisSafetyPriceSchedule if record.model_name==STRUCTURED_MODEL_SOL61 else
+                  SolExtractionPriceSchedule if profile=="interview" else LunaPriceSchedule)
+    price = price_type(**settings["prices"])
+    reservation = price.estimate_micro_usd(input_tokens=record.input_tokens,output_tokens=record.output_tokens)
+    if reservation != record.reservation_micro_usd:
+        raise ValueError("Named Guide reservation differs from its immutable record")
+    instance.profile,instance.variant_name = profile,record.name
+    instance.bounds,instance.budget = dict(settings["provider"]),dict(settings["budget"])
+    instance.reservation = reservation
+    instance.ongoing_budget_port = ongoing_budget_port
+    instance._credential = None
+    instance._token = token_provider or instance._managed_identity_token
+    instance.selected = {"deployment":record.deployment,"model":record.model_name,"version":record.model_version,
+        "effort":record.reasoning_effort,"output":record.output_tokens,"price":price_type,
+        "configured_hard_cap":instance.budget["hard_cap_micro_usd"],
+        "purpose_hard_cap":guide_budget_ceiling(profile,record.name,purpose=purpose),
+        "purpose":ExtractionPurpose.MY_DATA_INTAKE_EXTRACTION if profile=="extraction" else ExtractionPurpose.RESUME_CAREER_INTERVIEW}
+    instance.arguments = dict(endpoint=settings["endpoint"],deployment=record.deployment,
+        token_provider=instance._token,price_schedule=price,model_name=record.model_name,model_version=record.model_version,
+        response_identity_mode=RESPONSE_IDENTITY_CONFIGURED_DEPLOYMENT,**instance.bounds)
+    if transport is not None: instance.arguments["transport"] = transport
+    AzureFoundryResponsesProvider(**instance.arguments,spend_ledger=SpendLedger(hard_cap_micro_usd=reservation,max_calls=1))
+    instance.protections = _validated_ongoing_budget_port(ongoing_budget_port,profile=profile,
+        settings=settings,reservation=reservation)
+
+
 class BoundedResumeExtractionProvider:
     def __init__(self, *, settings, database, token_provider=None, transport=None,
-                 ongoing_budget_port=None):
+                 ongoing_budget_port=None, guide_budget_purpose="acceptance"):
+        if isinstance(settings,dict) and "variant" in settings:
+            _configure_guide_provider(self,"extraction",settings,token_provider=token_provider,transport=transport,
+                ongoing_budget_port=ongoing_budget_port,purpose=guide_budget_purpose)
+            return
         if not isinstance(settings, dict) or set(settings) != {"endpoint", "deployment", "provider", "prices", "budget"}:
             raise ValueError("Complete scoped extraction configuration is required.")
         bounds, budget, prices = settings["provider"], settings["budget"], settings["prices"]
@@ -198,6 +236,9 @@ class BoundedResumeExtractionProvider:
         owner = _EXTRACTION_OWNER.get()
         if not owner or maximum_output_tokens != self.bounds["maximum_output_tokens"]:
             raise ProviderUnavailableError("No authorized extraction scope is active.")
+        if getattr(self,"variant_name",None) is not None:
+            from services.ai_foundation.contracts import validate_guide_variant_request
+            validate_guide_variant_request(self.variant_name,request,profile="extraction")
         provider = AzureFoundryResponsesProvider(**self.arguments, spend_ledger=SpendLedger(
             hard_cap_micro_usd=self.reservation, max_calls=1,
         ))
@@ -852,7 +893,11 @@ publish or override this contract. Avoid 'enough to draft' assessments.'''
 class BoundedPrivateResumeProvider:
     """One selected profile, immutable durable aggregate, uncertain-active fence."""
     def __init__(self, profile, *, settings, database, token_provider=None, transport=None,
-                 ongoing_budget_port=None):
+                 ongoing_budget_port=None, guide_budget_purpose="acceptance"):
+        if isinstance(settings,dict) and "variant" in settings:
+            _configure_guide_provider(self,profile,settings,token_provider=token_provider,transport=transport,
+                ongoing_budget_port=ongoing_budget_port,purpose=guide_budget_purpose)
+            return
         selected = PRIVATE_ASSISTANCE_PROFILES[profile]
         required = {'endpoint', 'deployment', 'provider', 'prices', 'budget'}
         if not isinstance(settings, dict) or set(settings) != required:
@@ -920,6 +965,9 @@ class BoundedPrivateResumeProvider:
             instructions=instructions, input_text=json.dumps({'task': task, 'context': context},
                 ensure_ascii=False, separators=(',', ':')), schema_name='resume_' + self.profile + '_v1',
             reasoning_effort=self.selected['effort'], model_name=self.selected['model'])
+        if getattr(self,"variant_name",None) is not None:
+            from services.ai_foundation.contracts import validate_guide_variant_request
+            validate_guide_variant_request(self.variant_name,request,profile=self.profile)
         provider = self._new_provider()
         wire = provider.structured_payload(request, response_schema=response_schema,
                                            maximum_output_tokens=self.bounds['maximum_output_tokens'])
@@ -1104,7 +1152,7 @@ class PrivateResumeAssistanceService:
 
 def build_private_resume_assistance(config, *, draft_service, catalog, policy_repository,
                                     database, token_provider=None, transport=None, signer=None,
-                                    ongoing_budget_port=None):
+                                    ongoing_budget_port=None,guide_budget_purpose="acceptance"):
     """Pure composition with injected real or explicitly isolated fixture ports."""
     settings = config.get('RESUME_PRIVATE_ASSISTANCE_CONFIGURATION')
     if isinstance(settings, str):
@@ -1130,6 +1178,6 @@ def build_private_resume_assistance(config, *, draft_service, catalog, policy_re
         signer = URLSafeTimedSerializer(key, salt='resume-private-assistance-v1')
     providers = {profile: BoundedPrivateResumeProvider(profile, settings=value, database=database,
         token_provider=token_provider, transport=transport,
-        ongoing_budget_port=ongoing_budget_port) for profile, value in profiles.items()}
+        ongoing_budget_port=ongoing_budget_port,guide_budget_purpose=guide_budget_purpose) for profile, value in profiles.items()}
     return PrivateResumeAssistanceService(draft_service=draft_service, catalog=catalog,
         policy_repository=policy_repository, providers=providers, signer=signer, limits=settings['limits'])

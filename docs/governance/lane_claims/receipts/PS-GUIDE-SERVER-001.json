@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "package": "PS-GUIDE-SERVER-001",
+  "candidate_sha": "b0133adef05dcb9af5e479729a48d94bb380ded4",
+  "review_type": "independent",
+  "reviewer_ref": "session:9fb18da7-d312-4e90-a956-7f3718e5969f",
+  "result": "pass",
+  "reviewed_at": "2026-10-13T17:55:00Z",
+  "findings": [
+    {
+      "id": "B2-carry",
+      "status": "informational",
+      "disposition": "B2-0 first arrival and once acknowledgment; m6/n2/shared publication basis including Story/Contact, binding/eligibility/blocked items and missing access-revision basis before C2."
+    },
+    {
+      "id": "B3-carry",
+      "status": "informational",
+      "disposition": "Unequal numbers/qualifiers and different-role matching plus corrupt-history ordinary-save repair/operator path; F1/F2 remain B3/C3 requirements."
+    },
+    {
+      "id": "unchanged-deadline-flake",
+      "status": "informational",
+      "disposition": "Independent no-Playwright whole-suite extra credential-deadline failure passed3/3 alone with unchanged Ask Pete source; do not retime it in B1."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-GUIDE-SERVER-001.md"
+}
