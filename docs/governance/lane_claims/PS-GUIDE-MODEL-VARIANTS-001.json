@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "package": "PS-GUIDE-MODEL-VARIANTS-001",
+  "state": "active",
+  "outcome": "Add the approved named Sol 6.1 owner-only Guide turn and extraction variant contracts with negative tests first. Preserve the incumbent no-variant requests and envelopes byte-for-byte, narrow purposes/audiences/efforts, and keep synthesis high unchanged. Publish fixed variant records for the server and local installation consumers without a global model switch. Server adapter/composition work belongs to PS-GUIDE-SERVER-001 and local factory/allocation composition belongs to PS-ONBOARDING-PRIVATE-SITES-001. Fake providers only; no paid calls or production release.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a132fe-1f81-77f3-8821-d53d157ca025",
+  "branch": "codex/2026-10-13-guide-model-variants-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "b9d8a53ef5f1560817b43e53e5d4c1814ce64b3f",
+  "owner_outcome_ref": "role:owner/pete-chat-2026-10-12/claude-manager-local_4fefa9f6/mvp1-build-codex-writer",
+  "surfaces": [
+    "services/ai_foundation/contracts.py",
+    "tests/ai_foundation/test_azure_foundry_provider.py",
+    "tests/ai_foundation/test_guide_model_variants.py",
+    "docs/governance/lane_claims/PS-GUIDE-MODEL-VARIANTS-001.json",
+    "docs/governance/lane_claims/receipts/PS-GUIDE-MODEL-VARIANTS-001.json",
+    "docs/governance/lane_claims/evidence/PS-GUIDE-MODEL-VARIANTS-001.md"
+  ],
+  "domains": ["consequential-ai:guide:model-variants"],
+  "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-GUIDE-MODEL-VARIANTS-001.md"],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
