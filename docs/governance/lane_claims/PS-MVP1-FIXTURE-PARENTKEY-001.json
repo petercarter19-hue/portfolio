@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-FIXTURE-PARENTKEY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver the bounded Lane A D4 acceptance-fixture correction under the existing MVP1 builder assignment: carry parent_key through EntryPolicyCanonicalFixture, guard real 8444-shaped catalog identity/parent/version/token/access/value/classification and draft-overlay fields, then obtain Claude exact-SHA independent review, normal CI, merge and close. Manager routing coordination87af064. No C14 runtime, source reset, new design, paid calls, private cutover, schema or production release; C14 full checkpoint and criteria stay preserved.",
   "assignment": "implementation",
   "writer_ref": "session:01a132fe-1f81-77f3-8821-d53d157ca025",
@@ -27,6 +27,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "723f95c6345a0576d3ada13353a68b46a51e6008",
+  "closed_at": "2026-10-13T14:47:08Z"
 }
