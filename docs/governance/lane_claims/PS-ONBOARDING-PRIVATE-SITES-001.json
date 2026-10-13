@@ -25,7 +25,6 @@
     "tests/test_local_reviewer_providers.py",
     "tests/test_local_reviewer_identity.py",
     "tests/test_local_reviewer_isolation.py",
-    "tests/mvp1_acceptance_support.py",
     "docs/LOCAL_REVIEWER.md",
     "docs/governance/lane_claims/PS-ONBOARDING-PRIVATE-SITES-001.json",
     "docs/governance/lane_claims/receipts/PS-ONBOARDING-PRIVATE-SITES-001.json",
@@ -42,5 +41,52 @@
   "checkpoint_sha": null,
   "merged_sha": null,
   "closed_at": null,
-  "handoff": null
+  "handoff": null,
+  "scope_release": {
+    "checkpoint_sha": "2ff7f0e9c5ea4094d81486d2fd118fbd684a2b8c",
+    "control_branch": "work/2026-10-13-delivery-release-surfaces-mvp1-fixture",
+    "control_lease_sha256": "74754d47576bbe4420b1cae6333cfb7e2fa60004aae9a962052ce9b79dd52f28",
+    "fixed_evidence_ref": "docs/governance/lane_claims/evidence/PS-ONBOARDING-PRIVATE-SITES-001.md",
+    "index_schema": 4,
+    "new_domains": [
+      "tooling:local-reviewer:onboarding-isolation",
+      "privacy:local-reviewer:payer-ledgers"
+    ],
+    "operation_id": "3efc8aa84689989d537dd2c31685e6099ff526b4c01f1b5b4a346d0e63091539",
+    "prepared_from_main": "e9987210b2affaad5702c0762b7cfc35008969a0",
+    "prior_claim_sha256": "5611add5375d9ce5e1d6adaac8cf8545d3ea9060cf844468831ddb0f523c79fc",
+    "prior_domains": [
+      "tooling:local-reviewer:onboarding-isolation",
+      "privacy:local-reviewer:payer-ledgers"
+    ],
+    "quiescence_ref": "session:01a132fe-1f81-77f3-8821-d53d157ca025/c14-2ff7f0e9-quiescent-for-d4",
+    "reduction_sha256": "d7e1d2105b19f4799472e626679a48a0928e75c6599b637271b66885a3d4fa7f",
+    "registry_schema": 2,
+    "release_rationale": "Claude routing87af064 confirms the unchanged MVP1 fixture file moves to one bounded same-writer D4 slice; preserve the full C14 checkpoint, acceptance plan and all other custody.",
+    "released_file_proofs": [
+      {
+        "accepted_introduction": null,
+        "checkpoint_blob": "5f0632abc131ca68f906e261888d90ecb1329cae",
+        "checkpoint_mode": "100644",
+        "main_blob": "5f0632abc131ca68f906e261888d90ecb1329cae",
+        "main_mode": "100644",
+        "path": "tests/mvp1_acceptance_support.py",
+        "unpublished_delta": false
+      }
+    ],
+    "released_surfaces": [
+      "tests/mvp1_acceptance_support.py"
+    ],
+    "retained_responsibilities": [
+      {
+        "domain": "tooling:local-reviewer:onboarding-isolation",
+        "responsibility": "C14 private-site root/process isolation and rehearsal; fixture slice separately admitted"
+      },
+      {
+        "domain": "privacy:local-reviewer:payer-ledgers",
+        "responsibility": "Independent per-payer ledgers, conservative failure settlement and operator recovery"
+      }
+    ],
+    "schema_version": 1
+  }
 }
