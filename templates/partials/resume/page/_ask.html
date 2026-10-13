@@ -1,0 +1,47 @@
+{# Owner resume page: Ask AI panels (the main card and the rail panel).
+   Presentation only in D1: this page makes no AI call. The owner's private
+   preview transport arrives with PS-RESUME-PAGE-PUBLIC-001; until then a
+   question gets the truthful unavailable state. The rail panel starts compact
+   and grows when the main card scrolls away (resume-page.js). #}
+{% macro ask_mark(size=22) -%}
+<svg class="rp-ask-mark" viewBox="0 0 24 24" width="{{ size }}" height="{{ size }}" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="12"/><g transform="translate(12 12) scale(0.64) translate(-12 -12)"><use href="#rp-i-cairn"/></g></svg>
+{%- endmacro %}
+
+{% macro ask_panel(variant, first_name) -%}
+{% set label = ('Ask ' ~ first_name ~ ' AI') if first_name else 'Ask AI' %}
+{% set idp = 'resume-page-ask-' ~ variant %}
+<section class="rp-ask rp-ask--{{ variant }}" id="{{ idp }}" aria-labelledby="{{ idp }}-title" data-rp-ask="{{ variant }}">
+    <div class="rp-ask__top">
+        <div class="rp-ask__art"{% if variant == 'main' %} role="img" aria-label="Mountains at first light: Real experience. Real perspective."{% else %} aria-hidden="true"{% endif %}></div>
+        <div class="rp-ask__lead">
+            <p class="rp-ask__kicker">{{ ask_mark(22 if variant == 'main' else 18) }}<span id="{{ idp }}-title">{{ label }}</span></p>
+            {% if variant == 'main' %}
+            <h2 class="rp-ask__title">The person behind the experience.</h2>
+            {% else %}
+            <div class="rp-ask__more" data-rp-ask-more><div class="rp-ask__more-in">
+                <p class="rp-ask__title">The person behind the experience.</p>
+            </div></div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="rp-ask__body">
+        {% if variant == 'main' %}
+        <p class="rp-ask__hint">What visitors could ask</p>
+        <div class="rp-ask__chips" data-rp-ask-chips></div>
+        {% else %}
+        <div class="rp-ask__more" data-rp-ask-more><div class="rp-ask__more-in">
+            <p class="rp-ask__hint">What visitors could ask</p>
+            <div class="rp-ask__chips" data-rp-ask-chips></div>
+        </div></div>
+        {% endif %}
+        <div class="rp-ask__log" role="log" aria-live="polite" aria-label="{{ label }} answers" data-rp-ask-log hidden></div>
+        <form class="rp-ask__box" data-rp-ask-form novalidate>
+            <label class="rp-sr" for="{{ idp }}-q">Ask a question</label>
+            <textarea id="{{ idp }}-q" rows="1" maxlength="500" data-rp-ask-input
+                placeholder="{% if variant == 'main' %}Ask about {{ (first_name ~ '’s') if first_name else 'this' }} experience, skills or a specific role…{% else %}Ask about {{ first_name if first_name else 'this resume' }}…{% endif %}"></textarea>
+            <button type="submit" class="rp-btn rp-btn--gold rp-ask__go">Ask</button>
+        </form>
+        <p class="rp-ask__note"><svg aria-hidden="true" focusable="false"><use href="#rp-i-lock"/></svg>Answers come only from your published resume.</p>
+    </div>
+</section>
+{%- endmacro %}

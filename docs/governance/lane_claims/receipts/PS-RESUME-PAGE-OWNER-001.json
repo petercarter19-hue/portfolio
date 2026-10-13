@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-RESUME-PAGE-OWNER-001",
+  "candidate_sha": "997ac8cd40046552d02122dbfabc8528f1d81a91",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a132fe-1f81-77f3-8821-d53d157ca025",
+  "result": "pass",
+  "reviewed_at": "2026-10-13T18:28:08Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-RESUME-PAGE-OWNER-001.md"
+}

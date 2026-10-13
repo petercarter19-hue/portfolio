@@ -1,0 +1,45 @@
+{# Owner resume page: the main column (layout idea 1, "One story, told once").
+   Server-rendered structure; resume-page.js fills it from the signed-in
+   member's private workspace through resume-page-model.js. #}
+{% from "partials/resume/page/_ask.html" import ask_panel %}
+{% set rp_name = ((member.display_name or '') | trim) if member else '' %}
+{% set rp_first = rp_name.split(' ')[0] if rp_name else '' %}
+<div class="rp-toolbar">
+    <span class="rp-pill"><svg aria-hidden="true" focusable="false"><use href="#rp-i-draft"/></svg>Private draft</span>
+    <span class="rp-toolbar__note">Saving does not publish.</span>
+    <span class="rp-toolbar__acts">
+        <button type="button" class="rp-btn rp-btn--outline rp-btn--sm" id="resume-page-edit" aria-expanded="false" aria-controls="resume-page-editor">Edit myself</button>
+    </span>
+</div>
+<div class="rp-jump" id="resume-page-jump-bar" hidden>
+    <label for="resume-page-jump">Jump to</label>
+    <select id="resume-page-jump"></select>
+</div>
+<p class="rp-status" id="resume-page-status" role="status" aria-live="polite">Loading your resume…</p>
+<section class="rp-snap" id="rp-overview" aria-labelledby="resume-page-name" tabindex="-1">
+    <div class="rp-hero" id="resume-page-hero" data-has-photo="false" data-has-side="false">
+        <div class="rp-hero__photo" data-rp-photo aria-hidden="true"><span data-rp-initials></span></div>
+        <div class="rp-hero__id">
+            <h1 class="rp-hero__name" id="resume-page-name">{{ rp_name or 'Your resume' }}</h1>
+            <p class="rp-hero__headline" data-rp-headline hidden></p>
+            <p class="rp-hero__statement" id="rp-impact_statement" data-rp-statement hidden></p>
+        </div>
+        <div class="rp-hero__side" data-rp-side hidden>
+            <div class="rp-hero__details">
+                <h2 class="rp-kicker">Details &amp; contact</h2>
+                <ul class="rp-hero__contact" data-rp-contact></ul>
+            </div>
+            <div class="rp-hero__acts" data-rp-acts></div>
+        </div>
+        <div class="rp-hero__highlights" data-rp-highlights hidden></div>
+    </div>
+    <div class="rp-snap__ask">
+        {{ ask_panel('main', rp_first) }}
+    </div>
+</section>
+<section class="rp-card rp-glance rp-glance--phone" id="resume-page-glance-phone" aria-labelledby="resume-page-glance-phone-title" hidden>
+    <h2 class="rp-card__title" id="resume-page-glance-phone-title">Credentials at a glance</h2>
+    <ul class="rp-glance__list" data-rp-glance></ul>
+    <a class="rp-glance__all" href="#rp-credentials">See all credentials &rarr;</a>
+</section>
+<div class="rp-sections" id="resume-page-sections"></div>

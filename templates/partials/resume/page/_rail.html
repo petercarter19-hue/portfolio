@@ -1,0 +1,19 @@
+{# Owner resume page: the left rail. Order (Pete, 2026-10-12): section list,
+   Credentials at a glance, Ask AI. Rows are filled by resume-page.js from the
+   member's own workspace; empty cards stay hidden. #}
+{% from "partials/resume/page/_ask.html" import ask_panel %}
+{% set rp_first = ((member.display_name or '') | trim).split(' ')[0] if member else '' %}
+<div class="rp-rail" id="resume-page-rail">
+    <section class="rp-card rp-nav" aria-labelledby="resume-page-nav-title">
+        <h2 class="rp-card__title" id="resume-page-nav-title">On this resume</h2>
+        <nav aria-label="Resume sections">
+            <ul class="rp-secnav" id="resume-page-secnav"></ul>
+        </nav>
+    </section>
+    <section class="rp-card rp-glance" id="resume-page-glance" aria-labelledby="resume-page-glance-title" hidden>
+        <h2 class="rp-card__title" id="resume-page-glance-title">Credentials at a glance</h2>
+        <ul class="rp-glance__list" data-rp-glance></ul>
+        <a class="rp-glance__all" href="#rp-credentials">See all credentials &rarr;</a>
+    </section>
+    {{ ask_panel('rail', rp_first) }}
+</div>

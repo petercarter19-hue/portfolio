@@ -2,6 +2,8 @@
 
 {% block title %}{{ page_title }} | PeerSlate{% endblock %}
 
+{% block body_class %}{% if config.get('PEERSLATE_RESUME_PAGE_ENABLED') is sameas true %} rp-body{% endif %}{% endblock %}
+
 {% block meta_description %}Private Resume editor. Saves stay private and do not publish.{% endblock %}
 
 {% block extra_head %}
@@ -13,6 +15,9 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/resume-publication.css') }}">
 {% endif %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/resume-editor.css') }}">
+{% if config.get('PEERSLATE_RESUME_PAGE_ENABLED') is sameas true %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resume-page.css') }}">
+{% endif %}
 {% if config.get('PEERSLATE_RESUME_INTAKE_ENABLED', false) %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/resume-intake.css') }}">
 {% endif %}
@@ -20,6 +25,8 @@
 {% endblock %}
 
 {% block content %}
+{% set resume_page_enabled = config.get('PEERSLATE_RESUME_PAGE_ENABLED') is sameas true %}
+{% set legacy_editor %}
 <section class="owner-app resume-editor resume-editor--overview" aria-labelledby="resume-editor-title">
     <nav class="resume-editor__sections" aria-label="Resume sections">
         <p class="resume-editor__nav-title">My Resume</p>
@@ -216,8 +223,33 @@
         {% endif %}
     </div>
 </section>
+{% endset %}
+{% if resume_page_enabled %}
+{# PS-RESUME-PAGE-OWNER-001: the owner resume page (layout idea 1). Off by
+   default; today's editor below stays complete and reachable with Edit myself. #}
+<div class="rp" id="resume-page" data-workspace-url="{{ workspace_url }}" data-member-name="{{ (member.display_name or '') | trim }}">
+    {% include "partials/resume/page/_icons.html" %}
+    <div class="rp-wrap">
+        {% include "partials/resume/page/_rail.html" %}
+        <div class="rp-content">
+            {% include "partials/resume/page/_main.html" %}
+            <div class="rp-editor" id="resume-page-editor">
+{{ legacy_editor }}
+            </div>
+        </div>
+    </div>
+    {% include "partials/resume/page/_after.html" %}
+</div>
+{% else %}
+{{ legacy_editor }}
+{% endif %}
 <script src="{{ url_for('static', filename='js/dictation.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/resume-editor.js') }}" defer></script>
+{% if config.get('PEERSLATE_RESUME_PAGE_ENABLED') is sameas true %}
+<script src="{{ url_for('static', filename='js/resume-page-model.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/resume-page-ask.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/resume-page.js') }}" defer></script>
+{% endif %}
 {% if config.get('PEERSLATE_RESUME_MEDIA_ENABLED', false) %}
 <script src="{{ url_for('static', filename='js/resume-media.js') }}" defer></script>
 {% endif %}
