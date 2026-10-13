@@ -10,6 +10,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 from hashlib import sha256
+from types import MappingProxyType
+import re
 
 
 def _required_text(label: str, value: object) -> None:
@@ -87,6 +89,124 @@ REASONING_EFFORT_HIGH = "high"
 ALLOWED_REASONING_EFFORTS = frozenset(
     {REASONING_EFFORT_XHIGH, REASONING_EFFORT_MEDIUM, REASONING_EFFORT_HIGH}
 )
+
+
+@dataclass(frozen=True)
+class GuideModelVariant:
+    """A named immutable configuration, never a grant to spend or change a model."""
+
+    name: str
+    profile: str
+    model_name: str
+    deployment: str
+    model_version: str
+    reasoning_effort: str
+    wire_bytes: int
+    input_tokens: int
+    output_tokens: int
+    input_micro_usd_per_million: int
+    output_micro_usd_per_million: int
+
+    @property
+    def reservation_micro_usd(self) -> int:
+        return (self.input_tokens * self.input_micro_usd_per_million
+                + self.output_tokens * self.output_micro_usd_per_million + 999999) // 1000000
+
+
+GUIDE_MODEL_VARIANTS = MappingProxyType({record.name: record for record in (
+    GuideModelVariant("turn.sol6_low", "interview", "gpt-6-sol", "eval0930-gpt-6-sol", "2026-09-22",
+                      "low", 65536, 66560, 32768, 5000000, 15000000),
+    GuideModelVariant("turn.sol61_medium", "interview", "gpt-6.1-sol", "peerslate-resume-sol61", "2026-09-29",
+                      "medium", 65536, 66560, 16384, 100000000, 100000000),
+    GuideModelVariant("turn.sol61_low", "interview", "gpt-6.1-sol", "peerslate-resume-sol61", "2026-09-29",
+                      "low", 65536, 66560, 16384, 100000000, 100000000),
+    GuideModelVariant("organize.luna_low", "extraction", "gpt-6-luna", "gpt-6-luna", "2026-09-22",
+                      "low", 229376, 230400, 128000, 1000000, 6000000),
+    GuideModelVariant("organize.sol61_medium", "extraction", "gpt-6.1-sol", "peerslate-resume-sol61", "2026-09-29",
+                      "medium", 73728, 74752, 24576, 100000000, 100000000),
+    GuideModelVariant("organize.sol61_low", "extraction", "gpt-6.1-sol", "peerslate-resume-sol61", "2026-09-29",
+                      "low", 73728, 74752, 24576, 100000000, 100000000),
+)})
+
+
+def guide_model_variant(name: str, *, profile: str) -> GuideModelVariant:
+    if not isinstance(name, str) or profile not in ("interview", "extraction"):
+        raise ValueError("Closed Guide variant and profile required")
+    record = GUIDE_MODEL_VARIANTS.get(name)
+    if record is None or record.profile != profile:
+        raise ValueError("Guide variant does not match its profile")
+    return record
+
+
+def validate_guide_variant_request(name: str, request: StructuredRequest, *, profile: str) -> GuideModelVariant:
+    record = guide_model_variant(name, profile=profile)
+    if type(request) is not StructuredRequest:
+        raise ValueError("Structured Guide request required")
+    request.__post_init__()
+    product, purpose = (("my_data_intake", ExtractionPurpose.MY_DATA_INTAKE_EXTRACTION)
+                        if profile == "extraction" else
+                        ("resume_private_assistance", ExtractionPurpose.RESUME_CAREER_INTERVIEW))
+    if (request.product != product or request.purpose != purpose or request.audience != Audience.OWNER
+            or request.model_name != record.model_name or request.reasoning_effort != record.reasoning_effort):
+        raise ValueError("Guide request differs from its named variant")
+    return record
+
+
+def validate_guide_variant_bindings(name: str, *, profile: str, settings: dict,
+                                  allocation: dict, contract: dict) -> GuideModelVariant:
+    """Prove one record across all composition inputs before credentials/HTTP.
+
+    Funding authority and purpose-specific caps still come from the reviewed
+    allocation. Agreement here never creates an allocation or grants spending.
+    """
+    record = guide_model_variant(name, profile=profile)
+    if any(type(value) is not dict for value in (settings, allocation, contract)):
+        raise ValueError("Complete Guide variant bindings required")
+
+    def require(actual, expected):
+        if type(actual) is not type(expected) or actual != expected:
+            raise ValueError("Guide variant binding changed")
+        if type(expected) is dict:
+            for key in expected:
+                require(actual[key], expected[key])
+        elif type(expected) is list:
+            for actual_item, expected_item in zip(actual, expected):
+                require(actual_item, expected_item)
+
+    for key, expected in {
+        "variant": name, "model": record.model_name, "model_version": record.model_version,
+        "alias": record.deployment, "effort": record.reasoning_effort, "tier": "default",
+        "wire_bytes": record.wire_bytes, "input_tokens": record.input_tokens, "output_tokens": record.output_tokens,
+        "safety_prices_per_million_micro_usd": [record.input_micro_usd_per_million, record.output_micro_usd_per_million],
+    }.items():
+        require(contract.get(key), expected)
+    for key, expected in {
+        "variant": name, "model": record.model_name, "model_version": record.model_version,
+        "reasoning_effort": record.reasoning_effort, "service_tier": "default",
+        "input_tokens": record.input_tokens, "output_tokens": record.output_tokens,
+        "input_micro_usd_per_million": record.input_micro_usd_per_million,
+        "output_micro_usd_per_million": record.output_micro_usd_per_million,
+        "reservation_micro_usd": record.reservation_micro_usd, "maximum_calls": 100, "concurrent_requests": 1,
+    }.items():
+        require(allocation.get(key), expected)
+    scope, cap = allocation.get("scope"), allocation.get("hard_cap_micro_usd")
+    if (not isinstance(scope, str) or not re.fullmatch("[a-z0-9-]{1,80}", scope)
+            or type(cap) is not int or cap < record.reservation_micro_usd):
+        raise ValueError("Bound Guide allocation scope and cap required")
+    require(settings.get("variant"), name)
+    require(settings.get("deployment"), record.deployment)
+    require(settings.get("provider"), {"maximum_input_bytes": record.wire_bytes,
+        "maximum_input_tokens": record.input_tokens, "maximum_output_tokens": record.output_tokens})
+    require(settings.get("budget"), {key: allocation[key] for key in
+        ("scope", "maximum_calls", "hard_cap_micro_usd", "concurrent_requests")})
+    prices = settings.get("prices")
+    if (type(prices) is not dict or set(prices) != {
+            "input_micro_usd_per_million", "output_micro_usd_per_million", "schedule_ref"}
+            or not isinstance(prices["schedule_ref"], str) or not prices["schedule_ref"].strip()):
+        raise ValueError("Bound Guide safety schedule required")
+    require(prices["input_micro_usd_per_million"], record.input_micro_usd_per_million)
+    require(prices["output_micro_usd_per_million"], record.output_micro_usd_per_million)
+    return record
 
 
 @dataclass(frozen=True)
@@ -250,10 +370,10 @@ class StructuredRequest:
 
     ``instructions`` carry the closed extraction contract and ``input_text``
     carries member material as data. ``schema_name`` selects the exact JSON
-    schema the provider must satisfy, and ``reasoning_effort`` must be the
-    default ``xhigh`` value. Explicit ``medium`` or ``high`` is limited to owner My Data
-    extraction; matching and other products do not inherit that selection.
-    Explicit Sol low/medium/high is limited to that same extraction scope.
+    schema the provider must satisfy. The default is Luna xhigh; explicit
+    extraction efforts stay owner-scoped. Sol6.1 low/medium is limited to owner
+    extraction or career interview, and Sol6.1 synthesis remains high-only.
+    Matching inherits none of these choices.
     """
 
     request_id: str
@@ -287,9 +407,12 @@ class StructuredRequest:
             if not owner_extraction or self.reasoning_effort != REASONING_EFFORT_LOW:
                 raise ValueError("Native Luna Low requires owner My Data extraction")
         elif self.model_name == STRUCTURED_MODEL_SOL61:
-            if (not selected_private or self.purpose != ExtractionPurpose.RESUME_PRIVATE_SYNTHESIS
-                    or self.reasoning_effort != REASONING_EFFORT_HIGH):
-                raise ValueError("Sol6.1 High requires private owner Resume synthesis")
+            synthesis = (selected_private and self.purpose == ExtractionPurpose.RESUME_PRIVATE_SYNTHESIS
+                         and self.reasoning_effort == REASONING_EFFORT_HIGH)
+            guide = ((owner_extraction or (selected_private and self.purpose == ExtractionPurpose.RESUME_CAREER_INTERVIEW))
+                     and self.reasoning_effort in (REASONING_EFFORT_LOW, REASONING_EFFORT_MEDIUM))
+            if not (synthesis or guide):
+                raise ValueError("Sol6.1 requires its closed private owner purpose and effort")
         elif (self.model_name == STRUCTURED_MODEL_SOL and selected_private
               and self.purpose == ExtractionPurpose.RESUME_CAREER_INTERVIEW):
             if self.reasoning_effort != REASONING_EFFORT_LOW:

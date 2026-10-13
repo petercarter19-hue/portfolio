@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "package": "PS-GUIDE-MODEL-VARIANTS-001",
+  "candidate_sha": "de574fdea3a436e98a472320ab532b6ec53875ae",
+  "review_type": "independent",
+  "reviewer_ref": "session:9fb18da7-d312-4e90-a956-7f3718e5969f",
+  "result": "pass",
+  "reviewed_at": "2026-10-13T05:40:00Z",
+  "findings": [
+    {"id":"minor-1","status":"informational","disposition":"Nonblocking: existing and future consumers must close outer settings/factory shapes and validate their endpoint; retained as a package 1/3 consumer requirement without changing this reviewed candidate."},
+    {"id":"minor-2","status":"informational","disposition":"Nonblocking: this binding helper is for ongoing 100-call ledger profiles and grants no cap authority. Consumers retain per-purpose ceilings; hosted budgets keep their separate existing guards."},
+    {"id":"minor-3","status":"informational","disposition":"Nonblocking: independent exhaustive/adversarial probes supplement local field-path tests. Matrix refusal occurs at construction before any provider object exists; evidence mapping states that precise proof."}
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-GUIDE-MODEL-VARIANTS-001.md"
+}
