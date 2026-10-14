@@ -4,7 +4,7 @@
   "state": "active",
   "outcome": "Implement approved C14 two-process private-site isolation: preserve the personal root, historical onboarding state and old ledger; prepare a fresh onboarding-only root with reviewed factory/allocation pins, separate ledgers, bounded accounting and settle-on-failure/operator resolution. Commit acceptance criteria first, complete the full zero-paid-call two-site cutover rehearsal and independent exact-SHA review before the one authorized announced personal/shared stop. Restore prior personal running intent and prove installed isolation/rollback. Maintain the accepted onboarding installation through later Guide rounds. No production release, schema application, credential/identity-account changes, historical data migration or destructive cleanup.",
   "assignment": "implementation",
-  "writer_ref": "session:01a132fe-1f81-77f3-8821-d53d157ca025",
+  "writer_ref": "agent:claude/2026-10-14/guide-build",
   "branch": "codex/2026-10-13-onboarding-private-sites-001",
   "delivery_path": "Protected",
   "repository_authority": "through_merge",
@@ -41,7 +41,12 @@
   "checkpoint_sha": null,
   "merged_sha": null,
   "closed_at": null,
-  "handoff": null,
+  "handoff": {
+    "from_ref": "session:01a132fe-1f81-77f3-8821-d53d157ca025",
+    "to_ref": "agent:claude/2026-10-14/guide-build",
+    "checkpoint_sha": "b682bb990731fbf651f26adf379faaff935363c7",
+    "relinquished": true
+  },
   "scope_release": {
     "checkpoint_sha": "51335865ed8852f69ff88a8e8b593596c011d703",
     "control_branch": "work/2026-10-13-delivery-release-surfaces-b2-readonly-fixture",
