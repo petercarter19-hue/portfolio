@@ -44,7 +44,10 @@
     "docs/governance/lane_claims/receipts/PS-GUIDE-SERVER-001.json",
     "docs/governance/lane_claims/evidence/PS-GUIDE-SERVER-001.md",
     "services/resume_publication_service.py",
-    "tests/test_resume_publication_service.py"
+    "tests/test_resume_publication_service.py",
+    "services/entry_policy_service.py",
+    "tests/test_entry_policy_service.py",
+    "tests/mvp1_acceptance_support.py"
   ],
   "domains": [
     "consequential-ai:resume-guide:server",
