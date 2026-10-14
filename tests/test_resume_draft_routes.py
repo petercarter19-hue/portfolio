@@ -37,6 +37,49 @@ def role_item():
     }
 
 
+class GuideManualDraftHttpTests(unittest.TestCase):
+    def test_real_manual_save_returns_missing_fields_and_actual_word_count_without_writes(self):
+        import json
+        from urllib.request import Request, urlopen
+        from urllib.error import HTTPError
+        from unittest.mock import patch
+        from tests.mvp1_acceptance_support import Mvp1AcceptanceServer
+        owner = "g-member-a"
+        with Mvp1AcceptanceServer() as server:
+            def submit(values, record_type="education", section=None):
+                payload = {"type": "create_private_item", "request_id": str(uuid4()), "record_key": str(uuid4()),
+                    "record_type": record_type, "values": values, "guide_review": True}
+                if section:
+                    payload["guide_section"] = section
+                request = Request(server.url + "/api/resume-drafts/me/commands", method="POST",
+                    data=json.dumps(payload).encode(), headers={"Content-Type": "application/json",
+                        "X-PeerSlate-Request": "same-origin", "Cookie": "mvp1-synthetic-owner=" + owner})
+                try:
+                    response = urlopen(request, timeout=10)
+                except HTTPError as error:
+                    response = error
+                with response:
+                    self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+                    return response.status, json.load(response)
+            with (patch.object(server.shared.policy.repository, "save_owner", wraps=server.shared.policy.repository.save_owner) as policy_save,
+                  patch.object(server.shared.draft.repository, "save_owner", wraps=server.shared.draft.repository.save_owner) as draft_save):
+                status, missing = submit({"institution_name": "Fictional University"})
+                self.assertEqual(status, 400)
+                self.assertEqual(missing["code"], "missing_required_fields")
+                self.assertEqual(missing["missing_required_fields"], ["end_date"])
+                status, too_long = submit({"title": "Professional summary", "wording": " ".join(["original"] * 71),
+                    "classification": "work"}, "knowledge", "impact_statement")
+                self.assertEqual(status, 400)
+                self.assertEqual((too_long["code"], too_long["actual_count"], too_long["limit"]), ("impact_statement_too_long", 71, 70))
+                policy_save.assert_not_called(); draft_save.assert_not_called()
+            status, valid = submit({"institution_name": "Fictional University", "end_date": "2024"})
+            self.assertEqual(status, 200)
+            self.assertTrue(valid["success"])
+            self.assertFalse(valid["publishes"])
+            self.assertIsNone(valid["item"]["values"]["title"])
+            self.assertEqual(valid["item"]["values"]["end_date"], "2024-01-01")
+
+
 class ResumeDraftRouteTests(unittest.TestCase):
     def setUp(self):
         self.catalog = InMemoryCanonicalCatalog()

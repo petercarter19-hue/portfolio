@@ -12,10 +12,11 @@ import hashlib
 import json
 import threading
 from dataclasses import replace
-from contextlib import nullcontext
+from contextlib import ExitStack, contextmanager, nullcontext
 from uuid import uuid4
 
 from services.mvp1_profile_binding import identity_reference
+from services.resume_intake_repository import owner_composed, resume_owner_guard
 
 from services.resume_media_catalog_repository import (
     CatalogFenceDenied,
@@ -33,13 +34,15 @@ from services.resume_publication_adapters import (
 from services.resume_publication_contracts import (
     CandidateInput,
     ContractError,
+    PublicationEvidenceVersion,
+    ValidationResult,
     ReadState,
     TrustedUseContext,
     UseAudience,
     UsePurpose,
     _context_from_authorized_server,
 )
-from services.resume_publication_projection import publication_evidence_version, ordered_resume_display
+from services.resume_publication_projection import publication_evidence_version, ordered_resume_display, resume_section_for
 from services.resume_publication_repository import (
     InMemoryResumePublicationRepository,
     PublicationConflictError,
@@ -91,6 +94,31 @@ def memory_resume_publication_service(**kwargs):
     kwargs.setdefault("catalog", InMemoryResumeCatalogRepository())
     kwargs.setdefault("sql_repository", None)
     return ResumePublicationService(**kwargs)
+
+
+class _ReadOnlyPolicyReview:
+    """Keep every validation reread on the same explicit read-only authority."""
+
+    def __init__(self, policy_service):
+        self.policy_service = policy_service
+
+    def _read(self, owner, method):
+        reader = getattr(self.policy_service, method, None)
+        if not callable(reader):
+            raise PublicationUnavailableError("Read-only publication review authority is unavailable.")
+        try:
+            listed = reader(owner)
+            if type(listed) is not dict or type(listed.get("entries")) is not list:
+                raise PublicationUnavailableError("Publication review authority is unavailable.")
+            return listed
+        except Exception as error:
+            raise PublicationUnavailableError("Publication review authority is unavailable.") from error
+
+    def list_entries(self, owner):
+        return self._read(owner, "read_entries")
+
+    def list_publication_entries(self, owner):
+        return self._read(owner, "read_publication_entries")
 
 
 class ResumePublicationService:
@@ -148,6 +176,23 @@ class ResumePublicationService:
         except PublicationStoreUnavailable as error:
             raise PublicationUnavailableError("Publication is unavailable.") from error
 
+    def read_display_selection_provenance(self, owner, entry_keys):
+        """Qualified memory-only choice history; permission flags remain authority.
+
+        Missing historical metadata is unknown. Reading never initializes it.
+        SQL has no provenance contract and must not be probed or guessed.
+        """
+        from services.entry_policy_repository import InMemoryEntryPolicyRepository
+        if (type(self.repository) is not InMemoryResumePublicationRepository or
+                type(getattr(self.policy_service, "repository", None)) is not InMemoryEntryPolicyRepository):
+            return None
+        with resume_owner_guard(owner):
+            choices = self._load(owner).get("guide_display_choices")
+            return {key: choices.get(key, "unknown") if type(choices) is dict and
+                type(choices.get(key)) is str and choices.get(key) in {"never_selected", "explicitly_chosen"}
+                else "unknown" for key in entry_keys}
+
+    @owner_composed
     def has_current(self, owner: str) -> bool:
         snapshot = self._load(owner)
         return snapshot.get("current_revision") is not None
@@ -243,6 +288,7 @@ class ResumePublicationService:
                             for delta in choice.deltas]})
         return rows
 
+    @owner_composed
     def draft_preview(self, owner, payload=None):
         if payload is not None:
             if type(payload) is not dict or type(payload.get("candidate")) is not dict:
@@ -319,8 +365,9 @@ class ResumePublicationService:
             raise
         return opened
 
-    def review_for_owner(self, owner: str, payload: dict | None = None, *, candidate=None):
-        """Review current durable policy/draft/media. Does not write."""
+    @owner_composed
+    def read_review_for_owner(self, owner: str, payload: dict | None = None, *, candidate=None):
+        """Read/validate the shared candidate without creating a pending review."""
 
         if getattr(self, "require_media_application", False) and self.media_application is None:
             raise PublicationUnavailableError("Resume media is unavailable. Your saved draft is unchanged.")
@@ -345,10 +392,8 @@ class ResumePublicationService:
         if candidate is None:
             if self.policy_service is None:
                 raise PublicationUnavailableError("Publication review authority is unavailable.")
-            list_for_review = getattr(
-                self.policy_service, "list_publication_entries", self.policy_service.list_entries
-            )
-            listed = list_for_review(owner)
+            read_policy = _ReadOnlyPolicyReview(self.policy_service)
+            listed = read_policy.list_publication_entries(owner)
             entries = [
                 item
                 for item in listed.get("entries") or []
@@ -387,6 +432,10 @@ class ResumePublicationService:
                     placements, media_states = durable_media_port.read_draft(owner, workspace["draft_version"])
                 except Exception as error:
                     raise PublicationUnavailableError("Resume media is unavailable.") from error
+            codec_blockers = self._publication_format_blockers(entries, workspace, payload)
+            if codec_blockers:
+                return ValidationResult(ReadState.UNAVAILABLE, "publication_codec_unavailable",
+                    blocked_items=tuple((item["item_ref"], item["reason"]) for item in codec_blockers))
             candidate, policy, media = build_owner_review_candidate(
                 owner=owner,
                 resume_key=str(payload.get("resume_key") or f"resume:{owner}"),
@@ -404,7 +453,7 @@ class ResumePublicationService:
                 media_states=media_states,
             )
             policy_port = OwnerPolicyPort(
-                self.policy_service,
+                read_policy,
                 resume_key=candidate.prior.resume_key,
                 draft_revision=candidate.prior.draft_revision,
                 publication_revision=candidate.prior.publication_revision,
@@ -430,7 +479,13 @@ class ResumePublicationService:
             media_port = self.media_port
             if policy_port is None or media_port is None:
                 raise PublicationUnavailableError("Publication review authority is unavailable.")
-        result = validate_candidate(candidate, policy_port, media_port)
+        return validate_candidate(candidate, policy_port, media_port)
+
+    @owner_composed
+    def review_for_owner(self, owner: str, payload: dict | None = None, *, candidate=None):
+        """Explicit review keeps its pending-review behavior; content stays private."""
+        payload = payload if isinstance(payload, dict) else {}
+        result = self.read_review_for_owner(owner, payload, candidate=candidate)
         if result.reviewed is not None:
             self._pending_reviews[owner] = {
                 "digest": result.reviewed.digest,
@@ -445,6 +500,260 @@ class ResumePublicationService:
                 self._pending_reviews[owner]["payload"]["profile_identity"] = ref.to_payload() if ref else None
         return result
 
+    @staticmethod
+    def _unavailable_basis(*, blocked=(), ineligible=()):
+        return {"read_state": "blocked" if blocked else "unavailable", "publication_state": "unknown",
+            "basis_revision": None, "publication_revision": None, "sharing_enabled": None,
+            "change_count": None, "membership": None, "items": None, "proposed": None,
+            "story": None, "contact": None, "profile": None, "candidate": None, "reviewed_digest": None,
+            "blocked_items": list(blocked), "ineligible_items": list(ineligible)}
+
+    def _basis_authorities(self, owner):
+        if self.policy_service is None or self.draft_service is None:
+            raise PublicationUnavailableError("Complete publication review authority is unavailable.")
+        rows = _ReadOnlyPolicyReview(self.policy_service).list_publication_entries(owner)["entries"]
+        keys = set()
+        for row in rows:
+            if (type(row) is not dict or type(row.get("entry_key")) is not str or not row["entry_key"]
+                    or row["entry_key"] in keys or row.get("lifecycle") not in {"active", "deleted"}
+                    or type(row.get("canonical_type")) is not str
+                    or type(row.get("content_version")) is not int or row["content_version"] < 1
+                    or type(row.get("access_revision")) is not int or row["access_revision"] < 1):
+                raise PublicationUnavailableError("Publication review authority is unavailable.")
+            keys.add(row["entry_key"])
+        workspace = self.draft_service.get_workspace(owner)
+        if (type(workspace) is not dict or workspace.get("capabilities", {}).get("canonical_read") != "ok"
+                or type(workspace.get("items")) is not list or type(workspace.get("draft_version")) is not int):
+            raise PublicationUnavailableError("Resume draft is unavailable.")
+        snapshot = self._load(owner)
+        if (type(snapshot.get("sharing_enabled")) is not bool
+                or any(type(snapshot.get(name)) is not int or snapshot[name] < 0
+                       for name in ("publication_revision", "sharing_epoch"))):
+            raise PublicationUnavailableError("Publication is unavailable.")
+        current = self._current(snapshot)
+        if snapshot.get("current_revision") is not None and current is None:
+            raise PublicationUnavailableError("Publication is unavailable.")
+        if snapshot["sharing_enabled"] and current is None:
+            raise PublicationUnavailableError("Publication is unavailable.")
+        if current is not None and (type(current) is not dict
+                or any(type(current.get(name)) is not dict for name in ("display", "visitor_ai", "evidence", "media"))):
+            raise PublicationUnavailableError("Publication is unavailable.")
+        return rows, workspace, snapshot, current
+
+    @staticmethod
+    def _publication_format_blockers(rows, workspace, payload=None, *, selected_only=True):
+        """Fail closed for ruled local fields that codec v1 cannot preserve.
+
+        List-valued project data also exceeds v1's complete-candidate scalar
+        contract, so it blocks that complete review even while unselected.
+        Nothing is removed or coerced into a different qualification type.
+        """
+        payload = payload or {}
+        choices = payload.get("entries") or payload.get("selections") or []
+        if type(choices) is not list or any(type(item) is not dict for item in choices):
+            raise PublicationValidationError("Invalid entry selections.")
+        selected = {item.get("entry_key"): item for item in choices}
+        items = {item["record_key"]: item for item in (workspace or {}).get("items", [])}
+        blocked = []
+        if "highlight_refs" in (workspace or {}):
+            blocked.append({"item_ref":"resume","reason":"publication_codec_highlight_references"})
+        blocked.extend({"item_ref":item["record_key"],"reason":"publication_codec_skill_references"}
+            for item in (workspace or {}).get("items",[]) if "evidence_refs" in item)
+        for row in rows:
+            if row.get("lifecycle") != "active":
+                continue
+            key = row["entry_key"]
+            item = items.get(key) or {}
+            values = {**(row.get("values") or {}), **(item.get("values") or {}), **(item.get("proposed_values") or {})}
+            choice = selected.get(key) or {}
+            publishing = bool(choice.get("resume_display", choice.get("display", row.get("resume_display")))
+                              or choice.get("visitor_ai", row.get("visitor_ai")))
+            reasons = []
+            if row["canonical_type"] == "knowledge":
+                from services.living_resume_editor_service import validate_guide_text_limits, GuideTextLimitError
+                try:
+                    validate_guide_text_limits(values)
+                except GuideTextLimitError as error:
+                    reasons.append(error.code)
+            if row["canonical_type"] == "credential":
+                if values.get("qualification_kind") in {"publication", "membership"}:
+                    reasons.append("publication_codec_qualification_kind")
+                if values.get("verification_url"):
+                    reasons.append("publication_codec_verification_url")
+            elif row["canonical_type"] == "project":
+                structured_links = isinstance(values.get("additional_project_urls"), list)
+                if values.get("project_url") or structured_links:
+                    reasons.append("publication_codec_project_links")
+                for field, reason in (("project_category", "category"), ("organization_name", "organization"),
+                                      ("project_role", "role"), ("project_status", "status"), ("location_text", "location")):
+                    if values.get(field):
+                        reasons.append("publication_codec_project_" + reason)
+                if (values.get("start_date") or values.get("end_date")) and values.get("date_precision") not in {None, "day"}:
+                    reasons.append("publication_codec_project_date_precision")
+                if structured_links:
+                    publishing = True  # v1 cannot construct a scalar Wording from this field.
+            if publishing or not selected_only:
+                blocked.extend({"item_ref": key, "reason": reason} for reason in reasons)
+        return blocked
+
+    @staticmethod
+    def _basis_diagnostics(rows, workspace, payload=None):
+        blocked, ineligible = [], []
+        for item in workspace["items"]:
+            if item.get("orphaned") is True:
+                blocked.append({"item_ref": item["record_key"], "reason": "orphaned"})
+            elif item.get("draft_is_stale") is True:
+                blocked.append({"item_ref": item["record_key"], "reason": "stale_draft"})
+            if item.get("publication_eligible") is False:
+                ineligible.append({"item_ref": item["record_key"], "reason": "publication_ineligible"})
+        ineligible.extend({"item_ref": row["entry_key"], "reason": "deleted"}
+                          for row in rows if row["lifecycle"] != "active")
+        blocked.extend(ResumePublicationService._publication_format_blockers(rows, workspace, payload))
+        ineligible.extend(ResumePublicationService._publication_format_blockers(rows, workspace, payload, selected_only=False))
+        return blocked, ineligible
+
+    @owner_composed
+    def read_publication_basis_for_owner(self, owner, payload=None):
+        """Describe the existing validated publish candidate; never review-cache or save.
+
+        Extra authority reads recheck the same candidate's versions. They do not
+        build another candidate, predict opaque tokens or create committed evidence.
+        """
+        try:
+            result = self.read_review_for_owner(owner, payload)
+        except Exception:
+            try:
+                rows, workspace, _, _ = self._basis_authorities(owner)
+                blocked, ineligible = self._basis_diagnostics(rows, workspace, payload)
+                return self._unavailable_basis(blocked=blocked, ineligible=ineligible)
+            except Exception:
+                return self._unavailable_basis()
+        try:
+            rows, workspace, snapshot, current = self._basis_authorities(owner)
+            blocked, ineligible = self._basis_diagnostics(rows, workspace, payload)
+            if result.state is not ReadState.CURRENT or result.reviewed is None or blocked:
+                return self._unavailable_basis(blocked=blocked, ineligible=ineligible)
+            reviewed = result.reviewed
+            versions = reviewed.versions
+            if (versions.subject_key != owner or versions.draft_revision != workspace["draft_version"]
+                    or versions.publication_revision != snapshot["publication_revision"]
+                    or versions.sharing_epoch != snapshot["sharing_epoch"]):
+                return self._unavailable_basis()
+            active = {row["entry_key"]: row for row in rows if row["lifecycle"] == "active"}
+            choices = {choice.entry.entry_key: choice for choice in reviewed.candidate.selections}
+            if set(active) != set(choices) or any(
+                    choice.entry.subject_key != owner or choice.entry.content_revision != str(active[key]["content_version"])
+                    or choice.entry.access_revision != active[key]["access_revision"]
+                    for key, choice in choices.items()):
+                return self._unavailable_basis()
+            from services.resume_publication_projection import TYPE_FIELD_MAP
+            unsupported = [{"item_ref": key, "reason": "unsupported_canonical_type"} for key, row in active.items()
+                           if row["canonical_type"] not in TYPE_FIELD_MAP]
+            if any(choices[item["item_ref"]].display or choices[item["item_ref"]].visitor_ai for item in unsupported):
+                return self._unavailable_basis(blocked=unsupported, ineligible=[*ineligible, *unsupported])
+            ineligible.extend(unsupported)
+            display = {item.ref.entry_key: {"canonical_type": active[item.ref.entry_key]["canonical_type"],
+                "presentation_section": "story" if item.ref.entry_key == reviewed.candidate.story_entry_key else "entry",
+                "wording": _wording_map(item.wording)} for item in reviewed.display.entries}
+            visitor_ai = {item.ref.entry_key: {"canonical_type": active[item.ref.entry_key]["canonical_type"],
+                "wording": _wording_map(item.wording)} for item in reviewed.visitor_ai.entries}
+            media = self._basis_media(self._visible_media(display, self._reviewed_media(reviewed)))
+            visible = bool(snapshot["sharing_enabled"] and current is not None)
+            before_display = current["display"] if visible else {}
+            before_ai = current["visitor_ai"] if visible else {}
+            before_media = self._basis_media(self._visible_media(before_display, current["media"])) if visible else {}
+            items = []
+            for key in sorted(set(active) | set(before_display) | set(before_ai)):
+                published_display, published_ai = key in before_display, key in before_ai
+                selected_display, selected_ai = key in display, key in visitor_ai
+                changed = (published_display, published_ai) != (selected_display, selected_ai)
+                for before, after, fields in ((before_display, display, ("canonical_type", "presentation_section", "wording")),
+                                               (before_ai, visitor_ai, ("canonical_type", "wording"))):
+                    if key in before and key in after:
+                        for field in fields:
+                            left, right = before[key].get(field), after[key].get(field)
+                            if field == "wording":
+                                if type(left) is not dict or type(right) is not dict:
+                                    return self._unavailable_basis()
+                                # Old published snapshots can retain explicit optional
+                                # nulls after the consumed draft's field list disappears.
+                                # Missing/null has the same visible value, not a new edit.
+                                changed = changed or any(left.get(name) != right.get(name) for name in set(left) | set(right))
+                            else:
+                                changed = changed or left != right
+                if published_display or published_ai:
+                    evidence = current["evidence"].get(key)
+                    if (not isinstance(evidence, PublicationEvidenceVersion)
+                            or evidence.owner_key != owner or evidence.entry_key != key):
+                        return self._unavailable_basis()
+                    if (selected_display or selected_ai) and key in choices:
+                        ref = choices[key].entry
+                        changed = changed or str(evidence.policy_content_version) != ref.content_revision or evidence.access_revision != ref.access_revision
+                items.append({"item_ref": key, "canonical_type": (active.get(key) or before_display.get(key) or before_ai.get(key))["canonical_type"],
+                    "published_display": published_display, "published_visitor_ai": published_ai,
+                    "proposed_display": selected_display, "proposed_visitor_ai": selected_ai, "changed": bool(changed)})
+            before_story = [key for key, row in before_display.items() if row.get("presentation_section") == "story"]
+            after_story = [key for key, row in display.items() if row.get("presentation_section") == "story"]
+            if len(before_story) > 1 or len(after_story) > 1:
+                return self._unavailable_basis()
+            def contact_keys(entries):
+                return sorted(key for key, row in entries.items() if resume_section_for(row.get("canonical_type"),
+                    row.get("wording") or {}, presentation_section=row.get("presentation_section"),
+                    story_bound=row.get("presentation_section") == "story") == "contact")
+            before_contact, after_contact = contact_keys(before_display), contact_keys(display)
+            contact_changed = before_contact != after_contact or any(row["changed"] and
+                row["item_ref"] in set(before_contact) | set(after_contact) for row in items)
+            profile = reviewed.candidate.profile_identity.to_payload() if reviewed.candidate.profile_identity else None
+            before_profile = current.get("profile_identity") if visible else None
+            profile_changed = before_profile != profile
+            media_changes = sorted(slot for slot in set(before_media) | set(media) if before_media.get(slot) != media.get(slot))
+            count = sum(row["changed"] for row in items) + int(profile_changed) + len(media_changes)
+            return {"read_state": "current", "publication_state": "unpublished" if not visible else "changes_waiting" if count else "published",
+                "basis_revision": _digest({"reviewed_digest": reviewed.digest, "publication_revision": snapshot["publication_revision"],
+                                           "sharing_epoch": snapshot["sharing_epoch"]}),
+                "publication_revision": snapshot["publication_revision"], "sharing_enabled": snapshot["sharing_enabled"],
+                "change_count": count, "membership": {"display": sorted(display), "visitor_ai": sorted(visitor_ai)}, "items": items,
+                "proposed": {"display": ordered_resume_display(display), "visitor_ai": visitor_ai, "media": media},
+                "story": {"private_entry_key": reviewed.candidate.story_entry_key,
+                          "published_entry_key": before_story[0] if before_story else None,
+                          "proposed_published_entry_key": after_story[0] if after_story else None,
+                          "changed": before_story != after_story},
+                "contact": {"published_entry_keys": before_contact, "proposed_entry_keys": after_contact,
+                            "changed": contact_changed},
+                "profile": {"published_reference": before_profile, "proposed_reference": profile, "changed": profile_changed},
+                "media_changed_slots": media_changes, "candidate": self.publish_candidate(reviewed),
+                "reviewed_digest": reviewed.digest, "blocked_items": [], "ineligible_items": ineligible}
+        except Exception:
+            return self._unavailable_basis()
+
+    @staticmethod
+    def _basis_media(media):
+        result = copy.deepcopy(media)
+        for item in result.values():
+            version = item.get("asset_version")
+            if (type(version) not in {int, str} or not str(version).isascii()
+                    or not str(version).isdigit() or int(version) < 1):
+                raise PublicationUnavailableError("Publication media version is unavailable.")
+            # Preserve exact rowversions across JSON and JavaScript; SQL-shaped
+            # decimal strings and snapshot integers mean the same version.
+            item["asset_version"] = str(int(version))
+            if item.get("catalog_revision") is not None:
+                item["catalog_revision"] = str(item["catalog_revision"])
+        return result
+
+    @staticmethod
+    def _reviewed_media(reviewed):
+        versions = {item.slot: item for item in reviewed.versions.media}
+        return {placement.slot: {"slot": placement.slot, "source_kind": placement.source_kind,
+            "source_key": placement.asset_id, "asset_version": placement.asset_version,
+            "content_sha256": placement.asset_digest,
+            "catalog_revision": None if placement.source_kind != "generated_illustration" else str(placement.asset_version),
+            "source_revision": versions[placement.slot].source_revision,
+            "presentation_version": placement.presentation_version, "crop": placement.crop.as_dict(),
+            "alt_text": placement.alt_text, "decorative": placement.decorative, "caption": placement.caption,
+            "provenance_label": placement.provenance_label, "active": True} for placement in reviewed.display.placements}
+
+    @owner_composed
     def owner_preview(self, owner: str) -> dict:
         snapshot = self._load(owner)
         current = self._current(snapshot)
@@ -453,7 +762,7 @@ class ResumePublicationService:
             presented = {
                 "revision": current["revision"],
                 "digest": current["digest"],
-                "display": ordered_resume_display(copy.deepcopy(current["display"])),
+                "display": copy.deepcopy(current["display"]),
                 "visitor_ai": copy.deepcopy(current["visitor_ai"]),
                 "media": copy.deepcopy(current["media"]),
                 "profile_identity": copy.deepcopy(current.get("profile_identity")),
@@ -503,7 +812,7 @@ class ResumePublicationService:
             "cache_control": "private,no-store",
             "sharing_enabled": True,
             "publication_revision": current["revision"],
-            "display": ordered_resume_display(copy.deepcopy(current["display"])),
+            "display": copy.deepcopy(current["display"]),
             "media": media,
             "public_identity": self._public_identity(owner, current.get("profile_identity")),
         }
@@ -554,7 +863,7 @@ class ResumePublicationService:
             "cache_control": "private,no-store",
             "sharing_enabled": True,
             "publication_revision": row.get("publication_revision"),
-            "display": ordered_resume_display(display or {}),
+            "display": copy.deepcopy(display or {}),
             "media": media,
             "public_identity": self._public_identity(
                 row.get("owner_user_key"),
@@ -686,7 +995,7 @@ class ResumePublicationService:
         body = {key: value for key, value in command.items() if key != "request_id"}
         digest = _digest(body)
         if self.sql_repository is None:
-            with self._lock, self._memory_media_lock(), self._memory_draft_lock():
+            with resume_owner_guard(owner), self._memory_media_locks(), self._memory_draft_lock():
                 before = self._load(owner)
                 existing = before["receipts"].get(request_id)
                 if existing is not None:
@@ -751,6 +1060,25 @@ class ResumePublicationService:
             raise PublicationUnavailableError("Atomic media storage is unavailable.")
         return guard
 
+    @contextmanager
+    def _memory_media_locks(self):
+        """The in-memory store order: media lifecycle, then bound media, then draft.
+
+        Publish and the Guide unit of work both read draft media while holding
+        the draft store lock, and media reads/commands take the bound-media and
+        lifecycle locks before the draft store. Taking both media locks first
+        keeps one global order, so two owners can never wait on each other.
+        """
+        with ExitStack() as stack:
+            stack.enter_context(self._memory_media_lock())
+            if self.media_application is not None:
+                bound = getattr(self.media_application.media_repository, "_lock", None)
+                if bound is not None:
+                    if not callable(getattr(bound, "__enter__", None)):
+                        raise PublicationUnavailableError("Atomic media storage is unavailable.")
+                    stack.enter_context(bound)
+            yield
+
     def _save_integrated_memory(self, owner, snapshot, reviewed, before):
         """Process-local fixture transaction; SQL uses the single command proc."""
         from services.entry_policy_repository import InMemoryEntryPolicyRepository
@@ -763,6 +1091,9 @@ class ResumePublicationService:
         draft_after = copy.deepcopy(draft_before)
         if draft_before["draft_version"] != reviewed.versions.draft_revision:
             raise PublicationConflictError("stale_draft", "The draft changed.")
+        display_choices = snapshot.setdefault("guide_display_choices", {})
+        if type(display_choices) is not dict:
+            raise PublicationUnavailableError("Display choice history is unavailable. Your input is kept.")
         for choice in reviewed.candidate.selections:
             entry = policy_after["entries"].get(choice.entry.entry_key)
             if (entry is None or entry["lifecycle"] != "active"
@@ -779,6 +1110,9 @@ class ResumePublicationService:
             if (entry["resume_display"], entry["visitor_ai"]) != (choice.display, choice.visitor_ai):
                 entry["resume_display"], entry["visitor_ai"] = choice.display, choice.visitor_ai
                 entry["access_revision"] += 1
+            # Publish explicitly confirms the complete reviewed list, including
+            # false/false choices whose canonical flags need no revision bump.
+            display_choices[choice.entry.entry_key] = "explicitly_chosen"
             draft_after["items"].pop(choice.entry.entry_key, None)
         draft_after["draft_version"] += 1
         draft_after["base_publication_version"] = snapshot["publication_revision"]
@@ -809,16 +1143,28 @@ class ResumePublicationService:
         return {"outcome": "applied", "publication_revision": snapshot["publication_revision"]}
 
     def commit_linked_write(self, owner: str, policy_repository, policy_before: dict, policy_after: dict, command: dict) -> None:
-        """Save policy and publication together, restoring both on failure."""
+        """Save linked policy/publication and any private-link deletion atomically."""
 
-        with self._lock:
+        from services.resume_draft_repository import InMemoryResumeDraftRepository
+        draft_repository = getattr(self.draft_service,"repository",None)
+        qualified_draft = type(draft_repository) is InMemoryResumeDraftRepository
+        deleting_links = qualified_draft and command.get("type") in {"delete","permanently_delete"}
+        with resume_owner_guard(owner), draft_repository._lock if deleting_links else nullcontext():
             if policy_repository.load_owner(owner) != policy_before:
                 raise PublicationConflictError("stale_publish", "Saved information changed.")
             pub_before = self._load(owner)
             pub_after = copy.deepcopy(pub_before)
             self._apply_policy_effects(pub_after, owner, command, policy_after.get("entries") or {})
+            draft_before = draft_after = None
+            if deleting_links:
+                removed = {key for key, row in policy_after.get("entries",{}).items() if row.get("lifecycle") != "active"}
+                removed.update(set(policy_before.get("entries",{})) - set(policy_after.get("entries",{})))
+                draft_before = draft_repository.load_owner(owner)
+                draft_after = self.draft_service.prune_deleted_private_references(draft_before,removed)
             try:
                 policy_repository.save_owner(owner, policy_after)
+                if draft_after is not None:
+                    draft_repository.save_owner(owner,draft_after)
                 self._save(owner, pub_after)
             except Exception:
                 try:
@@ -829,9 +1175,23 @@ class ResumePublicationService:
                     self._save(owner, pub_before)
                 except Exception:
                     pass
+                if draft_after is not None:
+                    draft_repository.save_owner(owner,draft_before)
                 raise
 
     def _apply_policy_effects(self, snapshot: dict, owner: str, command: dict, entries: dict) -> None:
+        # This snapshot is saved with the canonical mutation by the existing
+        # linked transaction, even before the first public copy exists.
+        if type(self.repository) is InMemoryResumePublicationRepository:
+            choices = snapshot.setdefault("guide_display_choices", {})
+            if type(choices) is not dict:
+                raise PublicationUnavailableError("Display choice history is unavailable. Your input is kept.")
+            if command.get("type") == "create":
+                choices.setdefault(command["entry_key"], "never_selected")
+            elif command.get("type") == "change_permissions":
+                for target in command.get("targets") or []:
+                    if "resume_display" in (target.get("permissions") or {}):
+                        choices[target["entry_key"]] = "explicitly_chosen"
         current = self._current(snapshot)
         if current is None:
             return
@@ -915,6 +1275,7 @@ class ResumePublicationService:
                     )
         return
 
+    @owner_composed
     def bind_slug(self, owner: str, slug: str) -> None:
         if slug in self.reserved_public_slugs:
             raise PublicationValidationError("Example profile stays separately classified.")
@@ -1054,34 +1415,18 @@ class ResumePublicationService:
             }
             if item.ref.entry_key in display:
                 display[item.ref.entry_key]["evidence_sha256"] = versioned.content_sha256
-        media = {}
         for placement in reviewed.display.placements:
             if placement.source_kind == "generated_illustration":
                 record = self.catalog.get_active(placement.asset_id, placement.asset_version)
                 if record.digest != placement.asset_digest:
                     raise PublicationDenied("denied", "Media is unavailable.")
-            media[placement.slot] = {
-                "slot": placement.slot,
-                "source_kind": placement.source_kind,
-                "source_key": placement.asset_id,
-                "asset_version": placement.asset_version,
-                "content_sha256": placement.asset_digest,
-                "catalog_revision": None if placement.source_kind != "generated_illustration" else str(placement.asset_version),
-                "source_revision": next(item.source_revision for item in reviewed.versions.media if item.slot == placement.slot),
-                "presentation_version": placement.presentation_version,
-                "crop": placement.crop.as_dict(),
-                "alt_text": placement.alt_text,
-                "decorative": placement.decorative,
-                "caption": placement.caption,
-                "provenance_label": placement.provenance_label,
-                "active": True,
-            }
+        media = self._reviewed_media(reviewed)
         publication = {
             "revision": new_revision,
             "digest": reviewed.digest,
             "profile_identity": (reviewed.candidate.profile_identity.to_payload()
                                  if reviewed.candidate.profile_identity is not None else None),
-            "display": display,
+            "display": ordered_resume_display(display),
             "visitor_ai": visitor_ai,
             "evidence": evidence,
             "media": media,

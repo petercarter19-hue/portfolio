@@ -1452,21 +1452,28 @@ class ResumeIntakeSqlTests(unittest.TestCase):
         winner_submission = winner["submission"]["submission_key"]
 
         # Reproduce a caller that loaded just before another connection won.
-        # Its local plan creates fresh IDs, but the procedure reports replay
-        # and returns the already persisted owner-qualified receipt.
+        # Every read it makes before its own write (the submit re-reads under
+        # its processing fence) predates the winner, so its local plan creates
+        # fresh IDs; the procedure reports replay and returns the already
+        # persisted owner-qualified receipt.
         original_read = simulator.first_result
-        stale_once = {"remaining": 1}
+        original_write = simulator.execute_procedure
+        stale = {"active": True}
 
         def stale_read(procedure_name, parameters=None):
-            if stale_once["remaining"]:
-                stale_once["remaining"] -= 1
+            if stale["active"]:
                 owner = dict(parameters)["@UserKey"]
                 state = copy.deepcopy(simulator.state(owner))
                 state["receipts"] = []
                 return [{"workspace_json": json.dumps(state)}]
             return original_read(procedure_name, parameters)
 
+        def first_write_ends_staleness(procedure_name, parameters=None):
+            stale["active"] = False
+            return original_write(procedure_name, parameters)
+
         simulator.first_result = stale_read
+        simulator.execute_procedure = first_write_ends_staleness
         replay = service.submit("owner-a", body)
         second_command = json.loads(simulator.calls[-2][1]["@CommandJson"])
 

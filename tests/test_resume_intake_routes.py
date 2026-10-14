@@ -42,6 +42,168 @@ CONFIG_KEYS = (
 )
 
 
+class GuideProposalHttpTests(unittest.TestCase):
+    def test_actual_reference_route_uses_owner_http_token_and_keeps_public_copy_unchanged(self):
+        from urllib.request import Request,urlopen
+        from urllib.error import HTTPError
+        from tests.mvp1_acceptance_support import Mvp1AcceptanceServer
+        with Mvp1AcceptanceServer() as server:
+            owner = 'g-member-a'
+            def create(kind, values, parent=None):
+                return server.shared.canonical.create_private(owner,{'command_id':str(uuid4()),'record_type':kind,
+                    'parent_key':parent,'values':values})['record_key']
+            role = create('role',{'role_title':'Fictional Engineer','employer_name':'Fictional Orchard'})
+            bullet = create('accomplishment',{'wording':'Reviewed 12 fictional records.','metric_value':'12'},role)
+            skill = create('skill',{'name':'Fictional skill'})
+            def read():
+                with urlopen(Request(server.url+'/api/resume-intake/me/guide/working-set',
+                        headers={'Cookie':'mvp1-synthetic-owner='+owner}),timeout=10) as response:
+                    return json.load(response)
+            initial = read()
+            payload = {'request_id':str(uuid4()),'kind':'skill','item_ref':skill,'references':[bullet],
+                'expected_working_set_token':initial['working_set_token']}
+            def post(payload, member=owner):
+                return urlopen(Request(server.url+'/api/resume-intake/me/guide/references',method='POST',
+                    data=json.dumps(payload).encode(),headers={'Content-Type':'application/json','X-PeerSlate-Request':'same-origin',
+                        'Cookie':'mvp1-synthetic-owner='+member}),timeout=10)
+            with self.assertRaises(HTTPError) as foreign:
+                post(payload,'g-member-b')
+            self.assertEqual(foreign.exception.code,404)
+            foreign.exception.close()
+            with post(payload) as response:
+                self.assertEqual(response.headers['Cache-Control'],'private, no-store')
+                self.assertEqual(json.load(response)['outcome'],'saved_privately')
+            with post(payload) as response:
+                self.assertTrue(json.load(response)['replayed'])
+            current = read()
+            self.assertEqual(current['references']['skill_evidence'][skill][0]['text'],'Reviewed 12 fictional records.')
+            self.assertEqual(current['publication']['read_state'],'blocked')
+            self.assertIsNone(current['publication']['change_count'])
+            self.assertIsNone(server.shared.publication.owner_preview(owner)['current'])
+            with self.assertRaises(HTTPError) as stale:
+                post({**payload,'request_id':str(uuid4()),'references':[]})
+            self.assertEqual(stale.exception.code,409)
+            stale.exception.close()
+
+    def test_guide_publication_basis_hides_role_and_contact_only_after_explicit_publish(self):
+        from urllib.request import Request, urlopen
+        from unittest.mock import patch
+        from tests.mvp1_acceptance_support import Mvp1AcceptanceServer
+        with Mvp1AcceptanceServer() as server:
+            owner = "g-member-a"
+            keys = []
+            for kind, values in (("role", {"role_title":"Fictional Engineer", "employer_name":"Fictional Orchard"}),
+                    ("knowledge", {"title":"Contact details", "wording":"fictional@example.test", "classification":"work"})):
+                item = server.shared.canonical.create_private(owner, {"command_id":str(uuid4()), "record_type":kind, "values":values})
+                keys.append(item["record_key"])
+            server.shared.seed_publication(owner, [(key, True, True) for key in keys])
+            headers = {"Cookie":"mvp1-synthetic-owner="+owner}
+            def read():
+                with urlopen(Request(server.url+"/api/resume-intake/me/guide/working-set", headers=headers), timeout=10) as response:
+                    return json.load(response)
+            with (patch.object(server.shared.policy.repository,"save_owner",wraps=server.shared.policy.repository.save_owner) as policy_save,
+                    patch.object(server.shared.draft.repository,"save_owner",wraps=server.shared.draft.repository.save_owner) as draft_save,
+                    patch.object(server.shared.publication.repository,"save_owner",wraps=server.shared.publication.repository.save_owner) as publication_save):
+                initial = read()
+                self.assertEqual(initial["publication"]["change_count"],0)
+                self.assertEqual(initial["publication_state"],"published")
+                self.assertEqual(set(initial["publication"]["membership"]["display"]),set(keys))
+                policy_save.assert_not_called(); draft_save.assert_not_called(); publication_save.assert_not_called()
+            for key in keys:
+                item = server.intake.working_item(owner,key)
+                server.intake.set_guide_visibility(owner, {"request_id":str(uuid4()),"item_ref":key,"hidden":True,
+                    "expected_working_set_token":server.intake.working_set(owner)["working_set_token"],
+                    "expected_item_revision":item["saved_revision"]})
+            hidden = read()
+            basis = hidden["publication"]
+            self.assertEqual((hidden["publication_state"],basis["change_count"]),("changes_waiting",2))
+            self.assertEqual(basis["membership"],{"display":[],"visitor_ai":[]})
+            self.assertEqual(set(server.shared.publication.owner_preview(owner)["current"]["display"]),set(keys))
+            self.assertEqual(set(server.shared.publication.owner_preview(owner)["current"]["visitor_ai"]),set(keys))
+            for item in [row for section in hidden["sections"] for row in section["items"]]+hidden["non_tab_items"]:
+                self.assertTrue(item["published_display"])
+                self.assertFalse(item["proposed_display"])
+            server.shared.publication.commit(owner,{"type":"publish","request_id":str(uuid4()),
+                "candidate":basis["candidate"],"reviewed_digest":basis["reviewed_digest"],"profile_identity":None})
+            current = server.shared.publication.owner_preview(owner)["current"]
+            self.assertEqual(current["display"],{})
+            self.assertEqual(current["visitor_ai"],{})
+            self.assertEqual(read()["publication"]["change_count"],0)
+
+    def test_real_visibility_uses_the_http_working_token_and_restores_waiting(self):
+        from urllib.request import Request, urlopen
+        from urllib.error import HTTPError
+        from tests.mvp1_acceptance_support import Mvp1AcceptanceServer
+        with Mvp1AcceptanceServer() as server:
+            owner = "g-member-a"
+            server.intake.submit(owner, {"request_id": str(uuid4()), "text": "Original fictional source."})
+            path = server.url + "/api/resume-intake/me/guide/working-set"
+            headers = {"Cookie": "mvp1-synthetic-owner=" + owner}
+            def working():
+                with urlopen(Request(path, headers=headers), timeout=10) as response:
+                    return json.load(response)
+            first = working()
+            item = first["unplaced"][0]
+            payload = {"request_id": str(uuid4()), "item_ref": item["item_ref"], "hidden": True,
+                "expected_working_set_token": first["working_set_token"], "expected_item_revision": item["revision"]}
+            def post(payload, identity=owner, same_origin=True):
+                post_headers = {"Cookie": "mvp1-synthetic-owner=" + identity, "Content-Type": "application/json"}
+                if same_origin:
+                    post_headers["X-PeerSlate-Request"] = "same-origin"
+                return urlopen(Request(server.url + "/api/resume-intake/me/guide/visibility", method="POST",
+                    data=json.dumps(payload).encode(), headers=post_headers), timeout=10)
+            for identity, origin, status in (("g-member-b", True, 404), (owner, False, 403)):
+                with self.assertRaises(HTTPError) as refused:
+                    post(payload, identity, origin)
+                self.assertEqual(refused.exception.code, status)
+                refused.exception.close()
+            with post(payload) as response:
+                self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+                self.assertEqual(json.load(response)["outcome"], "hidden")
+            with post(payload) as response:
+                self.assertTrue(json.load(response)["replayed"])
+            current = working()
+            self.assertEqual(current["unplaced"][0]["state"], "hidden")
+            with self.assertRaises(HTTPError) as stale:
+                post({**payload, "request_id": str(uuid4()), "hidden": False})
+            self.assertEqual(stale.exception.code, 409)
+            stale.exception.close()
+            with post({**payload, "request_id": str(uuid4()), "hidden": False,
+                    "expected_working_set_token": current["working_set_token"],
+                    "expected_item_revision": current["unplaced"][0]["revision"]}) as response:
+                self.assertEqual(json.load(response)["outcome"], "waiting")
+            self.assertEqual(working()["unplaced"][0]["item_ref"], item["item_ref"])
+            self.assertEqual(server.shared.canonical.list_items(owner), [])
+
+    def test_real_guide_confirmation_keeps_overlength_original_and_returns_actual_count(self):
+        from urllib.request import Request, urlopen
+        from urllib.error import HTTPError
+        from tests.mvp1_acceptance_support import Mvp1AcceptanceServer
+        owner = "g-member-a"
+        with Mvp1AcceptanceServer() as server:
+            original = " ".join(["original"] * 71)
+            submitted = server.intake.submit(owner, {"request_id": str(uuid4()), "text": original})
+            key = submitted["proposals"][0]["proposal_key"]
+            before = server.intake.repository.load_owner(owner)["proposals"][key]["proposed_values"].copy()
+            payload = {"request_id": str(uuid4()), "proposal_key": key, "decision": "accept", "guide_review": True,
+                "guide_section": "impact_statement", "confirmed_values": {"record_type": "knowledge",
+                    "title": "Professional summary", "wording": original, "classification": "work"}}
+            request = Request(server.url + "/api/resume-intake/me/proposals/decision", method="POST",
+                data=json.dumps(payload).encode(), headers={"Content-Type": "application/json",
+                    "X-PeerSlate-Request": "same-origin", "Cookie": "mvp1-synthetic-owner=" + owner})
+            with self.assertRaises(HTTPError) as refused:
+                urlopen(request, timeout=10)
+            with refused.exception as response:
+                self.assertEqual(response.status, 400)
+                self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+                data = json.load(response)
+            self.assertEqual((data["code"], data["actual_count"], data["limit"]), ("impact_statement_too_long", 71, 70))
+            after = server.intake.repository.load_owner(owner)["proposals"][key]
+            self.assertEqual(after["state"], "pending")
+            self.assertEqual(after["proposed_values"], before)
+            self.assertEqual(server.shared.canonical.list_items(owner), [])
+
+
 class RecordingTranscriber:
     def __init__(self, transcript="I led the migration."):
         self.transcript = transcript
@@ -700,6 +862,67 @@ class PolicyGateHttpTests(IntakeRoutesTestCase):
 
 
 class GuideHttpTests(IntakeRoutesTestCase):
+    def test_first_arrival_read_and_once_ack_use_real_owner_routes_without_provider_work(self):
+        from unittest.mock import patch
+        client = self.client()
+        before = self.repository.load_owner("member-a")
+        with (patch.object(self.repository, "save_owner", wraps=self.repository.save_owner) as save,
+              patch.object(self.draft_service.repository, "save_owner", wraps=self.draft_service.repository.save_owner) as draft_save,
+              patch.object(self.catalog, "put_item", wraps=self.catalog.put_item) as canonical_write,
+              patch.object(self.service, "_interpreter", side_effect=AssertionError("No provider work from arrival")) as provider):
+            response = client.get("/api/resume-intake/me/guide")
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(response.get_json()["first_arrival"]["eligible"])
+            self.assertIn("no-store", response.headers["Cache-Control"])
+            self.assertIn("private", response.headers["Cache-Control"])
+            working_before = client.get("/api/resume-intake/me/guide/working-set").get_json()
+            save.assert_not_called()
+            self.assertEqual(before, self.repository.load_owner("member-a"))
+            payload = {"request_id": str(uuid4()), "first_arrival_action": "shown"}
+            first = client.post("/api/resume-intake/me/guide/status",
+                headers={"X-PeerSlate-Request": "same-origin"}, json=payload)
+            self.assertEqual(first.status_code, 200)
+            self.assertTrue(first.get_json()["show_now"])
+            replay = client.post("/api/resume-intake/me/guide/status",
+                headers={"X-PeerSlate-Request": "same-origin"}, json=payload)
+            self.assertEqual(replay.status_code, 200)
+            self.assertTrue(replay.get_json()["replayed"])
+            self.assertFalse(replay.get_json()["show_now"])
+            self.assertEqual(save.call_count, 1)
+            draft_save.assert_not_called()
+            canonical_write.assert_not_called()
+            provider.assert_not_called()
+        after = client.get("/api/resume-intake/me/guide/working-set").get_json()
+        self.assertFalse(after["first_arrival"]["eligible"])
+        self.assertTrue(after["first_arrival"]["shown"])
+        self.assertEqual(after["counts"]["saved"], 0)
+        self.assertEqual(after["working_set_token"], working_before["working_set_token"])
+        self.assertEqual(after["draft_version"], working_before["draft_version"])
+        self.assertEqual(self.received_documents, [])
+        self.assertEqual(self.transcriber.calls, [])
+
+    def test_first_arrival_unreadable_catalog_stays_unknown_and_working_set_unavailable(self):
+        from unittest.mock import patch
+        from services.resume_draft_repository import CanonicalReadUnavailable
+        with patch.object(self.catalog, "list_items", side_effect=CanonicalReadUnavailable()):
+            guide = self.client().get("/api/resume-intake/me/guide")
+            self.assertEqual(guide.status_code, 200)
+            self.assertIsNone(guide.get_json()["first_arrival"]["eligible"])
+            working = self.client().get("/api/resume-intake/me/guide/working-set")
+            self.assertEqual(working.status_code, 503)
+            self.assertEqual(working.get_json()["load_state"], "unavailable")
+
+    def test_first_arrival_rejects_client_owner_and_mixed_status_selectors(self):
+        for extra in ({"owner_user_key": "member-b"}, {"status": "completed"}, {"first_arrival_action": {}}):
+            with self.subTest(extra=extra):
+                response = self.client().post("/api/resume-intake/me/guide/status",
+                    headers={"X-PeerSlate-Request": "same-origin"},
+                    json={"request_id": str(uuid4()), "first_arrival_action": "shown", **extra})
+                self.assertEqual(response.status_code, 400)
+        self.assertEqual(self.client().get("/api/resume-intake/me/guide?owner_user_key=member-b").status_code, 400)
+        self.assertEqual(self.repository.load_owner("member-a")["guide"], {})
+        self.assertEqual(self.repository.load_owner("member-b")["guide"], {})
+
     def test_guide_read_does_not_start_processing_or_invent_a_new_member(self):
         client = self.client()
         response = client.get("/api/resume-intake/me/guide")
@@ -869,20 +1092,21 @@ class GuideWorkingSetHttpTests(IntakeRoutesTestCase):
     def test_privacy_state_reads_the_current_owner_publication_without_publishing(self):
         from unittest.mock import Mock,patch
         publication = Mock()
-        publication.owner_preview.return_value = {"read_state":"current","sharing_enabled":True,
-            "current":{"revision":1,"evidence":{}}}
+        publication.read_display_selection_provenance.return_value = None
+        publication.read_publication_basis_for_owner.return_value = {"read_state":"current", "publication_state":"published",
+            "change_count":0,"membership":{"display":[],"visitor_ai":[]},"items":[],"candidate":{"draft_revision":0}}
         with patch.dict(app.config,{"RESUME_PUBLICATION_SERVICE":publication}):
             initial=self.client().get("/api/resume-intake/me/guide/working-set").get_json()
             self.assertEqual(initial["publication_state"],"published")
             self.seed()
             self.assertEqual(self.client().get("/api/resume-intake/me/guide/working-set").get_json()["publication_state"],"published")
-            publication.owner_preview.side_effect = RuntimeError("fictional publication read outage")
+            publication.read_publication_basis_for_owner.side_effect = RuntimeError("fictional publication read outage")
             before_outage=self.client().get("/api/resume-intake/me/guide/working-set").get_json()
             self.assertEqual(before_outage["publication_state"],"unknown")
-            publication.owner_preview.side_effect = None
+            publication.read_publication_basis_for_owner.side_effect = None
             restored=self.client().get("/api/resume-intake/me/guide/working-set").get_json()
             self.assertNotEqual(restored["working_set_token"],before_outage["working_set_token"])
-        publication.owner_preview.assert_called_with("member-a")
+        publication.read_publication_basis_for_owner.assert_called_with("member-a",{"entries":[]})
         publication.commit.assert_not_called()
 
 

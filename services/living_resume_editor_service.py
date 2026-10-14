@@ -122,8 +122,16 @@ _CREDENTIAL_FIELDS = frozenset(
         "expiration_date_precision",
         "verification_url",
         "completion_status",
+        "qualification_kind",
     }
 )
+
+QUALIFICATION_KINDS = frozenset({"certification", "license", "publication", "membership"})
+PROJECT_CATEGORIES = frozenset({"software", "research", "community_volunteer", "business_product", "creative_design", "other"})
+LOCAL_QUALIFICATION_UNAVAILABLE = "This storage does not support qualification kinds yet. Your input is kept."
+_PROJECT_FIELDS = frozenset({"project_name", "summary", "project_category", "organization_name", "project_role",
+    "project_status", "location_text", "start_date", "end_date", "date_precision", "project_url", "additional_project_urls"})
+PROJECT_EDITOR_FIELDS = _PROJECT_FIELDS
 
 _EDITOR_ROW_FIELDS = {
     "education": _EDUCATION_FIELDS | {"record_key", "row_version", "editable", "blocked_reason"},
@@ -300,7 +308,7 @@ def _validate_exact_fields(values: object, expected: frozenset[str]) -> Mapping[
     return values
 
 
-def _role_values(raw: object) -> dict[str, object]:
+def _role_values(raw: object, *, require_employer: bool = True) -> dict[str, object]:
     values = _validate_exact_fields(raw, _ROLE_FIELDS)
     precision = _choice(values, "date_precision", DATE_PRECISIONS) or "unknown"
     start = _date_value(values, "start_date")
@@ -314,7 +322,7 @@ def _role_values(raw: object) -> dict[str, object]:
         raise LivingResumeEditorValidationError("A current role cannot have an end_date.")
     return {
         "role_title": _text(values, "role_title", 300, required=True),
-        "employer_name": _text(values, "employer_name", 300, required=True),
+        "employer_name": _text(values, "employer_name", 300, required=require_employer),
         "location_text": _text(values, "location_text", 300),
         "summary": _text(values, "summary", 8000),
         "start_date": _normalized_date(start, precision),
@@ -371,6 +379,7 @@ def _credential_upper(value, precision):
 
 def _credential_values(raw: object) -> dict[str, object]:
     values = _validate_exact_fields(raw, _CREDENTIAL_FIELDS)
+    kind = _choice(values, "qualification_kind", QUALIFICATION_KINDS)
     status = _choice(values, "completion_status", CREDENTIAL_STATUSES, required=True)
     issue = _date_value(values, "issue_date")
     expiration = _date_value(values, "expiration_date")
@@ -402,7 +411,7 @@ def _credential_values(raw: object) -> dict[str, object]:
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
             raise LivingResumeEditorValidationError("verification_url must use http or https.")
     return {
-        "name": _text(values, "name", 300, required=True),
+        "name": _text(values, "name", 300, required=kind != "membership"),
         "issuer": _text(values, "issuer", 300, required=True),
         "identifier": _text(values, "identifier", 300),
         "issue_date": issue.isoformat() if issue else None,
@@ -410,10 +419,11 @@ def _credential_values(raw: object) -> dict[str, object]:
         "verification_url": verification_url,
         "completion_status": status,
         **precisions,
+        **({"qualification_kind": kind} if "qualification_kind" in values else {}),
     }
 
 
-def _education_values(raw: object) -> dict[str, object]:
+def _education_values(raw: object, *, require_title: bool = True) -> dict[str, object]:
     values = _validate_exact_fields(raw, _EDUCATION_FIELDS)
     precision = _choice(values, "date_precision", EDUCATION_DATE_PRECISIONS) or "unknown"
     start = _date_value(values, "start_date")
@@ -422,7 +432,7 @@ def _education_values(raw: object) -> dict[str, object]:
     if start is not None and end is not None and start > end:
         raise LivingResumeEditorValidationError("end_date cannot be before start_date.")
     return {
-        "title": _text(values, "title", 300, required=True),
+        "title": _text(values, "title", 300, required=require_title),
         "institution_name": _text(values, "institution_name", 300, required=True),
         "degree_name": _text(values, "degree_name", 300),
         "field_of_study": _text(values, "field_of_study", 300),
@@ -436,22 +446,195 @@ def _education_values(raw: object) -> dict[str, object]:
     }
 
 
+def _project_links(values):
+    first = _text(values, "project_url", 1000)
+    supplied = values.get("additional_project_urls")
+    if supplied is None:
+        supplied = []
+    if type(supplied) is not list:
+        raise LivingResumeEditorValidationError("additional_project_urls must be a list of links.")
+    extra = [_text({"link": value}, "link", 1000) for value in supplied]
+    extra = [value for value in extra if value is not None]
+    if len(extra) > 2:
+        raise LivingResumeEditorValidationError("A project can have at most three links.")
+    seen = set()
+    for value in ([first] if first else []) + extra:
+        try:
+            parsed = urlparse(value)
+            if (parsed.scheme != "https" or not parsed.hostname or parsed.username is not None
+                    or parsed.password is not None or re.search(r"[\s\x00-\x1f\x7f]", value)):
+                raise ValueError("unsafe link")
+            identity = (parsed.hostname.lower(), parsed.port or 443, parsed.path or "/", parsed.query, parsed.fragment)
+        except ValueError as error:
+            raise LivingResumeEditorValidationError("Project links must use HTTPS with a host and no sign-in details.") from error
+        if identity in seen:
+            raise LivingResumeEditorValidationError("Project links must be unique.")
+        seen.add(identity)
+    return first, extra
+
+
+def _project_values(raw: object) -> dict[str, object]:
+    values = _validate_exact_fields(raw, _PROJECT_FIELDS)
+    name = _text(values, "project_name", 300, required=True)
+    summary = _text(values, "summary", 8000, required=True)
+    if len(summary.splitlines()) != 1:
+        raise LivingResumeEditorValidationError("Use a one-line project description. Your wording is kept.")
+    category = _choice(values, "project_category", PROJECT_CATEGORIES)
+    precision = _choice(values, "date_precision", EDUCATION_DATE_PRECISIONS) or "unknown"
+    start, end = _date_value(values, "start_date"), _date_value(values, "end_date")
+    if start is not None and end is not None and start > end:
+        raise LivingResumeEditorValidationError("end_date cannot be before start_date.")
+    first, extra = _project_links(values)
+    result = {"project_name": name, "summary": summary}
+    if "project_category" in values:
+        result["project_category"] = category
+    for field in ("organization_name", "project_role", "project_status", "location_text"):
+        if field in values:
+            result[field] = _text(values, field, 300)
+    for field, parsed in (("start_date", start), ("end_date", end)):
+        if field in values:
+            result[field] = _normalized_date(parsed, precision)
+    if start is not None or end is not None:
+        result["date_precision"] = precision
+    elif "date_precision" in values:
+        result["date_precision"] = "unknown"
+    if "project_url" in values:
+        result["project_url"] = first
+    if "additional_project_urls" in values:
+        result["additional_project_urls"] = extra
+    return result
+
+
 _VALUE_VALIDATORS = {
     "education": _education_values,
     "role": _role_values,
     "accomplishment": _accomplishment_values,
     "skill": _skill_values,
     "credential": _credential_values,
+    "project": _project_values,
 }
 
 
-def normalize_editor_values(record_type: str, values: object) -> dict[str, object]:
+def normalize_editor_values(record_type: str, values: object, *, require_title: bool = True) -> dict[str, object]:
     """Validate closed editor field sets for draft overlay reuse."""
 
     validator = _VALUE_VALIDATORS.get(record_type)
     if validator is None:
         raise LivingResumeEditorValidationError("canonical_type has an unsupported value.")
-    return validator(values)
+    return validator(values, require_title=require_title) if record_type == "education" else validator(values)
+
+
+class GuideRequiredFieldsError(LivingResumeEditorValidationError):
+    code = "missing_required_fields"
+
+    def __init__(self, fields):
+        self.missing_required_fields = list(fields)
+        super().__init__("Add the required details before saving. Your input is kept.")
+        self.code = "missing_required_fields"
+
+
+class GuideTextLimitError(LivingResumeEditorValidationError):
+    def __init__(self, code, actual_count, limit):
+        self.actual_count, self.limit = actual_count, limit
+        super().__init__(f"This text has {actual_count}; the limit is {limit}. Your original words are kept.")
+        self.code = code
+
+
+def guide_required_fields(record_type, values, *, section=None):
+    """One Guide essentials policy; generic private editor behavior stays separate."""
+    if not isinstance(values, Mapping):
+        raise LivingResumeEditorValidationError("values must be an object.")
+    if record_type == "credential":
+        kind = values.get("qualification_kind") or "certification"
+        if kind not in QUALIFICATION_KINDS:
+            raise LivingResumeEditorValidationError("qualification_kind has an unsupported value.")
+        fields = ("issuer",) if kind == "membership" else ("name", "issuer")
+        if values.get("completion_status") not in ("planned", "in_progress"):
+            fields += ("issue_date",)
+    else:
+        fields = {"education": ("institution_name", "end_date"), "project": ("project_name", "summary"),
+            "skill": ("name",), "role": ("role_title",), "accomplishment": ("wording",),
+            "knowledge": ("title",)}.get(record_type)
+        if fields is None:
+            raise LivingResumeEditorValidationError("This entry type is not supported by the Guide.")
+    if record_type == "knowledge":
+        from services.resume_publication_projection import resume_section_for
+        actual = resume_section_for("knowledge", values, presentation_section=section, proposed=True)
+        if actual in {"impact_statement", "story", "looking_ahead", "contact"} or values.get("title") == "My Story":
+            fields = ("title", "wording")
+    return [field for field in fields if not isinstance(values.get(field), str) or not values[field].strip()]
+
+
+def _guide_date_input(values, field, precision_field):
+    raw = values.get(field)
+    if raw is None or raw == "":
+        return
+    if not isinstance(raw, str):
+        raise LivingResumeEditorValidationError(f"{field} must be a date or year.")
+    raw = raw.strip()
+    inferred = "year" if re.fullmatch(r"\d{4}", raw) else "month" if re.fullmatch(r"\d{4}-\d{2}", raw) else None
+    if inferred:
+        supplied = values.get(precision_field)
+        if supplied not in {None, inferred}:
+            raise LivingResumeEditorValidationError("The date and its detail do not agree. Your input is kept.")
+        raw += "-01-01" if inferred == "year" else "-01"
+        values[precision_field] = inferred
+    try:
+        parsed = date.fromisoformat(raw)
+    except ValueError as error:
+        raise LivingResumeEditorValidationError(f"{field} is not a valid date or year.") from error
+    values[field] = _normalized_date(parsed, values.get(precision_field))
+
+
+def validate_guide_text_limits(values, *, section=None):
+    """One non-mutating bound for named Resume text on every saving path."""
+    from services.resume_publication_projection import resume_section_for
+    words = values.get("wording")
+    if not isinstance(words, str):
+        return  # Required-field/type validation remains with its existing validator.
+    actual = resume_section_for("knowledge", values)
+    if (actual == "impact_statement" or section in {"impact_statement", "Professional summary"}) and len(words.split()) > 70:
+        raise GuideTextLimitError("impact_statement_too_long", len(words.split()), 70)
+    if (actual == "looking_ahead" or section in {"looking_ahead", "Looking Ahead"}) and utf16_length(words) > 120:
+        raise GuideTextLimitError("looking_ahead_too_long", utf16_length(words), 120)
+
+
+def normalize_guide_values(record_type, raw, *, section=None):
+    """Validate an explicit Guide save; do not shorten, save or publish anything."""
+    missing = guide_required_fields(record_type, raw, section=section)
+    if missing:
+        raise GuideRequiredFieldsError(missing)
+    values = dict(raw)
+    if record_type == "credential":
+        for field in ("issue_date", "expiration_date"):
+            _guide_date_input(values, field, field + "_precision")
+        if values.get("completion_status") is None:
+            values["completion_status"] = "completed"
+    elif record_type in {"education", "project", "role"}:
+        for field in ("start_date", "end_date"):
+            _guide_date_input(values, field, "date_precision")
+        if record_type == "education" and values.get("education_status") is None:
+            values["education_status"] = "in_progress" if int(values["end_date"][:4]) > date.today().year else "completed"
+    if record_type == "knowledge":
+        from services.knowledge_service import (
+            CLASSIFICATIONS, MAX_TITLE_UNITS, MAX_WORDING_UNITS,
+            validate_knowledge_item_input, KnowledgeServiceError)
+        values = _validate_exact_fields(values, frozenset({"title", "wording", "classification"}))
+        title = _text(values, "title", MAX_TITLE_UNITS, required=True)
+        wording = _text(values, "wording", MAX_WORDING_UNITS)
+        classification = values.get("classification", "personal")
+        if not isinstance(classification, str) or classification not in CLASSIFICATIONS:
+            raise LivingResumeEditorValidationError("Classification is invalid.")
+        validate_guide_text_limits(values, section=section)
+        if wording is not None:
+            try:
+                title, wording, classification = validate_knowledge_item_input(title, wording, classification)
+            except KnowledgeServiceError as error:
+                raise LivingResumeEditorValidationError(str(error)) from error
+        return {"title": title, "wording": wording, "classification": classification}
+    if record_type == "role":
+        return _role_values(values, require_employer=False)
+    return normalize_editor_values(record_type, values, require_title=False)
 
 
 def normalize_editor_intent(record_type: str, values: object) -> dict[str, object]:
@@ -470,6 +653,7 @@ def normalize_editor_intent(record_type: str, values: object) -> dict[str, objec
         "credential": _CREDENTIAL_FIELDS,
         "skill": _SKILL_FIELDS,
         "accomplishment": _ACCOMPLISHMENT_FIELDS,
+        "project": _PROJECT_FIELDS,
     }.get(record_type)
     if expected is None:
         raise LivingResumeEditorValidationError("canonical_type has an unsupported value.")
@@ -491,6 +675,11 @@ def normalize_editor_intent(record_type: str, values: object) -> dict[str, objec
         "wording": 8000,
         "metric_value": 100,
         "metric_label": 300,
+        "project_name": 300,
+        "project_role": 300,
+        "project_status": 300,
+        "organization_name": 300,
+        "project_url": 1000,
     }
     normalized: dict[str, object] = {}
     for name in supplied:
@@ -510,6 +699,14 @@ def normalize_editor_intent(record_type: str, values: object) -> dict[str, objec
             normalized[name] = _choice(supplied, name, EDUCATION_STATUSES, required=True)
         elif name == "completion_status":
             normalized[name] = _choice(supplied, name, CREDENTIAL_STATUSES, required=True)
+        elif name == "qualification_kind":
+            normalized[name] = _choice(supplied, name, QUALIFICATION_KINDS)
+        elif name == "project_category":
+            normalized[name] = _choice(supplied, name, PROJECT_CATEGORIES)
+        elif name == "additional_project_urls":
+            _, normalized[name] = _project_links({name: supplied[name]})
+        elif name == "project_url":
+            normalized[name], _ = _project_links({name: supplied[name]})
         else:
             normalized[name] = _text(supplied, name, text_limits[name])
     return normalized
@@ -710,6 +907,8 @@ class LivingResumeEditorService:
     def commit(self, user_key: object, payload: object) -> dict[str, object]:
         clean_user_key = self._user_key(user_key)
         normalized, command_json, expected_digest = normalize_command(payload)
+        if "qualification_kind" in normalized["values"]:
+            raise LivingResumeEditorValidationError(LOCAL_QUALIFICATION_UNAVAILABLE)
         if CREDENTIAL_PRECISION_FIELDS & set(normalized['values']):
             raise LivingResumeEditorValidationError(CREDENTIAL_PRECISION_UNAVAILABLE)
         try:

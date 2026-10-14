@@ -24,11 +24,72 @@ from __future__ import annotations
 import copy
 import json
 import threading
+import weakref
+from contextlib import ExitStack, contextmanager
+from functools import wraps
 from datetime import datetime, timedelta, timezone
 from typing import Any, Protocol
 from uuid import UUID, uuid4
 
 from services.database_service import DatabaseServiceError, database_service
+
+
+class _OwnerCompositionLocks:
+    def __init__(self):
+        self.intake = threading.RLock()
+        self.publication = threading.RLock()
+        self.draft = threading.RLock()
+
+
+_OWNER_LOCKS_GUARD = threading.Lock()
+_OWNER_LOCKS = weakref.WeakValueDictionary()
+_REQUEST_LOCKS = weakref.WeakValueDictionary()
+
+
+class _RequestLock:
+    def __init__(self):
+        self.lock = threading.Lock()
+
+
+@contextmanager
+def resume_request_guard(owner, request_id):
+    """Serialize one provider request across service instances, without stores."""
+    key = (type(owner), str(owner), str(request_id))
+    with _OWNER_LOCKS_GUARD:
+        lock = _REQUEST_LOCKS.get(key)
+        if lock is None:
+            lock = _RequestLock()
+            _REQUEST_LOCKS[key] = lock
+    with lock.lock:
+        yield
+
+
+@contextmanager
+def resume_owner_guard(owner):
+    """One process-local composition order: intake → publication → draft.
+
+    Only same-owner operations serialize. Store dictionary locks remain short
+    internal copy/replace guards. Never hold this context across a provider
+    call: snapshot first, dispatch unlocked, then re-enter and fence the result.
+    This is not a database transaction or cross-process SQL qualification.
+    """
+    key = (type(owner), str(owner))
+    with _OWNER_LOCKS_GUARD:
+        locks = _OWNER_LOCKS.get(key)
+        if locks is None:
+            locks = _OwnerCompositionLocks()
+            _OWNER_LOCKS[key] = locks
+    with locks.intake, locks.publication, locks.draft:
+        yield
+
+
+def owner_composed(method):
+    """Use the shared order at a provider-free owner service boundary."""
+    @wraps(method)
+    def composed(self, owner, *args, **kwargs):
+        with resume_owner_guard(owner):
+            return method(self, owner, *args, **kwargs)
+    return composed
 
 
 # Every browser procedure has the same closed three-parameter shape:
@@ -479,7 +540,7 @@ class ResumeIntakeRepository(Protocol):
     def claim_recording(self, owner_user_key, request_id, payload, *, now=None):
         """Reserve one durable provider lease or return pending/replay/conflict."""
 
-    def unit_of_work(self, draft_service=None):
+    def unit_of_work(self, draft_service=None, *, owner=None):
         """Return the transaction/unit-of-work the service commits through."""
 
     def with_drafts(self, owner_user_key: str, mutator, *, create: bool = False):
@@ -503,6 +564,9 @@ class InMemoryResumeIntakeRepository:
     # bindings and proposal revisions together. The SQL adapter has no
     # equivalent reviewed procedure and must not inherit this capability.
     supports_resume_conversation = True
+    # This snapshot store retains the first-arrival marker and its receipt
+    # atomically. The closed SQL mapper/procedure does not carry that metadata.
+    supports_guide_first_arrival = True
 
     def __init__(self) -> None:
         self._owners: dict[str, dict[str, Any]] = {}
@@ -517,10 +581,7 @@ class InMemoryResumeIntakeRepository:
             return copy.deepcopy(existing)
 
     def owner_guard(self, owner_user_key):
-        # The process-local test adapter uses one re-entrant lock for all owner
-        # snapshots. Service operations hold it from source validation through
-        # canonical/intake commit, so purge cannot interleave at that boundary.
-        return self._lock
+        return resume_owner_guard(owner_user_key)
 
     def save_owner(self, owner_user_key, snapshot, command=None):
         with self._lock:
@@ -532,6 +593,29 @@ class InMemoryResumeIntakeRepository:
             # boundary as every whole-owner replacement.
             current = self._owners.get(owner_user_key)
             replacement = copy.deepcopy(snapshot)
+            # Unrelated commands may have loaded their snapshot before a
+            # welcome was acknowledged. Never erase that once-only frontier.
+            prior_guide = (current or {}).get("guide") or {}
+            if isinstance(prior_guide, dict) and "first_arrival" in prior_guide:
+                guide = replacement.setdefault("guide", {})
+                prior = prior_guide["first_arrival"]
+                incoming = guide.get("first_arrival", {})
+                if isinstance(prior, dict) and isinstance(incoming, dict):
+                    merged = copy.deepcopy(prior)
+                    merged.update(incoming)
+                    for key, value in prior.items():
+                        if value is True:
+                            merged[key] = True
+                    guide["first_arrival"] = merged
+                else:
+                    guide["first_arrival"] = copy.deepcopy(prior)
+            for key, entry in ((current or {}).get("receipts") or {}).items():
+                result = entry.get("result") if isinstance(entry, dict) else None
+                if isinstance(result, dict) and result.get("type") == "acknowledge_guide_first_arrival":
+                    receipts = replacement.setdefault("receipts", {})
+                    if key in receipts and receipts[key] != entry:
+                        raise ResumeIntakeStoreUnavailable("An acknowledgment request key changed.")
+                    receipts[key] = copy.deepcopy(entry)
             from services.resume_guide_contract import bind_item_identities
             try:
                 bind_item_identities(owner_user_key,replacement,
@@ -594,7 +678,7 @@ class InMemoryResumeIntakeRepository:
     def with_drafts(self, owner_user_key: str, mutator, *, create: bool = False):
         """Owner-scoped draft CAS against current owner state."""
 
-        with self._lock:
+        with resume_owner_guard(owner_user_key), self._lock:
             existing = self._owners.get(owner_user_key)
             if existing is None:
                 if not create:
@@ -622,7 +706,7 @@ class InMemoryResumeIntakeRepository:
         moment = moment.astimezone(timezone.utc)
         key = (str(owner_user_key), str(request_id))
         digest = payload.get("request_digest")
-        with self._lock:
+        with resume_owner_guard(owner_user_key), self._lock:
             snapshot = self._owners.get(owner_user_key) or empty_intake_snapshot()
             receipt = (snapshot.get("receipts") or {}).get(str(request_id))
             if receipt is not None:
@@ -674,8 +758,8 @@ class InMemoryResumeIntakeRepository:
                 "lease_expires_at": claim["lease_expires_at"],
             }
 
-    def unit_of_work(self, draft_service=None):
-        return InMemoryIntakeUnitOfWork(self, draft_service)
+    def unit_of_work(self, draft_service=None, *, owner=None):
+        return InMemoryIntakeUnitOfWork(self, draft_service, owner=owner)
 
     def _restore(
         self, owners: dict[str, dict[str, Any]], *, preserve_live_drafts: bool = False
@@ -697,29 +781,58 @@ class InMemoryIntakeUnitOfWork:
     canonical fact, no source, no job, no proposal and no receipt behind.
     """
 
-    def __init__(self, repository: InMemoryResumeIntakeRepository, draft_service) -> None:
+    def __init__(self, repository: InMemoryResumeIntakeRepository, draft_service, *, owner=None) -> None:
         self.repository = repository
         self.draft_service = draft_service
+        self.owner = owner
         self._intake_state = None
         self._draft_state = None
         self._catalog_state = None
         self._catalog_store = None
+        self._publication_state = None
+        self._publication_store = None
         self._touched_owners = set()
         self.supports_atomic_composition = False
         self._draft_lock = None
+        self._locks = ExitStack()
 
     def __enter__(self):
-        with self.repository._lock:
-            self._intake_state = copy.deepcopy(self.repository._owners)
+        try:
+            return self._enter()
+        except BaseException:
+            self._locks.close()
+            raise
+
+    def _enter(self):
+        if not isinstance(self.owner, str) or not self.owner.strip():
+            raise ResumeIntakeStoreUnavailable("An owner-bound transaction is required.")
+        self._locks.enter_context(resume_owner_guard(self.owner))
         if self.draft_service is not None:
             draft_repository = getattr(self.draft_service, "repository", None)
             catalog = getattr(self.draft_service, "catalog", None)
+            publication = getattr(getattr(catalog, "policy", None), "publication_service", None)
+            if publication is not None:
+                from services.resume_publication_repository import InMemoryResumePublicationRepository
+                publication_store = getattr(publication, "repository", None)
+                if type(publication_store) is not InMemoryResumePublicationRepository:
+                    raise ResumeIntakeStoreUnavailable("Atomic publication storage is unavailable. Your input is kept.")
+                self._publication_store = publication_store
+                self._publication_state = self._owner_state(publication_store)
+                # Media lifecycle and bound-media locks precede the draft store,
+                # matching Publish and every media command (no cross-owner ABBA).
+                try:
+                    self._locks.enter_context(publication._memory_media_locks())
+                except Exception as error:
+                    raise ResumeIntakeStoreUnavailable(
+                        "Atomic media storage is unavailable. Your input is kept.") from error
             if draft_repository is not None:
                 from services.resume_draft_repository import InMemoryResumeDraftRepository
                 if isinstance(draft_repository, InMemoryResumeDraftRepository):
-                    self._draft_lock = draft_repository._lock
-                    self._draft_lock.acquire()
-                self._draft_state = copy.deepcopy(getattr(draft_repository, "_owners", {}))
+                    self._draft_lock = True
+                    # The pure apply/rollback phase also coordinates with
+                    # incumbent media writers using this store's short lock.
+                    self._locks.enter_context(draft_repository._lock)
+                self._draft_state = self._owner_state(draft_repository)
             if catalog is not None:
                 from services.resume_draft_repository import InMemoryCanonicalCatalog
                 if isinstance(catalog, InMemoryCanonicalCatalog):
@@ -730,16 +843,39 @@ class InMemoryIntakeUnitOfWork:
                     if isinstance(policy_store, InMemoryEntryPolicyRepository):
                         self._catalog_store = policy_store
                 if self._catalog_store is not None:
-                    self._catalog_state = copy.deepcopy(self._catalog_store._owners)
+                    self._catalog_state = self._owner_state(self._catalog_store)
                     self.supports_atomic_composition = self._draft_lock is not None
+        with self.repository._lock:
+            self._intake_state = self._owner_state(self.repository)
         return self
+
+    def _owner_state(self, store):
+        owners = getattr(store, "_owners", {})
+        return {self.owner: copy.deepcopy(owners[self.owner])} if self.owner in owners else {}
+
+    def _touch_owner(self, owner):
+        if owner != self.owner:
+            raise ResumeIntakeStoreUnavailable("A transaction cannot cross owners.")
+        self._touched_owners.add(owner)
 
     def apply_canonical(self, owner, payload, projected):
         if self.draft_service is None:
             raise ResumeIntakeStoreUnavailable("Resume drafts are unavailable.")
-        self._touched_owners.add(owner)
+        self._touch_owner(owner)
         result = self.draft_service.commit(owner, payload)
         return result.get("item") or projected
+
+    def stamp_resume_choice(self, owner, request_id, request_digest):
+        if not self.supports_atomic_composition:
+            raise ResumeIntakeStoreUnavailable("Private Resume choices are unavailable.")
+        self._touch_owner(owner)
+        self.draft_service.stamp_private_resume_choice(owner, request_id, request_digest)
+
+    def save_guide_references(self, owner, **command):
+        if not self.supports_atomic_composition:
+            raise ResumeIntakeStoreUnavailable("Private Resume references are unavailable.")
+        self._touch_owner(owner)
+        self.draft_service.save_private_guide_references(owner,**command)
 
     def apply_canonical_command(self, owner, payload, projected, *, boundary, request_id,
                                 callee_command):
@@ -751,7 +887,7 @@ class InMemoryIntakeUnitOfWork:
         }
 
     def commit(self, owner, snapshot, *, procedure=None, request_id=None, payload=None):
-        self._touched_owners.add(owner)
+        self._touch_owner(owner)
         command = None
         if procedure is not None:
             command = {
@@ -782,6 +918,8 @@ class InMemoryIntakeUnitOfWork:
                 self._restore_owners(draft_repository, self._draft_state)
             if self._catalog_store is not None and self._catalog_state is not None:
                 self._restore_owners(self._catalog_store, self._catalog_state)
+            if self._publication_store is not None and self._publication_state is not None:
+                self._restore_owners(self._publication_store, self._publication_state)
 
     def _restore_owners(self, store, before):
         for owner in self._touched_owners:
@@ -795,8 +933,7 @@ class InMemoryIntakeUnitOfWork:
             if exc_type is not None:
                 self.rollback()
         finally:
-            if self._draft_lock is not None:
-                self._draft_lock.release()
+            self._locks.close()
         return False
 
 
@@ -818,7 +955,7 @@ class SqlResumeIntakeRepository:
         self._owner_mutation_lock = threading.RLock()
 
     def owner_guard(self, owner_user_key):
-        return self._owner_mutation_lock
+        return resume_owner_guard(owner_user_key)
 
     def load_owner(self, owner_user_key: str) -> dict[str, Any]:
         try:
@@ -1060,7 +1197,7 @@ class SqlResumeIntakeRepository:
             "receipt_request_id": receipt_request_id,
         }
 
-    def unit_of_work(self, draft_service=None):
+    def unit_of_work(self, draft_service=None, *, owner=None):
         return SqlIntakeUnitOfWork(self)
 
 

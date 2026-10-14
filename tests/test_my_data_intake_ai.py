@@ -254,9 +254,21 @@ class AdapterContractTests(unittest.TestCase):
 
     def test_type_fields_are_exact_existing_canonical_editor_contract(self):
         from services.resume_intake_service import EDITOR_FIELDS
-        self.assertEqual(set(EXTRACTION_VALUE_FIELDS), set(EDITOR_FIELDS) | {"unspecified"})
+        # Ruled divergence (Guide type mapping 269ab17/8eff4fc): the editor-only
+        # project type and credential qualification_kind never enter extraction.
+        # Every other type and field stays exactly equal to the editor contract.
+        editor_only_types = {"project"}
+        editor_only_fields = {"credential": frozenset({"qualification_kind"})}
+        self.assertEqual(set(EXTRACTION_VALUE_FIELDS),
+                         (set(EDITOR_FIELDS) - editor_only_types) | {"unspecified"})
         for kind, fields in EDITOR_FIELDS.items():
-            self.assertEqual(frozenset(EXTRACTION_VALUE_FIELDS[kind]), fields)
+            if kind in editor_only_types:
+                self.assertNotIn(kind, EXTRACTION_VALUE_FIELDS)
+                continue
+            self.assertTrue(editor_only_fields.get(kind, frozenset()) <= fields)
+            self.assertEqual(frozenset(EXTRACTION_VALUE_FIELDS[kind]),
+                             fields - editor_only_fields.get(kind, frozenset()))
+        self.assertNotIn("qualification_kind", EXTRACTION_VALUE_FIELDS["credential"])
         self.assertEqual(EXTRACTION_VALUE_FIELDS["unspecified"], ("text",))
 
     def test_prompt_retains_grouping_unknown_precision_and_course_qualifiers(self):
@@ -1346,21 +1358,31 @@ class MatchedTargetBindingTests(unittest.TestCase):
             "confidence": "certain",
         })
         inner = service.draft_service
+        matching = threading.local()
 
         class WorkspaceGate:
-            def __init__(self):
-                self.calls = 0
-
+            # Only the matching shortlist read fails. Other private reads
+            # (including the submit's processing fence) stay readable, so
+            # this test isolates matching rather than counting reads.
             def __getattr__(self, name):
                 return getattr(inner, name)
 
             def get_workspace(self, owner):
-                self.calls += 1
-                if self.calls > 1:
+                if getattr(matching, "active", False):
                     raise ResumeDraftUnavailableError()
                 return inner.get_workspace(owner)
 
         service.draft_service = WorkspaceGate()
+        shortlist = service._matching_shortlist
+
+        def unreadable_shortlist(owner):
+            matching.active = True
+            try:
+                return shortlist(owner)
+            finally:
+                matching.active = False
+
+        service._matching_shortlist = unreadable_shortlist
         receipt = service.submit(self.owner, add_request(text=text))
         proposal = receipt["proposals"][0]
         self.assertEqual(proposal["kind"], "inferred_wording")

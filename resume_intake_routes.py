@@ -93,6 +93,10 @@ def _guide_service() -> ResumeGuideService:
     return ResumeGuideService(repository=_service().repository)
 
 
+def _first_arrival(owner):
+    return _guide_service().get_first_arrival(owner, read_content=_service().has_private_resume_content)
+
+
 @resume_intake.before_request
 def gate_and_protect_writes():
     if request.path.startswith("/api/"):
@@ -182,6 +186,14 @@ def _unavailable(error, default_message):
     if getattr(error, "proposed", None) is not None:
         payload["proposed_values"] = error.proposed
         payload["input_preserved"] = True
+    return payload
+
+
+def _guide_validation_payload(error):
+    payload = {"success": False, "code": getattr(error, "code", "invalid"), "message": str(error)}
+    for name in ("missing_required_fields", "actual_count", "limit"):
+        if hasattr(error, name):
+            payload[name] = getattr(error, name)
     return payload
 
 
@@ -329,7 +341,7 @@ def post_proposal_decision():
             allow_fixture_policy=_fixture_policy_enabled(),
         )
     except ResumeIntakeValidationError as error:
-        return jsonify({"success": False, "code": "invalid", "message": str(error)}), 400
+        return jsonify(_guide_validation_payload(error)), 400
     except ResumeIntakePolicyError as error:
         return _policy_response(error)
     except ResumeIntakeNotFoundError:
@@ -468,13 +480,15 @@ def get_guide_state():
     identity = _identity_or_not_found()
     if identity is None:
         return jsonify({"success": False, "message": "Not found."}), 404
+    if request.args:
+        return jsonify({"success": False, "code": "invalid", "message": "Invalid request."}), 400
     try:
         result = _guide_service().get_state(identity.user_key)
     except GuideUnavailableError as error:
         # A read failure is not a new member and not "nothing saved".
         state = _guide_service().unavailable_state()
         return jsonify({"success": False, "code": "unavailable", **state}), 503
-    return jsonify({"success": True, **result})
+    return jsonify({"success": True, **result, "first_arrival": _first_arrival(identity.user_key)})
 
 
 @resume_intake.get("/api/resume-intake/me/guide/working-set")
@@ -488,16 +502,76 @@ def get_guide_working_set():
         result = _service().working_set(identity.user_key)
     except ResumeIntakeUnavailableError as error:
         return jsonify({**_unavailable(error,"The Guide is unavailable right now."),"load_state":"unavailable"}),503
+    return jsonify({"success":True,**_complete_guide_working_set(identity.user_key, result)})
+
+
+def _complete_guide_working_set(owner, result):
+    from services.resume_publication_service import ResumePublicationService
+    basis = ResumePublicationService._unavailable_basis()
     publication = current_app.config.get("RESUME_PUBLICATION_SERVICE")
     if publication is not None:
-        from services.resume_guide_contract import guide_publication_state
         try:
-            result["publication_state"] = guide_publication_state(result,publication.owner_preview(identity.user_key))
+            basis = _service().guide_publication_basis(owner,result,publication)
         except Exception:
-            result["publication_state"] = "unknown"
+            basis = ResumePublicationService._unavailable_basis()
+    try:
+        references = _service().guide_reference_view(owner,result)
+    except Exception:
+        references = {"read_state":"unavailable","skill_evidence":None,"highlight_tiles":None,"needs_recheck":None}
+    result["references"] = references
+    result["publication"] = basis
+    result["publication_state"] = basis["publication_state"]
+    per_item = {item["item_ref"]: item for item in basis.get("items") or []}
+    def annotate(items):
+        for item in items:
+            detail = per_item.get(item["item_ref"])
+            for key in ("published_display","published_visitor_ai","proposed_display","proposed_visitor_ai"):
+                item[key] = detail.get(key) if detail is not None else (False if basis["read_state"] == "current" else None)
+            annotate(item["children"])
+    annotate([*(row for section in result["sections"] for row in section["items"]),
+        *result["unplaced"],*result["non_tab_items"]])
     from services.resume_guide_contract import refresh_working_set_token
-    refresh_working_set_token(identity.user_key,result)
-    return jsonify({"success":True,**result})
+    result["first_arrival"] = _first_arrival(owner)
+    refresh_working_set_token(owner,result)
+    return result
+
+
+@resume_intake.post("/api/resume-intake/me/guide/visibility")
+def post_guide_visibility():
+    identity = _identity_or_not_found()
+    if identity is None:
+        return jsonify({"success":False,"message":"Not found."}),404
+    try:
+        result = _service().set_guide_visibility(identity.user_key, request.get_json(silent=True),
+            read_working_set=lambda owner: _complete_guide_working_set(owner, _service().working_set(owner)))
+    except ResumeIntakeValidationError as error:
+        return jsonify({"success":False,"code":"invalid","message":str(error)}),400
+    except ResumeIntakeNotFoundError:
+        return jsonify({"success":False,"message":"Not found."}),404
+    except ResumeIntakeConflictError as error:
+        return jsonify({"success":False,"code":error.error_code,"message":str(error)}),409
+    except ResumeIntakeUnavailableError as error:
+        return jsonify(_unavailable(error,"The Guide is unavailable right now.")),503
+    return jsonify(result)
+
+
+@resume_intake.post("/api/resume-intake/me/guide/references")
+def post_guide_references():
+    identity = _identity_or_not_found()
+    if identity is None:
+        return jsonify({"success":False,"message":"Not found."}),404
+    try:
+        result = _service().set_guide_references(identity.user_key,request.get_json(silent=True),
+            read_working_set=lambda owner: _complete_guide_working_set(owner,_service().working_set(owner)))
+    except ResumeIntakeValidationError as error:
+        return jsonify({"success":False,"code":"invalid","message":str(error)}),400
+    except ResumeIntakeNotFoundError:
+        return jsonify({"success":False,"message":"Not found."}),404
+    except ResumeIntakeConflictError as error:
+        return jsonify({"success":False,"code":error.error_code,"message":str(error)}),409
+    except ResumeIntakeUnavailableError as error:
+        return jsonify(_unavailable(error,"The Guide is unavailable right now.")),503
+    return jsonify(result)
 
 
 @resume_intake.post("/api/resume-intake/me/guide/status")
@@ -506,7 +580,12 @@ def post_guide_status():
     if identity is None:
         return jsonify({"success": False, "message": "Not found."}), 404
     try:
-        result = _guide_service().set_status(identity.user_key, _json_body())
+        payload = request.get_json(silent=True)
+        if isinstance(payload, dict) and "first_arrival_action" in payload:
+            result = _guide_service().acknowledge_first_arrival(identity.user_key, payload,
+                read_content=_service().has_private_resume_content)
+        else:
+            result = _guide_service().set_status(identity.user_key, _json_body())
     except GuideConflictError as error:
         return jsonify({
             "success": False, "code": error.code, "message": str(error),

@@ -305,7 +305,11 @@ def review_resume_publication():
     except PublicationUnavailableError:
         return jsonify({"success": False, "code": "unavailable", "message": "Publication is unavailable."}), 503
     if result.reviewed is None:
-        return jsonify({"success": False, "code": result.reason, "state": result.state.value}), 409
+        refusal = {"success": False, "code": result.reason, "state": result.state.value}
+        if result.blocked_items:
+            refusal["blocked_items"] = [{"item_ref": ref, "reason": reason}
+                                        for ref, reason in result.blocked_items]
+        return jsonify(refusal), 409
     reference = result.reviewed.candidate.profile_identity
     approved_identity = None
     if reference is not None:

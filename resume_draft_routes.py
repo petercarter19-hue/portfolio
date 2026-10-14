@@ -120,6 +120,14 @@ def _unavailable_payload(error, *, default_message):
     return payload
 
 
+def _validation_payload(error):
+    payload = {"success": False, "code": getattr(error, "code", "invalid"), "message": str(error)}
+    for field in ("missing_required_fields", "actual_count", "limit"):
+        if hasattr(error, field):
+            payload[field] = getattr(error, field)
+    return payload
+
+
 @resume_draft.get("/app/resume")
 def get_resume_editor_page():
     try:
@@ -161,7 +169,7 @@ def commit_resume_draft_command():
     try:
         result = _service().commit(identity.user_key, _json_body())
     except ResumeDraftValidationError as error:
-        return jsonify({"success": False, "code": "invalid", "message": str(error)}), 400
+        return jsonify(_validation_payload(error)), 400
     except ResumeDraftNotFoundError:
         return jsonify({"success": False, "code": "not_found", "message": "Not found."}), 404
     except ResumeDraftConflictError as error:
@@ -197,7 +205,7 @@ def review_resume_draft():
     try:
         result = _service().commit(identity.user_key, payload)
     except ResumeDraftValidationError as error:
-        return jsonify({"success": False, "code": "invalid", "message": str(error)}), 400
+        return jsonify(_validation_payload(error)), 400
     except ResumeDraftConflictError as error:
         return jsonify(
             {

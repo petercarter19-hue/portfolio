@@ -520,6 +520,7 @@ def build_context(workspace, excluded_keys, selected_targets, *, catalog_rows, m
     PrivateResumeMatchingExclusions excludes missing/unregistered policy too.
     A failure reading policy must fail closed, not become an empty exclusion set.
     """
+    from services.resume_guide_contract import model_resume_values
     if workspace.get("capabilities", {}).get("canonical_read") != "ok":
         raise SynthesisError("unavailable")
     if type(workspace.get("draft_version")) is not int:
@@ -552,17 +553,18 @@ def build_context(workspace, excluded_keys, selected_targets, *, catalog_rows, m
         if not isinstance(values, dict):
             raise SynthesisError("unavailable")
         items[key] = item
+        model_values = model_resume_values(item.get("record_type"),values)
         source = {"source_id": key, "record_type": item.get("record_type"),
                   "content_token": item.get("content_token"),
                   "access_revision": item.get("access_revision"),
-                  "values": copy.deepcopy(values)}
+                  "values": model_values}
         if not source["content_token"] or type(source["access_revision"]) is not int:
             raise SynthesisError("unavailable")
         # Include attribution through the actual parent record, when present.
         source["parent_key"] = canonical[key].get("parent_key")
         if source["parent_key"] is not None:
             _uuid(source["parent_key"])
-        source["text"] = json.dumps(values, ensure_ascii=False, sort_keys=True)
+        source["text"] = json.dumps(model_values, ensure_ascii=False, sort_keys=True)
         source["values_digest"] = digest(values)
         sources.append(source)
         for field in WRITABLE_FIELDS.get(item.get("record_type"), ()):

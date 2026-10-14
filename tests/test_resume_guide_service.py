@@ -7,6 +7,237 @@ from unittest.mock import Mock,patch
 from tests.test_resume_intake_service import build_service
 from services.resume_intake_repository import ResumeIntakeStoreUnavailable
 from services.resume_intake_service import ResumeIntakeNotFoundError, ResumeIntakeUnavailableError
+from services.resume_guide_service import ResumeGuideService, GuideUnavailableError, GuideConflictError
+from services.resume_draft_repository import CanonicalReadUnavailable
+
+
+class GuideStoredTypeTests(unittest.TestCase):
+    def test_real_local_qualification_kinds_get_their_own_groups_without_changing_the_core_order(self):
+        from tests.mvp1_acceptance_support import Mvp1AcceptanceServer
+        from urllib.request import Request, urlopen
+        import json
+        owner = "g-member-a"
+        with Mvp1AcceptanceServer() as server:
+            for kind in ("membership", "publication"):
+                server.shared.draft.commit(owner, {"type": "create_private_item", "request_id": str(uuid4()),
+                    "record_key": str(uuid4()), "record_type": "credential", "values": {"qualification_kind": kind,
+                        "name": "Fictional publication" if kind == "publication" else None,
+                        "issuer": "Fictional organization", "issue_date": "2022-01-01",
+                        "issue_date_precision": "year", "completion_status": "completed"}})
+            def read():
+                with urlopen(Request(server.url + "/api/resume-intake/me/guide/working-set",
+                        headers={"Cookie": "mvp1-synthetic-owner=" + owner}), timeout=10) as response:
+                    self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+                    return json.load(response)
+            with (patch.object(server.shared.policy.repository, "save_owner", wraps=server.shared.policy.repository.save_owner) as policy_save,
+                  patch.object(server.shared.draft.repository, "save_owner", wraps=server.shared.draft.repository.save_owner) as draft_save,
+                  patch.object(server.intake.repository, "save_owner", wraps=server.intake.repository.save_owner) as intake_save):
+                data = read()
+                self.assertEqual(data["section_order"][:7], ["impact_statement", "skills", "experience", "projects", "education", "certifications", "awards"])
+                self.assertEqual(set(data["section_order"][7:]), {"memberships", "publications"})
+                for key in ("memberships", "publications"):
+                    self.assertEqual(next(row for row in data["sections"] if row["key"] == key)["counts"]["saved"], 1)
+                self.assertEqual(read()["section_order"], data["section_order"])
+                policy_save.assert_not_called(); draft_save.assert_not_called(); intake_save.assert_not_called()
+
+    def test_real_saved_personal_knowledge_needs_the_actual_story_binding_and_contact_stays_non_tab(self):
+        from tests.mvp1_acceptance_support import Mvp1AcceptanceServer
+        owner = "g-member-a"
+        with Mvp1AcceptanceServer() as server:
+            story = server.shared.canonical.create_private(owner, {"command_id": str(uuid4()), "record_type": "knowledge",
+                "values": {"title": "My Story", "wording": "A fictional personal account.", "classification": "personal"}})
+            contact = server.shared.canonical.create_private(owner, {"command_id": str(uuid4()), "record_type": "knowledge",
+                "values": {"title": "Contact details", "wording": "fictional@example.test", "classification": "work"}})
+            before = server.intake.working_set(owner)
+            self.assertIn(story["record_key"], [row["item_ref"] for row in before["unplaced"]])
+            self.assertEqual([(row["item_ref"], row["section"]) for row in before["non_tab_items"]], [(contact["record_key"], "contact")])
+            workspace = server.shared.draft.get_workspace(owner)
+            server.shared.draft.commit(owner, {"type": "bind_story", "request_id": str(uuid4()), "record_key": story["record_key"],
+                "expected_draft_version": workspace["draft_version"], "expected_content_token": story["content_token"],
+                "expected_access_revision": story["access_revision"]})
+            after = server.intake.working_set(owner)
+            self.assertIn((story["record_key"], "story"), [(row["item_ref"], row["section"]) for row in after["non_tab_items"]])
+            self.assertNotIn("presentation_section", server.shared.canonical.get_item(owner, story["record_key"])["values"])
+
+
+class GuideFirstArrivalTests(unittest.TestCase):
+    def test_first_arrival_does_not_persist_expired_canonical_cleanup(self):
+        from datetime import timedelta
+        from tests.mvp1_acceptance_support import SharedMvp1Fixture
+        shared = SharedMvp1Fixture()
+        instant, entry = shared.policy._now(), str(uuid4())
+        shared.policy.clock = lambda: instant
+        shared.policy.commit("arrival-fictional-a", {"type": "create", "request_id": str(uuid4()),
+            "entry_key": entry, "canonical_type": "skill", "values": {"skill_name": "Expired fictional skill"}})
+        shared.policy.commit("arrival-fictional-a", {"type": "delete", "request_id": str(uuid4()),
+            "entry_key": entry, "expected_content_version": 1, "expected_access_revision": 1,
+            "dependent_keys": []})
+        shared.policy.clock = lambda: instant + timedelta(days=31)
+        self.service.draft_service = shared.draft
+        before = deepcopy(shared.policy.repository.load_owner(self.owner))
+        with (patch.object(shared.policy.repository, "save_owner", wraps=shared.policy.repository.save_owner) as policy_save,
+              patch.object(self.repo, "save_owner", wraps=self.repo.save_owner) as guide_save,
+              patch.object(shared.draft.repository, "save_owner", wraps=shared.draft.repository.save_owner) as draft_save):
+            self.assertTrue(self.state()["eligible"])
+            policy_save.assert_not_called()
+            guide_save.assert_not_called()
+            draft_save.assert_not_called()
+        self.assertEqual(shared.policy.repository.load_owner(self.owner), before)
+
+    def setUp(self):
+        self.owner = "arrival-fictional-a"
+        self.service, self.catalog, self.draft = build_service()
+        self.repo = self.service.repository
+        self.guide = ResumeGuideService(repository=self.repo)
+
+    def state(self, owner=None):
+        return self.guide.get_first_arrival(owner or self.owner, read_content=self.service.has_private_resume_content)
+
+    def ack(self, payload, owner=None):
+        return self.guide.acknowledge_first_arrival(owner or self.owner, payload,
+            read_content=self.service.has_private_resume_content)
+
+    def test_new_member_reads_are_qualified_and_write_nothing(self):
+        before = self.repo.load_owner(self.owner)
+        with patch.object(self.repo, "save_owner", wraps=self.repo.save_owner) as save:
+            for _ in range(2):
+                state = self.state()
+                self.assertEqual(state, {"read_state": "available", "eligible": True,
+                    "shown": False, "dismissed": False, "started": False})
+            save.assert_not_called()
+        self.assertEqual(before, self.repo.load_owner(self.owner))
+
+    def test_existing_private_content_and_guide_choice_prevent_first_arrival(self):
+        for kind in ("canonical", "composer", "media", "guide"):
+            with self.subTest(kind=kind):
+                self.setUp()
+                if kind == "canonical":
+                    self.catalog.put_item(self.owner, {"record_key": str(uuid4()), "record_type": "skill",
+                        "values": {"name": "Private skill"}, "content_token": "1", "access_revision": 1,
+                        "resume_display": False, "visitor_ai": False})
+                elif kind == "composer":
+                    snapshot = self.repo.load_owner(self.owner)
+                    snapshot["drafts"] = {"composer": {"text": "Unsent private words", "items": [], "attachments": []}}
+                    self.repo.save_owner(self.owner, snapshot)
+                elif kind == "media":
+                    snapshot = self.draft.repository.load_owner(self.owner)
+                    snapshot["media"] = {"placements": [{"slot": "portrait", "media_key": str(uuid4())}]}
+                    self.draft.repository.save_owner(self.owner, snapshot)
+                else:
+                    self.guide.set_status(self.owner, {"request_id": str(uuid4()), "status": "paused"})
+                self.assertFalse(self.state()["eligible"])
+
+    def test_empty_composer_navigation_is_not_invented_content(self):
+        snapshot = self.repo.load_owner(self.owner)
+        snapshot["drafts"] = {"composer": {"text": None, "items": [], "attachments": [],
+            "guide_state": {"screen": "welcome", "manual_fields": {"empty_field": "", "unchecked_field": False}}}}
+        self.repo.save_owner(self.owner, snapshot)
+        self.assertTrue(self.state()["eligible"])
+
+    def test_unreadable_catalog_is_unknown_and_cannot_claim_a_welcome(self):
+        with patch.object(self.catalog, "list_items", side_effect=CanonicalReadUnavailable()):
+            self.assertIsNone(self.state()["eligible"])
+            self.assertEqual(self.state()["read_state"], "unavailable")
+            with self.assertRaises(GuideUnavailableError):
+                self.ack({"request_id": str(uuid4()), "first_arrival_action": "shown"})
+            with self.assertRaises(ResumeIntakeUnavailableError):
+                self.service.working_set(self.owner)
+        self.assertEqual(self.repo.load_owner(self.owner)["guide"], {})
+
+    def test_only_one_tab_claims_shown_and_exact_replay_never_reopens(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Barrier
+        ready = Barrier(2)
+        payloads = [{"request_id": str(uuid4()), "first_arrival_action": "shown"} for _ in range(2)]
+        def claim(payload):
+            ready.wait(timeout=5)
+            return self.ack(payload)
+        with patch.object(self.repo, "save_owner", wraps=self.repo.save_owner) as save:
+            with ThreadPoolExecutor(max_workers=2) as workers:
+                results = list(workers.map(claim, payloads))
+            self.assertEqual(sum(r["show_now"] for r in results), 1)
+            self.assertEqual(save.call_count, 1)
+            index = next(i for i, result in enumerate(results) if result["show_now"])
+            replay = self.ack(payloads[index])
+            self.assertTrue(replay["replayed"])
+            self.assertFalse(replay["show_now"])
+            self.assertEqual(replay["receipt"], results[index]["receipt"])
+            self.assertEqual(save.call_count, 1)
+        self.assertFalse(self.state()["eligible"])
+        self.assertTrue(self.state()["shown"])
+        self.assertEqual(self.guide.get_state(self.owner)["status"], "not_started")
+        self.assertFalse(self.guide.get_state(self.owner)["member_choice"])
+        self.assertTrue(self.ack(payloads[index], owner="arrival-fictional-b")["show_now"])
+
+    def test_member_acknowledgments_are_idempotent_not_completion_or_content(self):
+        for action in ("dismissed", "started"):
+            payload = {"request_id": str(uuid4()), "first_arrival_action": action}
+            first = self.ack(payload)
+            self.assertTrue(first["first_arrival"][action])
+            self.assertFalse(first["show_now"])
+            self.assertEqual(first["receipt"], self.ack(payload)["receipt"])
+            with self.assertRaises(GuideConflictError):
+                self.ack({**payload, "first_arrival_action": "shown"})
+        self.assertEqual(self.draft.get_workspace(self.owner)["items"], [])
+        self.assertEqual(self.guide.get_state(self.owner)["status"], "not_started")
+        self.assertFalse(self.state()["eligible"])
+
+    def test_explicit_dismissal_and_start_do_not_require_an_available_catalog(self):
+        with patch.object(self.catalog, "list_items", side_effect=CanonicalReadUnavailable()):
+            for action in ("dismissed", "started"):
+                result = self.ack({"request_id": str(uuid4()), "first_arrival_action": action})
+                self.assertTrue(result["first_arrival"][action])
+                self.assertFalse(result["show_now"])
+        self.assertEqual(self.guide.get_state(self.owner)["status"], "not_started")
+
+    def test_lost_ack_response_replays_the_stored_receipt_without_a_second_open(self):
+        payload = {"request_id": str(uuid4()), "first_arrival_action": "shown"}
+        save = self.repo.save_owner
+        def lost_response(*args, **kwargs):
+            save(*args, **kwargs)
+            raise ResumeIntakeStoreUnavailable("Lost acknowledgment response")
+        with patch.object(self.repo, "save_owner", side_effect=lost_response):
+            with self.assertRaises(GuideUnavailableError):
+                self.ack(payload)
+        replay = self.ack(payload)
+        self.assertTrue(replay["replayed"])
+        self.assertFalse(replay["show_now"])
+        self.assertTrue(replay["receipt"]["persisted"])
+        self.assertTrue(self.state()["shown"])
+
+    def test_unqualified_backend_and_corrupt_ack_never_claim_eligibility(self):
+        with patch.object(self.repo, "supports_guide_first_arrival", False, create=True):
+            self.assertIsNone(self.state()["eligible"])
+            with self.assertRaises(GuideUnavailableError):
+                self.ack({"request_id": str(uuid4()), "first_arrival_action": "shown"})
+        self.repo._owners[self.owner] = self.repo.load_owner(self.owner)
+        self.repo._owners[self.owner]["guide"] = {"first_arrival": {"shown": "yes"}}
+        self.assertIsNone(self.state()["eligible"])
+
+    def test_malformed_snapshot_and_receipt_are_not_invented_absence_or_acknowledgment(self):
+        for malformed in (None, {}, []):
+            with self.subTest(snapshot=malformed), patch.object(self.repo, "load_owner", return_value=malformed):
+                self.assertIsNone(self.state()["eligible"])
+        payload = {"request_id": str(uuid4()), "first_arrival_action": "shown"}
+        self.ack(payload)
+        self.repo._owners[self.owner]["receipts"][payload["request_id"]]["result"]["action"] = "started"
+        with self.assertRaises(GuideUnavailableError):
+            self.ack(payload)
+
+    def test_unrelated_old_snapshot_cannot_erase_arrival_or_its_replay_receipt(self):
+        from services.resume_intake_repository import COMMAND_PROCEDURES
+        old = self.repo.load_owner(self.owner)
+        payload = {"request_id": str(uuid4()), "first_arrival_action": "shown"}
+        original = self.ack(payload)
+        # Exercise the whole-snapshot repository boundary with a stale caller.
+        self.repo.save_owner(self.owner, old,
+            {"procedure": COMMAND_PROCEDURES["add_submission"], "payload": {}})
+        self.assertTrue(self.state()["shown"])
+        replay = self.ack(payload)
+        self.assertTrue(replay["replayed"])
+        self.assertEqual(replay["receipt"], original["receipt"])
+        self.guide.set_status(self.owner, {"request_id": str(uuid4()), "status": "paused"})
+        self.assertTrue(self.state()["shown"])
 
 
 class GuideWorkingSetTests(unittest.TestCase):
@@ -402,6 +633,85 @@ class GuidePublicationTruthTests(unittest.TestCase):
                 draft=json.load(response)
             self.assertTrue(draft["success"])
             self.assertEqual(next(row for row in draft["items"] if row["record_key"]==bullet["record_key"])["parent_key"],role["record_key"])
+
+
+class GuideReferenceResolutionTests(unittest.TestCase):
+    def test_owner_bound_saved_references_follow_private_edits_and_filter_hidden_pending_or_wrong_type(self):
+        from services.resume_guide_contract import resolve_guide_references
+        from hashlib import sha256
+        from copy import deepcopy
+        from tests.mvp1_acceptance_support import SharedMvp1Fixture
+        from services.resume_intake_repository import InMemoryResumeIntakeRepository
+        from services.resume_intake_service import ResumeIntakeService
+        from services.resume_intake_policy import selected_policy_for_tests
+        shared, owner = SharedMvp1Fixture(), 'reference-fictional-owner'
+        def create(kind, values, parent=None, member=owner):
+            return shared.canonical.create_private(member,{'command_id':str(uuid4()),'record_type':kind,
+                'parent_key':parent,'values':values})['record_key']
+        role = create('role',{'role_title':'Fictional Engineer','employer_name':'Fictional Orchard',
+            'summary':'Original exact summary line.','start_date':'2021-01-01','date_precision':'year'})
+        bullet = create('accomplishment',{'wording':'Reviewed 12 fictional records.','metric_value':'12',
+            'metric_label':'fictional records'},role)
+        skill = create('skill',{'name':'Fictional skill'})
+        foreign_role = create('role',{'role_title':'Other role','employer_name':'Other employer'},member='other-fictional-owner')
+        foreign = create('accomplishment',{'wording':'Other member secret.'},foreign_role,member='other-fictional-owner')
+        service = ResumeIntakeService(repository=InMemoryResumeIntakeRepository(),draft_service=shared.draft,
+            policy=selected_policy_for_tests())
+        pending = service.submit(owner,{'request_id':str(uuid4()),'text':'A pending fictional detail.'})
+        pending_ref = service.working_set(owner)['unplaced'][0]['item_ref']
+        summary = {'role_record_key':role,'line_digest':sha256(b'Original exact summary line.').hexdigest()}
+        choices = {skill:[bullet,summary,foreign,pending_ref,skill]}
+        original_choices = deepcopy(choices)
+        result = resolve_guide_references(service.working_set(owner),evidence_refs=choices,highlight_refs=[bullet])
+        self.assertEqual([row['text'] for row in result['skill_evidence'][skill]],
+            ['Reviewed 12 fictional records.','Original exact summary line.'])
+        self.assertEqual(result['highlight_tiles'][0]['metric_value'],'12')
+        self.assertNotIn('Other member secret',str(result))
+        self.assertEqual(choices,original_choices)
+        workspace = shared.draft.get_workspace(owner)
+        item = next(row for row in workspace['items'] if row['record_key']==bullet)
+        shared.draft.commit(owner,{'type':'save_item','request_id':str(uuid4()),'record_key':bullet,'record_type':'accomplishment',
+            'expected_draft_version':workspace['draft_version'],'expected_content_token':item['content_token'],
+            'expected_access_revision':item['access_revision'],'values':{'wording':'Reviewed 15 fictional records.',
+                'metric_value':None}})
+        edited = resolve_guide_references(service.working_set(owner),evidence_refs=choices,highlight_refs=[bullet])
+        self.assertEqual(edited['skill_evidence'][skill][0]['text'],'Reviewed 15 fictional records.')
+        self.assertEqual(edited['highlight_tiles'],[])
+        working = service.working_set(owner)
+        saved_role = service.working_item(owner,role)
+        service.set_guide_visibility(owner,{'request_id':str(uuid4()),'item_ref':role,'hidden':True,
+            'expected_working_set_token':working['working_set_token'],'expected_item_revision':saved_role['saved_revision']})
+        hidden = resolve_guide_references(service.working_set(owner),evidence_refs=choices,highlight_refs=[bullet])
+        self.assertEqual(hidden['skill_evidence'][skill],[])
+        self.assertEqual(hidden['highlight_tiles'],[])
+        self.assertEqual(choices,original_choices)
+        working = service.working_set(owner)
+        service.set_guide_visibility(owner,{'request_id':str(uuid4()),'item_ref':role,'hidden':False,
+            'expected_working_set_token':working['working_set_token'],
+            'expected_item_revision':service.working_item(owner,role)['saved_revision']})
+        restored = resolve_guide_references(service.working_set(owner),evidence_refs=choices,highlight_refs=[bullet])
+        self.assertEqual([row['text'] for row in restored['skill_evidence'][skill]],
+            ['Reviewed 15 fictional records.','Original exact summary line.'])
+        self.assertEqual(choices,original_choices)
+
+    def test_summary_digest_needs_recheck_after_edit_and_highlights_are_capped_at_four(self):
+        from services.resume_guide_contract import resolve_guide_references
+        from hashlib import sha256
+        role, skill = str(uuid4()),str(uuid4())
+        def node(key,kind,values,children=()):
+            return {'item_ref':key,'identity_aliases':[],'record_type':kind,'origin':'saved','state':'saved',
+                'values':values,'children':list(children)}
+        bullets = [node(str(uuid4()),'accomplishment',{'wording':'Exact '+str(n),'metric_value':str(n),
+            'metric_label':'original label'}) for n in range(6)]
+        for bullet in bullets:
+            bullet['parent_ref']=role
+        working = {'sections':[{'items':[node(role,'role',{'summary':'Changed exact line.','employer_name':'Fictional'},bullets),
+            node(skill,'skill',{'name':'Fictional'})]}],'unplaced':[],'non_tab_items':[]}
+        result = resolve_guide_references(working,evidence_refs={skill:[{'role_record_key':role,
+            'line_digest':sha256(b'Original exact line.').hexdigest()}]},highlight_refs=[row['item_ref'] for row in bullets])
+        self.assertEqual(result['skill_evidence'][skill],[])
+        self.assertEqual([row['reason'] for row in result['needs_recheck']],['summary_changed'])
+        self.assertEqual([row['metric_value'] for row in result['highlight_tiles']],['0','1','2','3'])
 
 
 class GuideReviewDeltaTests(unittest.TestCase):

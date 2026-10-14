@@ -1394,7 +1394,9 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         if bullet: self.assertEqual(after['items'][0]['proposed_values']['summary'], 'Keep my contribution.\nRetain this exact limitation.')
         else:
             self.assertFalse(dict(service.get_workspace(self.owner)['resume_excluded_records'])[key])
-            self.assertEqual(after, before)
+            self.assertEqual(after['draft_version'], before['draft_version'] + 1)
+            self.assertEqual({key: value for key, value in after.items() if key != 'draft_version'},
+                {key: value for key, value in before.items() if key != 'draft_version'})
         self.assertEqual(len(self.catalog.list_items(self.owner)), 1)
         self.assertEqual(len(calls), 1); self.assertEqual(self.errors, [])
 
@@ -1915,6 +1917,9 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
         page = self.page(); self.input(page)
         page.locator('#resume-intake-text').fill('Help me get started.');page.locator('#resume-intake-add').click()
         page.locator('#resume-intake-question').get_by_text('Which experience would you like to start with?',exact=True).wait_for()
+        # Precondition: the finish control is present without typing, so the
+        # helper cannot create the unsent input this test asserts is absent.
+        page.locator('#resume-intake-input-finish').wait_for(state='visible')
         self.finish_input(page)
         page.locator('#resume-intake-optional-next').click()
         page.locator('#resume-intake-complete').click()

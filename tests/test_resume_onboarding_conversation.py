@@ -75,6 +75,94 @@ def check_conversation_schema(value, rule=CONVERSATION_SCHEMA):
 
 
 class ConversationTests(unittest.TestCase):
+    def test_project_summary_revision_preserves_link_fields_without_sending_them_to_model(self):
+        saved = self.intake.draft_service.commit(self.owner,{'type':'create_private_item','request_id':str(uuid4()),
+            'record_key':str(uuid4()),'record_type':'project','values':{'project_name':'Fictional Orchard',
+                'summary':'Original summary.','project_url':'https://fictional-revision.example.test/private'}})
+        key = saved['item']['record_key']
+        self.behavior = lambda ctx: {'response':'Review the summary.','next_question':'','operations':[
+            operation(ctx,record_type='project',ref='record:'+key,section='Independent Project',
+                values={'summary':'New approved summary.'})]}
+        result = self.turn('Use New approved summary. for this project.',ref='record:'+key)
+        self.assertNotIn('fictional-revision.example.test',json.dumps(self.calls[-1]['context']))
+        self.confirm(result['proposals'][0])
+        workspace = self.intake.draft_service.get_workspace(self.owner)
+        item = next(row for row in workspace['items'] if row['record_key']==key)
+        self.assertEqual(item['proposed_values']['summary'],'New approved summary.')
+        self.assertEqual(item['proposed_values']['project_url'],'https://fictional-revision.example.test/private')
+
+    def test_project_link_fields_in_retained_structured_input_never_enter_model_materials(self):
+        self.intake.submit(self.owner,add_request(items=[{'client_key':'project','record_type':'project',
+            'values':{'project_name':'Fictional Orchard','summary':'Built a fictional demonstration.',
+                'project_url':'https://fictional-retained.example.test/private'}}]))
+        self.turn('What details could help?')
+        self.assertNotIn('fictional-retained.example.test',json.dumps(self.calls[-1]['context']))
+        snapshot = self.intake.repository.load_owner(self.owner)
+        self.assertIn('fictional-retained.example.test',json.dumps(snapshot['sources']))
+
+    def test_saved_project_link_fields_never_enter_the_model_context(self):
+        from services.resume_intake_service import CONVERSATION_FIELDS
+        saved = self.intake.draft_service.commit(self.owner,{'type':'create_private_item','request_id':str(uuid4()),
+            'record_key':str(uuid4()),'record_type':'project','values':{'project_name':'Fictional Orchard',
+                'summary':'Built a fictional demonstration.','project_url':'https://fictional-primary.example.test/private',
+                'additional_project_urls':['https://fictional-other.example.test/private']}})
+        self.turn('What other details could I add?')
+        wire = json.dumps(self.calls[-1]['context'])
+        self.assertNotIn('fictional-primary.example.test',wire)
+        self.assertNotIn('fictional-other.example.test',wire)
+        self.assertNotIn('project_url',CONVERSATION_FIELDS['project'])
+        self.assertNotIn('additional_project_urls',CONVERSATION_FIELDS['project'])
+        values = self.intake.draft_service.catalog.get_item(self.owner,saved['item']['record_key'])['values']
+        self.assertEqual(values['project_url'],'https://fictional-primary.example.test/private')
+        self.assertEqual(values['additional_project_urls'],['https://fictional-other.example.test/private'])
+
+    def test_imported_overlength_summary_keeps_source_and_accepts_only_the_members_shorter_edit(self):
+        from services.resume_intake_service import ResumeIntakeValidationError
+        original = ' '.join(['original']*71)
+        source = 'Professional summary\n'+original
+        self.intake._document_pipeline = extracted_pipeline(source)
+        self.intake._extraction_adapter = DeterministicFakeExtractionAdapter([{'record_type':'knowledge',
+            'values':{'title':'Professional summary','wording':original,'classification':'work'},
+            'quote':original,'outcome':'new','confidence':'certain','presentation_section':'Professional summary'}])
+        self.intake.submit(self.owner,add_request(attachments=[{'client_key':'doc','kind':'document',
+            'declared_content_type':'text/plain','filename':'summary.txt'}]),
+            files={'doc':FakeUpload('text/plain',source.encode())})
+        proposal = self.intake.get_workspace(self.owner)['pending_proposals'][0]
+        with self.assertRaises(ResumeIntakeValidationError) as refused:
+            self.confirm(proposal)
+        self.assertEqual(refused.exception.code,'impact_statement_too_long')
+        snapshot = self.intake.repository.load_owner(self.owner)
+        row = snapshot['proposals'][proposal['proposal_key']]
+        self.assertEqual(row['state'],'pending')
+        self.assertEqual(row['proposed_values']['wording'],original)
+        self.assertEqual(snapshot['sources'][row['binding']['source_key']]['text'],source)
+        shorter = ' '.join(['approved']*70)
+        saved = self.confirm(proposal,decision='edit',values={'title':'Professional summary',
+            'wording':shorter,'classification':'work'})
+        self.assertEqual(saved['item']['values']['wording'],shorter)
+        after = self.intake.repository.load_owner(self.owner)
+        self.assertEqual(after['sources'][row['binding']['source_key']]['text'],source)
+        self.assertEqual(len(self.intake.draft_service.catalog.list_items(self.owner)),1)
+
+    def test_model_generated_overlength_impact_remains_a_suggestion_with_original_source(self):
+        from services.resume_intake_service import ResumeIntakeValidationError
+        original = ' '.join(['fictional']*71)
+        self.behavior = lambda ctx: {'response':'Review your summary.','next_question':'','operations':[
+            operation(ctx,op='add_content',record_type='knowledge',section='Professional summary',
+                values={'title':'Professional summary','wording':original,'classification':'work'})]}
+        result = self.turn(original)
+        proposal = result['proposals'][0]
+        self.assertEqual(proposal['proposed_values']['wording'],original)
+        with self.assertRaises(ResumeIntakeValidationError) as refused:
+            self.confirm(proposal)
+        self.assertEqual(refused.exception.code,'impact_statement_too_long')
+        snapshot = self.intake.repository.load_owner(self.owner)
+        retained = snapshot['proposals'][proposal['proposal_key']]
+        self.assertEqual(retained['state'],'pending')
+        self.assertEqual(retained['proposed_values']['wording'],original)
+        self.assertEqual(snapshot['sources'][retained['binding']['source_key']]['text'],original)
+        self.assertEqual(self.intake.draft_service.catalog.list_items(self.owner),[])
+
     owner = 'synthetic-conversation-owner'
     def setUp(self):
         self.intake = build_service()
@@ -157,6 +245,8 @@ class ConversationTests(unittest.TestCase):
                         expected = {'title', 'wording', 'classification'}
                     if record_type == 'credential':
                         expected.add('resume_credential_wording')
+                    if record_type == 'project':
+                        expected -= {'project_url','additional_project_urls'}
                     self.assertEqual(set(fields['value_fields']), expected)
                     self.assertEqual(set(fields['explicit_clear_fields']), expected)
                     self.assertEqual(set(fields['bullet_edit_fields']), expected & CONVERSATION_BULLET_FIELDS)
@@ -1397,7 +1487,10 @@ class ConversationTests(unittest.TestCase):
         self.assertEqual(self.intake.draft_service.get_workspace(self.owner), before)
         self.confirm(pending)
         self.assertFalse(dict(self.intake.get_workspace(self.owner)['resume_excluded_records'])[key])
-        self.assertEqual(self.intake.draft_service.get_workspace(self.owner), before)
+        # Restoration changes private Resume membership. Words and permissions
+        # stay identical, but an older publish preview must become stale.
+        self.assertEqual(self.intake.draft_service.get_workspace(self.owner),
+            {**before, 'draft_version': before['draft_version'] + 1})
         self.assertEqual(len(self.calls), 1)
 
     def test_direct_saved_whole_and_bullet_pending_undo_only_rejects_exclusion(self):

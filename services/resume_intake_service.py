@@ -42,11 +42,15 @@ from services.living_resume_editor_service import (
     LivingResumeEditorValidationError,
     normalize_editor_intent,
     normalize_editor_values,
+    normalize_guide_values,
+    PROJECT_EDITOR_FIELDS,
     utf16_length,
 )
 from services.resume_draft_repository import (
     CanonicalReadUnavailable,
     ResumeDraftStoreUnavailable,
+    ResumeDraftIdempotencyConflict,
+    ResumeDraftVersionConflict,
 )
 from services.resume_draft_service import (
     ResumeDraftConflictError,
@@ -98,6 +102,7 @@ from services.resume_intake_repository import (
     InMemoryResumeIntakeRepository,
     SqlIntakeUnitOfWork,
     ResumeIntakeStoreUnavailable,
+    resume_request_guard,
     empty_intake_snapshot,
     validate_snapshot,
 )
@@ -112,7 +117,7 @@ COMMAND_TYPES = frozenset(
     {"add_submission", "decide_proposal", "purge_source", "transcribe_recording"}
 )
 STRUCTURED_RECORD_TYPES = frozenset(
-    {"role", "education", "credential", "skill", "accomplishment"}
+    {"role", "education", "credential", "skill", "accomplishment", "project"}
 )
 FORBIDDEN_CLIENT_FIELDS = frozenset(
     {
@@ -178,16 +183,19 @@ EDITOR_FIELDS = {
             "expiration_date_precision",
             "verification_url",
             "completion_status",
+            "qualification_kind",
         }
     ),
     "skill": frozenset({"name", "summary"}),
     "accomplishment": frozenset({"wording", "metric_value", "metric_label"}),
+    "project": PROJECT_EDITOR_FIELDS,
 }
 BOOLEAN_FIELDS = frozenset({"current_role"})
 # Conversation-only fields do not widen the manual editor's field contract.
 # This same closed set drives validation and the model's control/schema catalog.
 CONVERSATION_FIELDS = {
     **EDITOR_FIELDS,
+    "project": EDITOR_FIELDS["project"] - {"project_url", "additional_project_urls"},
     "credential": EDITOR_FIELDS["credential"] | {"resume_credential_wording"},
     "knowledge": frozenset({"title", "wording", "classification"}),
 }
@@ -209,6 +217,7 @@ def conversation_field_contract():
 
 _SUBJECT_FIELDS = {
     "role": "role_title",
+    "project": "project_name",
     "education": "title",
     "credential": "name",
     "skill": "name",
@@ -611,6 +620,10 @@ class _ItemPlan:
     as_separate: bool = False
     # A deterministic provider request id for a retry, so the ledger can recognize the same call.
     dispatch_id: str | None = None
+    parsed_document: object = None
+    extraction: tuple | None = None
+    # The matching shortlist the provider saw, to fence its matched targets.
+    shortlist: list | None = None
 
 
 class ResumeIntakeService:
@@ -681,8 +694,8 @@ class ResumeIntakeService:
         except ResumeIntakeStoreUnavailable as error:
             raise ResumeIntakeUnavailableError() from error
 
-    def _unit_of_work(self):
-        return self.repository.unit_of_work(self.draft_service)
+    def _unit_of_work(self, owner):
+        return self.repository.unit_of_work(self.draft_service, owner=owner)
 
     @contextmanager
     def _recording_request_lock(self, owner, request_id):
@@ -737,6 +750,24 @@ class ResumeIntakeService:
 
     # -- reads ----------------------------------------------------------
 
+    def has_private_resume_content(self, owner):
+        """Read existing private draft/My Data authority, never provider work."""
+        try:
+            draft = self.draft_service.repository.load_owner(owner)
+            if not isinstance(draft, dict) or not isinstance(draft.get("items"), dict):
+                raise ResumeIntakeUnavailableError()
+            media = draft.get("media") or {}
+            if not isinstance(media, dict):
+                raise ResumeIntakeUnavailableError()
+            if draft["items"] or draft.get("story_entry_key") or media.get("placements"):
+                return True
+            items, _ = self._canonical_view(owner)
+            return bool(items)
+        except ResumeIntakeUnavailableError:
+            raise
+        except Exception as error:
+            raise ResumeIntakeUnavailableError() from error
+
     def working_set(self, owner):
         """One owner-scoped read projection; never an ingestion or save action."""
         if not isinstance(owner,str) or not owner.strip():
@@ -767,6 +798,252 @@ class ResumeIntakeService:
             if found is not None:
                 return found
         raise ResumeIntakeNotFoundError()
+
+    def set_guide_references(self, owner, payload, *, read_working_set=None):
+        from services.resume_guide_contract import resolve_guide_references
+        required = {"request_id","kind","item_ref","references","expected_working_set_token"}
+        if (type(payload) is not dict or set(payload) != required or payload.get("kind") not in {"skill","highlights"}
+                or type(payload.get("references")) is not list
+                or type(payload.get("expected_working_set_token")) is not str or len(payload["expected_working_set_token"]) != 64):
+            raise ResumeIntakeValidationError("Invalid private Resume reference choice.")
+        command = copy.deepcopy(payload)
+        command["request_id"] = _as_uuid(command["request_id"],field="request id")
+        if command["kind"] == "skill":
+            command["item_ref"] = _as_uuid(command["item_ref"],field="skill reference")
+        elif command["item_ref"] is not None or len(command["references"]) > 4:
+            raise ResumeIntakeValidationError("Choose at most four saved highlight bullets.")
+        refs, seen = [],set()
+        for ref in command["references"]:
+            if type(ref) is str:
+                normalized = _as_uuid(ref,field="evidence reference")
+            elif command["kind"] == "skill" and type(ref) is dict and set(ref) == {"role_record_key","line_digest"}:
+                digest = ref["line_digest"]
+                if type(digest) is not str or len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest):
+                    raise ResumeIntakeValidationError("Choose the current exact summary line.")
+                normalized = {"role_record_key":_as_uuid(ref["role_record_key"],field="role reference"),"line_digest":digest}
+            else:
+                raise ResumeIntakeValidationError("Choose a saved bullet or current summary line.")
+            identity = _json_digest({"reference":normalized})
+            if identity in seen:
+                raise ResumeIntakeValidationError("Choose each reference once.")
+            seen.add(identity); refs.append(normalized)
+        if len(json.dumps(refs,ensure_ascii=False).encode("utf-8")) > 8000:
+            raise ResumeIntakeValidationError("Too many private reference details.")
+        command["references"] = refs
+        digest = _json_digest({"type":"guide_references",**{k:v for k,v in command.items() if k != "request_id"}})
+        if not getattr(self.repository,"supports_guide_first_arrival",False):
+            raise ResumeIntakeUnavailableError("This storage does not support Guide reference choices yet. Your input is kept.",
+                proposed={"kind":command["kind"],"item_ref":command["item_ref"],"references":copy.deepcopy(refs)})
+        with self.repository.owner_guard(owner):
+            snapshot = self._load(owner)
+            existing = snapshot["receipts"].get(command["request_id"])
+            if existing is not None:
+                if existing.get("request_digest") != digest:
+                    raise ResumeIntakeConflictError("idempotency_conflict",[],"That request key was already used for another choice.")
+                return {**copy.deepcopy(existing["result"]),"replayed":True}
+            with self._unit_of_work(owner) as unit:
+                if not getattr(unit,"supports_atomic_composition",False):
+                    raise ResumeIntakeUnavailableError()
+                base = self.working_set(owner)
+                working = (read_working_set or self.working_set)(owner)
+                if self.working_set(owner)["working_set_token"] != base["working_set_token"]:
+                    raise ResumeIntakeConflictError("changed",[],"The Resume changed. Review the current references.")
+                def flatten(items):
+                    for item in items:
+                        yield item
+                        yield from flatten(item["children"])
+                items = list(flatten([*(row for section in working["sections"] for row in section["items"]),
+                    *working["unplaced"],*working["non_tab_items"]]))
+                skill = next((row for row in items if row["item_ref"] == command["item_ref"]
+                    or command["item_ref"] in row["identity_aliases"]),None)
+                if command["kind"] == "skill" and (skill is None or skill["record_type"] != "skill"
+                        or skill["origin"] != "saved" or skill["state"] != "saved"):
+                    raise ResumeIntakeNotFoundError()
+                if working["working_set_token"] != command["expected_working_set_token"]:
+                    raise ResumeIntakeConflictError("changed",[],"The Resume changed. Review the current references.")
+                bound_refs, bound_seen = [],set()
+                for ref in refs:
+                    resolved = resolve_guide_references(working,evidence_refs={skill["item_ref"]:[ref]} if skill else {},
+                        highlight_refs=[ref] if command["kind"] == "highlights" else [])
+                    if resolved["needs_recheck"]:
+                        raise ResumeIntakeConflictError("changed",[],"That summary line changed. Choose it again.")
+                    shown = resolved["skill_evidence"].get(skill["item_ref"],[]) if skill else resolved["highlight_tiles"]
+                    if not shown:
+                        raise ResumeIntakeNotFoundError()
+                    bound = shown[0]["record_ref"] if type(ref) is str else {
+                        "role_record_key":shown[0]["role_ref"],"line_digest":ref["line_digest"]}
+                    identity = _json_digest({"reference":bound})
+                    if identity in bound_seen:
+                        raise ResumeIntakeValidationError("Choose each saved reference once.")
+                    bound_seen.add(identity); bound_refs.append(bound)
+                try:
+                    unit.save_guide_references(owner,request_id=command["request_id"],request_digest=digest,
+                        expected_version=working["draft_version"],kind=command["kind"],item=skill,references=bound_refs,
+                        validate_current=lambda: self.working_set(owner)["working_set_token"] == base["working_set_token"])
+                except (ResumeDraftConflictError,ResumeDraftVersionConflict) as error:
+                    raise ResumeIntakeConflictError("changed",[],"The private draft changed. Refresh and try again.") from error
+                except ResumeDraftIdempotencyConflict as error:
+                    raise ResumeIntakeConflictError("idempotency_conflict",[],"That request key was already used for a private edit.") from error
+                except (ResumeDraftUnavailableError,ResumeIntakeStoreUnavailable) as error:
+                    raise ResumeIntakeUnavailableError() from error
+                result = {"success":True,"type":"guide_references","request_id":command["request_id"],
+                    "kind":command["kind"],"item_ref":skill["item_ref"] if skill else None,"references":bound_refs,
+                    "replayed":False,"publishes":False,"outcome":"saved_privately"}
+                snapshot["receipts"][command["request_id"]] = {"request_digest":digest,"submission_key":None,"result":result}
+                try:
+                    unit.commit(owner,snapshot)
+                except ResumeIntakeStoreUnavailable as error:
+                    raise ResumeIntakeUnavailableError() from error
+                return result
+
+    def guide_reference_view(self, owner, working):
+        from services.resume_guide_contract import resolve_guide_references
+        from services.resume_draft_repository import InMemoryResumeDraftRepository
+        if not isinstance(self.draft_service.repository,InMemoryResumeDraftRepository):
+            return {"read_state":"unavailable","skill_evidence":None,"highlight_tiles":None,"needs_recheck":None}
+        with self.repository.owner_guard(owner):
+            workspace = self.draft_service.get_workspace(owner)
+            if (workspace["draft_version"] != working["draft_version"]
+                    or self.working_set(owner)["working_set_token"] != working.get("working_set_token")):
+                return {"read_state":"unavailable","skill_evidence":None,"highlight_tiles":None,"needs_recheck":None}
+            if ("highlight_refs" in workspace and type(workspace["highlight_refs"]) is not list
+                    or any(type(row["evidence_refs"]) is not list for row in workspace["items"] if "evidence_refs" in row)):
+                return {"read_state":"unavailable","skill_evidence":None,"highlight_tiles":None,"needs_recheck":None}
+            evidence = {row["record_key"]:row["evidence_refs"] for row in workspace["items"] if "evidence_refs" in row}
+            return {"read_state":"current",**resolve_guide_references(working,evidence_refs=evidence,
+                highlight_refs=workspace.get("highlight_refs") or [])}
+
+    def set_guide_visibility(self, owner, payload, *, read_working_set=None):
+        """A member's reversible private choice; never a canonical save or publish."""
+        from services.resume_guide_contract import bind_item_identities
+        required = {"request_id", "item_ref", "hidden", "expected_working_set_token", "expected_item_revision"}
+        if (not isinstance(payload, dict) or set(payload) != required
+                or type(payload.get("hidden")) is not bool
+                or not isinstance(payload.get("expected_working_set_token"), str)
+                or len(payload["expected_working_set_token"]) != 64):
+            raise ResumeIntakeValidationError("Invalid Guide visibility choice.")
+        command = {**payload, "request_id": _as_uuid(payload["request_id"], field="request id"),
+            "item_ref": _as_uuid(payload["item_ref"], field="item reference")}
+        digest = _json_digest({"type": "guide_visibility", **{k:v for k,v in command.items() if k != "request_id"}})
+        if not getattr(self.repository, "supports_guide_first_arrival", False):
+            raise ResumeIntakeUnavailableError("This storage cannot save Guide visibility yet. Your information is kept.")
+        with self.repository.owner_guard(owner):
+            snapshot = self._load(owner)
+            existing = snapshot["receipts"].get(command["request_id"])
+            if existing is not None:
+                if existing.get("request_digest") != digest:
+                    raise ResumeIntakeConflictError("idempotency_conflict", [], "That request key was already used for another choice.")
+                return {**copy.deepcopy(existing["result"]), "replayed": True}
+            with self._unit_of_work(owner) as unit:
+                if not getattr(unit, "supports_atomic_composition", False):
+                    raise ResumeIntakeUnavailableError()
+                working = (read_working_set or self.working_set)(owner)
+                def find(items):
+                    for item in items:
+                        if command["item_ref"] == item["item_ref"] or command["item_ref"] in item["identity_aliases"]:
+                            return item
+                        child = find(item["children"])
+                        if child is not None:
+                            return child
+                    return None
+                item = find([*(row for section in working["sections"] for row in section["items"]),
+                    *working["unplaced"], *working["non_tab_items"]])
+                if item is None:
+                    raise ResumeIntakeNotFoundError()
+                revision = item["revision"] if item["origin"] == "pending" else item["saved_revision"]
+                if (working["working_set_token"] != command["expected_working_set_token"]
+                        or type(revision) is not type(command["expected_item_revision"])
+                        or revision != command["expected_item_revision"]):
+                    raise ResumeIntakeConflictError("changed", [], "That item changed. Refresh the Guide and try again.")
+                if item["state"] not in {"saved", "waiting", "hidden"}:
+                    raise ResumeIntakeConflictError("changed", [], "That item is no longer available for Hide or Show.")
+                if not command["hidden"] and item["state"] != "hidden":
+                    raise ResumeIntakeConflictError("changed", [], "That item is already shown.")
+                changed = (item["state"] == "hidden") != command["hidden"]
+                order = self._next_resume_decision_order(snapshot)
+                if changed and item["origin"] == "pending":
+                    bind_item_identities(owner, snapshot)
+                    proposal = snapshot["proposals"].get(item["proposal_key"])
+                    if proposal is None or proposal["state"] != "pending" or proposal.get("superseded_by"):
+                        raise ResumeIntakeConflictError("changed", [], "That suggestion changed. Your original is kept.")
+                    proposal["guide_hidden"] = command["hidden"]
+                    proposal["revision"] += 1
+                elif changed:
+                    self._stamp_resume_choice(unit, owner, command["request_id"], digest)
+                result = {"success": True, "type": "guide_visibility", "request_id": command["request_id"],
+                    "item_ref": item["item_ref"], "origin": item["origin"], "hidden": command["hidden"],
+                    "decision_order": order, "changed": changed, "replayed": False, "publishes": False,
+                    "outcome": "hidden" if command["hidden"] else ("waiting" if item["origin"] == "pending" else "saved")}
+                snapshot["receipts"][command["request_id"]] = {"request_digest": digest,
+                    "submission_key": None, "result": result}
+                try:
+                    unit.commit(owner, snapshot)
+                except ResumeIntakeStoreUnavailable as error:
+                    raise ResumeIntakeUnavailableError() from error
+                return result
+
+    @staticmethod
+    def _stamp_resume_choice(unit, owner, request_id, digest):
+        stamp = getattr(unit, "stamp_resume_choice", None)
+        if not callable(stamp):
+            raise ResumeIntakeUnavailableError()
+        try:
+            stamp(owner, request_id, digest)
+        except ResumeDraftIdempotencyConflict as error:
+            raise ResumeIntakeConflictError("idempotency_conflict", [], "That request key was already used for another private edit.") from error
+        except ResumeDraftVersionConflict as error:
+            raise ResumeIntakeConflictError("changed", [], "The private draft changed. Refresh and try again.") from error
+        except (ResumeDraftUnavailableError, ResumeIntakeStoreUnavailable) as error:
+            raise ResumeIntakeUnavailableError() from error
+
+    def guide_publication_basis(self, owner, working, publication):
+        """Use the publisher's one validated engine with proven private inclusion.
+
+        Preserve existing explicit sharing choices. A private Hide removes
+        display and visitor-AI membership from the proposed copy; Show never
+        enables visitor AI. Reads do not write choices or pending reviews.
+        """
+        from services.resume_publication_service import ResumePublicationService
+        unavailable = ResumePublicationService._unavailable_basis
+        with self.repository.owner_guard(owner):
+            original_token = working.get("working_set_token")
+            if self.working_set(owner)["working_set_token"] != original_token:
+                return unavailable()
+            snapshot = self._load(owner)
+            history = self._resume_history(snapshot)
+            if any(row["effect"] == "inclusion" for row in history["conflicts"]):
+                return unavailable()
+            rows = {}
+            def collect(items, parent_hidden=False):
+                for item in items:
+                    hidden = parent_hidden or item["state"] == "hidden"
+                    if item["origin"] == "saved":
+                        rows[item["item_ref"]] = hidden
+                    collect(item["children"], hidden)
+            collect([*(row for section in working["sections"] for row in section["items"]),
+                *working["unplaced"], *working["non_tab_items"]])
+            if set(history["inclusion"]) - set(rows):
+                return unavailable()
+            read_provenance = getattr(publication, "read_display_selection_provenance", None)
+            provenance = read_provenance(owner, rows) if callable(read_provenance) else None
+            if provenance is not None and (type(provenance) is not dict or set(provenance) != set(rows) or
+                    any(type(value) is not str or value not in {"never_selected", "explicitly_chosen", "unknown"} for value in provenance.values())):
+                return unavailable()
+            states = provenance or dict.fromkeys(rows, "unknown")
+            selections = [{"entry_key": key, "resume_display": not hidden,
+                **({"visitor_ai": False} if hidden else {})} for key, hidden in rows.items()
+                if hidden or key in history["inclusion"] or states.get(key) == "never_selected"]
+            basis = publication.read_publication_basis_for_owner(owner, {"entries": selections})
+            if (type(basis) is not dict or basis.get("read_state") not in {"current", "blocked", "unavailable"}
+                    or self.working_set(owner)["working_set_token"] != original_token):
+                return unavailable()
+            if basis["read_state"] == "current" and (basis.get("candidate") or {}).get("draft_revision") != working["draft_version"]:
+                return unavailable()
+            if callable(read_provenance) and read_provenance(owner, rows) != provenance:
+                return unavailable()
+            basis["display_selection_provenance"] = states
+            basis["display_selection_provenance_read_state"] = "current" if provenance is not None and "unknown" not in states.values() else "unavailable"
+            return basis
 
     def get_workspace(self, owner):
         snapshot = self._load(owner)
@@ -908,6 +1185,13 @@ class ResumeIntakeService:
                 effects['bullets'] = meta['excluded_bullets']
             for effect, value in effects.items():
                 groups[effect].setdefault(key, []).append((row, value))
+        # Visibility button receipts are explicit member decisions, not fake
+        # extracted facts. Fold them into the same authoritative history.
+        for request_id, receipt in snapshot.get("receipts", {}).items():
+            choice = receipt.get("result") or {}
+            if choice.get("type") == "guide_visibility" and choice.get("origin") == "saved" and choice.get("changed") is True:
+                row = {"proposal_key": request_id, "resume_conversation_v1": {"decision_order": choice["decision_order"]}}
+                groups["inclusion"].setdefault(choice["item_ref"], []).append((row, choice["hidden"]))
         for effect, records in groups.items():
             for key, pairs in records.items():
                 values = {row['proposal_key']: value for row, value in pairs}
@@ -928,6 +1212,14 @@ class ResumeIntakeService:
                         for row, value in sorted(pairs, key=lambda pair: pair[0]['proposal_key'])]})
         result['conflicts'].sort(key=lambda row: (row['record_key'], row['effect']))
         return result
+
+    @staticmethod
+    def _next_resume_decision_order(snapshot):
+        orders = [(row.get("resume_conversation_v1") or {}).get("decision_order")
+            for row in snapshot["proposals"].values() if row.get("state") == "accepted"]
+        orders.extend((row.get("result") or {}).get("decision_order") for row in snapshot.get("receipts", {}).values()
+            if (row.get("result") or {}).get("type") == "guide_visibility")
+        return 1 + max([0] + [value for value in orders if type(value) is int and value > 0])
 
     @classmethod
     def _credential_bindings(cls, snapshot):
@@ -962,6 +1254,7 @@ class ResumeIntakeService:
         return list(latest.values())
 
     def _conversation_view(self, snapshot, canonical, *, exclude_source=None, budget=None):
+        from services.resume_guide_contract import model_resume_values
         """Authorized context for one turn; client-provided facts never enter this read.
 
         With a ``budget`` the view is bounded to the work in hand: the latest upload, what
@@ -1006,7 +1299,7 @@ class ResumeIntakeService:
             # limitations. The attached note remains excluded from private AI.
             if row['source_id'] in note_keys or row['source_id'] in restricted_parents:
                 continue
-            values = copy.deepcopy(row['values'])
+            values = model_resume_values(row['record_type'],row['values'])
             link = links.get(row['source_id'])
             note = eligible.get((link or {}).get('supplement_key'))
             if note is not None and row['record_type'] == 'credential':
@@ -1034,6 +1327,7 @@ class ResumeIntakeService:
                 keep_sources.add(source['source_key'])
             base = next((target for target in targets if target['target_ref'] == 'record:' + str(row.get('target_key'))), None)
             values = {**copy.deepcopy((base or {}).get('values') or {}), **copy.deepcopy(row['proposed_values'])}
+            values = model_resume_values(row['record_type'],values)
             for name in row.get('explicit_clears') or []:
                 values[name] = _empty_value(name)
             targets.append({'target_ref': 'proposal:' + row['proposal_key'],
@@ -1408,7 +1702,7 @@ class ResumeIntakeService:
         if not getattr(self.repository, 'supports_resume_conversation', False):
             raise ResumeIntakeUnavailableError()
         self._require_usable_policy(allow_fixture=allow_fixture_policy)
-        with self.repository.owner_guard(owner), self._unit_of_work() as unit:
+        with self.repository.owner_guard(owner), self._unit_of_work(owner) as unit:
             if not getattr(unit, 'supports_atomic_composition', False):
                 raise ResumeIntakeUnavailableError()
             snapshot = self._load(owner)
@@ -2051,12 +2345,15 @@ class ResumeIntakeService:
             proposal['requires_member_wording'] = False
             if (op == 'add_content' and unsupported_identity) or date_flags:
                 proposal['confidence'] = 'uncertain'
+            captured_values_digest = next((row.get('values_digest')
+                for row in (context.get('canonical') or {}).get('sources',[])
+                if canonical_target and row.get('source_id') == canonical_target['record_key']),None)
             proposal['resume_conversation_v1'] = {'unit_ids': [b['unit_id'] for b in source_refs],
                 'source_refs': copy.deepcopy(source_refs), 'source_bindings': dependencies,
                 'presentation_section': section, 'operation': op, 'revision_of': (old or {}).get('proposal_key'),
                 'excluded_bullets': excluded, 'bullet_edits': copy.deepcopy(operation['bullet_edits']),
-                'target_values_digest': _json_digest({k: v for k, v in (target or {}).get('values', {}).items()
-                    if k != 'resume_credential_wording'}) if canonical_target and not old else
+                'target_values_digest': (captured_values_digest or _json_digest({k: v for k, v in (target or {}).get('values', {}).items()
+                    if k != 'resume_credential_wording'})) if canonical_target and not old else
                     ((old or {}).get('resume_conversation_v1', {}).get('target_values_digest') or
                         (_json_digest({**canonical_target['values'], **(canonical_target.get('proposed_values') or {})}) if canonical_target else None)),
                 **({'uncertain_fields': (list(unsupported_identity) if op == 'add_content' else []) + date_flags}
@@ -2095,6 +2392,15 @@ class ResumeIntakeService:
     # -- explicit Add ---------------------------------------------------
 
     def submit(self, owner, payload, *, files=None, allow_fixture_policy=False, now=None):
+        request_id = str(payload.get("request_id") if isinstance(payload, dict) else None)
+        # Only an identical in-flight request waits; owner/store locks are
+        # never held across its provider call. Replay is checked before dispatch.
+        with resume_request_guard(owner, "submission:" + request_id):
+            return self._submit_guarded(
+                owner, payload, files=files, allow_fixture_policy=allow_fixture_policy, now=now,
+            )
+
+    def _submit_guarded(self, owner, payload, *, files=None, allow_fixture_policy=False, now=None):
         if isinstance(payload, dict) and payload.get("type") == "keep_extracted_separate":
             return self.keep_extracted_separate(
                 owner, payload, allow_fixture_policy=allow_fixture_policy, now=now,
@@ -2115,8 +2421,12 @@ class ResumeIntakeService:
             ],
             "attachments": raw["attachments"],
         }
+        recording_keys = [row["source_key"] for row in raw["attachments"]
+                          if row["kind"] == "recording" and row.get("source_key")]
         try:
-            snapshot = self._load(owner)
+            with self.repository.owner_guard(owner):
+                snapshot = self._load(owner)
+                preparation_fence = self._processing_fence(owner, snapshot, source_keys=recording_keys)
         except ResumeIntakeUnavailableError as error:
             raise ResumeIntakeUnavailableError(
                 proposed=error.proposed or proposed_hint
@@ -2125,17 +2435,21 @@ class ResumeIntakeService:
         prepared, results = self._prepare_inputs(raw, files, policy, snapshot)
         command = self._finalize_command(raw, prepared, snapshot)
 
-        existing = snapshot["receipts"].get(command["request_id"])
-        if existing is not None:
-            if existing["request_digest"] != command["request_digest"]:
-                raise ResumeIntakeConflictError(
-                    "idempotency_conflict",
-                    [{"request_id": command["request_id"]}],
-                    "That request key was already used for different content.",
-                    proposed=command["proposed"],
-                )
-            return {**self._hydrate_replay(owner, snapshot, existing["result"]), "replayed": True,
-                    "request_digest": existing["request_digest"]}
+        with self.repository.owner_guard(owner):
+            snapshot = self._load(owner)
+            replay = self._submission_replay(owner, snapshot, command)
+            if replay is not None:
+                return replay
+            self._check_processing_fence(owner, snapshot, preparation_fence, source_keys=recording_keys,
+                                         proposed=command["proposed"])
+            fence = self._processing_fence(owner, snapshot, source_keys=recording_keys)
+            plans = self._plan_items(command, prepared)
+            duplicate_keys = {plan.client_key for plan in plans if self._duplicate_document(snapshot, plan) is not None}
+        # Parse and model work are detached preparation. The actual source,
+        # proposal, canonical writes and receipt remain one fenced transaction.
+        for plan in plans:
+            if plan.client_key not in duplicate_keys:
+                self._prepare_processing(owner, plan, policy)
 
         submission_key = str(uuid4())
         submission_version = 1
@@ -2152,10 +2466,17 @@ class ResumeIntakeService:
             "proposal_keys": [],
             "item_count": 0,
         }
-        plans = self._plan_items(command, prepared)
         commit_result = None
         try:
-            with self._unit_of_work() as unit:
+            with self.repository.owner_guard(owner), self._unit_of_work(owner) as unit:
+                snapshot = self._load(owner)
+                replay = self._submission_replay(owner, snapshot, command)
+                if replay is not None:
+                    return replay
+                self._check_processing_fence(owner, snapshot, fence, source_keys=recording_keys,
+                                             proposed=command["proposed"])
+                self._check_dependent_targets(owner, plans, proposed=command["proposed"])
+                snapshot["policy_version"] = policy.version
                 # The submission row exists before any job is fenced, so a
                 # job's submission-version proof is meaningful from the start.
                 snapshot["submissions"][submission_key] = submission
@@ -2266,6 +2587,83 @@ class ResumeIntakeService:
         for entry in receipt.get("saved_items") or []:
             entry["persisted"] = True
         return _present_intake_receipt(receipt)
+
+    def _submission_replay(self, owner, snapshot, command):
+        existing = snapshot["receipts"].get(command["request_id"])
+        if existing is None:
+            return None
+        if existing["request_digest"] != command["request_digest"]:
+            raise ResumeIntakeConflictError(
+                "idempotency_conflict", [{"request_id": command["request_id"]}],
+                "That request key was already used for different content.", proposed=command["proposed"],
+            )
+        return {**self._hydrate_replay(owner, snapshot, existing["result"]), "replayed": True,
+                "request_digest": existing["request_digest"]}
+
+    def _processing_fence(self, owner, snapshot, *, source_keys=()):
+        """What a prepared result depends on in intake state, and nothing else.
+
+        The lifecycle epoch (reset), the exact source rows it reads and the
+        proposals already bound to them. Unrelated private work while
+        organizing (Hide/Show, references, Publish, other confirmations, edits
+        elsewhere) must not discard a paid result. Matched targets are fenced
+        separately against the shortlist the provider actually saw.
+        """
+        keys = sorted({str(key) for key in source_keys})
+        return _json_digest({
+            "lifecycle_epoch": snapshot.get("lifecycle_epoch"),
+            "sources": {key: snapshot["sources"].get(key) for key in keys},
+            "bound": {key: sorted(self._bound_proposals(snapshot, key), key=lambda row: row["proposal_key"])
+                      for key in keys},
+        })
+
+    def _check_processing_fence(self, owner, snapshot, expected, *, source_keys=(), proposed=None):
+        if self._processing_fence(owner, snapshot, source_keys=source_keys) != expected:
+            raise ResumeIntakeConflictError(
+                "changed", [], "Your private résumé changed while organizing. Review it and try again.",
+                proposed=proposed,
+            )
+
+    def _check_dependent_targets(self, owner, plans, *, proposed=None):
+        """Refuse a prepared result whose matched saved items changed meanwhile.
+
+        Only the items the provider's drafts reference count. Each must still
+        read exactly as in the shortlist the provider saw; a newly excluded,
+        deleted or edited target reports stale instead of forcing an apply.
+        """
+        dependent = {}
+        for plan in plans:
+            drafts = (plan.extraction or (None,))[0] or []
+            seen = {row.get("record_key"): row for row in (plan.shortlist or []) if row.get("record_key")}
+            for draft in drafts:
+                for name in ("match_reference", "parent_reference"):
+                    key = draft.get(name)
+                    if isinstance(key, str) and key in seen:
+                        dependent[key] = seen[key]
+        if not dependent:
+            return
+        current = {row.get("record_key"): row for row in self._matching_shortlist(owner) if row.get("record_key")}
+        if any(current.get(key) != before for key, before in dependent.items()):
+            raise ResumeIntakeConflictError(
+                "changed", [], "Your private résumé changed while organizing. Review it and try again.",
+                proposed=proposed,
+            )
+
+    def _prepare_processing(self, owner, plan, policy):
+        if plan.kind == "structured":
+            return
+        if plan.kind == "document":
+            parsed = self.document_adapter.parse(
+                plan.prepared["content_type"], plan.prepared["data"], policy, pipeline=self._document_pipeline,
+            )
+            plan.parsed_document = parsed
+            if not parsed.ok:
+                return
+            plan.source_text, plan.quote, plan.document = parsed.text, (parsed.text or "")[:300], parsed.as_receipt()
+        if self._extraction_adapter is not None:
+            plan.extraction = self._extract_with_adapter(owner, plan)
+        else:
+            plan.extraction = (self._interpreter(plan.source_text or "", plan.kind) or [], None, None)
 
     # -- in-field microphone transcription ------------------------------
 
@@ -2386,90 +2784,93 @@ class ResumeIntakeService:
         # claim has returned this lease and preallocated source key.
         outcome = self.transcription_adapter.transcribe(validated, policy)
 
-        # Reload after provider work so finalization never replaces newer owner
-        # state with the snapshot observed before the lease was acquired.
-        snapshot = self._load(owner)
-        if (
-            int(snapshot["lifecycle_epoch"]) != lifecycle_epoch
-            or int(snapshot["policy_version"]) != int(policy.version)
-        ):
-            raise ResumeIntakeConflictError(
-                "recording_claim_changed", [{"request_id": request_id}],
-                "This recording finished after your intake state changed. "
-                "It was not saved, and it will not be sent to the provider again.",
-                proposed={"client_key": client_key},
-            )
-        snapshot["policy_version"] = policy.version
-        result = {
-            "success": outcome.ok,
-            "outcome": "transcribed" if outcome.ok else "failed",
-            "request_id": request_id,
-            "request_digest": digest,
-            "replayed": False,
-            "client_key": client_key,
-            "transcript": outcome.transcript,
-            "receipt": outcome.as_receipt(),
-            "input_preserved": not outcome.ok,
-            "publishes": False,
-            "source_version": 1 if outcome.ok else None,
-            "lifecycle_epoch": lifecycle_epoch,
-        }
-        source_key = claim["source_key"]
-        if outcome.ok:
-            snapshot["sources"][source_key] = {
-                "source_key": source_key,
-                "kind": "recording",
-                "state": "active",
-                "version": 1,
-                "text": outcome.transcript,
-                "content_type": outcome.content_type,
-                "byte_length": outcome.byte_length,
-                "sha256": outcome.sha256,
-                "duration_seconds": outcome.duration_seconds,
-                "created_at": moment.isoformat(),
-                "origin_client_key": client_key,
+        # Finalize inside the owner order: the provider call above held no lock,
+        # and this reload/save must not interleave with a guarded owner write.
+        with self.repository.owner_guard(owner):
+            # Reload after provider work so finalization never replaces newer owner
+            # state with the snapshot observed before the lease was acquired.
+            snapshot = self._load(owner)
+            if (
+                int(snapshot["lifecycle_epoch"]) != lifecycle_epoch
+                or int(snapshot["policy_version"]) != int(policy.version)
+            ):
+                raise ResumeIntakeConflictError(
+                    "recording_claim_changed", [{"request_id": request_id}],
+                    "This recording finished after your intake state changed. "
+                    "It was not saved, and it will not be sent to the provider again.",
+                    proposed={"client_key": client_key},
+                )
+            snapshot["policy_version"] = policy.version
+            result = {
+                "success": outcome.ok,
+                "outcome": "transcribed" if outcome.ok else "failed",
+                "request_id": request_id,
+                "request_digest": digest,
+                "replayed": False,
+                "client_key": client_key,
+                "transcript": outcome.transcript,
+                "receipt": outcome.as_receipt(),
+                "input_preserved": not outcome.ok,
+                "publishes": False,
+                "source_version": 1 if outcome.ok else None,
+                "lifecycle_epoch": lifecycle_epoch,
             }
-            result["source_key"] = source_key
-        stored_result = receipt_for_storage(result)
-        stored_result["persisted"] = bool(outcome.ok)
-        snapshot["receipts"][request_id] = {
-            "request_digest": digest, "submission_key": None, "result": stored_result,
-        }
-        try:
-            commit_result = self.repository.save_owner(
-                owner,
-                snapshot,
-                {
-                    "procedure": COMMAND_PROCEDURES["transcribe_recording"],
-                    "request_id": request_id,
-                    "payload": {
-                        "type": "transcribe_recording",
+            source_key = claim["source_key"]
+            if outcome.ok:
+                snapshot["sources"][source_key] = {
+                    "source_key": source_key,
+                    "kind": "recording",
+                    "state": "active",
+                    "version": 1,
+                    "text": outcome.transcript,
+                    "content_type": outcome.content_type,
+                    "byte_length": outcome.byte_length,
+                    "sha256": outcome.sha256,
+                    "duration_seconds": outcome.duration_seconds,
+                    "created_at": moment.isoformat(),
+                    "origin_client_key": client_key,
+                }
+                result["source_key"] = source_key
+            stored_result = receipt_for_storage(result)
+            stored_result["persisted"] = bool(outcome.ok)
+            snapshot["receipts"][request_id] = {
+                "request_digest": digest, "submission_key": None, "result": stored_result,
+            }
+            try:
+                commit_result = self.repository.save_owner(
+                    owner,
+                    snapshot,
+                    {
+                        "procedure": COMMAND_PROCEDURES["transcribe_recording"],
                         "request_id": request_id,
-                        "client_key": client_key,
-                        "entrance": policy.entrance,
-                        "policy_version": policy.version,
-                        "lifecycle_epoch": lifecycle_epoch,
-                        "audio_sha256": audio_sha256,
-                        "byte_length": validated.byte_length,
-                        "content_type": validated.content_type,
-                        "duration_seconds": validated.duration_seconds,
-                        "outcome": result["outcome"],
-                        "transcript": outcome.transcript,
-                        "source_key": source_key,
-                        "source_version": 1 if outcome.ok else None,
-                        "receipt": stored_result,
-                        "request_digest": digest,
-                        "lease_id": claim["lease_id"],
+                        "payload": {
+                            "type": "transcribe_recording",
+                            "request_id": request_id,
+                            "client_key": client_key,
+                            "entrance": policy.entrance,
+                            "policy_version": policy.version,
+                            "lifecycle_epoch": lifecycle_epoch,
+                            "audio_sha256": audio_sha256,
+                            "byte_length": validated.byte_length,
+                            "content_type": validated.content_type,
+                            "duration_seconds": validated.duration_seconds,
+                            "outcome": result["outcome"],
+                            "transcript": outcome.transcript,
+                            "source_key": source_key,
+                            "source_version": 1 if outcome.ok else None,
+                            "receipt": stored_result,
+                            "request_digest": digest,
+                            "lease_id": claim["lease_id"],
+                        },
                     },
-                },
-            )
-        except ResumeIntakeStoreUnavailable as error:
-            # The durable claim deliberately remains pending. A retry checks
-            # for a completed receipt but never starts a second provider call
-            # merely because this final response or finalization was ambiguous.
-            raise ResumeIntakeUnavailableError(proposed={"client_key": client_key}) from error
-        winner = self._winner_after_commit(owner, request_id, digest, commit_result)
-        return winner if winner is not None else result
+                )
+            except ResumeIntakeStoreUnavailable as error:
+                # The durable claim deliberately remains pending. A retry checks
+                # for a completed receipt but never starts a second provider call
+                # merely because this final response or finalization was ambiguous.
+                raise ResumeIntakeUnavailableError(proposed={"client_key": client_key}) from error
+            winner = self._winner_after_commit(owner, request_id, digest, commit_result)
+            return winner if winner is not None else result
 
     # -- member decision on a pending proposal ---------------------------
 
@@ -2487,6 +2888,16 @@ class ResumeIntakeService:
         decision = payload.get("decision")
         if decision not in {"accept", "reject", "edit"}:
             raise ResumeIntakeValidationError("Invalid decision.")
+        guide_review = payload.get("guide_review", False)
+        guide_section = payload.get("guide_section")
+        if type(guide_review) is not bool:
+            raise ResumeIntakeValidationError("Invalid Guide review mode.")
+        if guide_review:
+            from services.resume_publication_projection import RESUME_SECTION_LABELS
+            if guide_section is not None and guide_section not in RESUME_SECTION_LABELS:
+                raise ResumeIntakeValidationError("Invalid Guide section.")
+            if not getattr(self.repository, "supports_guide_first_arrival", False):
+                raise ResumeIntakeValidationError("This storage does not support Guide review yet. Your input is kept.")
         undo_token = payload.get('undo_exclusion_token')
         if undo_token is not None and (decision != 'reject' or not isinstance(undo_token, str) or len(undo_token) != 64):
             raise ResumeIntakeValidationError('Invalid exclusion Undo.')
@@ -2501,6 +2912,7 @@ class ResumeIntakeService:
         digest = _json_digest(
             {"type": "decide_proposal", "proposal_key": proposal_key,
              "decision": decision, "confirmed_values": confirmed,
+             **({"guide_review": True, "guide_section": guide_section} if guide_review else {}),
              **({'undo_exclusion_token': undo_token} if undo_token is not None else {})}
         )
         snapshot = self._load(owner)
@@ -2561,6 +2973,7 @@ class ResumeIntakeService:
                     "Choose what this should become before saving it.",
                     proposed=proposal.get("proposed_values"),
                 )
+        prior_inclusion = self._resume_history(snapshot)["inclusion"]
         try:
             decided = decide_proposal_record(
                 snapshot, proposal_key, decision=decision,
@@ -2577,7 +2990,7 @@ class ResumeIntakeService:
         commit_result = None
         restored_proposal = None
         try:
-            with self._unit_of_work() as unit:
+            with self._unit_of_work(owner) as unit:
                 if recovery and decision in {'accept', 'edit'} or undo_token is not None:
                     if not getattr(unit, 'supports_atomic_composition', False):
                         raise ResumeIntakeUnavailableError()
@@ -2596,11 +3009,7 @@ class ResumeIntakeService:
                 if decided["state"] == "accepted":
                     metadata = decided.get('resume_conversation_v1') or {}
                     if metadata:
-                        metadata['decision_order'] = 1 + max([0] + [
-                            value for row in snapshot['proposals'].values()
-                            if row.get('state') == 'accepted'
-                            for value in [(row.get('resume_conversation_v1') or {}).get('decision_order')]
-                            if type(value) is int and value > 0])
+                        metadata['decision_order'] = self._next_resume_decision_order(snapshot)
                     if decided.get('target_key') and metadata:
                         # Recheck under the participating draft-store lock,
                         # including projection-only exclusion/restoration.
@@ -2632,13 +3041,26 @@ class ResumeIntakeService:
                             raise ResumeIntakeConflictError('changed', [], 'That saved choice changed. Review it again.')
                         item = self._find_item(owner, decided['target_key'])
                         outcome = 'reviewed'
+                        if review['effect'] == 'inclusion' and item and prior_inclusion.get(item['record_key'], False) != bool(metadata.get('resume_exclusion')):
+                            self._stamp_resume_choice(unit, owner, request_id, digest)
                     elif metadata.get('resume_exclusion') or metadata.get('resume_restoration'):
                         # Inclusion is a private Resume projection choice, not
                         # permission to delete canonical member evidence.
                         item = self._find_item(owner, decided['target_key']) if decided.get('target_key') else None
                         outcome = 'excluded' if metadata.get('resume_exclusion') else 'restored'
+                        if item and prior_inclusion.get(item["record_key"], False) != bool(metadata.get("resume_exclusion")):
+                            self._stamp_resume_choice(unit, owner, request_id, digest)
                     else:
-                        item = self._apply_decision(owner, snapshot, unit, decided, confirmed)
+                        application = {**decided, "_guide_review": True, "_guide_section": guide_section} if guide_review else decided
+                        item = self._apply_decision(owner, snapshot, unit, application, confirmed)
+                        if guide_review and guide_section is not None:
+                            from services.resume_publication_projection import RESUME_SECTION_LABELS
+                            label = {"impact_statement": "Professional summary"}.get(guide_section, RESUME_SECTION_LABELS[guide_section])
+                            if decided.get("record_type") == "knowledge" and guide_section == "projects":
+                                label = "Independent Project"
+                            decided.setdefault("resume_conversation_v1", {})["presentation_section"] = label
+                        if guide_review and guide_section == "story":
+                            self._bind_guide_story(owner, unit, item, request_id)
                         outcome = "saved"
                     decided["saved_record_key"] = (item or {}).get("record_key") or decided.get("target_key")
                 self._refresh_source_accounting(snapshot)
@@ -2688,6 +3110,27 @@ class ResumeIntakeService:
             raise ResumeIntakeUnavailableError(proposed=confirmed) from error
         winner = self._winner_after_commit(owner, request_id, digest, commit_result)
         return winner if winner is not None else result
+
+    def _bind_guide_story(self, owner, unit, item, request_id):
+        """Save in the explicit My Story screen designates that actual personal entry."""
+        from uuid import NAMESPACE_URL, uuid5
+        if not getattr(unit, "supports_atomic_composition", False) or not item:
+            raise ResumeIntakeUnavailableError()
+        items, version = self._canonical_view(owner)
+        current = next((row for row in items if row["record_key"] == item["record_key"]), None)
+        if current is None:
+            raise ResumeIntakeNotFoundError()
+        payload = {"type":"bind_story", "request_id":str(uuid5(NAMESPACE_URL, "peerslate-guide-story:"+owner+":"+request_id)),
+            "record_key":current["record_key"], "expected_draft_version":version,
+            "expected_content_token":current["content_token"], "expected_access_revision":current["access_revision"]}
+        try:
+            unit.apply_canonical(owner,payload,None)
+        except ResumeDraftUnavailableError as error:
+            raise ResumeIntakeUnavailableError() from error
+        except ResumeDraftConflictError as error:
+            raise ResumeIntakeConflictError("changed",error.conflicts,"My Story changed. Your words are kept.") from error
+        except (ResumeDraftValidationError, ResumeDraftNotFoundError) as error:
+            raise ResumeIntakeValidationError("Choose a current personal entry for My Story.") from error
 
     # -- purge / delete a source ----------------------------------------
 
@@ -3091,7 +3534,7 @@ class ResumeIntakeService:
         }
         commit_result = None
         try:
-            with self._unit_of_work() as unit:
+            with self._unit_of_work(owner) as unit:
                 submission_key = override_key
                 submission_version = 1
                 submission = {
@@ -3891,11 +4334,8 @@ class ResumeIntakeService:
                     "message": "Choose an eligible private draft role for this Impact, then save it.",
                     "saved": False,
                 }
-        if plan.kind == "document" and plan.source_text is None:
-            parsed = self.document_adapter.parse(
-                plan.prepared["content_type"], plan.prepared["data"], policy,
-                pipeline=self._document_pipeline,
-            )
+        if plan.kind == "document" and plan.parsed_document is not None:
+            parsed = plan.parsed_document
             from services.resume_onboarding_document_reader import inventory_source
             source["structured_values"] = {"resume_conversation_v1": {
                 "schema_version": 1, "source_units": list(parsed.source_units) or inventory_source(parsed.text or "", document=True),
@@ -3983,10 +4423,9 @@ class ResumeIntakeService:
         organization = None
         resume_document = (plan.kind == "document" and self._extraction_adapter is not None
                            and hasattr(self._extraction_adapter, "organize_resume"))
-        if self._extraction_adapter is not None and plan.kind in {"text", "document", "recording"}:
-            drafts, provider_issue, organization = self._extract_with_adapter(owner, plan)
-        else:
-            drafts = self._interpreter(plan.source_text or "", plan.kind) or []
+        if plan.extraction is None:
+            raise ResumeIntakeUnavailableError("Prepared extraction is unavailable. Your input is kept.")
+        drafts, provider_issue, organization = plan.extraction
         if resume_document:
             # The document is kept either way. When it could not be organized there are no
             # fragment items: the member can try again, sort it by hand, or edit directly.
@@ -4264,6 +4703,11 @@ class ResumeIntakeService:
         return parsed.text, units, list(parsed.pages), parsed.complete, parsed.ocr_configuration_sha256
 
     def organize_source(self, owner, payload, *, allow_fixture_policy=False):
+        request_id = str(payload.get("request_id") if isinstance(payload, dict) else None)
+        with resume_request_guard(owner, "organize_source:" + request_id):
+            return self._organize_source_guarded(owner, payload, allow_fixture_policy=allow_fixture_policy)
+
+    def _organize_source_guarded(self, owner, payload, *, allow_fixture_policy=False):
         """Organize an uploaded résumé again, or let the member sort it by hand.
 
         ``retry`` makes one provider dispatch for a document whose organization
@@ -4305,40 +4749,56 @@ class ResumeIntakeService:
                 return {"success": True, "outcome": "already_organized", "source_key": source_key,
                         "request_id": request_id, "replayed": False, "saved": False, "publishes": False,
                         "message": "This résumé is already organized."}
-            meta = self._source_meta(source)
-            units = list(meta.get("source_units") or [])
-            text = source["text"]
-            refreshed = self._reread_original(owner, source, policy) if mode == "retry" else None
-            if refreshed:
-                text, units = refreshed[0], refreshed[1]
-            elif mode == "retry":
-                # The words are unchanged, but the lines stored with them may come from an older reader than the one
-                # the dispatch below uses. Re-derive and store them (under a new source version) so the lines the
-                # model cites are the lines the source keeps, instead of a false "not attached to any item".
-                from services.resume_onboarding_document_reader import inventory_source
-                fresh = inventory_source(text, pages=meta.get("pages"), document=True)
-                if [row["unit_id"] for row in fresh] != [row.get("unit_id") for row in units]:
-                    units = fresh
-                    refreshed = (text, fresh, list(meta.get("pages") or []), meta.get("complete"),
-                                 meta.get("ocr_configuration_sha256"))
+            processing_fence = self._processing_fence(owner, snapshot, source_keys=[source_key])
+        meta = self._source_meta(source)
+        units = list(meta.get("source_units") or [])
+        text = source["text"]
+        refreshed = self._reread_original(owner, source, policy) if mode == "retry" else None
+        if refreshed:
+            text, units = refreshed[0], refreshed[1]
+        elif mode == "retry":
+            # The words are unchanged, but the lines stored with them may come from an older reader than the one
+            # the dispatch below uses. Re-derive and store them (under a new source version) so the lines the
+            # model cites are the lines the source keeps, instead of a false "not attached to any item".
+            from services.resume_onboarding_document_reader import inventory_source
+            fresh = inventory_source(text, pages=meta.get("pages"), document=True)
+            if [row["unit_id"] for row in fresh] != [row.get("unit_id") for row in units]:
+                units = fresh
+                refreshed = (text, fresh, list(meta.get("pages") or []), meta.get("complete"),
+                             meta.get("ocr_configuration_sha256"))
+        if mode == "retry":
+            from uuid import uuid5
+            # The same seam an upload uses, so every composition's provider scope (the private owner
+            # scope, the hosted one) wraps this dispatch; calling the adapter directly would bypass it.
+            dispatch = _ItemPlan(client_key="organize-" + source_key, kind="document", record_type="unspecified",
+                                 source_text=text, quote=text[:300], confidence="uncertain",
+                                 dispatch_id=str(uuid5(UUID(request_id), "organize_source")))
+            _drafts, provider_issue, organization = self._extract_with_adapter(owner, dispatch)
+            dispatch.extraction = (_drafts, provider_issue, organization)
+            if organization is None:
+                # Nothing changed: the member's words and this source stay exactly as they were.
+                return {"success": True, "outcome": "unavailable", "source_key": source_key,
+                        "request_id": request_id, "replayed": False, "saved": False, "publishes": False,
+                        "provider_issue": {"code": provider_issue or "provider_unavailable", "retryable": True},
+                        "message": "The organizer is unavailable right now. Nothing was changed."}
+        else:
+            organization = organize_resume_extraction(
+                {"candidates": []}, text=text, source_units=units,
+                allowed_fields={name: EDITOR_FIELDS[name] for name in EDITOR_FIELDS})
+        with self.repository.owner_guard(owner):
+            snapshot = self._load(owner)
+            existing = snapshot["receipts"].get(request_id)
+            if existing is not None:
+                if existing["request_digest"] != digest:
+                    raise ResumeIntakeConflictError("idempotency_conflict", [{"request_id": request_id}])
+                return {**existing["result"], "replayed": True, "request_digest": digest}
+            self._check_processing_fence(owner, snapshot, processing_fence, source_keys=[source_key])
             if mode == "retry":
-                from uuid import uuid5
-                # The same seam an upload uses, so every composition's provider scope (the private owner
-                # scope, the hosted one) wraps this dispatch; calling the adapter directly would bypass it.
-                dispatch = _ItemPlan(client_key="organize-" + source_key, kind="document", record_type="unspecified",
-                                     source_text=text, quote=text[:300], confidence="uncertain",
-                                     dispatch_id=str(uuid5(UUID(request_id), "organize_source")))
-                _drafts, provider_issue, organization = self._extract_with_adapter(owner, dispatch)
-                if organization is None:
-                    # Nothing changed: the member's words and this source stay exactly as they were.
-                    return {"success": True, "outcome": "unavailable", "source_key": source_key,
-                            "request_id": request_id, "replayed": False, "saved": False, "publishes": False,
-                            "provider_issue": {"code": provider_issue or "provider_unavailable", "retryable": True},
-                            "message": "The organizer is unavailable right now. Nothing was changed."}
-            else:
-                organization = organize_resume_extraction(
-                    {"candidates": []}, text=text, source_units=units,
-                    allowed_fields={name: EDITOR_FIELDS[name] for name in EDITOR_FIELDS})
+                self._check_dependent_targets(owner, [dispatch])
+            source = snapshot["sources"][source_key]
+            meta = self._source_meta(source)
+            bound = self._bound_proposals(snapshot, source_key)
+            pending = [row for row in bound if row["state"] == "pending"]
             snapshot["policy_version"] = policy.version
             summary = organization.summary()
             created, matched, replaced = [], [], 0
@@ -4640,7 +5100,9 @@ class ResumeIntakeService:
         """
 
         text = plan.source_text or ""
-        shortlist = self._matching_shortlist(owner)
+        with self.repository.owner_guard(owner):
+            shortlist = self._matching_shortlist(owner)
+        plan.shortlist = copy.deepcopy(shortlist)
         try:
             # The older private-provider seam carries source_text alone. Only
             # an explicitly declared document uses the resume inventory path.
@@ -4767,6 +5229,9 @@ class ResumeIntakeService:
         except (ResumeDraftUnavailableError, CanonicalReadUnavailable,
                 ResumeDraftStoreUnavailable) as error:
             raise ResumeIntakeUnavailableError() from error
+        if (not isinstance(workspace, dict) or not isinstance(workspace.get("capabilities"), dict)
+                or workspace["capabilities"].get("canonical_read") != "ok"):
+            raise ResumeIntakeUnavailableError()
         items = workspace.get("items")
         if not isinstance(items, list):
             raise ResumeIntakeUnavailableError()
@@ -4777,20 +5242,26 @@ class ResumeIntakeService:
             or draft_version < 0
         ):
             raise ResumeIntakeUnavailableError()
-        return [item for item in items if not item.get("orphaned")], draft_version
+        story_key = workspace.get("story_entry_key")
+        return [{**item, "story_bound": item.get("record_key") == story_key}
+                for item in items if not item.get("orphaned")], draft_version
 
     def _canonical_items(self, owner):
         items, _draft_version = self._canonical_view(owner)
         return items
 
-    def _save_new_fact(self, owner, snapshot, unit, plan, submission_key):
+    def _save_new_fact(self, owner, snapshot, unit, plan, submission_key, *, guide_review=False, guide_section=None):
         record_key = _stable_key(submission_key, f"fact:{plan.client_key}")
         try:
-            normalized = (_normalize_draft_values("knowledge", plan.provided_values)
+            normalized = (normalize_guide_values(plan.record_type, plan.provided_values, section=guide_section) if guide_review else
+                          _normalize_draft_values("knowledge", plan.provided_values)
                           if plan.record_type == "knowledge"
                           else normalize_editor_values(plan.record_type, plan.provided_values))
         except LivingResumeEditorValidationError as error:
-            raise ResumeIntakeValidationError(str(error)) from error
+            raise _guide_intake_validation_error(error) from error
+        if isinstance(unit, SqlIntakeUnitOfWork) and (guide_review or plan.record_type == "project" or "qualification_kind" in normalized
+                or plan.record_type == "education" and not normalized.get("title")):
+            raise ResumeIntakeValidationError("This storage does not support these local Resume fields yet. Your input is kept.")
         if plan.record_type == 'knowledge' and isinstance(unit, SqlIntakeUnitOfWork):
             raise ResumeIntakeValidationError('Guided personal stories are not supported by this storage yet. '
                 'Your input is kept. Use the existing entry editor or the private local workspace.')
@@ -4808,6 +5279,10 @@ class ResumeIntakeService:
             "values": normalized,
             "intended_permission_expansions": {"resume_display": False, "visitor_ai": False},
         }
+        if guide_review:
+            payload["guide_review"] = True
+            if guide_section is not None:
+                payload["guide_section"] = guide_section
         # A brand-new private fact is created by the EXISTING canonical editor
         # command (usp_CommitLivingResumeCommandForOwner), whose closed key set
         # and type vocabulary are extracted from PS-RESUME-EDIT-002. Calling the
@@ -4934,10 +5409,22 @@ class ResumeIntakeService:
         if record_type in {None, "unspecified"}:
             record_type = values.pop("record_type", None)
         resume_binding = proposal.get("resume_conversation_v1") or {}
+        guide_review = proposal.get("_guide_review") is True
+        guide_section = proposal.get("_guide_section")
+        if guide_review and guide_section is None:
+            from services.resume_publication_projection import resume_section_for
+            derived = resume_section_for(record_type, values, presentation_section=resume_binding.get("presentation_section"), proposed=True)
+            guide_section = derived if derived != "unplaced" else None
+        if guide_review and record_type in STRUCTURED_RECORD_TYPES and guide_section is not None:
+            from services.resume_publication_projection import resume_section_for
+            if resume_section_for(record_type, values) != guide_section:
+                raise ResumeIntakeValidationError("That needs a staged type change before saving. Your input is kept.")
         source_knowledge = (record_type == "knowledge" and bool(resume_binding.get("unit_ids"))
                             and resume_binding.get("presentation_section") in {
                                 "My Story", "Awards", "Professional summary", "Contact details", "Independent Project"}
-                            or record_type == 'knowledge' and resume_binding.get('credential_supplement') is True)
+                            or record_type == 'knowledge' and resume_binding.get('credential_supplement') is True
+                            or record_type == "knowledge" and guide_review and guide_section in {
+                                "story", "awards", "impact_statement", "contact", "projects", "looking_ahead"})
         if record_type not in STRUCTURED_RECORD_TYPES and not (
                 source_knowledge or record_type == "knowledge" and proposal.get("record_type") == "unspecified"
                 and not target_key):
@@ -4948,7 +5435,8 @@ class ResumeIntakeService:
                 proposed=proposal.get("proposed_values"),
             )
         if record_type == "knowledge":
-            expected_class = ("personal" if not source_knowledge or resume_binding.get("presentation_section") == "My Story" else "work")
+            expected_class = ("personal" if not source_knowledge or resume_binding.get("presentation_section") == "My Story"
+                              or guide_section == "story" else "work")
             if values.get("classification", expected_class) != expected_class:
                 raise ResumeIntakeValidationError("Choose a personal entry for My Story." if expected_class == "personal" else
                     "Keep this resume supplement separate from My Story.")
@@ -4979,7 +5467,8 @@ class ResumeIntakeService:
                 provided_values=dict(values),
                 parent_key=resolved_parent,
             )
-            return self._save_new_fact(owner, snapshot, unit, plan, proposal["proposal_key"])
+            return self._save_new_fact(owner, snapshot, unit, plan, proposal["proposal_key"],
+                guide_review=guide_review, guide_section=guide_section)
         # A change to an existing fact goes through B's private draft overlay,
         # against the versions captured when the proposal was made. The same
         # read supplies the authoritative draft version fenced below.
@@ -4994,14 +5483,26 @@ class ResumeIntakeService:
         merged.update(values)
         for name in clears:
             merged[name] = _empty_value(name)
+        if record_type == "knowledge":
+            from services.resume_publication_projection import resume_section_for
+            existing_section = resume_section_for(record_type, existing.get("values") or {},
+                presentation_section=resume_binding.get("presentation_section"), story_bound=existing.get("story_bound") is True)
+            if existing_section in {"impact_statement", "looking_ahead", "story", "contact"}:
+                guide_section = existing_section
         try:
-            normalized = (_normalize_draft_values(record_type, merged) if record_type == "knowledge"
+            normalized = (normalize_guide_values(record_type, merged, section=guide_section) if guide_review else
+                          _normalize_draft_values(record_type, merged, section=guide_section) if record_type == "knowledge"
                           else normalize_editor_values(record_type, merged))
         except LivingResumeEditorValidationError as error:
-            raise ResumeIntakeValidationError(str(error)) from error
-        partial = {name: normalized.get(name) for name in values}
+            raise _guide_intake_validation_error(error) from error
+        # Guide normalization can add precision/status from an explicit year.
+        # Keep that representation with the date; dropping it invents detail.
+        partial = dict(normalized) if guide_review else {name: normalized.get(name) for name in values}
         for name in clears:
             partial[name] = _empty_value(name)
+        if isinstance(unit, SqlIntakeUnitOfWork) and (guide_review or record_type == "project" or "qualification_kind" in partial
+                or record_type == "education" and "title" in partial and not partial["title"]):
+            raise ResumeIntakeValidationError("This storage does not support these local Resume fields yet. Your input is kept.")
         if (record_type == 'credential' and isinstance(unit, SqlIntakeUnitOfWork)
                 and {'issue_date_precision', 'expiration_date_precision'} & set(partial)):
             from services.living_resume_editor_service import CREDENTIAL_PRECISION_UNAVAILABLE
@@ -5019,6 +5520,10 @@ class ResumeIntakeService:
             "values": partial,
             "intended_permission_expansions": {"resume_display": False, "visitor_ai": False},
         }
+        if guide_review:
+            payload["guide_review"] = True
+            if guide_section is not None:
+                payload["guide_section"] = guide_section
         projected = {
             "record_key": target_key,
             "record_type": existing.get("record_type") or record_type,
@@ -5215,6 +5720,15 @@ def _present_intake_receipt(receipt):
                 for keep in (row.get("keep_separate_actions") or [])
             ]
     return presented
+
+
+def _guide_intake_validation_error(error):
+    result = ResumeIntakeValidationError(str(error))
+    result.code = getattr(error, "code", "invalid")
+    for name in ("missing_required_fields", "actual_count", "limit"):
+        if hasattr(error, name):
+            setattr(result, name, copy.deepcopy(getattr(error, name)))
+    return result
 
 
 def _job_kind(kind):

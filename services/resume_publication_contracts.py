@@ -736,3 +736,6 @@ class ValidationResult:
     state: ReadState
     reason: str
     reviewed: ReviewedCandidate | None = None
+    # Named items behind an UNAVAILABLE codec refusal, so the owner can see
+    # which entry blocks the whole review. Never content, only refs/reasons.
+    blocked_items: tuple[tuple[str, str], ...] = ()

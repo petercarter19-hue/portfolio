@@ -36,7 +36,489 @@ from tests.test_resume_publication_contracts import fixture
 from tests.mvp1_acceptance_support import SharedMvp1Fixture
 
 
+class GuideDisplayProvenanceTests(unittest.TestCase):
+    def setUp(self):
+        from services.resume_intake_service import ResumeIntakeService
+        from services.resume_intake_repository import InMemoryResumeIntakeRepository
+        from services.resume_intake_policy import selected_policy_for_tests
+        self.shared=SharedMvp1Fixture()
+        self.owner='provenance-fictional'
+        self.intake=ResumeIntakeService(repository=InMemoryResumeIntakeRepository(),
+            draft_service=self.shared.draft,policy=selected_policy_for_tests())
+
+    def role(self, command_id=None):
+        command={'command_id':command_id or str(uuid4()),'record_type':'role',
+            'values':{'role_title':'Fictional engineer','employer_name':'Fictional Orchard'}}
+        return self.shared.canonical.create_private(self.owner,command)
+
+    def basis(self):
+        return self.intake.guide_publication_basis(self.owner,self.intake.working_set(self.owner),self.shared.publication)
+
+    def test_new_known_item_defaults_only_into_the_read_only_proposed_display(self):
+        key=self.role()['record_key']
+        before=[copy.deepcopy(store.load_owner(self.owner)) for store in
+            (self.shared.policy.repository,self.shared.draft.repository,self.shared.publication.repository)]
+        result=self.basis()
+        self.assertEqual(result['read_state'],'current')
+        self.assertIn(key,result['membership']['display'])
+        self.assertNotIn(key,result['membership']['visitor_ai'])
+        self.assertEqual(result['display_selection_provenance'][key],'never_selected')
+        self.assertEqual(before,[store.load_owner(self.owner) for store in
+            (self.shared.policy.repository,self.shared.draft.repository,self.shared.publication.repository)])
+        self.assertFalse(self.shared.canonical.get_item(self.owner,key)['resume_display'])
+        self.assertFalse(self.shared.canonical.get_item(self.owner,key)['visitor_ai'])
+        self.assertIsNone(self.shared.publication.owner_preview(self.owner)['current'])
+        self.assertEqual(self.shared.publication._pending_reviews,{})
+
+    def test_explicit_exclude_survives_reload_and_republish_even_with_unchanged_false_flags(self):
+        key=self.role()['record_key']
+        self.shared.seed_publication(self.owner,[(key,False,False)])
+        self.assertEqual(self.shared.canonical.get_item(self.owner,key)['access_revision'],1)
+        self.shared.publication._pending_reviews.clear()
+        for _ in range(2):
+            result=self.basis()
+            self.assertEqual(result['display_selection_provenance'][key],'explicitly_chosen')
+            self.assertNotIn(key,result['membership']['display'])
+            self.assertNotIn(key,result['membership']['visitor_ai'])
+            self.shared.seed_publication(self.owner,[(key,False,False)])
+
+    def test_historical_unknown_provenance_keeps_flags_and_reports_unavailable_provenance(self):
+        keys=[self.role()['record_key'],self.role()['record_key']]
+        snapshot=self.shared.publication.repository.load_owner(self.owner)
+        snapshot.pop('guide_display_choices',None)
+        self.shared.publication.repository.save_owner(self.owner,snapshot)
+        policy=self.shared.policy.repository.load_owner(self.owner)
+        policy['entries'][keys[1]]['resume_display']=True
+        self.shared.policy.repository.save_owner(self.owner,policy)
+        result=self.basis()
+        self.assertEqual(result['membership']['display'],[keys[1]])
+        self.assertEqual(result['display_selection_provenance'],dict.fromkeys(keys,'unknown'))
+        self.assertEqual(result['display_selection_provenance_read_state'],'unavailable')
+        self.assertEqual(result['membership']['visitor_ai'],[])
+
+    def test_create_and_permission_replays_do_not_reset_a_choice_and_ai_only_choice_does_not_choose_display(self):
+        command_id=str(uuid4())
+        entry=self.role(command_id)
+        key=entry['record_key']
+        permission={'type':'change_permissions','request_id':str(uuid4()),'entry_key':key,
+            'expected_access_revision':entry['access_revision'],'permissions':{'private_assistance_excluded':True}}
+        self.shared.policy.commit(self.owner,permission)
+        self.assertEqual(self.basis()['display_selection_provenance'][key],'never_selected')
+        current=self.shared.canonical.get_item(self.owner,key)
+        exclude={'type':'change_permissions','request_id':str(uuid4()),'entry_key':key,
+            'expected_access_revision':current['access_revision'],'permissions':{'resume_display':False}}
+        self.shared.policy.commit(self.owner,exclude)
+        self.role(command_id)
+        self.assertTrue(self.shared.policy.commit(self.owner,exclude)['replayed'])
+        self.assertEqual(self.basis()['display_selection_provenance'][key],'explicitly_chosen')
+        self.assertNotIn(key,self.basis()['membership']['display'])
+
+    def test_linked_create_failure_restores_policy_and_provenance_together(self):
+        before=self.shared.publication.repository.load_owner(self.owner)
+        original=self.shared.publication._save
+        calls=[]
+        def fail_once(owner,snapshot):
+            calls.append(owner)
+            if len(calls)==1: raise RuntimeError('fictional publication failure')
+            return original(owner,snapshot)
+        from unittest.mock import patch
+        with patch.object(self.shared.publication,'_save',side_effect=fail_once),self.assertRaises(RuntimeError):
+            self.role()
+        self.assertEqual(self.shared.canonical.list_items(self.owner),[])
+        self.assertEqual(self.shared.publication.repository.load_owner(self.owner),before)
+
+    def test_sql_provenance_read_is_closed_before_storage_and_does_not_guess(self):
+        database=Mock()
+        service=ResumePublicationService(repository=SqlResumePublicationRepository(database))
+        self.assertIsNone(service.read_display_selection_provenance(self.owner,[str(uuid4())]))
+        database.execute_procedure.assert_not_called()
+
+    def test_malformed_provenance_is_unknown_without_inventing_a_default_or_writing(self):
+        key=self.role()['record_key']
+        for metadata in ([],{key:[]},{key:'unexpected'}):
+            with self.subTest(metadata=metadata):
+                snapshot=self.shared.publication.repository.load_owner(self.owner)
+                snapshot['guide_display_choices']=metadata
+                self.shared.publication.repository.save_owner(self.owner,snapshot)
+                result=self.basis()
+                self.assertEqual(result['display_selection_provenance'][key],'unknown')
+                self.assertEqual(result['display_selection_provenance_read_state'],'unavailable')
+                self.assertEqual(result['membership']['display'],[])
+                self.assertEqual(self.shared.publication.repository.load_owner(self.owner),snapshot)
+
+
 class IntegratedDraftPublicationTests(unittest.TestCase):
+    def test_stored_public_display_is_byte_identical_until_publish_then_new_snapshot_uses_shared_order(self):
+        from services.resume_publication_projection import ordered_resume_display
+        shared, owner = SharedMvp1Fixture(), 'historical-order-fictional'
+        rows = (
+            ('role', {'role_title': 'Fictional engineer', 'employer_name': 'Fictional Orchard'}),
+            ('knowledge', {'title': 'Professional summary', 'wording': 'Fictional summary.', 'classification': 'work'}),
+            ('project', {'project_name': 'Fictional project', 'summary': 'Fictional work.'}),
+            ('skill', {'name': 'Fictional skill'}),
+        )
+        keys = [shared.canonical.create_private(owner, {'command_id': str(uuid4()),
+            'record_type': kind, 'values': values})['record_key'] for kind, values in rows]
+        choices = [(key, True, False) for key in keys]
+        shared.seed_publication(owner, choices, slug='historical-order')
+        # Model a pre-B2 snapshot's stored order; its actual published wording,
+        # evidence, revision and digest remain the result of explicit Publish.
+        snapshot = shared.publication.repository.load_owner(owner)
+        published = snapshot['publications'][snapshot['current_revision']]
+        published['display'] = {key: published['display'][key] for key in keys}
+        shared.publication.repository.save_owner(owner, snapshot)
+        before = copy.deepcopy(snapshot)
+        stored_bytes = json.dumps(published['display'], separators=(',', ':'), ensure_ascii=False).encode()
+        expected = list(ordered_resume_display(published['display']))
+        self.assertEqual(expected, [keys[1], keys[3], keys[0], keys[2]])
+        self.assertNotEqual(expected, keys)
+        for _ in range(2):
+            guest = shared.publication.guest_read(slug='historical-order')
+            preview = shared.publication.owner_preview(owner)['current']
+            for display in (guest['display'], preview['display']):
+                self.assertEqual(json.dumps(display, separators=(',', ':'), ensure_ascii=False).encode(), stored_bytes)
+            self.assertEqual(guest['etag'], published['digest'])
+            self.assertEqual(guest['publication_revision'], published['revision'])
+        self.assertEqual(shared.publication.repository.load_owner(owner), before)
+        selections = {'entries': [{'entry_key': key, 'resume_display': True, 'visitor_ai': False} for key in keys]}
+        basis = shared.publication.read_publication_basis_for_owner(owner, selections)
+        self.assertEqual(basis['read_state'], 'current')
+        self.assertEqual(list(basis['proposed']['display']), expected)
+        self.assertEqual(shared.publication.repository.load_owner(owner), before)
+        reviewed = shared.publication.review_for_owner(owner, selections).reviewed
+        self.assertIsNotNone(reviewed)
+        payload = {'type': 'publish', 'request_id': str(uuid4()), 'slug': 'historical-order',
+            'profile_identity': None, 'reviewed_digest': reviewed.digest,
+            'candidate': shared.publication.publish_candidate(reviewed)}
+        self.assertEqual(list(shared.publication.draft_preview(owner, payload)['display']), expected)
+        self.assertEqual(list(shared.publication.guest_read(slug='historical-order')['display']), keys)
+        shared.publication.commit(owner, payload)
+        after = shared.publication.repository.load_owner(owner)
+        current = after['publications'][after['current_revision']]
+        self.assertEqual(list(current['display']), expected)
+        self.assertEqual(list(shared.publication.guest_read(slug='historical-order')['display']), expected)
+        self.assertEqual(list(shared.publication.owner_preview(owner)['current']['display']), expected)
+        self.assertEqual(after['publications'][published['revision']], published)
+        self.assertEqual(current['visitor_ai'], {})
+
+    def test_sql_adapter_guest_read_preserves_stored_display_json_order_without_engine_calls(self):
+        # Source/adapter contract only: the port is a Mock, not a SQL engine.
+        display = {
+            'role': {'canonical_type': 'role', 'wording': {'role_title': 'Fictional engineer'}},
+            'project': {'canonical_type': 'project', 'wording': {'title': 'Fictional project'}},
+            'skill': {'canonical_type': 'skill', 'wording': {'name': 'Fictional skill'}},
+        }
+        for stored in (display, json.dumps(display, separators=(',', ':'))):
+            with self.subTest(encoded=isinstance(stored, str)):
+                port = Mock()
+                row = {'reviewed_digest': 'historical-digest', 'display_json': copy.deepcopy(stored),
+                    'media_json': '{}', 'publication_revision': 7, 'owner_user_key': 'historical-owner'}
+                port.get_public_by_slug.return_value = row
+                service = ResumePublicationService(repository=InMemoryResumePublicationRepository(), sql_repository=port)
+                before = copy.deepcopy(row)
+                result = service.guest_read(slug='historical-sql-shaped')
+                self.assertEqual(json.dumps(result['display'], separators=(',', ':')),
+                    json.dumps(display, separators=(',', ':')))
+                self.assertEqual(result['publication_revision'], 7)
+                self.assertEqual(result['etag'], 'historical-digest')
+                result['display']['role']['wording']['role_title'] = 'Caller mutation'
+                self.assertEqual(row, before)
+                port.get_public_by_slug.assert_called_once_with('historical-sql-shaped')
+                port.commit_command.assert_not_called()
+
+
+    def test_historical_overlength_impact_is_blocked_without_truncating_the_stored_original(self):
+        shared, owner = SharedMvp1Fixture(), 'historical-impact-fictional'
+        item = shared.canonical.create_private(owner,{'command_id':str(uuid4()),'record_type':'knowledge',
+            'values':{'title':'Professional summary','wording':'Fictional original.','classification':'work'}})
+        key = item['record_key']
+        snapshot = shared.policy.repository.load_owner(owner)
+        original = ' '.join(['original']*71)
+        snapshot['entries'][key]['values']['wording'] = original
+        shared.policy.repository.save_owner(owner,snapshot)
+        basis = shared.publication.read_publication_basis_for_owner(owner,
+            {'entries':[{'entry_key':key,'resume_display':True,'visitor_ai':False}]})
+        self.assertEqual(basis['read_state'],'blocked')
+        self.assertIn({'item_ref':key,'reason':'impact_statement_too_long'},basis['blocked_items'])
+        self.assertIsNone(basis['change_count'])
+        self.assertEqual(shared.canonical.get_item(owner,key)['values']['wording'],original)
+
+    def test_local_publication_and_membership_have_named_publishing_blockers_instead_of_becoming_certifications(self):
+        for kind in ("publication", "membership"):
+            with self.subTest(kind=kind):
+                shared, owner = SharedMvp1Fixture(), "codec-kind-fictional"
+                saved = shared.draft.commit(owner, {"type": "create_private_item", "request_id": str(uuid4()),
+                    "record_key": str(uuid4()), "record_type": "credential", "values": {"qualification_kind": kind,
+                        "name": "Fictional paper" if kind == "publication" else None, "issuer": "Fictional organization",
+                        "issue_date": "2022-01-01", "issue_date_precision": "year", "completion_status": "completed"}})
+                key = saved["item"]["record_key"]
+                pending = copy.deepcopy(shared.publication._pending_reviews)
+                selections = {"entries": [{"entry_key": key, "resume_display": True, "visitor_ai": False}]}
+                reviewed = shared.publication.review_for_owner(owner, selections)
+                self.assertIsNone(reviewed.reviewed)
+                basis = shared.publication.read_publication_basis_for_owner(owner, selections)
+                self.assertEqual(basis["read_state"], "blocked")
+                self.assertIsNone(basis["change_count"])
+                self.assertIn({"item_ref": key, "reason": "publication_codec_qualification_kind"}, basis["blocked_items"])
+                self.assertEqual(shared.publication._pending_reviews, pending)
+                self.assertEqual(shared.canonical.get_item(owner, key)["values"]["qualification_kind"], kind)
+
+    def test_local_project_links_category_and_organization_cannot_silently_drop_at_publish(self):
+        for extras, reason in (({"project_url": "https://example.test/demo"}, "publication_codec_project_links"),
+            ({"additional_project_urls": ["https://example.test/code"]}, "publication_codec_project_links"),
+            ({"project_category": "software"}, "publication_codec_project_category"),
+            ({"organization_name": "Fictional Institute"}, "publication_codec_project_organization")):
+            with self.subTest(extras=extras):
+                shared, owner = SharedMvp1Fixture(), "codec-project-fictional"
+                saved = shared.draft.commit(owner, {"type": "create_private_item", "request_id": str(uuid4()),
+                    "record_key": str(uuid4()), "record_type": "project", "values": {"project_name": "Fictional Orchard",
+                        "summary": "Fictional work.", **extras}})
+                key = saved["item"]["record_key"]
+                basis = shared.publication.read_publication_basis_for_owner(owner,
+                    {"entries": [{"entry_key": key, "resume_display": True, "visitor_ai": False}]})
+                self.assertEqual(basis["read_state"], "blocked")
+                self.assertIn({"item_ref": key, "reason": reason}, basis["blocked_items"])
+                self.assertEqual(shared.publication._pending_reviews, {})
+                self.assertIsNone(shared.publication.owner_preview(owner)["current"])
+                for name, value in extras.items():
+                    self.assertEqual(shared.canonical.get_item(owner, key)["values"][name], value)
+
+    def test_contact_basis_uses_the_approved_knowledge_entry_without_borrowing_signin_identity(self):
+        shared, owner = SharedMvp1Fixture(), "contact-basis-fictional"
+        item = shared.canonical.create_private(owner, {"command_id": str(uuid4()), "record_type": "knowledge",
+            "values": {"title": "Contact details", "wording": "fictional-old@example.test", "classification": "work"}})
+        key = item["record_key"]
+        shared.seed_publication(owner, [(key, True, False)])
+        workspace = shared.draft.get_workspace(owner)
+        current = next(row for row in workspace["items"] if row["record_key"] == key)
+        shared.draft.commit(owner, {"type": "save_item", "request_id": str(uuid4()), "record_key": key,
+            "record_type": "knowledge", "expected_draft_version": workspace["draft_version"],
+            "expected_content_token": current["content_token"], "expected_access_revision": current["access_revision"],
+            "values": {"wording": "fictional-new@example.test"}})
+        basis = shared.publication.read_publication_basis_for_owner(owner)
+        self.assertEqual(basis["contact"], {"published_entry_keys": [key], "proposed_entry_keys": [key], "changed": True})
+        self.assertEqual(basis["change_count"], 1)
+        self.assertIsNone(basis["profile"]["proposed_reference"])
+        self.assertEqual(basis["proposed"]["display"][key]["wording"]["wording"], "fictional-new@example.test")
+        self.assertEqual(shared.publication.owner_preview(owner)["current"]["display"][key]["wording"]["wording"], "fictional-old@example.test")
+
+    def test_publish_basis_matches_the_actual_review_packet_and_commit_without_writes(self):
+        from unittest.mock import patch
+        shared, owner, key, payload = self._saved_edit()
+        pending = copy.deepcopy(shared.publication._pending_reviews)
+        selections = {"entries": payload["candidate"]["entries"]}
+        with (patch.object(shared.policy.repository, "save_owner", wraps=shared.policy.repository.save_owner) as policy_save,
+              patch.object(shared.draft.repository, "save_owner", wraps=shared.draft.repository.save_owner) as draft_save,
+              patch.object(shared.publication.repository, "save_owner", wraps=shared.publication.repository.save_owner) as publication_save):
+            basis = shared.publication.read_publication_basis_for_owner(owner, selections)
+            self.assertEqual(basis["read_state"], "current")
+            self.assertEqual(basis["publication_state"], "unpublished")
+            self.assertEqual(basis["change_count"], 1)
+            self.assertEqual(basis["membership"], {"display": [key], "visitor_ai": [key]})
+            self.assertEqual(basis["candidate"], payload["candidate"])
+            row = next(row for row in basis["items"] if row["item_ref"] == key)
+            self.assertTrue(row["changed"])
+            self.assertFalse(row["published_display"])
+            self.assertEqual(shared.publication._pending_reviews, pending)
+            policy_save.assert_not_called(); draft_save.assert_not_called(); publication_save.assert_not_called()
+        shared.publication.commit(owner, {**payload, "candidate": basis["candidate"],
+            "reviewed_digest": basis["reviewed_digest"]})
+        published = shared.publication.guest_read(slug="alice")
+        self.assertEqual(set(published["display"]), set(basis["membership"]["display"]))
+        self.assertEqual(published["display"][key]["wording"], basis["proposed"]["display"][key]["wording"])
+        after = shared.publication.read_publication_basis_for_owner(owner)
+        self.assertEqual(after["publication_state"], "published")
+        self.assertEqual(after["change_count"], 0)
+        self.assertNotEqual(after["basis_revision"], basis["basis_revision"])
+
+    def test_story_binding_alone_is_one_real_publish_change(self):
+        shared, owner = SharedMvp1Fixture(), "story-basis-fictional"
+        item = shared.canonical.create_private(owner, {"command_id": str(uuid4()), "record_type": "knowledge",
+            "values": {"title": "My Story", "wording": "A fictional personal story.", "classification": "personal"}})
+        key = item["record_key"]
+        shared.seed_publication(owner, [(key, True, False)])
+        workspace = shared.draft.get_workspace(owner)
+        current = next(row for row in workspace["items"] if row["record_key"] == key)
+        shared.draft.commit(owner, {"type": "bind_story", "request_id": str(uuid4()), "record_key": key,
+            "expected_draft_version": workspace["draft_version"], "expected_content_token": current["content_token"],
+            "expected_access_revision": current["access_revision"]})
+        before = copy.deepcopy(shared.publication.owner_preview(owner))
+        basis = shared.publication.read_publication_basis_for_owner(owner)
+        self.assertEqual(basis["change_count"], 1)
+        self.assertEqual(basis["story"], {"private_entry_key": key, "published_entry_key": None,
+            "proposed_published_entry_key": key, "changed": True})
+        self.assertEqual(shared.publication.owner_preview(owner), before)
+        shared.publication.commit(owner, {"type": "publish", "request_id": str(uuid4()),
+            "reviewed_digest": basis["reviewed_digest"], "candidate": basis["candidate"],
+            "profile_identity": basis["candidate"]["profile_identity"]})
+        self.assertEqual(shared.publication.owner_preview(owner)["current"]["display"][key]["presentation_section"], "story")
+        self.assertEqual(shared.publication.read_publication_basis_for_owner(owner)["change_count"], 0)
+
+    def test_blocked_and_deleted_items_have_reasons_without_a_guessed_change_count(self):
+        shared, owner, key, _ = self._saved_edit()
+        shared.policy.commit(owner, {"type": "delete", "request_id": str(uuid4()), "entry_key": key,
+            "expected_content_version": 1, "expected_access_revision": 1, "dependent_keys": []})
+        pending = copy.deepcopy(shared.publication._pending_reviews)
+        basis = shared.publication.read_publication_basis_for_owner(owner)
+        self.assertEqual(basis["read_state"], "blocked")
+        self.assertEqual(basis["publication_state"], "unknown")
+        self.assertIsNone(basis["change_count"])
+        self.assertIsNone(basis["membership"])
+        self.assertIn({"item_ref": key, "reason": "orphaned"}, basis["blocked_items"])
+        self.assertIn({"item_ref": key, "reason": "deleted"}, basis["ineligible_items"])
+        self.assertEqual(shared.publication._pending_reviews, pending)
+
+    def test_malformed_publish_basis_is_unknown_instead_of_empty(self):
+        from unittest.mock import patch
+        shared = SharedMvp1Fixture()
+        with patch.object(shared.policy, "read_publication_entries", return_value={"entries": None}):
+            basis = shared.publication.read_publication_basis_for_owner("malformed-fictional-owner")
+        self.assertEqual(basis["read_state"], "unavailable")
+        self.assertEqual(basis["publication_state"], "unknown")
+        self.assertIsNone(basis["change_count"])
+        self.assertIsNone(basis["membership"])
+        self.assertEqual(shared.publication._pending_reviews, {})
+
+    def test_publish_basis_uses_only_its_actual_owner(self):
+        shared, owner, key, _ = self._saved_edit()
+        pending = copy.deepcopy(shared.publication._pending_reviews)
+        other = shared.publication.read_publication_basis_for_owner("another-fictional-owner")
+        self.assertEqual(other["read_state"], "current")
+        self.assertEqual(other["membership"], {"display": [], "visitor_ai": []})
+        self.assertEqual(other["items"], [])
+        self.assertNotIn(key, str(other))
+        self.assertEqual(shared.publication._pending_reviews, pending)
+
+    def test_publish_basis_uses_the_real_rebased_permission_revision_after_restriction(self):
+        shared, owner, key, payload = self._saved_edit()
+        shared.publication.commit(owner, payload)
+        row = shared.policy.read_entries(owner)["entries"][0]
+        shared.policy.commit(owner, {"type": "change_permissions", "request_id": str(uuid4()),
+            "entry_key": key, "expected_access_revision": row["access_revision"],
+            "permissions": {"resume_display": True, "visitor_ai": False, "private_assistance_excluded": False}})
+        basis = shared.publication.read_publication_basis_for_owner(owner)
+        self.assertEqual(basis["read_state"], "current")
+        self.assertEqual(basis["change_count"], 0)
+        self.assertFalse(basis["items"][0]["changed"])
+        evidence = shared.publication._current(shared.publication._load(owner))["evidence"][key]
+        self.assertEqual(evidence.access_revision, shared.policy.read_entries(owner)["entries"][0]["access_revision"])
+        self.assertEqual(shared.publication.owner_preview(owner)["current"]["visitor_ai"], {})
+
+    def test_publish_basis_refuses_a_competing_draft_change_after_its_candidate_read(self):
+        from unittest.mock import patch
+        shared, owner, key, payload = self._saved_edit()
+        original = shared.publication.read_review_for_owner
+        def competing_writer(*args, **kwargs):
+            result = original(*args, **kwargs)
+            workspace = shared.draft.get_workspace(owner)
+            row = next(row for row in workspace["items"] if row["record_key"] == key)
+            shared.draft.commit(owner, {"type": "save_item", "request_id": str(uuid4()), "record_key": key,
+                "record_type": "role", "expected_draft_version": workspace["draft_version"],
+                "expected_content_token": row["content_token"], "expected_access_revision": row["access_revision"],
+                "values": {"summary": "A newer fictional manual edit."}})
+            return result
+        with patch.object(shared.publication, "read_review_for_owner", side_effect=competing_writer):
+            basis = shared.publication.read_publication_basis_for_owner(owner, {"entries": payload["candidate"]["entries"]})
+        self.assertEqual(basis["publication_state"], "unknown")
+        self.assertIsNone(basis["change_count"])
+
+    def test_publish_basis_media_version_transport_is_not_a_new_change(self):
+        from services.resume_media_repository import MediaPlacement, RequestReceipt, provenance_label_for
+        from services.resume_media_service import centered_slot_crop
+        shared, owner = SharedMvp1Fixture(), "media-basis-fictional"
+        item = shared.canonical.create_private(owner, {"command_id": str(uuid4()), "record_type": "knowledge",
+            "values": {"title": "My Story", "wording": "A fictional personal story.", "classification": "personal"}})
+        key = item["record_key"]
+        workspace = shared.draft.get_workspace(owner)
+        shared.draft.commit(owner, {"type": "bind_story", "request_id": str(uuid4()), "record_key": key,
+            "expected_draft_version": workspace["draft_version"], "expected_content_token": item["content_token"],
+            "expected_access_revision": item["access_revision"]})
+        photo = shared.seed_photo(owner)
+        placement = MediaPlacement("story_banner", "owner_photo", photo.source_id, photo.version, photo.digest,
+            centered_slot_crop(slot="story_banner", width=photo.width, height=photo.height), alt_text="Fictional image",
+            provenance_label=provenance_label_for(source_kind="owner_photo"))
+        shared.media.media_repository.commit_draft(owner_id=owner,
+            expected_version=shared.draft.get_workspace(owner)["draft_version"], placements=(placement,),
+            receipt=RequestReceipt(owner, "add", str(uuid4()), "b" * 64, "{}"))
+        shared.seed_publication(owner, [(key, True, False)])
+        snapshot = shared.publication.repository.load_owner(owner)
+        snapshot["publications"][snapshot["current_revision"]]["media"]["story_banner"]["asset_version"] = str(photo.version)
+        shared.publication.repository.save_owner(owner, snapshot)
+        basis = shared.publication.read_publication_basis_for_owner(owner)
+        self.assertEqual(basis["read_state"], "current")
+        self.assertEqual(basis["change_count"], 0)
+        self.assertEqual(basis["media_changed_slots"], [])
+        self.assertEqual(basis["proposed"]["media"]["story_banner"]["asset_version"], str(photo.version))
+
+    def test_shared_review_requires_an_explicit_read_only_policy_reader(self):
+        shared = SharedMvp1Fixture()
+        legacy = Mock(spec=["list_entries", "list_publication_entries"])
+        legacy.list_publication_entries.return_value = {"entries": []}
+        shared.publication.policy_service = legacy
+        with self.assertRaises(PublicationUnavailableError):
+            shared.publication.read_review_for_owner("unqualified-fictional-owner")
+        legacy.list_entries.assert_not_called()
+        legacy.list_publication_entries.assert_not_called()
+        self.assertEqual(shared.publication._pending_reviews, {})
+
+    def test_read_review_does_not_persist_expired_policy_cleanup(self):
+        from datetime import timedelta
+        from uuid import uuid4
+        from unittest.mock import patch
+        shared, owner = SharedMvp1Fixture(), "publication-expiry-fictional"
+        instant, entry = shared.policy._now(), str(uuid4())
+        shared.policy.clock = lambda: instant
+        shared.policy.commit(owner, {"type": "create", "request_id": str(uuid4()),
+            "entry_key": entry, "canonical_type": "skill", "values": {"skill_name": "Expired fictional skill"}})
+        shared.policy.commit(owner, {"type": "delete", "request_id": str(uuid4()),
+            "entry_key": entry, "expected_content_version": 1, "expected_access_revision": 1,
+            "dependent_keys": []})
+        shared.policy.clock = lambda: instant + timedelta(days=31)
+        before = copy.deepcopy(shared.policy.repository.load_owner(owner))
+        with patch.object(shared.policy.repository, "save_owner", wraps=shared.policy.repository.save_owner) as save:
+            result = shared.publication.read_review_for_owner(owner)
+            self.assertEqual(result.state.value, "current")
+            self.assertEqual(shared.publication._pending_reviews, {})
+            save.assert_not_called()
+        self.assertEqual(shared.policy.repository.load_owner(owner), before)
+        self.assertEqual(shared.publication.review_for_owner(owner), result)
+        self.assertEqual(shared.policy.repository.load_owner(owner), before)
+
+    def test_read_review_seam_matches_explicit_review_without_pending_or_durable_writes(self):
+        from unittest.mock import patch
+        shared, owner, _, payload = self._saved_edit()
+        shared.publication._pending_reviews[owner] = {"sentinel": "existing explicit review"}
+        pending = copy.deepcopy(shared.publication._pending_reviews)
+        before = (copy.deepcopy(shared.policy.repository.load_owner(owner)),
+            copy.deepcopy(shared.draft.repository.load_owner(owner)),
+            copy.deepcopy(shared.publication.repository.load_owner(owner)))
+        selections = {"entries": payload["candidate"]["entries"]}
+        with (patch.object(shared.policy.repository, "save_owner", wraps=shared.policy.repository.save_owner) as policy_save,
+              patch.object(shared.draft.repository, "save_owner", wraps=shared.draft.repository.save_owner) as draft_save,
+              patch.object(shared.publication.repository, "save_owner", wraps=shared.publication.repository.save_owner) as publication_save):
+            read = shared.publication.read_review_for_owner(owner, selections)
+            self.assertIsNotNone(read.reviewed)
+            self.assertEqual(shared.publication._pending_reviews, pending)
+            policy_save.assert_not_called()
+            draft_save.assert_not_called()
+            publication_save.assert_not_called()
+        explicit = shared.publication.review_for_owner(owner, selections)
+        self.assertEqual(read, explicit)
+        self.assertEqual(shared.publication._pending_reviews[owner]["digest"], explicit.reviewed.digest)
+        self.assertNotEqual(shared.publication._pending_reviews, pending)
+        self.assertEqual(before, (shared.policy.repository.load_owner(owner),
+            shared.draft.repository.load_owner(owner), shared.publication.repository.load_owner(owner)))
+
+    def test_read_review_seam_is_owner_bound_and_preserves_another_owners_pending_review(self):
+        shared, owner, _, _ = self._saved_edit()
+        pending = copy.deepcopy(shared.publication._pending_reviews)
+        result = shared.publication.read_review_for_owner("fictional-other-member")
+        self.assertIsNotNone(result.reviewed)
+        self.assertEqual(result.reviewed.candidate.context.subject_key, "fictional-other-member")
+        self.assertEqual(result.reviewed.owner_entries, ())
+        self.assertEqual(shared.publication._pending_reviews, pending)
+        self.assertIn(owner, pending)
+
     def test_private_preview_uses_authoritative_strength_and_explicit_story_metadata(self):
         shared,owner,role,_ = self._saved_edit()
         skill,story = str(uuid4()),str(uuid4())

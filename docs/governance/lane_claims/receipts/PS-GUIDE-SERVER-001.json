@@ -1,26 +1,31 @@
 {
   "schema_version": 1,
   "package": "PS-GUIDE-SERVER-001",
-  "candidate_sha": "b0133adef05dcb9af5e479729a48d94bb380ded4",
+  "candidate_sha": "492b2643fe53b934b80bde01c5f376207c2cf1bf",
   "review_type": "independent",
-  "reviewer_ref": "session:9fb18da7-d312-4e90-a956-7f3718e5969f",
+  "reviewer_ref": "session:16023c0e-7189-420e-8a4d-11f8012a9713",
   "result": "pass",
-  "reviewed_at": "2026-10-13T17:55:00Z",
+  "reviewed_at": "2026-10-14T17:01:01Z",
   "findings": [
     {
-      "id": "B2-carry",
+      "id": "R3-m1",
       "status": "informational",
-      "disposition": "B2-0 first arrival and once acknowledgment; m6/n2/shared publication basis including Story/Contact, binding/eligibility/blocked items and missing access-revision basis before C2."
+      "disposition": "Add a test that fails if the source component of the processing fence is removed; carried into the source-only receipt increment or B3."
     },
     {
-      "id": "B3-carry",
+      "id": "R3-m2",
       "status": "informational",
-      "disposition": "Unequal numbers/qualifiers and different-role matching plus corrupt-history ordinary-save repair/operator path; F1/F2 remain B3/C3 requirements."
+      "disposition": "Rare load-only browser timeouts (2 in 10 concurrent copies vs base 0 in 4): watch in CI; no retries, retiming or deadline changes; report any current-target CI occurrence rather than rerunning to green."
     },
     {
-      "id": "unchanged-deadline-flake",
+      "id": "m2-m3-carry",
       "status": "informational",
-      "disposition": "Independent no-Playwright whole-suite extra credential-deadline failure passed3/3 alone with unchanged Ask Pete source; do not retime it in B1."
+      "disposition": "Package 5/6 Publish changes must read only the Guide publish basis; any highlight_refs key keeps Guide publish status unavailable until D6 codec support; C2 copy says so honestly."
+    },
+    {
+      "id": "R4-ci-race",
+      "status": "informational",
+      "disposition": "PR1382 build 4629 test-harness race reported, not rerun; reviewer-approved precondition wait in test_finish_without_unsent_input_has_no_false_reminder (recheck PASS coordination f991c23); finish_input helper precondition sweep is a named C1 follow-up."
     }
   ],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-GUIDE-SERVER-001.md"

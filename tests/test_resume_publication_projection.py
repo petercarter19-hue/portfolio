@@ -15,6 +15,43 @@ from services.resume_publication_projection import (
 
 
 class ResumePublicationProjectionTests(unittest.TestCase):
+    def test_one_shared_section_definition_uses_stored_kind_and_actual_story_binding(self):
+        from services import resume_publication_projection as projection
+        from services.resume_guide_contract import GUIDE_SECTION_ORDER
+        classify = getattr(projection, "resume_section_for", None)
+        self.assertTrue(callable(classify), "Guide and publication need one actual type/section definition")
+        self.assertEqual(projection.RESUME_BASE_SECTION_ORDER, GUIDE_SECTION_ORDER)
+        for kind, section in ((None, "certifications"), ("certification", "certifications"), ("license", "certifications"),
+                              ("publication", "publications"), ("membership", "memberships")):
+            self.assertEqual(classify("credential", {"qualification_kind": kind}), section)
+        self.assertEqual(classify("knowledge", {"title": "My Story", "classification": "personal"}), "unplaced")
+        self.assertEqual(classify("knowledge", {"title": "My Story", "classification": "personal"}, story_bound=True), "story")
+        self.assertEqual(classify("knowledge", {"title": "Contact details", "classification": "work"}), "contact")
+        self.assertEqual(classify("knowledge", {"classification": "work"}, presentation_section="Awards"), "awards")
+
+    def test_core_order_is_fixed_and_optional_groups_follow_first_encounter_without_phantom_tabs(self):
+        from services import resume_publication_projection as projection
+        order = getattr(projection, "resume_section_order", None)
+        self.assertTrue(callable(order))
+        base = ("impact_statement", "skills", "experience", "projects", "education", "certifications", "awards")
+        self.assertEqual(order([]), base)
+        self.assertEqual(order(["memberships", "publications", "memberships"]), (*base, "memberships", "publications"))
+        self.assertEqual(order(["memberships", "languages", "publications"]), (*base, "languages", "memberships", "publications"))
+        display = {"role": {"canonical_type": "role", "wording": {"role_title": "Fictional engineer"}},
+            "membership": {"canonical_type": "credential", "wording": {"qualification_kind": "membership"}},
+            "skill": {"canonical_type": "skill", "wording": {"name": "Fictional skill"}},
+            "publication": {"canonical_type": "credential", "wording": {"qualification_kind": "publication"}}}
+        before = copy.deepcopy(display)
+        self.assertEqual(list(projection.ordered_resume_display(display)), ["skill", "role", "membership", "publication"])
+        self.assertEqual(display, before)
+
+    def test_project_name_maps_to_the_existing_title_slot_without_expanding_codec_v1(self):
+        values = {"project_name": "Fictional Orchard", "summary": "Fictional work."}
+        before = copy.deepcopy(values)
+        decoded = decode_canonical_source(committed_source_bytes("project", values))
+        self.assertEqual(decoded["title"], "Fictional Orchard")
+        self.assertEqual(values, before)
+
     def test_credential_projection_commits_independent_precision_without_changing_legacy_codec(self):
         dates={'issue_date':'2022-06-01','expiration_date':'2027-06-01'}
         for issue_precision,expiry_precision,issue,expiry in (

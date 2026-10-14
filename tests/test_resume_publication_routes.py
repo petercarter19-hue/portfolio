@@ -234,6 +234,28 @@ class ResumePublicationRouteTests(unittest.TestCase):
         self.assertEqual(guest.status_code, 404)
         self.assertEqual(response.headers["Cache-Control"], "private, no-store")
 
+    def test_codec_blocked_review_names_each_blocked_item_and_saves_nothing(self):
+        from unittest.mock import patch
+        from tests.mvp1_acceptance_support import SharedMvp1Fixture
+        shared, owner = SharedMvp1Fixture(), "codec-route-fictional"
+        saved = shared.draft.commit(owner, {"type": "create_private_item", "request_id": str(uuid4()),
+            "record_key": str(uuid4()), "record_type": "project", "values": {"project_name": "Fictional Orchard",
+                "summary": "Fictional work.", "project_url": "https://example.test/demo"}})
+        key = saved["item"]["record_key"]
+        with patch.dict(app.config, {"RESUME_PUBLICATION_SERVICE": shared.publication,
+                "RESUME_DRAFT_SERVICE": shared.draft, "ENTRY_POLICY_SERVICE": shared.policy,
+                "PEERSLATE_DEV_USER_KEY": owner}):
+            response = self._client().post("/api/resume-publication/me/review", headers=self._headers(),
+                json={"entries": [{"entry_key": key, "resume_display": True, "visitor_ai": False}]})
+        self.assertEqual(response.status_code, 409)
+        body = response.get_json()
+        self.assertEqual(body["code"], "publication_codec_unavailable")
+        self.assertEqual(body["state"], "unavailable")
+        self.assertEqual(body["blocked_items"], [{"item_ref": key, "reason": "publication_codec_project_links"}])
+        self.assertNotIn("example.test", response.get_data(as_text=True))
+        self.assertEqual(shared.publication._pending_reviews, {})
+        self.assertIsNone(shared.publication.owner_preview(owner)["current"])
+
     def test_publish_guest_sees_result_and_private_cache(self):
         client = self._client()
         reviewed = client.post(

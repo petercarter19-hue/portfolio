@@ -23,6 +23,7 @@ from services.resume_intake_repository import (
     InMemoryResumeIntakeRepository,
     ResumeIntakeStoreUnavailable,
     empty_intake_snapshot,
+    validate_snapshot,
 )
 
 
@@ -96,6 +97,148 @@ class ResumeGuideService:
             "message": "The guide is unavailable right now. Your saved work is unchanged.",
         }
 
+    @staticmethod
+    def unavailable_first_arrival():
+        return {"read_state": "unavailable", "eligible": None,
+            "shown": None, "dismissed": None, "started": None}
+
+    def _arrival_snapshot(self, owner):
+        if not isinstance(owner, str) or not owner.strip():
+            raise GuideValidationError("Invalid owner context.")
+        if not getattr(self.repository, "supports_guide_first_arrival", False):
+            raise GuideUnavailableError("First arrival is unavailable for this storage.")
+        snapshot = self.repository.load_owner(owner)
+        validate_snapshot(snapshot)  # Validate, retaining other legitimate snapshot metadata.
+        return snapshot
+
+    @staticmethod
+    def _arrival_flags(snapshot):
+        arrival = snapshot["guide"].get("first_arrival", {})
+        if not isinstance(arrival, dict) or set(arrival) - {"shown", "dismissed", "started"}:
+            raise GuideUnavailableError("First arrival state is unavailable.")
+        if any(type(value) is not bool for value in arrival.values()):
+            raise GuideUnavailableError("First arrival state is unavailable.")
+        return {key: arrival.get(key, False) for key in ("shown", "dismissed", "started")}
+
+    @staticmethod
+    def _arrival_projection(owner, snapshot, read_content):
+        def supplied(value):
+            if isinstance(value, str):
+                return bool(value.strip())
+            if isinstance(value, dict):
+                return any(supplied(item) for item in value.values())
+            if isinstance(value, list):
+                return any(supplied(item) for item in value)
+            return value is not None and value is not False
+        guide = snapshot["guide"]
+        flags = ResumeGuideService._arrival_flags(snapshot)
+        has_content = bool(guide) or any(snapshot[name] for name in ("sources", "proposals", "submissions", "jobs"))
+        for draft in snapshot["drafts"].values():
+            if not isinstance(draft, dict):
+                raise GuideUnavailableError("Private draft content is unavailable.")
+            words = draft.get("text")
+            words = "" if words is None else words  # The existing composer stores absent text as null.
+            if not isinstance(words, str):
+                raise GuideUnavailableError("Private draft content is unavailable.")
+            if any(not isinstance(draft.get(key, []), list) for key in ("items", "attachments")):
+                raise GuideUnavailableError("Private draft content is unavailable.")
+            state = draft.get("guide_state") or {}
+            if not isinstance(state, dict):
+                raise GuideUnavailableError("Private draft content is unavailable.")
+            has_content = has_content or bool(words.strip() or draft.get("items") or draft.get("attachments"))
+            for key in ("manual_fields", "correction_inputs", "proposal_drafts", "pending_conversation"):
+                fields = state.get(key) or {}
+                if not isinstance(fields, dict):
+                    raise GuideUnavailableError("Private draft content is unavailable.")
+                has_content = has_content or supplied(fields)
+            history = state.get("navigation_history") or []
+            if not isinstance(history, list) or any(not isinstance(row, dict) for row in history):
+                raise GuideUnavailableError("Private draft content is unavailable.")
+            has_content = has_content or any(supplied(row.get("text")) for row in history)
+        if not has_content:
+            try:
+                content = read_content(owner)
+            except Exception as error:
+                raise GuideUnavailableError("Private resume content is unavailable.") from error
+            if type(content) is not bool:
+                raise GuideUnavailableError("Private resume content is unavailable.")
+            has_content = content
+        return {"read_state": "available", "eligible": not has_content, **flags}
+
+    def get_first_arrival(self, owner, *, read_content):
+        """A qualified negative-content read; never creates an owner or marker."""
+        try:
+            with self.repository.owner_guard(owner):
+                snapshot = self._arrival_snapshot(owner)
+                return self._arrival_projection(owner, snapshot, read_content)
+        except (ResumeIntakeStoreUnavailable, GuideUnavailableError, TypeError, ValueError):
+            return self.unavailable_first_arrival()
+
+    def acknowledge_first_arrival(self, owner, payload, *, read_content):
+        """Claim shown once, or record an explicit dismissal/start; no content save."""
+        if not isinstance(payload, dict) or set(payload) != {"request_id", "first_arrival_action"}:
+            raise GuideValidationError("Invalid first arrival acknowledgment.")
+        action, request_id = payload["first_arrival_action"], payload["request_id"]
+        if not isinstance(action, str) or action not in {"shown", "dismissed", "started"}:
+            raise GuideValidationError("Invalid first arrival acknowledgment.")
+        try:
+            if str(UUID(request_id)) != request_id:
+                raise ValueError()
+        except (ValueError, TypeError, AttributeError) as error:
+            raise GuideValidationError("Invalid acknowledgment request id.") from error
+        digest = hashlib.sha256(json.dumps({"type": "acknowledge_guide_first_arrival", "action": action},
+            sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        try:
+            with self.repository.owner_guard(owner):
+                snapshot = self._arrival_snapshot(owner)
+                existing = snapshot["receipts"].get(request_id)
+                if existing is not None:
+                    if existing.get("request_digest") != digest:
+                        raise GuideConflictError("That request key was already used for another action.")
+                    receipt = existing.get("result")
+                    if (not isinstance(receipt, dict) or receipt.get("type") != "acknowledge_guide_first_arrival"
+                            or receipt.get("request_id") != request_id or receipt.get("request_digest") != digest
+                            or receipt.get("action") != action or receipt.get("persisted") is not True
+                            or receipt.get("canonical_write") is not False):
+                        raise GuideUnavailableError("Acknowledgment receipt is unavailable.")
+                    return {"success": True, "replayed": True, "show_now": False,
+                        "receipt": copy.deepcopy(receipt),
+                        "first_arrival": self._arrival_projection(owner, snapshot, read_content)}
+                flags = self._arrival_flags(snapshot)
+                if flags[action]:
+                    return {"success": True, "replayed": False, "show_now": False,
+                        "receipt": None, "first_arrival": self._arrival_projection(owner, snapshot, read_content)}
+                # Only automatic showing requires proof of absent content.
+                # Explicit member choices remain recordable during a catalog outage.
+                if action == "shown":
+                    before = self._arrival_projection(owner, snapshot, read_content)
+                    if not before["eligible"]:
+                        return {"success": True, "replayed": False, "show_now": False,
+                            "receipt": None, "first_arrival": before}
+                guide = snapshot["guide"]
+                guide.setdefault("first_arrival", {})[action] = True
+                receipt = {"success": True, "type": "acknowledge_guide_first_arrival",
+                    "request_id": request_id, "request_digest": digest, "action": action,
+                    "persisted": True, "canonical_write": False}
+                snapshot["receipts"][request_id] = {"request_digest": digest,
+                    "submission_key": None, "result": receipt}
+                committed = self.repository.save_owner(owner, snapshot, {
+                    "procedure": COMMAND_PROCEDURES["set_guide_status"], "request_id": request_id,
+                    "payload": {"type": "set_guide_status", "request_id": request_id,
+                        "request_digest": digest, "status": guide.get("status") or "not_started",
+                        "status_source": guide.get("status_source") or "default_unstarted", "receipt": receipt}})
+                current = self._arrival_snapshot(owner)
+                stored = current["receipts"].get(request_id)
+                if (not isinstance(stored, dict) or stored.get("request_digest") != digest
+                        or stored.get("result") != receipt or current["guide"].get("first_arrival", {}).get(action) is not True):
+                    raise GuideUnavailableError("The acknowledgment could not be verified.")
+                replayed = bool(committed and committed.get("replayed"))
+                return {"success": True, "replayed": replayed,
+                    "show_now": action == "shown" and not replayed, "receipt": copy.deepcopy(receipt),
+                    "first_arrival": self._arrival_projection(owner, current, read_content)}
+        except ResumeIntakeStoreUnavailable as error:
+            raise GuideUnavailableError("First arrival is unavailable.") from error
+
     def _status_response(self, owner, receipt, *, replayed, question=None):
         if not isinstance(receipt, dict):
             raise GuideUnavailableError("The guide is unavailable.")
@@ -113,6 +256,10 @@ class ResumeGuideService:
         }
 
     def set_status(self, owner: str, payload: object, *, now: datetime | None = None) -> dict:
+        with self.repository.owner_guard(owner):
+            return self._set_status(owner, payload, now=now)
+
+    def _set_status(self, owner: str, payload: object, *, now: datetime | None = None) -> dict:
         if not isinstance(payload, dict):
             raise GuideValidationError("Invalid guide status.")
         if set(payload) & {"owner_user_key", "user_key", "owner_profile_id"}:

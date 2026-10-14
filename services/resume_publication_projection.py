@@ -69,14 +69,68 @@ TYPE_FIELD_MAP = {
     "knowledge": ("title", "summary"),
 }
 
+RESUME_CORE_SECTIONS = (
+    ("impact_statement", "Impact Statement"), ("skills", "Skills"), ("experience", "Experience"),
+    ("projects", "Projects"), ("education", "Education"), ("certifications", "Certifications"), ("awards", "Awards"),
+)
+RESUME_BASE_SECTION_ORDER = tuple(key for key, _ in RESUME_CORE_SECTIONS)
+RESUME_SECTION_LABELS = {**dict(RESUME_CORE_SECTIONS), "languages": "Languages", "publications": "Publications",
+    "memberships": "Memberships", "story": "My Story", "contact": "Contact details", "looking_ahead": "Looking Ahead"}
+_SECTION_ALIASES = {label: key for key, label in RESUME_SECTION_LABELS.items()}
+_SECTION_ALIASES.update({"Professional summary": "impact_statement", "Credentials": "certifications",
+                         "Independent Project": "projects"})
 
-def resume_presentation_key(record_type: str, values: dict) -> tuple:
+
+def resume_section_for(record_type, values=None, *, presentation_section=None, story_bound=False, proposed=False):
+    """Classify actual stored types/approved placement; never infer a Story binding."""
+    values = values or {}
+    if record_type == "credential":
+        kind = values.get("qualification_kind")
+        if kind in {None, "certification", "license"}:
+            return "certifications"
+        return {"publication": "publications", "membership": "memberships"}.get(kind, "unplaced")
+    direct = {"role": "experience", "skill": "skills", "education": "education", "project": "projects"}
+    if record_type in direct:
+        return direct[record_type]
+    if record_type != "knowledge":
+        return "unplaced"
+    if story_bound:
+        return "story" if values.get("classification") == "personal" else "unplaced"
+    stated = _SECTION_ALIASES.get(presentation_section, presentation_section)
+    if stated == "story":
+        return "story" if proposed else "unplaced"
+    if stated in {"awards", "impact_statement", "projects", "contact", "looking_ahead", "languages"}:
+        return stated
+    # These are the approved knowledge envelope labels, not arbitrary title
+    # guesses. "My Story" alone deliberately remains unbound.
+    if values.get("classification") in {"work", "both"}:
+        return {"Contact details": "contact", "Professional summary": "impact_statement",
+                "Independent Project": "projects", "Looking Ahead": "looking_ahead"}.get(values.get("title"), "unplaced")
+    return "unplaced"
+
+
+def resume_section_order(seen=()):
+    extras = []
+    for section in seen:
+        if section in {"languages", "publications", "memberships"} and section not in extras:
+            extras.append(section)
+    if "languages" in extras:
+        extras.remove("languages")
+        extras.insert(0, "languages")
+    return (*RESUME_BASE_SECTION_ORDER, *extras)
+
+
+def resume_presentation_key(record_type: str, values: dict, *, presentation_section=None, story_bound=False, section_order=None) -> tuple:
     """Presentation only: current roles, then known dates; stable unknown ties.
 
     Never infer a date/currentness from prose or change canonical/review bytes.
     Placeholder days in the existing year/month encoding carry no extra truth.
     """
-    section = {"role": 0, "education": 1, "credential": 2}.get(record_type, 3)
+    order = section_order or RESUME_BASE_SECTION_ORDER
+    section_key = resume_section_for(record_type, values, presentation_section=presentation_section, story_bound=story_bound)
+    section = order.index(section_key) if section_key in order else len(order)
+    if section_order is None and section_key in {"languages", "publications", "memberships"}:
+        return section, 0, 0  # Preserve first encounter across optional groups.
     current = record_type == "role" and values.get("current_role") is True
     precision = values.get("date_precision")
     raw = values.get("end_date") or values.get("start_date")
@@ -96,8 +150,13 @@ def resume_presentation_key(record_type: str, values: dict) -> tuple:
 
 
 def ordered_resume_display(display: dict) -> dict:
+    order = resume_section_order(resume_section_for(row.get("canonical_type"), row.get("wording") or {},
+        presentation_section=row.get("presentation_section"), story_bound=row.get("presentation_section") == "story")
+        for row in display.values())
     return dict(sorted(display.items(), key=lambda pair: resume_presentation_key(
-        pair[1].get("canonical_type", ""), pair[1].get("wording") or {})))
+        pair[1].get("canonical_type", ""), pair[1].get("wording") or {},
+        presentation_section=pair[1].get("presentation_section"), story_bound=pair[1].get("presentation_section") == "story",
+        section_order=order)))
 
 
 def canonical_fields_from_values(canonical_type: str, values: dict[str, object]) -> dict[str, object]:
@@ -106,6 +165,10 @@ def canonical_fields_from_values(canonical_type: str, values: dict[str, object])
     if type(values) is not dict:
         raise ContractError("typed canonical values required")
     mapped = dict(values)
+    if canonical_type == "project" and "project_name" in mapped:
+        if mapped.get("title") not in {None, mapped["project_name"]}:
+            raise ContractError("Project name and title disagree.")
+        mapped["title"] = mapped["project_name"]
     if canonical_type == 'credential':
         # Local partial-date evidence uses the existing date string slots.
         # The fixed durable v1 codec and legacy full-ISO bytes stay unchanged.

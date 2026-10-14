@@ -126,6 +126,7 @@ _FIELD_SETS = {
             "expiration_date_precision",
             "completion_status",
             "verification_url",
+            "qualification_kind",
         }
     ),
     "skill": frozenset({"skill_name", "skill_summary"}),
@@ -136,6 +137,9 @@ _FIELD_SETS = {
             "project_role",
             "project_status",
             "project_url",
+            "additional_project_urls",
+            "project_category",
+            "organization_name",
             "location_text",
             "summary",
             "start_date",
@@ -221,7 +225,7 @@ def _clean_text(value, *, field: str, required=False, maximum=MAX_TEXT):
     return text or None
 
 
-def _normalize_values(canonical_type: str, values: object, *, required: bool) -> dict:
+def _normalize_values(canonical_type: str, values: object, *, required: bool, guide_review=False, section=None) -> dict:
     if values is None:
         values = {}
     if not isinstance(values, dict):
@@ -242,10 +246,36 @@ def _normalize_values(canonical_type: str, values: object, *, required: bool) ->
     }
     if set(values) & forbidden:
         raise EntryPolicyValidationError("Authority fields cannot be client-supplied.")
+    if guide_review and canonical_type in {"role", "knowledge"}:
+        from services.living_resume_editor_service import normalize_guide_values, LivingResumeEditorValidationError
+        try:
+            return normalize_guide_values(canonical_type, values, section=section)
+        except LivingResumeEditorValidationError as error:
+            raise EntryPolicyValidationError(str(error)) from error
+    local_project_fields = {"project_category", "organization_name", "additional_project_urls"}
+    if (canonical_type == "credential" and "qualification_kind" in values) or (
+            canonical_type == "project" and local_project_fields & set(values)):
+        from services.living_resume_editor_service import (
+            LivingResumeEditorValidationError, normalize_editor_intent, normalize_editor_values)
+        aliases = {"credential_name": "name", "issuer_name": "issuer", "credential_identifier": "identifier"}
+        supplied = {aliases.get(name, name) if canonical_type == "credential" else name: value
+                    for name, value in values.items()}
+        try:
+            normalizer = normalize_editor_values if required else normalize_editor_intent
+            result = normalizer(canonical_type, supplied)
+        except LivingResumeEditorValidationError as error:
+            raise EntryPolicyValidationError(str(error)) from error
+        reverse = {value: name for name, value in aliases.items()} if canonical_type == "credential" else {}
+        return {reverse.get(name, name): value for name, value in result.items()}
+    required_fields = _REQUIRED_CREATE[canonical_type]
+    if canonical_type == "education" and not str(values.get("title") or "").strip():
+        # The local Guide's institution/year path carries no invented degree
+        # or title. Existing titled education keeps its legacy validation.
+        required_fields = ("institution_name", "end_date")
     normalized = {}
     for name in sorted(allowed):
         if name not in values:
-            if required and name in _REQUIRED_CREATE[canonical_type]:
+            if required and name in required_fields:
                 raise EntryPolicyValidationError(f"Invalid {name}.")
             continue
         raw = values[name]
@@ -260,7 +290,7 @@ def _normalize_values(canonical_type: str, values: object, *, required: bool) ->
                 raise EntryPolicyValidationError('Invalid credential status.')
             if raw is not None: normalized[name] = raw
         else:
-            need = required and name in _REQUIRED_CREATE[canonical_type]
+            need = required and name in required_fields
             normalized[name] = _clean_text(raw, field=name, required=need)
     if canonical_type == 'credential':
         from services.living_resume_editor_service import credential_date_text, LivingResumeEditorValidationError
@@ -273,9 +303,15 @@ def _normalize_values(canonical_type: str, values: object, *, required: bool) ->
         except LivingResumeEditorValidationError as error:
             raise EntryPolicyValidationError(str(error)) from error
     if required:
-        for name in _REQUIRED_CREATE[canonical_type]:
+        for name in required_fields:
             if not normalized.get(name):
                 raise EntryPolicyValidationError(f"Invalid {name}.")
+    if canonical_type == 'knowledge':
+        from services.living_resume_editor_service import validate_guide_text_limits, LivingResumeEditorValidationError
+        try:
+            validate_guide_text_limits(normalized)
+        except LivingResumeEditorValidationError as error:
+            raise EntryPolicyValidationError(str(error)) from error
     return normalized
 
 
@@ -354,6 +390,13 @@ class EntryPolicyService:
         self.publication_service = publication_service
 
     def list_entries(self, user_key: object) -> dict:
+        return self._list_entries(user_key, persist_expiry=True)
+
+    def read_entries(self, user_key: object) -> dict:
+        """Project current policy without persisting expiry or modifying loaded state."""
+        return self._list_entries(user_key, persist_expiry=False)
+
+    def _list_entries(self, user_key: object, *, persist_expiry: bool) -> dict:
         owner = self._owner(user_key)
         now = self._now()
         if self._sql_command_port():
@@ -363,9 +406,13 @@ class EntryPolicyService:
                 if entry.get("lifecycle") != LIFECYCLE_PERMANENT
             ]
         else:
-            snapshot = self._load(owner)
-            if self._expire_snapshot(snapshot, now):
-                self._save(owner, snapshot)
+            from services.resume_intake_repository import resume_owner_guard
+            with resume_owner_guard(owner):
+                snapshot = self._load(owner)
+                if not persist_expiry:
+                    snapshot = copy.deepcopy(snapshot)
+                if self._expire_snapshot(snapshot, now) and persist_expiry:
+                    self._save(owner, snapshot)
             visible = [
                 _present(entry, now=now)
                 for entry in snapshot["entries"].values()
@@ -381,6 +428,12 @@ class EntryPolicyService:
                 "ai_provider_required": False,
             },
         }
+
+    def read_publication_entries(self, user_key: object) -> dict:
+        """Use the existing publication SQL read or a non-persisting snapshot projection."""
+        if not self._sql_command_port():
+            return self.read_entries(user_key)
+        return self.list_publication_entries(user_key)
 
     def list_publication_entries(self, user_key: object) -> dict:
         """Use the E canonical read when the SQL publication boundary is active."""
@@ -413,16 +466,33 @@ class EntryPolicyService:
             if item is None or item.get("lifecycle") == LIFECYCLE_PERMANENT:
                 raise EntryPolicyNotFoundError("That item is no longer available.")
             return {"entry": _present(item, now=now)}
-        snapshot = self._load(owner)
-        if self._expire_snapshot(snapshot, now):
-            self._save(owner, snapshot)
+        from services.resume_intake_repository import resume_owner_guard
+        with resume_owner_guard(owner):
+            snapshot = self._load(owner)
+            if self._expire_snapshot(snapshot, now):
+                self._save(owner, snapshot)
         return {"entry": _present(_get_own(snapshot, key), now=now)}
 
     def commit(self, user_key: object, payload: object) -> dict:
+        from services.resume_intake_repository import resume_owner_guard
+        owner = self._owner(user_key)
+        with resume_owner_guard(owner):
+            return self._commit_guarded(owner, payload)
+
+    def _commit_guarded(self, user_key: object, payload: object) -> dict:
         owner = self._owner(user_key)
         command = self._normalize_command(payload)
         now = self._now()
         if self._sql_command_port():
+            values = command.get("values") or {}
+            local_fields = {"qualification_kind", "project_category", "organization_name", "additional_project_urls"}
+            title = values.get("title")
+            title_missing = title is None or isinstance(title, str) and not title.strip()
+            untitled = (command.get("canonical_type") == "education" and command["type"] == "create"
+                        and title_missing) or (command["type"] == "edit" and "title" in values
+                            and command.get("canonical_type") in {None, "education"} and title_missing)
+            if command.get("guide_review") or local_fields & set(values) or untitled:
+                raise EntryPolicyValidationError("This storage does not support these local Resume fields yet. Your input is kept.")
             if {'issue_date_precision', 'expiration_date_precision', 'completion_status'} & set(command.get('values') or {}):
                 from services.living_resume_editor_service import CREDENTIAL_PRECISION_UNAVAILABLE
                 raise EntryPolicyValidationError(CREDENTIAL_PRECISION_UNAVAILABLE)
@@ -516,9 +586,11 @@ class EntryPolicyService:
     def sweep_expired(self, user_key: object) -> dict:
         owner = self._owner(user_key)
         now = self._now()
-        snapshot = self._load(owner)
-        expired = self._expire_snapshot(snapshot, now)
-        self._save(owner, snapshot)
+        from services.resume_intake_repository import resume_owner_guard
+        with resume_owner_guard(owner):
+            snapshot = self._load(owner)
+            expired = self._expire_snapshot(snapshot, now)
+            self._save(owner, snapshot)
         return {"expired_count": expired}
 
     def _load(self, owner: str) -> dict:
@@ -567,7 +639,8 @@ class EntryPolicyService:
                     raise EntryPolicyNotFoundError("That item is no longer available.")
         elif parent_key is not None:
             raise EntryPolicyValidationError("This entry type cannot have a parent.")
-        values = _normalize_values(canonical_type, command["values"], required=True)
+        values = _normalize_values(canonical_type, command["values"], required=True,
+            guide_review=command.get("guide_review", False), section=command.get("guide_section"))
         entry = {
             "entry_key": entry_key,
             "canonical_type": canonical_type,
@@ -596,7 +669,17 @@ class EntryPolicyService:
         if entry["lifecycle"] != LIFECYCLE_ACTIVE:
             raise EntryPolicyNotFoundError("That item is no longer available.")
         self._require_content_version(entry, command)
-        values = _normalize_values(entry["canonical_type"], command["values"], required=True)
+        section = command.get("guide_section")
+        if command.get("guide_review") and entry["canonical_type"] == "knowledge":
+            from services.resume_publication_projection import resume_section_for
+            current = entry.get("values") or {}
+            existing_section = resume_section_for("knowledge", current)
+            if current.get("title") == "My Story":
+                existing_section = "story"
+            if existing_section in {"impact_statement", "story", "looking_ahead", "contact"}:
+                section = existing_section
+        values = _normalize_values(entry["canonical_type"], command["values"], required=True,
+            guide_review=command.get("guide_review", False), section=section)
         entry["values"] = values
         entry["content_version"] += 1
         entry["updated_at"] = _moment_text(now)
@@ -849,6 +932,14 @@ class EntryPolicyService:
         }
         if set(payload) & forbidden:
             raise EntryPolicyValidationError("Owner or table fields cannot be client-supplied.")
+        guide_review = payload.get("guide_review", False)
+        if type(guide_review) is not bool:
+            raise EntryPolicyValidationError("Invalid Guide review choice.")
+        if guide_review:
+            from services.resume_publication_projection import RESUME_SECTION_LABELS
+            if payload.get("type") not in {"create", "edit"} or (
+                    payload.get("guide_section") is not None and payload["guide_section"] not in RESUME_SECTION_LABELS):
+                raise EntryPolicyValidationError("Invalid Guide save.")
         command_type = payload.get("type")
         if command_type not in COMMAND_TYPES:
             raise EntryPolicyValidationError("Unknown command.")
@@ -976,6 +1067,12 @@ class EntryPolicyService:
                 "match_decision",
             )
         }
+        if guide_review:
+            guide_options = {"guide_review": True}
+            if payload.get("guide_section") is not None:
+                guide_options["guide_section"] = payload["guide_section"]
+            normalized.update(guide_options)
+            digest_body.update(guide_options)
         normalized["digest"] = _json_digest(digest_body)
         return normalized
 

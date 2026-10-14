@@ -5,17 +5,23 @@ from copy import deepcopy
 from hashlib import sha256
 import json
 from uuid import NAMESPACE_URL, UUID, uuid5
-
-
-GUIDE_SECTIONS = (
-    ("impact_statement","Impact Statement"),("skills","Skills"),("experience","Experience"),
-    ("projects","Projects"),("education","Education"),("certifications","Certifications"),("awards","Awards"),
+from services.resume_publication_projection import (
+    RESUME_CORE_SECTIONS, RESUME_BASE_SECTION_ORDER, RESUME_SECTION_LABELS,
+    resume_section_for, resume_section_order,
 )
-GUIDE_SECTION_ORDER = tuple(key for key,_ in GUIDE_SECTIONS)
-_TYPE_SECTION = {"role":"experience","skill":"skills","project":"projects", "education":"education","credential":"certifications"}
-_SECTION_ALIASES = {label:key for key,label in GUIDE_SECTIONS}
-_SECTION_ALIASES.update({"Professional summary":"impact_statement","Credentials":"certifications",
-                         "Independent Project":"projects","My Story":"story","Contact details":"contact"})
+
+
+GUIDE_SECTIONS = RESUME_CORE_SECTIONS
+GUIDE_SECTION_ORDER = RESUME_BASE_SECTION_ORDER
+
+
+def model_resume_values(record_type, values):
+    """Project links are private literal strings, never model inputs (269ab17)."""
+    result = deepcopy(values)
+    if record_type == "project":
+        result.pop("project_url",None)
+        result.pop("additional_project_urls",None)
+    return result
 
 
 def _json(value):
@@ -99,14 +105,10 @@ def bind_item_identities(owner, snapshot, *, privacy_repair=False):
         bind(key)
 
 
-def _section(record_type, metadata=None):
+def _section(record_type, metadata=None, values=None, *, story_bound=False, proposed=False):
     metadata = metadata or {}
-    stated = metadata.get("presentation_section")
-    if stated in GUIDE_SECTION_ORDER:
-        return stated
-    if stated in _SECTION_ALIASES:
-        return _SECTION_ALIASES[stated]
-    return _TYPE_SECTION.get(record_type,"unplaced")
+    return resume_section_for(record_type, values, presentation_section=metadata.get("presentation_section"),
+        story_bound=story_bound, proposed=proposed)
 
 
 def _evidence(snapshot, row):
@@ -153,8 +155,10 @@ def project_working_set(owner, snapshot, canonical_items, draft_version, *, hist
     for source_item in canonical_items:
         item = deepcopy(source_item)
         key = item["record_key"]
+        values = {**(item.get("values") or {}), **(item.get("proposed_values") or {})}
         section = _section(item["record_type"],{"presentation_section":history.get("section",{}).get(key)
-            or item.get("presentation_section") or (item.get("values") or {}).get("presentation_section")})
+            or item.get("presentation_section") or (item.get("values") or {}).get("presentation_section")},
+            values, story_bound=item.get("story_bound") is True)
         hidden = history.get("inclusion",{}).get(key) is True
         nodes[key] = {"item_ref":key,"identity_aliases":[],"origin":"saved","state":"hidden" if hidden else "saved",
             "has_draft":item.get("has_draft") is True,
@@ -164,7 +168,9 @@ def project_working_set(owner, snapshot, canonical_items, draft_version, *, hist
                 **(deepcopy(item.get("proposed_values") or {}) if item.get("has_draft") else {})},
             "saved_revision":item.get("content_token"),
             "saved_content_version":item.get("content_version"),"saved_access_revision":item.get("access_revision"),
-            "parent_ref":item.get("parent_key"),"proposal_key":None,"revision":None,"proposals":[],"evidence":[],"children":[]}
+            "parent_ref":item.get("parent_key"),"proposal_key":None,"revision":None,"proposals":[],"evidence":[],"children":[],
+            **({"evidence_refs":deepcopy(item["evidence_refs"]),"evidence_refs_manual":item.get("evidence_refs_manual") is True}
+                if "evidence_refs" in item else {})}
     rows = snapshot.get("proposals") or {}
     for row in sorted(rows.values(),key=lambda row:(row.get("created_at") or "",row.get("proposal_key") or "")):
         target = row.get("saved_record_key") or row.get("target_key")
@@ -180,11 +186,12 @@ def project_working_set(owner, snapshot, canonical_items, draft_version, *, hist
         reference = target if target in nodes else row.get("item_ref")
         if not reference:
             reference = str(uuid5(NAMESPACE_URL,"peerslate-guide-legacy:" + _json([owner,row.get("proposal_key")])))
-        section = _section(row["record_type"],meta)
+        section = _section(row["record_type"],meta,row.get("proposed_values") or {},proposed=True)
         if row["state"]=="rejected" and (target in nodes or section != "unplaced"):
             legacy.append({"item_ref":reference,"proposal_key":row["proposal_key"],"state":"declined"})
             continue
-        state = "skipped" if row["state"]=="rejected" else ("hidden" if row["state"]=="hidden" else "waiting")
+        pending_hidden = row["state"] == "pending" and row.get("guide_hidden") is True
+        state = "skipped" if row["state"]=="rejected" else ("hidden" if row["state"]=="hidden" or pending_hidden else "waiting")
         if reference not in nodes:
             nodes[reference] = {"item_ref":reference,"identity_aliases":list(row.get("identity_aliases") or []),
                 "origin":"pending","state":state,"record_type":row["record_type"],"section":section,
@@ -194,7 +201,7 @@ def project_working_set(owner, snapshot, canonical_items, draft_version, *, hist
                 "proposals":[],"evidence":[],"children":[]}
         node = nodes[reference]
         if node["origin"] == "saved":
-            node["update_waiting"] = node["update_waiting"] or row["state"] == "pending"
+            node["update_waiting"] = node["update_waiting"] or (row["state"] == "pending" and not pending_hidden)
         else:
             node["state"] = state
         node["proposals"].append({"proposal_key":row["proposal_key"],"revision":row.get("revision") or 1,
@@ -245,15 +252,17 @@ def project_working_set(owner, snapshot, canonical_items, draft_version, *, hist
     def counts(items):
         return {**{state:sum(item["state"]==state for item in items) for state in ("saved","waiting","hidden","skipped")},
                 "updates_waiting":sum(item.get("update_waiting") is True for item in items)}
-    for key,label in GUIDE_SECTIONS:
+    section_order = resume_section_order(node["section"] for node in nodes.values())
+    for key in section_order:
+        label = RESUME_SECTION_LABELS[key]
         items = [node for ref,node in nodes.items() if ref not in children and node["section"]==key]
         sections.append({"key":key,"label":label,"items":items,
             "tab_visible":any(item["state"] in {"saved","waiting"} for item in items),
             "counts":counts(items),"child_counts":counts([child for item in items for child in item["children"]])})
     unplaced = [node for ref,node in nodes.items() if ref not in children and node["section"]=="unplaced"]
-    non_tab = [node for ref,node in nodes.items() if ref not in children and node["section"] in {"story","contact"}]
-    top = [node for ref,node in nodes.items() if ref not in children and node["section"] not in {"story","contact"}]
-    result = {"schema_version":1,"load_state":"loaded","section_order":list(GUIDE_SECTION_ORDER),
+    non_tab = [node for ref,node in nodes.items() if ref not in children and node["section"] in {"story","contact","looking_ahead"}]
+    top = [node for ref,node in nodes.items() if ref not in children and node["section"] not in {"story","contact","looking_ahead"}]
+    result = {"schema_version":1,"load_state":"loaded","section_order":list(section_order),
         "sections":sections,"unplaced":unplaced,"non_tab_items":non_tab,"legacy_outcomes":legacy,"active_sources":active_sources,"draft_version":draft_version,
         "lifecycle_epoch":snapshot.get("lifecycle_epoch",0),"publication_state":"unknown",
         "counts":counts(top),"child_counts":counts([nodes[key] for key in children]),
@@ -263,8 +272,100 @@ def project_working_set(owner, snapshot, canonical_items, draft_version, *, hist
 
 
 def refresh_working_set_token(owner, working_set):
-    body = {key:value for key,value in working_set.items() if key != "working_set_token"}
+    # A once-only welcome acknowledgment is UI lifecycle, not resume content.
+    body = {key:value for key,value in working_set.items() if key not in {"working_set_token", "first_arrival"}}
     working_set["working_set_token"] = sha256(_json([owner,body]).encode()).hexdigest()
+
+
+def resolve_guide_references(working_set, *, evidence_refs=None, highlight_refs=()):
+    """Resolve server-held references against this owner's current private tree.
+
+    No keyword matching, copied source truth, writes or permission expansion.
+    Hidden references remain stored by the caller and are only filtered here.
+    Pending/absent records never supply evidence, labels or numbers.
+    """
+    evidence_refs = evidence_refs or {}
+    if type(evidence_refs) is not dict or not isinstance(highlight_refs,(list,tuple)):
+        raise ValueError("Invalid private Resume references")
+    index, ambiguous = {},set()
+    def collect(items, ancestor_hidden=False):
+        for item in items:
+            hidden = ancestor_hidden or item.get("state") == "hidden"
+            visible = not hidden and item.get("origin") == "saved" and item.get("state") == "saved"
+            for key in (item["item_ref"], *item.get("identity_aliases",[])):
+                if key in index and index[key][0] is not None and index[key][0]["item_ref"] != item["item_ref"]:
+                    ambiguous.add(key)
+                index[key] = (None,False) if key in ambiguous else (item, visible)
+            collect(item.get("children",[]), hidden)
+    collect([*(row for section in working_set["sections"] for row in section["items"]),
+        *working_set["unplaced"], *working_set["non_tab_items"]])
+    needs_recheck = []
+
+    def role_detail(role):
+        values = role.get("values") or {}
+        return {"role_ref":role["item_ref"], **{name:values.get(name) for name in
+            ("employer_name","role_title","start_date","end_date","date_precision","current_role")}}
+
+    def resolve(ref):
+        if type(ref) is str:
+            row, visible = index.get(ref,(None,False))
+            if row is None or not visible or row.get("record_type") != "accomplishment":
+                return None
+            parent, shown = index.get(row.get("parent_ref"),(None,False))
+            if parent is None or not shown or parent.get("record_type") != "role":
+                return None
+            text = (row.get("values") or {}).get("wording")
+            if not isinstance(text,str) or not text.strip():
+                return None
+            return {"evidence_ref":ref,"record_ref":row["item_ref"],"text":text,**role_detail(parent)}
+        if type(ref) is not dict or set(ref) != {"role_record_key","line_digest"}:
+            return None
+        role, visible = index.get(ref.get("role_record_key"),(None,False))
+        if role is None or not visible or role.get("record_type") != "role":
+            return None
+        summary = (role.get("values") or {}).get("summary")
+        lines = summary.splitlines() if isinstance(summary,str) else []
+        matched = [line for line in lines if line.strip() and sha256(line.encode("utf-8")).hexdigest() == ref.get("line_digest")]
+        if not matched:
+            needs_recheck.append({"reference":deepcopy(ref),"reason":"summary_changed"})
+            return None
+        return {"evidence_ref":deepcopy(ref),"record_ref":None,"text":matched[0],**role_detail(role)}
+
+    skill_evidence = {}
+    for key, refs in evidence_refs.items():
+        if type(key) is not str or type(refs) is not list:
+            raise ValueError("Invalid skill evidence references")
+        skill, visible = index.get(key,(None,False))
+        resolved, seen = [],set()
+        if skill is not None and visible and skill.get("record_type") == "skill":
+            for ref in refs:
+                identity = _json(ref)
+                if identity in seen:
+                    continue
+                seen.add(identity)
+                entry = resolve(ref)
+                if entry is not None:
+                    resolved.append(entry)
+                if len(resolved) == 3:
+                    break
+        skill_evidence[key] = resolved
+    highlights, seen = [],set()
+    for ref in highlight_refs:
+        if type(ref) is not str or ref in seen:
+            continue
+        seen.add(ref)
+        entry = resolve(ref)
+        if entry is None:
+            continue
+        row = index[ref][0]
+        values = row.get("values") or {}
+        metric = values.get("metric_value")
+        if not isinstance(metric,str) or not metric.strip():
+            continue
+        highlights.append({**entry,"metric_value":metric,"metric_label":values.get("metric_label")})
+        if len(highlights) == 4:
+            break
+    return {"skill_evidence":skill_evidence,"highlight_tiles":highlights,"needs_recheck":needs_recheck}
 
 
 def guide_publication_state(working_set, owner_preview):

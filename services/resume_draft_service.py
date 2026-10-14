@@ -20,10 +20,13 @@ from typing import Any
 from uuid import UUID
 
 from services.resume_publication_projection import resume_presentation_key
+from services.resume_intake_repository import owner_composed
 
 from services.living_resume_editor_service import (
     LivingResumeEditorValidationError,
     normalize_editor_values,
+    normalize_guide_values,
+    validate_guide_text_limits,
     utf16_length,
 )
 from services.resume_draft_repository import (
@@ -43,7 +46,7 @@ COMMAND_TYPES = frozenset(
     {"save_item", "discard_item", "create_private_item", "review_candidate", "bind_story", "clear_story"}
 )
 RECORD_TYPES = frozenset(
-    {"role", "education", "credential", "skill", "accomplishment", "knowledge"}
+    {"role", "education", "credential", "skill", "accomplishment", "knowledge", "project"}
 )
 FORBIDDEN_CLIENT_FIELDS = frozenset(
     {
@@ -154,12 +157,19 @@ def _command_json(command: dict) -> str:
     return json.dumps(body, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
 
 
-def _normalize_draft_values(record_type, values):
+def _normalize_draft_values(record_type, values, *, guide_review=False, section=None):
+    if guide_review:
+        return normalize_guide_values(record_type, values, section=section)
+    if record_type == "project":
+        return normalize_editor_values("project", values)
+    if record_type == "education":
+        return normalize_editor_values("education", values, require_title=False)
     if record_type != "knowledge":
         return normalize_editor_values(record_type, values)
     from services.knowledge_service import KnowledgeServiceError, validate_knowledge_item_input
     if not isinstance(values, dict) or set(values) - {"title", "wording", "classification"}:
         raise LivingResumeEditorValidationError("Check the personal entry fields.")
+    validate_guide_text_limits(values, section=section)
     try:
         title, wording, classification = validate_knowledge_item_input(
             values.get("title"), values.get("wording"), values.get("classification", "personal"))
@@ -191,6 +201,88 @@ class ResumeDraftService:
         snapshot["_base_version"] = int(snapshot["draft_version"])
         return snapshot
 
+    @owner_composed
+    def stamp_private_resume_choice(self, owner: str, request_id: str, request_digest: str) -> None:
+        """Fence a private projection choice without storing it twice or editing words/media.
+
+        The caller must participate in the qualified intake unit of work. SQL
+        has no applied command for this operation and remains unsupported.
+        """
+        from services.resume_draft_repository import InMemoryResumeDraftRepository
+        if not isinstance(self.repository, InMemoryResumeDraftRepository):
+            raise ResumeDraftUnavailableError()
+        snapshot = self._load(owner)
+
+        def apply(live):
+            receipts = live.setdefault("receipts", {})
+            existing = receipts.get(request_id)
+            if existing is not None:
+                if existing.get("request_digest") != request_digest:
+                    raise ResumeDraftIdempotencyConflict()
+                return False
+            live["draft_version"] = int(live.get("draft_version") or 0) + 1
+            receipts[request_id] = {"request_digest": request_digest,
+                "result": {"type": "private_resume_choice_stamp", "draft_version": live["draft_version"]}}
+            return True
+
+        self.repository.commit_owner_command(owner, expected_version=snapshot["draft_version"], apply=apply)
+
+    @owner_composed
+    def save_private_guide_references(self, owner, *, request_id, request_digest, expected_version,
+                                      kind, item, references, validate_current):
+        """Qualified private metadata, separate from wording and media."""
+        from services.resume_draft_repository import InMemoryResumeDraftRepository
+        if not isinstance(self.repository, InMemoryResumeDraftRepository):
+            raise ResumeDraftUnavailableError()
+        def apply(live):
+            existing = live.setdefault("receipts",{}).get(request_id)
+            if existing is not None:
+                if existing.get("request_digest") != request_digest:
+                    raise ResumeDraftIdempotencyConflict()
+                return False
+            if not validate_current():
+                raise ResumeDraftConflictError("changed",[],"The reference choices changed. Refresh and try again.")
+            if kind == "skill":
+                key = item["item_ref"]
+                overlay = copy.deepcopy(live.setdefault("items",{}).get(key) or {
+                    "record_key":key,"record_type":"skill","base_content_token":item["saved_revision"],
+                    "base_access_revision":item["saved_access_revision"],"proposed_values":{},
+                    "intended_permission_expansions":{"resume_display":False,"visitor_ai":False},"is_new":False})
+                overlay["evidence_refs"] = copy.deepcopy(references)
+                overlay["evidence_refs_manual"] = True
+                live["items"][key] = overlay
+            else:
+                live["highlight_refs"] = copy.deepcopy(references)
+                live["highlight_refs_manual"] = True
+            live["draft_version"] = int(live.get("draft_version") or 0)+1
+            live["receipts"][request_id] = {"request_digest":request_digest,
+                "result":{"type":"guide_references","draft_version":live["draft_version"]}}
+            return True
+        self.repository.commit_owner_command(owner,expected_version=expected_version,apply=apply)
+
+    @staticmethod
+    def prune_deleted_private_references(snapshot, removed):
+        """Prepare the existing linked transaction's draft delta; never save here."""
+        after = copy.deepcopy(snapshot)
+        changed = False
+        def keep(ref):
+            return ref not in removed if type(ref) is str else (type(ref) is dict and ref.get("role_record_key") not in removed)
+        for key, item in after.get("items",{}).items():
+            if "evidence_refs" not in item:
+                continue
+            prior = item["evidence_refs"]
+            retained = [] if key in removed else [ref for ref in prior if keep(ref)]
+            if retained != prior:
+                item["evidence_refs"] = retained
+                changed = True
+        if "highlight_refs" in after:
+            prior = after["highlight_refs"]
+            after["highlight_refs"] = [ref for ref in prior if ref not in removed]
+            changed = changed or prior != after["highlight_refs"]
+        if changed:
+            after["draft_version"] = int(after.get("draft_version") or 0)+1
+        return after if changed else None
+
     def _save(self, owner: str, snapshot: dict, command: dict | None = None) -> bool:
         if command is not None:
             transport = dict(command)
@@ -198,7 +290,8 @@ class ResumeDraftService:
                 transport["expected_draft_version"] = snapshot.get("_base_version", 0)
             if command.get("record_type") == "knowledge":
                 if command["type"] == "create_private_item":
-                    transport["values"] = _normalize_draft_values("knowledge", command["values"])
+                    transport["values"] = _normalize_draft_values("knowledge", command["values"],
+                        guide_review=command.get("guide_review", False), section=command.get("guide_section"))
                 elif command["type"] == "save_item":
                     transport["values"] = snapshot["items"][command["record_key"]]["proposed_values"]
             snapshot["_pending_command"] = {
@@ -358,6 +451,7 @@ class ResumeDraftService:
         except CanonicalReadUnavailable as error:
             raise ResumeDraftUnavailableError() from error
 
+    @owner_composed
     def get_workspace(self, owner: str) -> dict:
         snapshot = self._load(owner)
         canonical_items, canonical_read = self._catalog_list(owner)
@@ -397,6 +491,8 @@ class ResumeDraftService:
             "draft_version": snapshot["draft_version"],
             "base_publication_version": snapshot.get("base_publication_version"),
             "story_entry_key": snapshot.get("story_entry_key"),
+            **({"highlight_refs":copy.deepcopy(snapshot["highlight_refs"]),
+                "highlight_refs_manual":snapshot.get("highlight_refs_manual") is True} if "highlight_refs" in snapshot else {}),
             "items": sorted(merged, key=lambda item: resume_presentation_key(
                 item.get("record_type"), {**(item.get("values") or {}), **(item.get("proposed_values") or {})})),
             "capabilities": {
@@ -448,6 +544,9 @@ class ResumeDraftService:
             "draft_does_not_change_sharing": True,
         }
         if overlay:
+            if "evidence_refs" in overlay:
+                presented["evidence_refs"] = copy.deepcopy(overlay["evidence_refs"])
+                presented["evidence_refs_manual"] = overlay.get("evidence_refs_manual") is True
             presented["draft_base_content_token"] = overlay.get("base_content_token")
             presented["draft_base_access_revision"] = overlay.get("base_access_revision")
             stale = (
@@ -459,8 +558,21 @@ class ResumeDraftService:
             presented["draft_is_stale"] = False
         return presented
 
+    @owner_composed
     def commit(self, owner: str, payload: object) -> dict:
         command = self._normalize_command(payload)
+        sql_bound = (isinstance(self.repository, SqlResumeDraftRepository)
+                     or getattr(self.repository, "command_port", False)
+                     or isinstance(self.catalog, LivingResumeCanonicalCatalog))
+        values = command.get("values") or {}
+        if sql_bound and command["type"] in {"create_private_item", "save_item"}:
+            title = values.get("title")
+            title_missing = title is None or isinstance(title, str) and not title.strip()
+            untitled_education = command.get("record_type") == "education" and (
+                command["type"] == "create_private_item" and title_missing
+                or "title" in values and title_missing)
+            if command.get("guide_review") or command.get("record_type") == "project" or "qualification_kind" in values or untitled_education:
+                raise ResumeDraftValidationError("This storage does not support these local Resume fields yet. Your input is kept.")
         if (command.get('record_type') == 'credential' and isinstance(self.repository, SqlResumeDraftRepository)
                 and {'issue_date_precision', 'expiration_date_precision'} & set(command.get('values') or {})):
             from services.living_resume_editor_service import CREDENTIAL_PRECISION_UNAVAILABLE
@@ -587,9 +699,17 @@ class ResumeDraftService:
                 previous.get('base_content_token') == str(canonical['content_token'])
                 and previous.get('base_access_revision') == int(canonical['access_revision'])) else {}
             merged = {**(canonical.get("values") or {}), **previous_values, **command["values"]}
-            proposed = _normalize_draft_values(command["record_type"], merged)
+            section = command.get("guide_section")
+            if command["record_type"] == "knowledge":
+                from services.resume_publication_projection import resume_section_for
+                existing_section = resume_section_for("knowledge", canonical.get("values") or {},
+                    story_bound=snapshot.get("story_entry_key") == command["record_key"])
+                if existing_section in {"impact_statement", "looking_ahead", "story", "contact"}:
+                    section = existing_section
+            proposed = _normalize_draft_values(command["record_type"], merged,
+                guide_review=command.get("guide_review", False), section=section)
         except LivingResumeEditorValidationError as error:
-            raise ResumeDraftValidationError(str(error)) from error
+            raise _guide_validation_error(error) from error
         snapshot["items"][command["record_key"]] = {
             "record_key": command["record_key"],
             "record_type": command["record_type"],
@@ -598,6 +718,7 @@ class ResumeDraftService:
             "proposed_values": proposed,
             "intended_permission_expansions": command.get("intended_permission_expansions"),
             "is_new": False,
+            **{name:copy.deepcopy(previous[name]) for name in ("evidence_refs","evidence_refs_manual") if name in previous},
         }
         snapshot["draft_version"] = int(snapshot["draft_version"]) + 1
         return {
@@ -610,6 +731,13 @@ class ResumeDraftService:
     def _discard_item(self, owner: str, snapshot: dict, command: dict) -> dict:
         overlay = snapshot["items"].pop(command["record_key"], None)
         if overlay is not None:
+            if "evidence_refs" in overlay:
+                # Discarding unsaved words does not discard accepted manual links.
+                canonical = self._catalog_get(owner,command["record_key"])
+                retained = {**overlay,"proposed_values":{}}
+                if canonical:
+                    retained.update(base_content_token=canonical["content_token"],base_access_revision=canonical["access_revision"])
+                snapshot["items"][command["record_key"]] = retained
             snapshot["draft_version"] = int(snapshot["draft_version"]) + 1
         return {"outcome": "discarded", "item": None}
 
@@ -618,9 +746,10 @@ class ResumeDraftService:
             if self._catalog_get(owner, command["parent_key"]) is None:
                 raise ResumeDraftNotFoundError()
         try:
-            values = _normalize_draft_values(command["record_type"], command["values"])
+            values = _normalize_draft_values(command["record_type"], command["values"],
+                guide_review=command.get("guide_review", False), section=command.get("guide_section"))
         except LivingResumeEditorValidationError as error:
-            raise ResumeDraftValidationError(str(error)) from error
+            raise _guide_validation_error(error) from error
         if command["record_type"] == "knowledge" and getattr(self.repository, "command_port", False):
             # The SQL command creates the existing versioned knowledge record,
             # private policy and receipt in one transaction. This is only a
@@ -635,6 +764,8 @@ class ResumeDraftService:
                     "record_type": command["record_type"],
                     "parent_key": command.get("parent_key"),
                     "values": values,
+                    **({"guide_review": True, "guide_section": command.get("guide_section")}
+                       if command.get("guide_review") else {}),
                 },
             )
         except CanonicalValidationError as error:
@@ -760,10 +891,30 @@ class ResumeDraftService:
             "expected_content_token": expected_content_token,
             "expected_access_revision": expected_access_revision,
         }
+        guide_review = payload.get("guide_review", False)
+        if type(guide_review) is not bool:
+            raise ResumeDraftValidationError("Invalid Guide review mode.")
+        if guide_review:
+            section = payload.get("guide_section")
+            if section is not None and section not in {"impact_statement", "looking_ahead", "story", "contact",
+                    "skills", "experience", "education", "certifications", "awards", "projects", "publications", "memberships", "unplaced"}:
+                raise ResumeDraftValidationError("Invalid Guide section.")
+            command["guide_review"] = True
+            if section is not None:
+                command["guide_section"] = section
         command["digest"] = _json_digest(
             {key: command[key] for key in command if key != "digest"}
         )
         return command
+
+
+def _guide_validation_error(error):
+    result = ResumeDraftValidationError(str(error))
+    result.code = getattr(error, "code", "invalid")
+    for name in ("missing_required_fields", "actual_count", "limit"):
+        if hasattr(error, name):
+            setattr(result, name, copy.deepcopy(getattr(error, name)))
+    return result
 
 
 resume_draft_service = ResumeDraftService()

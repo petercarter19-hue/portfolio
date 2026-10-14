@@ -27,6 +27,112 @@ ROLE_KEY = str(UUID(int=11, version=4))
 EDU_KEY = str(UUID(int=12, version=4))
 
 
+class GuideLocalDraftTypeTests(unittest.TestCase):
+    def test_renaming_an_existing_impact_cannot_bypass_its_text_limit(self):
+        service = self.service()
+        saved = self.create(service,'knowledge',{'title':'Professional summary','wording':'Original summary.','classification':'work'})
+        item = service.get_workspace(OWNER_A)['items'][0]
+        with self.assertRaises(ResumeDraftValidationError) as refused:
+            service.commit(OWNER_A,{'type':'save_item','request_id':str(uuid4()),'record_key':item['record_key'],
+                'record_type':'knowledge','expected_draft_version':0,'expected_content_token':item['content_token'],
+                'expected_access_revision':item['access_revision'],'values':{'title':'Renamed label','wording':' '.join(['new']*71)}})
+        self.assertEqual(refused.exception.code,'impact_statement_too_long')
+        self.assertFalse(service.get_workspace(OWNER_A)['items'][0]['has_draft'])
+        self.assertEqual(service.catalog.get_item(OWNER_A,saved['item']['record_key'])['values']['wording'],'Original summary.')
+
+    def test_named_resume_text_limits_also_guard_existing_manual_save_paths(self):
+        for title, text, code in (("Professional summary", " ".join(["original"]*71), "impact_statement_too_long"),
+                ("Looking Ahead", "x"*121, "looking_ahead_too_long")):
+            with self.subTest(title=title):
+                service = self.service()
+                with self.assertRaises(ResumeDraftValidationError) as refused:
+                    self.create(service,"knowledge",{"title":title,"wording":text,"classification":"work"})
+                self.assertEqual(refused.exception.code,code)
+                self.assertEqual(service.catalog.list_items(OWNER_A),[])
+                self.assertEqual(service.repository.load_owner(OWNER_A)["receipts"],{})
+
+    def service(self):
+        return ResumeDraftService(repository=InMemoryResumeDraftRepository(), catalog=InMemoryCanonicalCatalog())
+
+    def create(self, service, record_type, values, **options):
+        return service.commit(OWNER_A, {"type": "create_private_item", "request_id": str(uuid4()),
+            "record_key": str(uuid4()), "record_type": record_type, "values": values, **options})
+
+    def test_explicit_guide_manual_save_uses_required_fields_and_limits_before_writes(self):
+        service = self.service()
+        with self.assertRaises(ResumeDraftValidationError) as missing:
+            self.create(service, "education", {"institution_name": "Fictional University"}, guide_review=True)
+        self.assertEqual(missing.exception.code, "missing_required_fields")
+        self.assertEqual(missing.exception.missing_required_fields, ["end_date"])
+        self.assertEqual(service.catalog.list_items(OWNER_A), [])
+        self.assertEqual(service.repository.load_owner(OWNER_A)["receipts"], {})
+        valid = self.create(service, "education", {"institution_name": "Fictional University", "end_date": "2024"}, guide_review=True)
+        self.assertEqual(valid["item"]["values"]["end_date"], "2024-01-01")
+        original = " ".join(["original"] * 71)
+        with self.assertRaises(ResumeDraftValidationError) as too_long:
+            self.create(service, "knowledge", {"title": "Professional summary", "wording": original, "classification": "work"},
+                guide_review=True, guide_section="impact_statement")
+        self.assertEqual(too_long.exception.code, "impact_statement_too_long")
+        self.assertEqual(too_long.exception.actual_count, 71)
+        self.assertEqual(len(service.catalog.list_items(OWNER_A)), 1)
+
+    def test_local_projects_qualifications_and_untitled_education_save_without_publication(self):
+        for record_type, values in (("project", {"project_name": "Fictional Orchard", "summary": "Built a fictional demonstration.",
+                "additional_project_urls": ["https://example.test/demo"]}),
+            ("credential", {"qualification_kind": "membership", "issuer": "Fictional Guild", "issue_date": "2021-01-01",
+                "issue_date_precision": "year", "completion_status": "completed"}),
+            ("education", {"institution_name": "Fictional University", "end_date": "2024-01-01",
+                "date_precision": "year", "education_status": "completed"})):
+            with self.subTest(record_type=record_type):
+                service = self.service()
+                result = self.create(service, record_type, values)
+                self.assertEqual(result["outcome"], "created")
+                self.assertFalse(result["publishes"])
+                item = result["item"]
+                self.assertFalse(item["resume_display"])
+                self.assertFalse(item["visitor_ai"])
+                for key, value in values.items():
+                    self.assertEqual(item["values"][key], value)
+                if record_type == "education":
+                    self.assertIsNone(item["values"]["title"])
+                    self.assertIsNone(item["values"]["degree_name"])
+
+    def test_unqualified_sql_keeps_new_local_inputs_before_any_database_call(self):
+        for record_type, values in (("project", {"project_name": "Fictional Orchard", "summary": "Fictional work."}),
+            ("credential", {"qualification_kind": "publication", "name": "Fictional paper", "issuer": "Fictional Press",
+                "issue_date": "2022-01-01", "completion_status": "completed"}),
+            ("education", {"institution_name": "Fictional University", "end_date": "2024-01-01",
+                "date_precision": "year", "education_status": "completed"})):
+            with self.subTest(record_type=record_type):
+                database = Mock()
+                catalog = Mock()
+                service = ResumeDraftService(repository=SqlResumeDraftRepository(database), catalog=catalog)
+                with self.assertRaisesRegex(ResumeDraftValidationError, "input is kept"):
+                    self.create(service, record_type, values)
+                database.execute_procedure.assert_not_called()
+                catalog.create_private.assert_not_called()
+
+    def test_local_type_values_survive_the_actual_shared_entry_policy_catalog(self):
+        from tests.mvp1_acceptance_support import SharedMvp1Fixture
+        shared = SharedMvp1Fixture()
+        cases = (("credential", {"qualification_kind": "membership", "issuer": "Fictional Guild", "issue_date": "2021-01-01",
+                    "issue_date_precision": "year", "completion_status": "completed"}),
+                 ("education", {"institution_name": "Fictional University", "end_date": "2024-01-01",
+                    "date_precision": "year", "education_status": "completed"}),
+                 ("project", {"project_name": "Fictional Orchard", "summary": "Built a fictional demonstration.",
+                    "project_category": "software", "organization_name": "Fictional Institute",
+                    "additional_project_urls": ["https://example.test/demo"]}))
+        for record_type, values in cases:
+            with self.subTest(record_type=record_type):
+                result = self.create(shared.draft, record_type, values)
+                key = result["item"]["record_key"]
+                reread = shared.canonical.get_item(OWNER_A, key)
+                for name, value in values.items():
+                    self.assertEqual(reread["values"][name], value)
+                self.assertFalse(reread["resume_display"])
+                self.assertFalse(reread["visitor_ai"])
+
+
 class SqlStoryIdentityTests(unittest.TestCase):
     def test_sql_draft_refuses_credential_precision_before_read_or_write(self):
         database=Mock()
@@ -112,18 +218,18 @@ def published_role(owner_catalog, key=ROLE_KEY, **values):
     )
 
 
-class BarrierDraftStore(InMemoryResumeDraftRepository):
-    """Shared store that lets two callers load one snapshot before either saves.
+class LoadBarrierDraftStore(InMemoryResumeDraftRepository):
+    """Store whose two callers each load one snapshot before either saves.
 
-    The first read in each worker thread waits on a two-party barrier, so both
-    commands observe the same draft version and no receipt. That is the exact
-    window the receipt read in ``ResumeDraftService.commit`` races against.
+    Used without the service-level owner guard, so the store's own receipt
+    check inside ``commit_owner_command`` is the only thing that can make
+    the second caller converge (the store-level race, kept covered).
     """
 
     def __init__(self):
         super().__init__()
         self.load_barrier = threading.Barrier(2)
-        self._load_waiters = set()
+        self.load_waiters = set()
         self._armed = True
 
     def disarm(self):
@@ -132,10 +238,33 @@ class BarrierDraftStore(InMemoryResumeDraftRepository):
     def load_owner(self, owner_user_key):
         snapshot = super().load_owner(owner_user_key)
         ident = threading.get_ident()
-        if self._armed and ident not in self._load_waiters:
-            self._load_waiters.add(ident)
+        if self._armed and ident not in self.load_waiters:
+            self.load_waiters.add(ident)
             self.load_barrier.wait(timeout=5)
         return snapshot
+
+
+class BarrierDraftStore(InMemoryResumeDraftRepository):
+    """Shared store whose two callers start their commands at the same moment.
+
+    Same-owner commands are serialized at the service boundary (one owner
+    composition order), so two loads can no longer interleave inside
+    ``ResumeDraftService.commit``. Each worker instead meets the other at a
+    two-party barrier immediately before its guarded call, so both race for
+    the owner and the second must converge on the first's stored receipt.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.start_barrier = threading.Barrier(2)
+        self._armed = True
+
+    def disarm(self):
+        self._armed = False
+
+    def rendezvous(self):
+        if self._armed:
+            self.start_barrier.wait(timeout=5)
 
 
 class ResumeDraftServiceTests(unittest.TestCase):
@@ -344,6 +473,9 @@ class ResumeDraftServiceTests(unittest.TestCase):
         outcomes = []
 
         def attempt(service, body):
+            rendezvous = getattr(service.repository, "rendezvous", None)
+            if rendezvous is not None:
+                rendezvous()
             try:
                 outcomes.append(("ok", service.commit(OWNER_A, body)))
             except ResumeDraftConflictError as error:
@@ -422,6 +554,51 @@ class ResumeDraftServiceTests(unittest.TestCase):
             stored["receipts"][request_id]["request_digest"],
             winners[0][1]["request_digest"],
         )
+
+    def run_unguarded_store_race(self, bodies):
+        # The undecorated commit: no service owner guard, only the store.
+        store = LoadBarrierDraftStore()
+        services = [self.shared_text_service(store) for _ in range(2)]
+        unguarded = ResumeDraftService.commit.__wrapped__
+        outcomes = []
+
+        def attempt(service, body):
+            try:
+                outcomes.append(("ok", unguarded(service, OWNER_A, body)))
+            except ResumeDraftConflictError as error:
+                outcomes.append(("conflict", error.error_code))
+
+        threads = [threading.Thread(target=attempt, args=pair) for pair in zip(services, bodies)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=10)
+        store.disarm()
+        self.assertEqual(len(store.load_waiters), 2, "Both callers must load before either saves")
+        return store, outcomes
+
+    def test_store_level_receipt_race_converges_without_the_service_guard(self):
+        request_id = str(uuid4())
+        body = self.concurrent_body(request_id, summary="Store-level once")
+        store, outcomes = self.run_unguarded_store_race([body, dict(body)])
+        self.assertEqual([entry[0] for entry in outcomes], ["ok", "ok"], outcomes)
+        self.assertEqual(sorted(entry[1]["replayed"] for entry in outcomes), [False, True])
+        stored = store.load_owner(OWNER_A)
+        self.assertEqual(stored["draft_version"], 1)
+        self.assertEqual(len(stored["receipts"]), 1)
+        self.assertEqual(len(stored["items"]), 1)
+
+    def test_store_level_changed_body_race_is_an_idempotency_conflict_without_the_service_guard(self):
+        request_id = str(uuid4())
+        store, outcomes = self.run_unguarded_store_race([
+            self.concurrent_body(request_id, summary="First store wording"),
+            self.concurrent_body(request_id, summary="Different store wording"),
+        ])
+        self.assertEqual(sorted(entry[0] for entry in outcomes), ["conflict", "ok"], outcomes)
+        self.assertEqual([entry[1] for entry in outcomes if entry[0] == "conflict"], ["idempotency_conflict"])
+        stored = store.load_owner(OWNER_A)
+        self.assertEqual(stored["draft_version"], 1)
+        self.assertEqual(len(stored["receipts"]), 1)
 
     def test_review_does_not_publish(self):
         result = self.service.commit(

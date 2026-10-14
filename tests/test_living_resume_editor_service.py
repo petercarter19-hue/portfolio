@@ -45,6 +45,220 @@ def role_payload(**overrides):
     return payload
 
 
+class GuideLocalTypeTests(unittest.TestCase):
+    def test_planned_and_in_progress_guide_credentials_save_without_a_year_and_refuse_explicit_dates(self):
+        from copy import deepcopy
+        from uuid import uuid4
+        from services.living_resume_editor_service import guide_required_fields
+        from services.resume_draft_service import ResumeDraftValidationError
+        from tests.mvp1_acceptance_support import SharedMvp1Fixture
+        for status in ('planned', 'in_progress'):
+            for kind in ('certification', 'license', 'publication'):
+                with self.subTest(status=status, kind=kind):
+                    shared, owner = SharedMvp1Fixture(), 'credential-status-fictional'
+                    values = {'qualification_kind': kind, 'name': 'Fictional qualification',
+                        'issuer': 'Fictional Institute', 'completion_status': status}
+                    original = deepcopy(values)
+                    self.assertEqual(guide_required_fields('credential', values), [])
+                    saved = shared.draft.commit(owner, {'type': 'create_private_item',
+                        'request_id': str(uuid4()), 'record_key': str(uuid4()),
+                        'record_type': 'credential', 'values': values, 'guide_review': True})
+                    self.assertEqual(saved['outcome'], 'created')
+                    self.assertFalse(saved['publishes'])
+                    current = shared.canonical.get_item(owner, saved['item']['record_key'])
+                    self.assertEqual(current['values']['completion_status'], status)
+                    self.assertEqual(current['values']['name'], values['name'])
+                    self.assertEqual(current['values']['issuer'], values['issuer'])
+                    self.assertIsNone(current['values']['issue_date'])
+                    self.assertIsNone(current['values']['expiration_date'])
+                    self.assertFalse(current['resume_display'])
+                    self.assertFalse(current['visitor_ai'])
+                    self.assertEqual(values, original)
+                    before = tuple(deepcopy(store.load_owner(owner)) for store in
+                        (shared.policy.repository, shared.draft.repository, shared.publication.repository))
+                    for field in ('issue_date', 'expiration_date'):
+                        with self.subTest(field=field):
+                            supplied = {**values, field: '2030'}
+                            exact = deepcopy(supplied)
+                            with self.assertRaisesRegex(ResumeDraftValidationError,
+                                    'cannot have issue or expiration dates'):
+                                shared.draft.commit(owner, {'type': 'create_private_item',
+                                    'request_id': str(uuid4()), 'record_key': str(uuid4()),
+                                    'record_type': 'credential', 'values': supplied, 'guide_review': True})
+                            self.assertEqual(supplied, exact)
+                            self.assertEqual(before, tuple(store.load_owner(owner) for store in
+                                (shared.policy.repository, shared.draft.repository, shared.publication.repository)))
+
+    def test_noncompleted_guide_credentials_keep_membership_name_exception_and_completed_date_essential(self):
+        from services.living_resume_editor_service import guide_required_fields, normalize_guide_values
+        for status in ('planned', 'in_progress'):
+            with self.subTest(status=status):
+                values = {'qualification_kind': 'membership', 'issuer': 'Fictional Guild',
+                    'completion_status': status}
+                self.assertEqual(guide_required_fields('credential', values), [])
+                normalized = normalize_guide_values('credential', values)
+                self.assertIsNone(normalized['name'])
+                self.assertIsNone(normalized['issue_date'])
+                self.assertEqual(guide_required_fields('credential', {**values, 'issuer': ' '}), ['issuer'])
+        for status in (None, 'completed'):
+            values = {'name': 'Fictional qualification', 'issuer': 'Fictional Institute'}
+            if status is not None:
+                values['completion_status'] = status
+            self.assertEqual(guide_required_fields('credential', values), ['issue_date'])
+        for field in ('name', 'issuer'):
+            values = {'name': 'Fictional qualification', 'issuer': 'Fictional Institute',
+                'completion_status': 'planned', field: ' '}
+            self.assertEqual(guide_required_fields('credential', values), [field])
+
+
+        for status in ([], {}):
+            with self.subTest(invalid_status=status):
+                with self.assertRaises(LivingResumeEditorValidationError):
+                    normalize_guide_values('credential', {'name': 'Fictional qualification',
+                        'issuer': 'Fictional Institute', 'issue_date': '2030', 'completion_status': status})
+
+    def test_one_guide_essentials_table_requires_only_the_approved_fields(self):
+        from services import living_resume_editor_service as editor
+        required = getattr(editor, "guide_required_fields", None)
+        self.assertTrue(callable(required))
+        cases = (("credential", {"name": "Fictional credential", "issuer": "Fictional Institute", "issue_date": "2022"}, ["name", "issuer", "issue_date"]),
+            ("credential", {"qualification_kind": "publication", "name": "Fictional paper", "issuer": "Fictional Press", "issue_date": "2022"}, ["name", "issuer", "issue_date"]),
+            ("credential", {"qualification_kind": "membership", "issuer": "Fictional Guild", "issue_date": "2022"}, ["issuer", "issue_date"]),
+            ("education", {"institution_name": "Fictional University", "end_date": "2024"}, ["institution_name", "end_date"]),
+            ("project", {"project_name": "Fictional Orchard", "summary": "Fictional work."}, ["project_name", "summary"]),
+            ("skill", {"name": "Fictional skill"}, ["name"]))
+        for kind, values, fields in cases:
+            with self.subTest(kind=kind, values=values):
+                self.assertEqual(required(kind, values), [])
+                for field in fields:
+                    self.assertEqual(required(kind, {**values, field: " "}), [field])
+
+    def test_guide_years_normalize_precisely_without_invented_titles_or_optional_questions(self):
+        from services import living_resume_editor_service as editor
+        normalize = getattr(editor, "normalize_guide_values", None)
+        self.assertTrue(callable(normalize))
+        education = normalize("education", {"institution_name": "Fictional University", "end_date": "2024", "degree_name": ""})
+        self.assertEqual((education["end_date"], education["date_precision"]), ("2024-01-01", "year"))
+        self.assertIsNone(education["title"])
+        self.assertIsNone(education["degree_name"])
+        membership = normalize("credential", {"qualification_kind": "membership", "issuer": "Fictional Guild", "issue_date": "2022"})
+        self.assertEqual((membership["issue_date"], membership["issue_date_precision"]), ("2022-01-01", "year"))
+        self.assertIsNone(membership["name"])
+        self.assertEqual(membership["completion_status"], "completed")
+        with self.assertRaises(editor.GuideRequiredFieldsError) as missing:
+            normalize("education", {"institution_name": "Fictional University"})
+        self.assertEqual(missing.exception.missing_required_fields, ["end_date"])
+        self.assertEqual(missing.exception.code, "missing_required_fields")
+
+    def test_guide_impact_and_looking_ahead_limits_keep_original_words(self):
+        from services import living_resume_editor_service as editor
+        normalize = getattr(editor, "normalize_guide_values", None)
+        self.assertTrue(callable(normalize))
+        seventy = "  " + " \t".join(["well-tested", "café"] * 35) + "\n"
+        values = {"title": "Professional summary", "wording": seventy, "classification": "work"}
+        self.assertEqual(normalize("knowledge", values, section="impact_statement")["wording"], seventy.strip())
+        original = {**values, "wording": seventy + " extra"}
+        before = dict(original)
+        with self.assertRaises(editor.GuideTextLimitError) as too_long:
+            normalize("knowledge", original, section="impact_statement")
+        self.assertEqual((too_long.exception.code, too_long.exception.actual_count), ("impact_statement_too_long", 71))
+        self.assertEqual(original, before)
+        with self.assertRaises(editor.GuideTextLimitError):
+            normalize("knowledge", original, section="awards")
+        ahead = {"title": "Looking Ahead", "wording": "x" * 120, "classification": "work"}
+        self.assertEqual(normalize("knowledge", ahead, section="looking_ahead")["wording"], "x" * 120)
+        with self.assertRaises(editor.GuideTextLimitError) as too_long:
+            normalize("knowledge", {**ahead, "wording": "x" * 121}, section="looking_ahead")
+        self.assertEqual(too_long.exception.actual_count, 121)
+
+    def credential(self, **changes):
+        return {"name": "Fictional qualification", "issuer": "Fictional Institute", "issue_date": "2022-01-01",
+            "issue_date_precision": "year", "completion_status": "completed", **changes}
+
+    def test_optional_qualification_kind_keeps_legacy_defaults_out_of_stored_values(self):
+        from services.living_resume_editor_service import normalize_editor_values
+        legacy = normalize_editor_values("credential", self.credential())
+        self.assertNotIn("qualification_kind", legacy)
+        self.assertIsNone(normalize_editor_values("credential", self.credential(qualification_kind=None))["qualification_kind"])
+        for kind in ("certification", "license", "publication", "membership"):
+            with self.subTest(kind=kind):
+                values = normalize_editor_values("credential", self.credential(qualification_kind=kind))
+                self.assertEqual(values["qualification_kind"], kind)
+                self.assertEqual(values["issue_date"], "2022-01-01")
+                self.assertEqual(values["issue_date_precision"], "year")
+        with self.assertRaises(LivingResumeEditorValidationError):
+            normalize_editor_values("credential", self.credential(qualification_kind="award"))
+
+    def test_membership_needs_its_organization_and_date_but_no_invented_name(self):
+        from services.living_resume_editor_service import normalize_editor_values
+        values = normalize_editor_values("credential", self.credential(qualification_kind="membership", name=None))
+        self.assertIsNone(values["name"])
+        self.assertEqual(values["issuer"], "Fictional Institute")
+        for changes in ({"issuer": None}, {"issue_date": None, "issue_date_precision": None}, {"qualification_kind": "certification"}):
+            with self.subTest(changes=changes), self.assertRaises(LivingResumeEditorValidationError):
+                normalize_editor_values("credential", self.credential(**{"qualification_kind": "membership", "name": None, **changes}))
+
+    def test_untitled_education_requires_the_explicit_local_normalizer_mode(self):
+        from services.living_resume_editor_service import normalize_editor_values
+        original = {"institution_name": "Fictional University", "end_date": "2024-01-01",
+            "date_precision": "year", "education_status": "completed"}
+        with self.assertRaises(LivingResumeEditorValidationError):
+            normalize_editor_values("education", original)
+        values = normalize_editor_values("education", original, require_title=False)
+        self.assertIsNone(values["title"])
+        self.assertIsNone(values["degree_name"])
+        self.assertEqual(values["end_date"], "2024-01-01")
+
+    def test_project_minimum_optional_category_and_three_https_links(self):
+        from services.living_resume_editor_service import normalize_editor_values
+        minimum = {"project_name": "Fictional Orchard", "summary": "Built a small fictional demonstration."}
+        values = normalize_editor_values("project", minimum)
+        self.assertEqual(values["project_name"], minimum["project_name"])
+        self.assertEqual(values["summary"], minimum["summary"])
+        self.assertNotIn("project_category", values)
+        rich = normalize_editor_values("project", {**minimum, "project_category": "software",
+            "organization_name": "Fictional Institute", "project_role": "Builder",
+            "project_url": "https://example.test/demo", "additional_project_urls": ["https://example.test/code", "https://example.test/paper"],
+            "start_date": "2020-01-01", "end_date": "2022-01-01", "date_precision": "year"})
+        self.assertEqual(rich["additional_project_urls"], ["https://example.test/code", "https://example.test/paper"])
+        self.assertEqual(rich["project_category"], "software")
+        self.assertEqual(rich["date_precision"], "year")
+        for changes in ({"summary": "two\nlines"}, {"summary": None}, {"project_category": "invented"},
+                        {"project_url": "http://example.test"}, {"project_url": "https:///missing-host"},
+                        {"project_url": "https://example.test", "additional_project_urls": ["https://EXAMPLE.test"]},
+                        {"additional_project_urls": ["https://a.test", "https://b.test", "https://c.test"]},
+                        {"additional_project_urls": [{"url": "https://example.test"}]}, {"details": "Not an approved stored field"}):
+            with self.subTest(changes=changes), self.assertRaises(LivingResumeEditorValidationError):
+                normalize_editor_values("project", {**minimum, **changes})
+
+    def test_new_fields_are_preserved_by_partial_intent_without_inventing_missing_values(self):
+        from services.living_resume_editor_service import normalize_editor_intent
+        self.assertEqual(normalize_editor_intent("credential", {"qualification_kind": "membership", "issuer": "Fictional Guild"}),
+            {"qualification_kind": "membership", "issuer": "Fictional Guild"})
+        self.assertEqual(normalize_editor_intent("project", {"summary": "Fictional work", "additional_project_urls": ["https://example.test"]}),
+            {"summary": "Fictional work", "additional_project_urls": ["https://example.test"]})
+
+    def test_project_optional_field_clears_are_not_silently_lost(self):
+        from services.living_resume_editor_service import normalize_editor_values
+        normalized = normalize_editor_values("project", {"project_name": "Fictional Orchard", "summary": "Fictional work.",
+            "organization_name": "", "project_category": "", "project_url": "", "additional_project_urls": [],
+            "start_date": None, "end_date": None})
+        self.assertIsNone(normalized["organization_name"])
+        self.assertIsNone(normalized["project_category"])
+        self.assertIsNone(normalized["project_url"])
+        self.assertEqual(normalized["additional_project_urls"], [])
+        self.assertIsNone(normalized["start_date"])
+        self.assertIsNone(normalized["end_date"])
+
+    def test_sql_editor_refuses_qualification_kind_before_any_procedure(self):
+        database = MagicMock()
+        payload = {"command_id": COMMAND_ID, "type": "create_credential", "record_key": RECORD_KEY,
+            "parent_key": None, "expected_version": None, "values": self.credential(qualification_kind="membership")}
+        with self.assertRaisesRegex(LivingResumeEditorValidationError, "storage.*support"):
+            LivingResumeEditorService(database).commit("fictional-owner", payload)
+        database.execute_procedure.assert_not_called()
+
+
 class CredentialPrecisionTests(unittest.TestCase):
     def values(self, **changes):
         return {'name':'Service Design Practitioner','issuer':'Example Institute','completion_status':'completed',

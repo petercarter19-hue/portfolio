@@ -36,7 +36,7 @@ class EntryPolicyCanonicalFixture:
             "visitor_ai": row["visitor_ai"],
             "private_assistance_excluded": row.get("private_assistance_excluded", False),
             "publication_eligible": True,
-        } for row in self.policy.list_entries(owner)["entries"] if row["lifecycle"] == "active"]
+        } for row in self.policy.read_entries(owner)["entries"] if row["lifecycle"] == "active"]
 
     @staticmethod
     def editor_values(row):
@@ -57,7 +57,9 @@ class EntryPolicyCanonicalFixture:
         self.policy.commit(owner, {"type": "create", "request_id": str(uuid5(NAMESPACE_URL, owner + ":" + item["command_id"])),
             "entry_key": key, "parent_key": item.get("parent_key"),
             "canonical_type": "achievement" if item["record_type"] == "accomplishment" else item["record_type"],
-            "values": {aliases.get(key, key): value for key, value in item["values"].items()}})
+            "values": {aliases.get(key, key): value for key, value in item["values"].items()},
+            **({"guide_review": True, "guide_section": item.get("guide_section")}
+               if item.get("guide_review") else {})})
         return self.get_item(owner, key)
 
 

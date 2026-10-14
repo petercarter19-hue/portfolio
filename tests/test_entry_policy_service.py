@@ -30,6 +30,74 @@ class Clock:
 
 
 class EntryPolicyServiceTests(unittest.TestCase):
+    def test_guide_edit_cannot_empty_an_existing_text_section_by_renaming_it(self):
+        service=EntryPolicyService(repository=InMemoryEntryPolicyRepository())
+        for title in ('Professional summary','Looking Ahead','Contact details','My Story'):
+            with self.subTest(title=title):
+                entry=str(uuid4())
+                service.commit('section-fictional',{'type':'create','request_id':str(uuid4()),
+                    'entry_key':entry,'canonical_type':'knowledge',
+                    'values':{'title':title,'wording':'Original fictional words.','classification':'work'}})
+                with self.assertRaises(EntryPolicyValidationError):
+                    service.commit('section-fictional',{'type':'edit','request_id':str(uuid4()),
+                        'entry_key':entry,'expected_content_version':1,'guide_review':True,
+                        'values':{'title':'Renamed label','wording':None,'classification':'work'}})
+                self.assertEqual(service.repository.load_owner('section-fictional')['entries'][entry]['values']['wording'],
+                    'Original fictional words.')
+
+    def test_primary_named_resume_text_refuses_over_limit_without_mutation(self):
+        service = EntryPolicyService(repository=InMemoryEntryPolicyRepository())
+        for title, text in (('Professional summary',' '.join(['original']*71)),('Looking Ahead','x'*121)):
+            with self.subTest(title=title):
+                with self.assertRaises(EntryPolicyValidationError):
+                    service.commit('text-limit-fictional',{'type':'create','request_id':str(uuid4()),
+                        'entry_key':str(uuid4()),'canonical_type':'knowledge',
+                        'values':{'title':title,'wording':text,'classification':'work'}})
+                self.assertEqual(service.repository.load_owner('text-limit-fictional')['entries'],{})
+
+    def test_read_only_expiry_uses_a_copy_and_preserves_legacy_cleanup(self):
+        from unittest.mock import patch
+        self.create(self.owner_a, role_title="Engineer", employer_name="Fictional Acorn Works")
+        self.create(self.owner_b, entry=2, role_title="Designer", employer_name="Fictional Birch Works")
+        self.service.commit(self.owner_a, {"type": "delete", "request_id": str(uuid4()),
+            "entry_key": key(1), "expected_content_version": 1, "expected_access_revision": 1,
+            "dependent_keys": []})
+        self.clock.now += timedelta(days=31)
+        snapshot = self.service.repository.load_owner(self.owner_a)
+        before = copy.deepcopy(snapshot)
+        with (patch.object(self.service.repository, "load_owner", return_value=snapshot),
+              patch.object(self.service.repository, "save_owner", wraps=self.service.repository.save_owner) as save):
+            read = self.service.read_entries(self.owner_a)
+            publication = self.service.read_publication_entries(self.owner_a)
+            self.assertEqual(read["entries"], [])
+            self.assertEqual(publication, read)
+            save.assert_not_called()
+        self.assertEqual(snapshot, before)
+        self.assertEqual(self.service.repository.load_owner(self.owner_a), before)
+        self.assertEqual(len(self.service.read_entries(self.owner_b)["entries"]), 1)
+        with patch.object(self.service.repository, "save_owner", wraps=self.service.repository.save_owner) as save:
+            self.assertEqual(self.service.list_entries(self.owner_a), read)
+            save.assert_called_once()
+        self.assertEqual(self.service.repository.load_owner(self.owner_a)["entries"][key(1)]["lifecycle"],
+            "permanently_deleted")
+
+    def test_read_only_sql_port_uses_existing_owner_scoped_reads_without_commands(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        self.create(self.owner_a, role_title="Engineer", employer_name="Fictional Acorn Works")
+        row = self.service.repository.load_owner(self.owner_a)["entries"][key(1)]
+        repo = SimpleNamespace(commit_command=Mock(), save_owner=Mock(), load_owner=Mock(),
+            list_entries=Mock(return_value=[copy.deepcopy(row)]),
+            list_publication_entries=Mock(return_value=[copy.deepcopy(row)]))
+        service = EntryPolicyService(repository=repo, clock=self.clock)
+        self.assertEqual(service.read_entries(self.owner_a)["entries"],
+            service.read_publication_entries(self.owner_a)["entries"])
+        repo.list_entries.assert_called_once_with(self.owner_a)
+        repo.list_publication_entries.assert_called_once_with(self.owner_a)
+        repo.commit_command.assert_not_called()
+        repo.save_owner.assert_not_called()
+        repo.load_owner.assert_not_called()
+
     def test_local_credential_precision_is_preserved_and_sql_port_refuses_it(self):
         values={'credential_name':'Service Design Practitioner','issuer_name':'Example Institute',
             'issue_date':'2022-06-01','issue_date_precision':'month',
