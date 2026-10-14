@@ -47,13 +47,10 @@
     "tests/test_entry_policy_service.py",
     "services/living_resume_editor_service.py",
     "tests/test_living_resume_editor_service.py",
-    "services/resume_publication_projection.py",
-    "tests/test_resume_publication_projection.py",
     "tests/test_resume_onboarding_conversation.py",
     "tests/test_my_data_intake_ai.py",
     "resume_publication_routes.py",
     "tests/test_resume_publication_routes.py",
-    "services/resume_publication_contracts.py",
     "tests/test_resume_intake_sql.py"
   ],
   "domains": [
@@ -74,94 +71,64 @@
   "merged_sha": null,
   "closed_at": null,
   "scope_release": {
-    "checkpoint_sha": "33ae53717e128bb5a18fcafd17987197674bd055",
-    "control_branch": "work/2026-10-14-delivery-release-surfaces-b2-custody-returns",
-    "control_lease_sha256": "ab1f70f7e6003244498ccd99a85b7d1ca5ff22d144102c868449fe2d445b59e6",
+    "checkpoint_sha": "d3500a6d574e19557d42b6c434d5245844aaeb3d",
+    "control_branch": "work/2026-10-14-delivery-release-surfaces-b2-d6b-codec-files",
+    "control_lease_sha256": "a34bba3a85d16eacf17d9bc7fdc0a5bcb887f8eee38888b77108a1f442aa2d7a",
     "fixed_evidence_ref": "docs/governance/lane_claims/evidence/PS-GUIDE-SERVER-001.md",
     "index_schema": 4,
     "new_domains": [
       "consequential-ai:resume-guide:server",
       "canonical:resume-draft:guide"
     ],
-    "operation_id": "39d8d9a6262fc936435fa80bc86ffb0d99cc1732a172278d243886b612c79843",
-    "prepared_from_main": "1107ca695aa14b5c19fbcd8e260e7d2ab5088264",
-    "prior_claim_sha256": "8d8c58e3882cfe1d6e7a9e16fa18ab021759a5979ce8424abea3217690b31561",
+    "operation_id": "4347feec920a4bb5045f17cac43ea209b7a90d3638e5312ca132708601bca311",
+    "prepared_from_main": "51588a1c446a306ee9f7a7dae3f119f9e3a75caf",
+    "prior_claim_sha256": "5a6972b8157011da259019a8fda75b5dac73dd3f3ef47afa680b4bb246d4d243",
     "prior_domains": [
       "consequential-ai:resume-guide:server",
       "canonical:resume-draft:guide"
     ],
-    "quiescence_ref": "agent:claude/2026-10-14/guide-build/b2-merged-quiescent-for-custody-returns",
-    "reduction_sha256": "fbd7b78cba646ac6656c08f7bd9811431316a09ebe15c89a7081df42b21edab2",
+    "quiescence_ref": "agent:claude/2026-10-14/guide-build/b2b-merged-quiescent-for-d6b-release",
+    "reduction_sha256": "c1b3660f58f50571797a382d3906922e9be10ac36e37c4b6ac0a1286f3de47cb",
     "registry_schema": 2,
-    "release_rationale": "After accepted B2 (independent PASS at 5730a316, coordination bffe29d), return borrowed custody exactly as planned: the publisher pair services/resume_publication_service.py and tests/test_resume_publication_service.py to D6 (PS-RESUME-PAGE-PUBLIC-001, Lane D activates it); tests/mvp1_acceptance_support.py to C14 (PS-ONBOARDING-PRIVATE-SITES-001); tests/test_resume_intake_browser.py to C1 (PS-GUIDE-PANEL-001). Each recipient reacquires its file through its own exact-file extension.",
+    "release_rationale": "Manager option A (coordination b78c469): release services/resume_publication_contracts.py, services/resume_publication_projection.py and tests/test_resume_publication_projection.py to PS-RESUME-PAGE-PUBLIC-001 for D6b codec v2. B3 does not need them; resume_publication_routes.py is retained for B4.",
     "released_file_proofs": [
       {
-        "accepted_introduction": {
-          "candidate_sha": "492b2643fe53b934b80bde01c5f376207c2cf1bf",
-          "merged_sha": "1107ca695aa14b5c19fbcd8e260e7d2ab5088264",
-          "package": "PS-GUIDE-SERVER-001",
-          "receipt_ref": "docs/governance/lane_claims/receipts/PS-GUIDE-SERVER-001.json"
-        },
-        "checkpoint_blob": "b366a954b0083cd6aab28d60ea8d2d5088cd3368",
+        "accepted_introduction": null,
+        "checkpoint_blob": "9b4fb75053f56da2aff4ca20e63579804165ac2f",
         "checkpoint_mode": "100644",
-        "main_blob": "b366a954b0083cd6aab28d60ea8d2d5088cd3368",
+        "main_blob": "9b4fb75053f56da2aff4ca20e63579804165ac2f",
         "main_mode": "100644",
-        "path": "services/resume_publication_service.py",
-        "unpublished_delta": true
+        "path": "services/resume_publication_projection.py",
+        "unpublished_delta": false
       },
       {
-        "accepted_introduction": {
-          "candidate_sha": "492b2643fe53b934b80bde01c5f376207c2cf1bf",
-          "merged_sha": "1107ca695aa14b5c19fbcd8e260e7d2ab5088264",
-          "package": "PS-GUIDE-SERVER-001",
-          "receipt_ref": "docs/governance/lane_claims/receipts/PS-GUIDE-SERVER-001.json"
-        },
-        "checkpoint_blob": "4ab597d4167a94657afac792aa918a66de641ea7",
+        "accepted_introduction": null,
+        "checkpoint_blob": "d98a2e0d4b237d5d8ebf875b9be1819ba00148d4",
         "checkpoint_mode": "100644",
-        "main_blob": "4ab597d4167a94657afac792aa918a66de641ea7",
+        "main_blob": "d98a2e0d4b237d5d8ebf875b9be1819ba00148d4",
         "main_mode": "100644",
-        "path": "tests/test_resume_publication_service.py",
-        "unpublished_delta": true
+        "path": "tests/test_resume_publication_projection.py",
+        "unpublished_delta": false
       },
       {
-        "accepted_introduction": {
-          "candidate_sha": "492b2643fe53b934b80bde01c5f376207c2cf1bf",
-          "merged_sha": "1107ca695aa14b5c19fbcd8e260e7d2ab5088264",
-          "package": "PS-GUIDE-SERVER-001",
-          "receipt_ref": "docs/governance/lane_claims/receipts/PS-GUIDE-SERVER-001.json"
-        },
-        "checkpoint_blob": "b5ea4cb89becff857e7e70b18d530ffa996a27d0",
+        "accepted_introduction": null,
+        "checkpoint_blob": "520993c05a99359acd22e95ed06561563554c44b",
         "checkpoint_mode": "100644",
-        "main_blob": "b5ea4cb89becff857e7e70b18d530ffa996a27d0",
+        "main_blob": "520993c05a99359acd22e95ed06561563554c44b",
         "main_mode": "100644",
-        "path": "tests/mvp1_acceptance_support.py",
-        "unpublished_delta": true
-      },
-      {
-        "accepted_introduction": {
-          "candidate_sha": "492b2643fe53b934b80bde01c5f376207c2cf1bf",
-          "merged_sha": "1107ca695aa14b5c19fbcd8e260e7d2ab5088264",
-          "package": "PS-GUIDE-SERVER-001",
-          "receipt_ref": "docs/governance/lane_claims/receipts/PS-GUIDE-SERVER-001.json"
-        },
-        "checkpoint_blob": "7291f4883caed8d1a4c0e24566a72e103584bd35",
-        "checkpoint_mode": "100644",
-        "main_blob": "7291f4883caed8d1a4c0e24566a72e103584bd35",
-        "main_mode": "100644",
-        "path": "tests/test_resume_intake_browser.py",
-        "unpublished_delta": true
+        "path": "services/resume_publication_contracts.py",
+        "unpublished_delta": false
       }
     ],
     "released_surfaces": [
-      "services/resume_publication_service.py",
-      "tests/test_resume_publication_service.py",
-      "tests/mvp1_acceptance_support.py",
-      "tests/test_resume_intake_browser.py"
+      "services/resume_publication_projection.py",
+      "tests/test_resume_publication_projection.py",
+      "services/resume_publication_contracts.py"
     ],
     "retained_responsibilities": [
       {
         "domain": "consequential-ai:resume-guide:server",
-        "responsibility": "Guide server rounds B2b-B4: source-only receipt, conversation turns, staged conversion and live-words routes on existing intake/draft foundations"
+        "responsibility": "Guide server rounds B3-B4: conversation turns, staged conversion and live-words routes on existing intake/draft foundations"
       },
       {
         "domain": "canonical:resume-draft:guide",
