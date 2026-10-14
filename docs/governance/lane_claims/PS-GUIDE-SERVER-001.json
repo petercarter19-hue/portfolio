@@ -4,7 +4,7 @@
   "state": "active",
   "outcome": "Build the approved R6q Guide server B1-B4 on existing source/proposal/draft foundations: stable working-set projection and extraction quality first; shared review rules and truthful receipts; owner-bound revision-checked exactly-once conversation and staged F1 cross-type conversion with safe Undo; live-words ticket/accounting routes. Read build plan v2 and design rationale including current conflict rulings before freezing the B1/C1 API. One model switch point, fixed named variants consumed from package 2, manual edits win, no false saves and no second extractor/store/schema migration. Fake providers initially; exact-SHA Claude PC review each Protected round. Production release, resume-page direction and unrelated active surfaces remain withheld.",
   "assignment": "implementation",
-  "writer_ref": "session:01a132fe-1f81-77f3-8821-d53d157ca025",
+  "writer_ref": "agent:claude/2026-10-14/guide-build",
   "branch": "codex/2026-10-13-guide-server-001",
   "delivery_path": "Protected",
   "repository_authority": "through_merge",
@@ -63,7 +63,12 @@
     "docs/governance/lane_claims/evidence/PS-GUIDE-SERVER-001.md"
   ],
   "review_requirement": "independent",
-  "handoff": null,
+  "handoff": {
+    "from_ref": "session:01a132fe-1f81-77f3-8821-d53d157ca025",
+    "to_ref": "agent:claude/2026-10-14/guide-build",
+    "checkpoint_sha": "2f46d47132913bba385e4327a3954f53b6b3dc9b",
+    "relinquished": true
+  },
   "checkpoint_sha": null,
   "merged_sha": null,
   "closed_at": null
