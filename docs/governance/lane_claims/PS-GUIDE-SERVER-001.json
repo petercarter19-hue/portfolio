@@ -52,7 +52,8 @@
     "tests/test_living_resume_editor_service.py",
     "services/resume_publication_projection.py",
     "tests/test_resume_publication_projection.py",
-    "tests/test_resume_onboarding_conversation.py"
+    "tests/test_resume_onboarding_conversation.py",
+    "tests/test_resume_intake_browser.py"
   ],
   "domains": [
     "consequential-ai:resume-guide:server",
