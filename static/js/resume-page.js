@@ -1,4 +1,4 @@
-/* Owner resume page renderer and layout behaviour (PS-RESUME-PAGE-OWNER-001, D1).
+/* Owner resume page renderer and layout behaviour (PS-RESUME-PAGE-OWNER-001, D1/D1d).
  *
  * Reads the signed-in member's private draft workspace (the server derives the
  * identity; no owner id is ever sent), maps it once through
@@ -25,8 +25,6 @@
     var jumpBar = doc.getElementById('resume-page-jump-bar');
     var jump = doc.getElementById('resume-page-jump');
     var rail = doc.getElementById('resume-page-rail');
-    var railAsk = doc.getElementById('resume-page-ask-rail');
-    var mainAsk = doc.getElementById('resume-page-ask-main');
     var workspaceUrl = root.getAttribute('data-workspace-url');
     var displayName = root.getAttribute('data-member-name') || '';
     var model = null, loadSeq = 0, navEntries = [];
@@ -68,9 +66,10 @@
         var person = m.person;
         var photo = hero.querySelector('[data-rp-photo]');
         photo.replaceChildren();
-        if (person.photo && person.photo.src && /^\/static\//.test(person.photo.src)) {
+        var photoSrc = person.photo ? staticImagePath(person.photo.src) : null;
+        if (photoSrc) {
             var img = el('img');
-            img.src = person.photo.src;
+            img.src = photoSrc;
             img.alt = person.photo.alt || person.name;
             photo.appendChild(img);
             photo.removeAttribute('aria-hidden');
@@ -141,28 +140,140 @@
         return c.section;
     }
 
+    /* Skills in Practice (D1d): every resume line that shows the selected skill, at most
+     * three, each with its role's employer and dates. Lines that fit are centred in the
+     * panel; lines that overflow scroll in one named region with an always-visible bar
+     * (the Guide's height rule: one scroll region, never nested). */
+    /* The one guard for every image source this page sets (hero photo, Looking Ahead picture
+     * and its phone variant). It returns the normalised same-origin /static/ path, or null.
+     * Rejected: anything not starting with /static/, a scheme or //host, a query or fragment,
+     * "..", backslashes, whitespace or control characters, and percent-encoded dots or slashes
+     * (%2e %2f %5c, any case) in the raw string or after one decode, so "/static/%2e%2e/x" and
+     * "/static/%252e%252e/x" never become /x. The browser's own resolution must leave the path
+     * unchanged, and only that normalised path is ever assigned. */
+    var UNSAFE_IMAGE = /\.\.|\\|%2e|%2f|%5c|[?#\s\u0000-\u001f\u007f]|^[a-z][a-z0-9+.-]*:|\/\//i;
+    function staticImagePath(raw) {
+        if (typeof raw !== 'string' || !raw || raw.length > 512 || raw.indexOf('/static/') !== 0) return null;
+        var decoded;
+        try { decoded = decodeURIComponent(raw); } catch (error) { return null; }
+        if (UNSAFE_IMAGE.test(raw) || UNSAFE_IMAGE.test(decoded)) return null;
+        var url;
+        try { url = new global.URL(raw, global.location.origin); } catch (error) { return null; }
+        if (url.origin !== global.location.origin || url.search || url.hash) return null;
+        if (url.pathname.indexOf('/static/') !== 0 || url.pathname !== raw) return null;
+        return url.pathname;
+    }
+
+    var skillPanels = [];
+    function fitSkillPanel(entry) {
+        var scroll = entry.scroll, bar = entry.bar, thumb = entry.thumb;
+        if (!scroll.isConnected) return;
+        var over = scroll.scrollHeight > scroll.clientHeight + 1;
+        entry.panel.classList.toggle('is-overflowing', over);
+        if (over) scroll.tabIndex = 0; else scroll.removeAttribute('tabindex');
+        // Where the browser hides its own scrollbar at rest, draw the same track and thumb.
+        var style = global.getComputedStyle(scroll);
+        var native = scroll.offsetWidth - scroll.clientWidth - (parseFloat(style.borderLeftWidth) || 0) -
+            (parseFloat(style.borderRightWidth) || 0);
+        var draw = over && native < 1;
+        bar.hidden = !draw;
+        entry.panel.classList.toggle('has-drawn-bar', draw);
+        if (!draw) return;
+        var track = bar.clientHeight, ratio = scroll.clientHeight / scroll.scrollHeight;
+        var size = Math.max(24, Math.round(track * ratio));
+        var room = track - size, range = scroll.scrollHeight - scroll.clientHeight;
+        thumb.style.height = size + 'px';
+        thumb.style.transform = 'translateY(' + (range > 0 ? Math.round(scroll.scrollTop / range * room) : 0) + 'px)';
+    }
+    function drawnScrollbar(panel, scroll) {
+        var bar = el('div', 'rp-scrollbar');
+        bar.setAttribute('aria-hidden', 'true');
+        bar.hidden = true;
+        var thumb = el('div', 'rp-scrollbar__thumb');
+        bar.appendChild(thumb);
+        var entry = {panel: panel, scroll: scroll, bar: bar, thumb: thumb};
+        scroll.addEventListener('scroll', function () { fitSkillPanel(entry); }, {passive: true});
+        bar.addEventListener('pointerdown', function (event) {
+            event.preventDefault();
+            var range = scroll.scrollHeight - scroll.clientHeight;
+            var room = bar.clientHeight - thumb.offsetHeight;
+            if (event.target !== thumb) {
+                // A click on the track pages toward the click.
+                var below = event.clientY > thumb.getBoundingClientRect().top;
+                scroll.scrollTop += (below ? 1 : -1) * scroll.clientHeight * 0.9;
+                return;
+            }
+            var startY = event.clientY, startTop = scroll.scrollTop;
+            if (thumb.setPointerCapture) thumb.setPointerCapture(event.pointerId);
+            function move(e) { scroll.scrollTop = startTop + (e.clientY - startY) * (room > 0 ? range / room : 0); }
+            function up() {
+                thumb.removeEventListener('pointermove', move);
+                thumb.removeEventListener('pointerup', up);
+                thumb.removeEventListener('pointercancel', up);
+            }
+            thumb.addEventListener('pointermove', move);
+            thumb.addEventListener('pointerup', up);
+            thumb.addEventListener('pointercancel', up);
+        });
+        skillPanels.push(entry);
+        return entry;
+    }
+    var skillObserver = global.ResizeObserver ? new global.ResizeObserver(function () { skillPanels.forEach(fitSkillPanel); }) : null;
+
     function renderSkills(m) {
         var skills = m.sections.skills.filter(function (s) { return s.name; });
         if (!skills.length) return null;
         var c = card('skills', 'Skills in Practice');
         var head = el('div', 'rp-sec__head');
         head.appendChild(c.heading);
-        var withLines = skills.filter(function (s) { return s.line; });
-        if (withLines.length) head.appendChild(el('p', 'rp-sec__sub', 'Pick a skill to see the line on the resume that shows it.'));
+        var withLines = skills.filter(function (s) { return s.lines && s.lines.length; });
+        if (withLines.length) head.appendChild(el('p', 'rp-sec__sub', 'Pick a skill to see the lines on the resume that show it.'));
         c.section.appendChild(head);
         var wrap = el('div', withLines.length ? 'rp-skills' : 'rp-skills rp-skills--plain');
         var grid = el('ul', 'rp-skills__grid');
         var panel = el('div', 'rp-skills__line');
         panel.id = 'rp-skills-line';
-        panel.setAttribute('aria-live', 'polite');
+        var scroll = el('div', 'rp-skills__scroll');
+        scroll.setAttribute('role', 'region');
+        scroll.setAttribute('aria-live', 'polite');
+        var inner = el('div', 'rp-skills__in');
+        scroll.appendChild(inner);
+        panel.appendChild(scroll);
+        skillPanels = [];
+        var entry = drawnScrollbar(panel, scroll);
+        panel.appendChild(entry.bar);
         var buttons = [];
         function show(skill, button) {
             buttons.forEach(function (b) { b.setAttribute('aria-pressed', String(b === button)); });
-            panel.replaceChildren(el('p', 'rp-kicker', skill.name), el('p', 'rp-skills__quote', skill.line));
+            scroll.setAttribute('aria-label', 'Resume lines for ' + skill.name);
+            var list = el('ul', 'rp-skills__lines');
+            skill.lines.slice(0, Model.MAX_SKILL_LINES).forEach(function (line) {
+                var li = el('li', 'rp-skills__item');
+                li.appendChild(el('p', 'rp-skills__quote', line.text));
+                var source = [line.employer, line.title, line.dates].filter(Boolean).join(' \u00b7 ');
+                if (source) li.appendChild(el('p', 'rp-skills__src', source));
+                // "See it in the role" opens that role's chapter and moves focus there, like the hero's
+                // "See the role". (Experience renders after this section, so the chapter is looked up on click.)
+                if (line.roleKey) {
+                    var go = link('#rp-experience', 'See it in the role \u2192', 'rp-link rp-skills__role');
+                    go.setAttribute('aria-label', 'See it in the role: ' + [line.employer, line.title].filter(Boolean).join(', '));
+                    go.addEventListener('click', function (event) {
+                        if (!chapters[line.roleKey]) return;  // no chapter: the ordinary in-page link to Experience
+                        event.preventDefault();
+                        event.stopPropagation();
+                        openChapter(line.roleKey, true);
+                    });
+                    li.appendChild(go);
+                }
+                list.appendChild(li);
+            });
+            inner.replaceChildren(el('p', 'rp-kicker', skill.name), list);
+            scroll.scrollTop = 0;
+            fitSkillPanel(entry);
         }
         skills.forEach(function (skill) {
             var li = el('li');
-            if (skill.line) {
+            if (skill.lines && skill.lines.length) {
                 var b = el('button', 'rp-skill');
                 b.type = 'button';
                 b.setAttribute('aria-pressed', 'false');
@@ -181,6 +292,7 @@
         if (withLines.length) {
             wrap.appendChild(panel);
             show(withLines[0], buttons[0]);
+            if (skillObserver) { skillObserver.disconnect(); skillObserver.observe(panel); skillObserver.observe(inner); }
         }
         c.section.appendChild(wrap);
         return c.section;
@@ -290,7 +402,30 @@
     function renderLookingAhead(m) {
         var c = card('looking-ahead', 'Looking Ahead', 'rp-ahead');
         c.heading.className = 'rp-kicker';
-        c.section.appendChild(el('div', 'rp-ahead__pic'));
+        // The member's own Looking Ahead picture fills the slot; without one there is no picture box.
+        var pic = m.lookingAheadPicture;
+        var picSrc = pic ? staticImagePath(pic.src) : null;
+        if (picSrc) {
+            var slot = el('div', 'rp-ahead__pic');
+            var picture = el('picture');
+            var phoneSrc = staticImagePath(pic.phoneSrc);
+            if (phoneSrc) {
+                var source = el('source');
+                source.media = '(max-width: 959px)';
+                source.srcset = phoneSrc;
+                picture.appendChild(source);
+            }
+            var img = el('img');
+            img.src = picSrc;
+            img.alt = pic.alt ? String(pic.alt) : '';
+            img.decoding = 'async';
+            if (typeof pic.position === 'string' && /^\d{1,3}% \d{1,3}%$/.test(pic.position)) img.style.objectPosition = pic.position;
+            picture.appendChild(img);
+            slot.appendChild(picture);
+            c.section.appendChild(slot);
+        } else {
+            c.section.classList.add('rp-ahead--text');
+        }
         var t = el('div', 'rp-ahead__text');
         t.appendChild(c.heading);
         if (m.lookingAhead) {
@@ -743,45 +878,13 @@
         });
     }
 
-    /* ---------- the rail Ask grows when the main card scrolls away ---------- */
-    var askObserver = null, mainAskAway = false;
-    function railHasRoom() {
-        if (!rail || !railAsk) return false;
-        var mores = railAsk.querySelectorAll('[data-rp-ask-more] > *');
-        var extra = 0;
-        Array.prototype.forEach.call(mores, function (node) { extra += node.scrollHeight; });
-        var grown = railAsk.classList.contains('is-grown');
-        var railHeight = rail.scrollHeight + (grown ? 0 : extra);
-        var top = parseFloat(global.getComputedStyle(rail).top) || 0;
-        // 16px hysteresis so the panel never flickers at the boundary.
-        return railHeight + top + (grown ? 0 : 16) <= global.innerHeight;
-    }
-    function updateRailAsk() {
-        if (!railAsk) return;
-        var desktop = global.innerWidth >= FOLD;
-        var conversation = railAsk.querySelector('[data-rp-ask-log]');
-        var talking = conversation && !conversation.hidden;
-        var grow = desktop && (talking || (mainAskAway && railHasRoom()));
-        railAsk.classList.toggle('is-grown', grow);
-        Array.prototype.forEach.call(railAsk.querySelectorAll('[data-rp-ask-more]'), function (region) {
-            if (grow) region.removeAttribute('inert'); else region.setAttribute('inert', '');
-        });
-        railAsk.dataset.state = grow ? 'grown' : 'compact';
-        // A rail taller than the window scrolls with the page so nothing in it is ever unreachable.
+    /* ---------- the rail: always the full Ask panel (Pete, D1 review round 2) ----------
+     * A rail taller than the window scrolls with the page so nothing in it is ever unreachable. */
+    function fitRail() {
+        if (!rail) return;
         var top = parseFloat(global.getComputedStyle(rail).top) || 0;
         rail.classList.remove('is-tall');
-        if (desktop && rail.scrollHeight + top > global.innerHeight) rail.classList.add('is-tall');
-    }
-    function watchMainAsk() {
-        if (!mainAsk || !global.IntersectionObserver) return;
-        askObserver = new global.IntersectionObserver(function (records) {
-            records.forEach(function (r) {
-                // "Scrolled away" means the card left above the viewport.
-                mainAskAway = !r.isIntersecting && r.boundingClientRect.bottom <= (r.rootBounds ? r.rootBounds.top : 0) + 1;
-            });
-            updateRailAsk();
-        }, {threshold: 0});
-        askObserver.observe(mainAsk);
+        if (global.innerWidth >= FOLD && rail.scrollHeight + top > global.innerHeight) rail.classList.add('is-tall');
     }
 
     /* ---------- shared layout token for the Guide (Lane C) ---------- */
@@ -834,7 +937,7 @@
         renderNav(navEntries);
         observeSections(navEntries);
         if (global.PeerSlateResumePageAsk) global.PeerSlateResumePageAsk.setStarters(m);
-        updateRailAsk();
+        fitRail();
         publishEdge();
         root.dataset.state = 'ready';
     }
@@ -926,10 +1029,8 @@
 
     doc.addEventListener('resume-private-draft-changed', function () { load(); });
     doc.addEventListener('resume-intake-fact-saved', function () { load(); });
-    global.addEventListener('resize', function () { updateRailAsk(); publishEdge(); });
-    if (reduceMotion.addEventListener) reduceMotion.addEventListener('change', updateRailAsk);
+    global.addEventListener('resize', function () { fitRail(); publishEdge(); });
 
-    watchMainAsk();
     publishEdge();
     global.PeerSlateResumePage = Object.freeze({
         reload: load,
@@ -937,7 +1038,7 @@
         foldWidth: FOLD,
         render: function (m) { render(m); setStatus('', ''); },
         state: function () { return model; },
-        updateRailAsk: updateRailAsk
+        fitRail: fitRail
     });
     load();
 })(window);

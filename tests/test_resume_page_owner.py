@@ -190,10 +190,13 @@ class OwnerResumePageRenderTests(unittest.TestCase):
         self.assertNotRegex(CSS, r"\.footer\b")
 
     def test_motion_is_removed_under_reduced_motion(self):
-        reduced = re.search(r"@media \(prefers-reduced-motion: reduce\) \{(.*?)\n\}", CSS, re.S)
-        self.assertIsNotNone(reduced)
-        self.assertIn("transition: none", reduced.group(1))
-        self.assertIn(".rp-ask__more", reduced.group(1))
+        # Every transition on the page is switched off under reduced motion (D1d: the rail Ask no longer animates).
+        reduced = " ".join(re.findall(r"@media \(prefers-reduced-motion: reduce\) \{(.*?)\}\s*\}", CSS, re.S))
+        animated = re.findall(r"([^{}]+)\{[^{}]*\btransition:\s*(?!none)[^;{}]+;", CSS)
+        self.assertTrue(animated)
+        for selector in animated:
+            self.assertIn(selector.strip().splitlines()[-1].split(":")[0].strip(), reduced, selector)
+        self.assertIn("transition: none", reduced)
         # Stone stacking only animates when the visitor allows motion.
         self.assertRegex(CSS, r"prefers-reduced-motion: no-preference\) \{\s*\.rp-stone \{ opacity: 0; animation")
 
@@ -211,11 +214,94 @@ class OwnerResumePageRenderTests(unittest.TestCase):
                       ("#596860", "#f3ece0"), ("#495a51", "#faf6ec"), ("#1d3527", "#ece4d3"),
                       ("#2f5640", "#fffdf8"), ("#3a6a4f", "#faf6ec"), ("#7d5916", "#f3ecdd"),
                       ("#214e3c", "#f4dfa6"), ("#6e5d3b", "#fbf5e9"), ("#66716a", "#ffffff"),
-                      ("#fbf6ea", "#17263f"), ("#8a2c2c", "#fdf3f2")]
+                      ("#fbf6ea", "#17263f"), ("#8a2c2c", "#fdf3f2"),
+                      # D1d: skill line source, Ask placeholder, tab labels on the bar and the selected pill
+                      ("#596860", "#f3ecdd"), ("#5b4a2a", "#fbf5e9"), ("#2d3932", "#f7f2e6"), ("#1d3527", "#e8dfc9")]
         for fg, bg in body_pairs:
             self.assertGreaterEqual(ratio(fg, bg), 4.5, (fg, bg))
         self.assertGreaterEqual(ratio("#a8690a", "#faf8f2"), 3.0)  # 27px highlight numbers (large text)
         self.assertGreaterEqual(ratio("#a8781e", "#faf8f2"), 3.0)  # focus ring / gold edge (non-text)
+        self.assertGreaterEqual(ratio("#5b7466", "#e3ebe2"), 3.0)  # the skill panel's scroll thumb on its track (non-text)
+
+    # --- D1d: main Ask tabs, the rail Ask always expanded, skill lines, Looking Ahead picture ---
+    def ask_html(self, body, variant):
+        start = body.index('id="resume-page-ask-%s"' % variant)
+        return body[start:body.index("</section>", start)]
+
+    def test_main_ask_has_three_real_tabs_in_its_mountain_header(self):
+        main = self.ask_html(self.page(True), "main")
+        top = main[main.index('class="rp-ask__top"'):main.index('class="rp-ask__body"')]
+        self.assertEqual(top.count('role="tablist"'), 1)
+        tabs = re.findall(r'<button type="button" class="rp-tab" role="tab" id="([^"]+)" aria-controls="([^"]+)" '
+                          r'aria-selected="(true|false)" tabindex="(0|-1)" data-rp-tab="([a-z]+)">(.*?)</button>', top)
+        self.assertEqual([t[4] for t in tabs], ["ask", "highlights", "job"])
+        self.assertEqual([(t[2], t[3]) for t in tabs], [("true", "0"), ("false", "-1"), ("false", "-1")])
+        self.assertEqual(tabs[0][5], "Ask a question")
+        self.assertEqual(tabs[1][5], "Career highlights")
+        self.assertEqual(tabs[2][5], 'Compare a job <span class="rp-tab__soon">Soon</span>')
+        body = main[main.index('class="rp-ask__body"'):]
+        for tab_id, panel_id, selected, _, name, _ in tabs:
+            panel = re.search(r'<div class="rp-ask__panel" role="tabpanel" id="%s" aria-labelledby="%s"[^>]*>' % (panel_id, tab_id), body)
+            self.assertIsNotNone(panel, name)
+            self.assertEqual("hidden" in panel.group(0), selected == "false", name)
+        # Career highlights: a marked placeholder, never an invented story; Compare a job: Coming soon, no working control.
+        highlights = body[body.index('-panel-highlights"'):body.index('-panel-job"')]
+        self.assertIn("Placeholder", highlights)
+        self.assertIn("The Guide will draft your career highlights from your published resume, for your OK.", highlights)
+        job = body[body.index('-panel-job"'):body.index("data-rp-ask-log")]
+        self.assertIn("Coming soon", job)
+        self.assertNotRegex(job, r"<(button|textarea|input|select|a)\b")
+        # The question box sits outside every tab panel, so it is there in every tab.
+        self.assertGreater(body.index("data-rp-ask-form"), body.index('-panel-job"'))
+        self.assertEqual(body.count("data-rp-ask-form"), 1)
+
+    def test_rail_ask_is_the_full_panel_with_no_compact_or_grow_state(self):
+        rail = self.ask_html(self.page(True), "rail")
+        self.assertNotIn("data-rp-ask-more", rail)
+        self.assertNotIn('role="tablist"', rail)
+        for text in ("The person behind the experience.", "Pick a question, or type your own", "data-rp-ask-chips",
+                     "data-rp-ask-form", "Answers come only from your published resume."):
+            self.assertIn(text, rail)
+        for gone in ("is-grown", "mainAskAway", "railHasRoom", "watchMainAsk", "data-rp-ask-more", "inert"):
+            self.assertNotIn(gone, JS["resume-page.js"], gone)
+        self.assertNotIn("rp-ask__more", CSS)
+        self.assertNotIn("is-grown", CSS)
+        self.assertNotRegex(CSS, r"\.rp-ask--rail[^{]*\{[^}]*(opacity: 0|transition)")
+
+    def test_skill_lines_are_derived_in_the_one_adapter_capped_at_three(self):
+        model = JS["resume-page-model.js"]
+        self.assertIn("var MAX_SKILL_LINES = 3;", model)
+        self.assertIn("skill.lines = skillLines(skill, ordered)", model)
+        self.assertIn(".slice(0, MAX_SKILL_LINES)", model)
+        self.assertIn(".slice(0, Model.MAX_SKILL_LINES)", JS["resume-page.js"])
+        # Generic rule only: no member names or employers in the adapter.
+        for specific in ("Pete", "Northrop", "L3Harris", "Air Force", "Riverbend"):
+            self.assertNotIn(specific, model, specific)
+
+    def test_skill_panel_has_one_scroll_region_and_an_always_visible_bar(self):
+        self.assertIn("scrollbar-color: #5b7466 #e3ebe2", CSS)
+        self.assertRegex(CSS, r"\.rp-skills__scroll \{[^}]*overflow-y: auto")
+        self.assertRegex(CSS, r"\.rp-skills__in \{ margin-block: auto; \}")
+        self.assertRegex(CSS, r"\.rp-scrollbar \{[^}]*background: #e3ebe2")
+        self.assertRegex(CSS, r"\.rp-scrollbar__thumb \{[^}]*background: #5b7466")
+
+    def test_looking_ahead_has_no_stock_picture(self):
+        self.assertNotIn("feed-mountain-ridge", CSS)
+        self.assertIn(".rp-ahead--text { grid-template-columns: minmax(0, 1fr); }", CSS)
+        self.assertIn("lookingAheadPicture: null", JS["resume-page-model.js"])
+
+    def test_every_image_source_goes_through_the_one_static_guard(self):
+        page = JS["resume-page.js"]
+        self.assertEqual(page.count("function staticImagePath("), 1)
+        self.assertNotIn("localImage", page)
+        self.assertNotRegex(page, r"/\^\\/static\\//\.test")  # no second, weaker prefix check
+        # Each image source assignment uses a value returned by the guard, never the raw member string.
+        assignments = re.findall(r"\b(?:img\.src|source\.srcset)\s*=\s*([A-Za-z_.]+);", page)
+        self.assertEqual(sorted(assignments), ["phoneSrc", "photoSrc", "picSrc"])
+        for name in ("photoSrc", "picSrc", "phoneSrc"):
+            self.assertRegex(page, r"var %s = [^;]*staticImagePath\(" % name)
+        for js in JS.values():
+            self.assertNotRegex(js, r"style\.(?:background|backgroundImage)\s*=|\.setAttribute\('(?:src|srcset|style)'")
 
     def test_ask_header_art_is_a_local_asset(self):
         asset = ROOT / "static" / "images" / "resume-page" / "ask-mountains.png"

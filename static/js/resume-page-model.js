@@ -139,7 +139,67 @@
 
     function readSkill(item) {
         var v = valuesOf(item);
-        return {key: item.record_key, name: text(v.name), line: text(v.summary)};
+        return {key: item.record_key, name: text(v.name), summary: text(v.summary), lines: []};
+    }
+
+    /* ---------- Skills in Practice: the resume lines that show a skill ----------
+     * The draft holds no skill-to-bullet link, so the lines are derived here,
+     * read-only, from data already in the member's own draft: the skill's name
+     * and summary, and the accomplishment bullets with the role they belong to.
+     * A bullet shows a skill when (in this order of strength):
+     *   0. it contains the skill's own summary line, or the summary contains it;
+     *   1. its lead-in label ("Name. ..." / "Name: ...") is the skill's name;
+     *   2. it mentions the skill's name as a whole phrase.
+     * Ties keep page order (current role first, then newest; unlinked last).
+     * At most three lines; a skill's own summary that matches no bullet is shown
+     * as its own line, without a role. Nothing is reworded except that a lead-in
+     * label equal to the skill's name is not repeated under the skill's name. */
+    var MAX_SKILL_LINES = 3;
+
+    function norm(value) {
+        return text(value).toLowerCase().replace(/[‘’]/g, "'");
+    }
+
+    function leadIn(wording) {
+        var match = /^([^.:]{2,60})[.:]\s+(\S[\s\S]*)$/.exec(text(wording));
+        return match ? {label: match[1], rest: match[2]} : null;
+    }
+
+    function hasPhrase(haystack, phrase) {
+        if (phrase.length < 2) return false;
+        var at = haystack.indexOf(phrase);
+        while (at >= 0) {
+            var before = at === 0 || !/[a-z0-9]/.test(haystack.charAt(at - 1));
+            var end = at + phrase.length;
+            var after = end >= haystack.length || !/[a-z0-9]/.test(haystack.charAt(end));
+            if (before && after) return true;
+            at = haystack.indexOf(phrase, at + 1);
+        }
+        return false;
+    }
+
+    function skillLines(skill, bullets) {
+        var name = norm(skill.name), summary = norm(skill.summary);
+        var ranked = [];
+        bullets.forEach(function (bullet, order) {
+            var wording = norm(bullet.text), lead = leadIn(bullet.text);
+            var body = lead ? norm(lead.rest) : wording;
+            var rank = -1;
+            if (summary.length >= 12 && (wording.indexOf(summary) >= 0 || (body.length >= 12 && summary.indexOf(body) >= 0))) rank = 0;
+            else if (lead && norm(lead.label) === name) rank = 1;
+            else if (hasPhrase(wording, name)) rank = 2;
+            if (rank < 0) return;
+            var shown = lead && norm(lead.label) === name ? lead.rest : bullet.text;
+            ranked.push({rank: rank, order: order, line: {key: bullet.key, text: shown, roleKey: bullet.role ? bullet.role.key : null,
+                employer: bullet.role ? (bullet.role.org || bullet.role.title) : '',
+                title: bullet.role && bullet.role.org ? bullet.role.title : '', dates: bullet.role ? bullet.role.dates : ''}});
+        });
+        ranked.sort(function (a, b) { return (a.rank - b.rank) || (a.order - b.order); });
+        var lines = ranked.map(function (r) { return r.line; });
+        if (skill.summary && !ranked.some(function (r) { return r.rank === 0; })) {
+            lines.unshift({key: skill.key + ':summary', text: skill.summary, roleKey: null, employer: '', title: '', dates: ''});
+        }
+        return lines.slice(0, MAX_SKILL_LINES);
     }
 
     function readStatement(item) {
@@ -342,6 +402,13 @@
             if (bullet.parent && roleByKey[bullet.parent]) roleByKey[bullet.parent].bullets.push(bullet);
             else unlinked.push(bullet);
         });
+        // Bullets in page order (roles as shown, then the ones not linked to a role) for Skills in Practice.
+        var ordered = [];
+        sections.experience.forEach(function (role) {
+            role.bullets.forEach(function (bullet) { ordered.push({key: bullet.key, text: bullet.text, role: role}); });
+        });
+        unlinked.forEach(function (bullet) { ordered.push({key: bullet.key, text: bullet.text, role: null}); });
+        sections.skills.forEach(function (skill) { skill.lines = skillLines(skill, ordered); });
         var currentRole = sections.experience.filter(function (role) { return role.current === true; })[0];
         var model = {
             person: {
@@ -350,7 +417,7 @@
                 photo: null, contact: []
             },
             highlights: [], story: story, sections: sections, unlinked: unlinked,
-            lookingAhead: null, philosophy: null, talk: null
+            lookingAhead: null, lookingAheadPicture: null, philosophy: null, talk: null
         };
         model.glance = glance(sections);
         model.constellation = constellation(sections);
@@ -363,6 +430,6 @@
 
     global.PeerSlateResumePageModel = Object.freeze({
         SECTION_ORDER: SECTION_ORDER, SECTION_LABELS: SECTION_LABELS, TYPE_SECTION: TYPE_SECTION,
-        fromWorkspace: fromWorkspace, glance: glance, constellation: constellation, bandStops: bandStops, curveY: curveY
+        MAX_SKILL_LINES: MAX_SKILL_LINES, fromWorkspace: fromWorkspace, skillLines: skillLines, glance: glance, constellation: constellation, bandStops: bandStops, curveY: curveY
     });
 })(window);

@@ -1,4 +1,4 @@
-"""Owner resume page (PS-RESUME-PAGE-OWNER-001, D1): real browser journeys.
+"""Owner resume page (PS-RESUME-PAGE-OWNER-001, D1 and D1d): real browser journeys.
 
 Playwright drives headless Chrome against a locally served Flask app with the
 page flag on. The draft workspace comes from the real ResumeDraftService over
@@ -247,34 +247,351 @@ class OwnerResumePageBrowserTests(unittest.TestCase):
         button.click()
         self.assertFalse(chapter.is_visible())
 
-    # rail_ask_grow
-    def test_rail_ask_grows_smoothly_when_the_main_card_scrolls_away(self):
-        page = self.open(1440, 900)
-        rail = page.locator("#resume-page-ask-rail")
-        self.assertEqual(rail.get_attribute("data-state"), "compact")
-        self.assertTrue(page.evaluate("document.querySelector('#resume-page-ask-rail [data-rp-ask-more]').inert"))
-        duration = page.eval_on_selector("#resume-page-ask-rail .rp-ask__more", "e => getComputedStyle(e).transitionDuration")
-        self.assertNotEqual(duration.split(",")[0].strip(), "0s")
-        page.evaluate("document.getElementById('rp-skills').scrollIntoView()")
-        page.wait_for_function("document.getElementById('resume-page-ask-rail').dataset.state === 'grown'")
-        self.assertFalse(page.evaluate("document.querySelector('#resume-page-ask-rail [data-rp-ask-more]').inert"))
-        page.evaluate("window.scrollTo(0, 0)")
-        page.wait_for_function("document.getElementById('resume-page-ask-rail').dataset.state === 'compact'")
+    # rail_ask_expanded (D1d, Pete: "I actually do want that always expanded")
+    RAIL_STATE_JS = """() => { const a = document.getElementById('resume-page-ask-rail'), r = a.getBoundingClientRect();
+        const vis = e => !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden';
+        const art = a.querySelector('.rp-ask__art');
+        return {height: Math.round(r.height), title: vis(a.querySelector('.rp-ask__title')) && a.querySelector('.rp-ask__title').textContent,
+            hint: vis(a.querySelector('.rp-ask__hint')) && a.querySelector('.rp-ask__hint').textContent,
+            chips: [...a.querySelectorAll('[data-rp-ask-q]')].filter(vis).length, box: vis(a.querySelector('textarea')),
+            note: vis(a.querySelector('.rp-ask__note')), art: getComputedStyle(art).opacity, artWidth: Math.round(art.getBoundingClientRect().width),
+            inert: a.querySelectorAll('[inert]').length, state: a.dataset.state || null}; }"""
 
-    def test_rail_ask_change_is_instant_with_reduced_motion(self):
+    def test_rail_ask_is_always_the_full_panel_at_1440_and_960(self):
+        for width in (1440, 960):
+            page = self.open(width, 900)
+            first = page.evaluate(self.RAIL_STATE_JS)
+            self.assertEqual(first["title"], "The person behind the experience.", width)
+            self.assertEqual(first["hint"], "Pick a question, or type your own", width)
+            self.assertEqual(first["chips"], 3, width)
+            self.assertTrue(first["box"] and first["note"], width)
+            self.assertEqual(first["art"], "1", width)
+            self.assertGreater(first["artWidth"], 80, width)
+            self.assertEqual((first["inert"], first["state"]), (0, None), width)
+            # Scrolling the main card away changes nothing.
+            page.evaluate("document.getElementById('rp-skills').scrollIntoView()")
+            page.wait_for_timeout(400)
+            self.assertEqual(page.evaluate(self.RAIL_STATE_JS), first, width)
+            page.evaluate("window.scrollTo(0, 0)")
+            page.wait_for_timeout(200)
+            self.assertEqual(page.evaluate(self.RAIL_STATE_JS), first, width)
+
+    def test_rail_ask_is_expanded_under_reduced_motion_and_in_a_short_window(self):
         page = self.open(1440, 900, reduced=True)
-        duration = page.eval_on_selector("#resume-page-ask-rail .rp-ask__more", "e => getComputedStyle(e).transitionDuration")
-        # The site's own reduced-motion rule may leave a 0.01ms duration; anything under 1ms is instant.
-        seconds = [float(part.strip()[:-1]) for part in duration.split(",")]
-        self.assertTrue(all(value < 0.001 for value in seconds), duration)
-        page.evaluate("document.getElementById('rp-skills').scrollIntoView()")
-        page.wait_for_function("document.getElementById('resume-page-ask-rail').dataset.state === 'grown'")
-
-    def test_rail_ask_stays_compact_when_the_window_is_too_short(self):
+        state = page.evaluate(self.RAIL_STATE_JS)
+        self.assertEqual((state["chips"], state["box"], state["art"]), (3, True, "1"))
+        durations = page.eval_on_selector_all("#resume-page-ask-rail, #resume-page-ask-rail *",
+                                              "els => els.map(e => getComputedStyle(e).transitionDuration)")
+        for duration in durations:
+            self.assertTrue(all(float(part.strip()[:-1]) < 0.001 for part in duration.split(",")), duration)
+        # A rail taller than the window scrolls with the page, so the full Ask is still reachable.
         page = self.open(1440, 560)
-        page.evaluate("document.getElementById('rp-credentials').scrollIntoView()")
+        self.assertEqual(page.evaluate(self.RAIL_STATE_JS)["chips"], 3)
+        self.assertTrue(page.eval_on_selector("#resume-page-rail", "e => e.classList.contains('is-tall')"))
+        page.locator("#resume-page-ask-rail textarea").scroll_into_view_if_needed()
+        self.assertTrue(page.evaluate("""() => { const r = document.querySelector('#resume-page-ask-rail textarea').getBoundingClientRect();
+            return r.top >= 0 && r.bottom <= innerHeight; }"""))
+        page = self.open(959, 900)
+        self.assertFalse(page.is_visible("#resume-page-ask-rail"))
+
+    # ask_tabs (D1d): the main card's three tabs at every width
+    def tab_state(self, page):
+        return page.evaluate("""() => [...document.querySelectorAll('#resume-page-ask-main [role=tab]')].map(t => ({
+            name: t.textContent.replace(/\\s+/g, ' ').trim(), selected: t.getAttribute('aria-selected'), tabindex: t.tabIndex,
+            panel: !document.getElementById(t.getAttribute('aria-controls')).hidden,
+            labelled: document.getElementById(t.getAttribute('aria-controls')).getAttribute('aria-labelledby') === t.id,
+            role: document.getElementById(t.getAttribute('aria-controls')).getAttribute('role'),
+            h: t.getBoundingClientRect().height, w: t.getBoundingClientRect().width,
+            inHeader: !!t.closest('.rp-ask__top'), focused: document.activeElement === t}))""")
+
+    def test_main_ask_has_three_real_tabs_at_every_width(self):
+        for width in (1440, 960, 390):
+            page = self.open(width, 900)
+            tabs = self.tab_state(page)
+            self.assertEqual([t["name"] for t in tabs], ["Ask a question", "Career highlights", "Compare a job Soon"], width)
+            self.assertEqual([t["selected"] for t in tabs], ["true", "false", "false"], width)
+            self.assertEqual([t["tabindex"] for t in tabs], [0, -1, -1], width)
+            self.assertEqual([t["panel"] for t in tabs], [True, False, False], width)
+            self.assertTrue(all(t["labelled"] and t["role"] == "tabpanel" and t["inHeader"] for t in tabs), width)
+            self.assertTrue(all(t["h"] >= 24 and t["w"] >= 24 for t in tabs), width)
+            self.assertEqual(page.get_attribute("#resume-page-ask-main [role=tablist]", "aria-labelledby"),
+                             "resume-page-ask-main-title")
+            # Every tab is on screen inside the card (none hidden off to the side).
+            self.assertTrue(page.evaluate("""() => { const card = document.getElementById('resume-page-ask-main').getBoundingClientRect();
+                return [...document.querySelectorAll('#resume-page-ask-main [role=tab]')].every(t => {
+                    const r = t.getBoundingClientRect(); return r.left >= card.left && r.right <= card.right + 0.5; }); }"""), width)
+            self.assertTrue(self.no_sideways_scroll(page), width)
+            for name, expected in (("highlights", "The Guide will draft your career highlights from your published resume, for your OK."),
+                                   ("job", "Paste a job description to see where your published resume documents a match.")):
+                page.click("#resume-page-ask-main-tab-" + name)
+                panel = page.locator("#resume-page-ask-main-panel-" + name)
+                self.assertTrue(panel.is_visible(), (width, name))
+                self.assertIn(expected, panel.inner_text())
+                self.assertFalse(page.is_visible("#resume-page-ask-main-panel-ask"), (width, name))
+                # The question box and the lock line stay reachable in every tab.
+                self.assertTrue(page.is_visible("#resume-page-ask-main-q"), (width, name))
+                self.assertTrue(page.is_visible("#resume-page-ask-main .rp-ask__note"), (width, name))
+            self.assertIn("Placeholder", page.text_content("#resume-page-ask-main-panel-highlights"))
+            self.assertIn("Coming soon", page.inner_text("#resume-page-ask-main-panel-job"))
+            # Coming soon offers nothing that pretends to work.
+            self.assertEqual(page.eval_on_selector_all("#resume-page-ask-main-panel-job :is(button, a, input, textarea, select)",
+                                                       "els => els.length"), 0)
+            self.assertEqual(page.eval_on_selector_all("#resume-page-ask-main-panel-highlights :is(button, a, input, textarea, select)",
+                                                       "els => els.length"), 0)
+
+    def test_main_ask_tabs_follow_the_keyboard_and_asking_works_from_every_tab(self):
+        page = self.open()
+        page.focus("#resume-page-ask-main-tab-ask")
+        steps = (("ArrowRight", 1), ("ArrowRight", 2), ("ArrowRight", 0), ("ArrowLeft", 2), ("Home", 0), ("End", 2))
+        for key_name, expected in steps:
+            page.keyboard.press(key_name)
+            tabs = self.tab_state(page)
+            self.assertEqual([t["selected"] for t in tabs].index("true"), expected, key_name)
+            self.assertTrue(tabs[expected]["focused"], key_name)
+            self.assertEqual([t["tabindex"] for t in tabs], [0 if i == expected else -1 for i in range(3)], key_name)
+            self.assertEqual([t["panel"] for t in tabs], [i == expected for i in range(3)], key_name)
+        outline = page.eval_on_selector("#resume-page-ask-main-tab-job", "e => getComputedStyle(e).outlineStyle")
+        self.assertEqual(outline, "solid")
+        # A question asked from any tab gets the truthful unavailable reply.
+        for name in ("ask", "highlights", "job"):
+            page.click("#resume-page-ask-main-tab-" + name)
+            page.fill("#resume-page-ask-main-q", "A fictional question from the %s tab" % name)
+            page.press("#resume-page-ask-main-q", "Enter")
+            log = page.locator("#resume-page-ask-main [data-rp-ask-log]")
+            log.locator(".rp-turn__ai").wait_for()
+            self.assertIn("Ask AI isn\u2019t available right now.", log.inner_text())
+            self.assertIn("A fictional question from the %s tab" % name, log.inner_text())
+            self.assertTrue(log.is_visible())
+
+    # skill_lines (D1d): up to three resume lines per skill, with the role's employer and dates
+    def add_skill_lines(self):
+        items = self.workspaces[OWNER]["items"]
+        items.append(item(70, "skill", {"name": "Crane safety", "summary": "Wrote the berth lockout procedure."}))
+        items.append(item(71, "accomplishment", {"wording": "Crane safety: Wrote the berth lockout procedure.",
+                                                 "metric_value": None, "metric_label": None}, parent_key=key(1)))
+        items.append(item(72, "accomplishment", {"wording": "Ran the crane safety audit for the substation yards.",
+                                                 "metric_value": None, "metric_label": None}, parent_key=key(2)))
+        items.append(item(73, "accomplishment", {"wording": "Trained crews on crane safety drills before every shift.",
+                                                 "metric_value": None, "metric_label": None}, parent_key=key(3)))
+        items.append(item(74, "accomplishment", {"wording": "Shared crane safety notes with the union board.",
+                                                 "metric_value": None, "metric_label": None}))
+
+    def skill_panel(self, page, skill):
+        page.click("button.rp-skill:has-text('%s')" % skill)
+        return page.evaluate("""() => { const scroll = document.querySelector('#rp-skills-line .rp-skills__scroll');
+            const inner = scroll.querySelector('.rp-skills__in').getBoundingClientRect(), box = scroll.getBoundingClientRect();
+            const pad = parseFloat(getComputedStyle(scroll).paddingTop), padB = parseFloat(getComputedStyle(scroll).paddingBottom);
+            const bar = document.querySelector('#rp-skills-line .rp-scrollbar');
+            const nested = [...document.querySelectorAll('#rp-skills *')].filter(e => e !== scroll &&
+                /auto|scroll/.test(getComputedStyle(e).overflowY) && e.scrollHeight > e.clientHeight + 1).length;
+            return {items: [...scroll.querySelectorAll('.rp-skills__item')].map(li => ({
+                    text: li.querySelector('.rp-skills__quote').textContent,
+                    src: li.querySelector('.rp-skills__src') ? li.querySelector('.rp-skills__src').textContent : null,
+                    link: li.querySelector('a.rp-skills__role') ? [li.querySelector('a.rp-skills__role').textContent,
+                        li.querySelector('a.rp-skills__role').getAttribute('href')] : null})),
+                kicker: scroll.querySelector('.rp-kicker').textContent, label: scroll.getAttribute('aria-label'),
+                role: scroll.getAttribute('role'), tabindex: scroll.getAttribute('tabindex'),
+                over: scroll.scrollHeight > scroll.clientHeight + 1, client: scroll.clientHeight,
+                above: inner.top - (box.top + pad), below: (box.top + scroll.clientHeight - padB) - inner.bottom,
+                nativeBar: scroll.offsetWidth - scroll.clientWidth, drawn: !bar.hidden && bar.getBoundingClientRect().height > 0,
+                thumb: bar.querySelector('.rp-scrollbar__thumb').getBoundingClientRect().height, nested: nested,
+                panelH: document.getElementById('rp-skills-line').getBoundingClientRect().height,
+                gridH: document.querySelector('#rp-skills .rp-skills__grid').getBoundingClientRect().height}; }""")
+
+    def test_skill_panel_lists_up_to_three_lines_with_employer_and_dates(self):
+        self.add_skill_lines()
+        page = self.open()
+        panel = self.skill_panel(page, "Crane safety")
+        self.assertEqual(panel["kicker"], "Crane safety")
+        see = ["See it in the role \u2192", "#rp-experience"]
+        self.assertEqual(panel["items"], [
+            {"text": "Wrote the berth lockout procedure.",
+             "src": "Harbor Light Robotics \u00b7 Controls Engineer \u00b7 Mar 2023 \u2013 Present", "link": see},
+            {"text": "Ran the crane safety audit for the substation yards.",
+             "src": "Cedar Grid Utilities \u00b7 Reliability Analyst \u00b7 Jun 2020 \u2013 Feb 2023", "link": see},
+            {"text": "Trained crews on crane safety drills before every shift.",
+             "src": "North Ridge Transit \u00b7 Systems Technician \u00b7 Jan 2018 \u2013 May 2020", "link": see}])
+        self.assertNotIn("union board", page.inner_text("#rp-skills"))  # a fourth match is never shown
+        self.assertEqual((panel["role"], panel["label"]), ("region", "Resume lines for Crane safety"))
+        # A skill line that matches no bullet is still the member's own line, shown without a role.
+        # "See it in the role" is a real link: keyboard-reachable, it opens that role's chapter and moves focus there.
+        role_link = page.locator("#rp-skills-line a.rp-skills__role").nth(1)
+        self.assertEqual(role_link.get_attribute("aria-label"), "See it in the role: Cedar Grid Utilities, Reliability Analyst")
+        role_link.focus()
+        page.keyboard.press("Enter")
+        page.wait_for_function("document.activeElement && document.activeElement.classList.contains('rp-chapter')")
+        opened = page.evaluate("""() => { const c = document.activeElement;
+            const button = document.querySelector('[aria-controls="' + c.id + '"]');
+            return {head: c.querySelector('.rp-chapter__head').textContent, expanded: button.getAttribute('aria-expanded'),
+                    visible: c.getClientRects().length > 0}; }""")
+        self.assertTrue(opened["head"].startswith("Cedar Grid Utilities"), opened)
+        self.assertEqual((opened["expanded"], opened["visible"]), ("true", True))
+        panel = self.skill_panel(page, "Reliability modelling")
+        self.assertEqual(panel["items"], [{"text": "Built the substation outage-risk model.", "src": None, "link": None}])
+        self.assertEqual(page.eval_on_selector_all("span.rp-skill--plain", "els => els.map(e => e.textContent)"), ["Field safety"])
+        # The first skill with lines is open when the page loads.
+        page = self.open()
+        self.assertEqual(page.get_attribute("#rp-skills button.rp-skill", "aria-pressed"), "true")
+        self.assertIn("Programs and validates the crane PLC logic.", page.inner_text("#rp-skills-line"))
+
+    def test_skill_lines_are_centred_when_they_fit_and_scroll_when_they_overflow(self):
+        self.add_skill_lines()
+        long = "Kept the long fictional crane safety log current, " * 6
+        self.workspaces[OWNER]["items"].append(item(75, "accomplishment", {"wording": long.strip(), "metric_value": None,
+                                                                             "metric_label": None}, parent_key=key(1)))
+        self.workspaces[OWNER]["items"].append(item(76, "skill", {"name": "Crane logs", "summary": None}))
+        self.workspaces[OWNER]["items"].append(item(77, "accomplishment", {"wording": "Kept the crane logs for 6 berths.",
+                                                                             "metric_value": None, "metric_label": None}, parent_key=key(1)))
+        for width in (1440, 960):
+            page = self.open(width, 900)
+            panel = self.skill_panel(page, "Crane logs")
+            self.assertEqual(len(panel["items"]), 1, width)
+            self.assertFalse(panel["over"], width)
+            self.assertLessEqual(abs(panel["above"] - panel["below"]), 2, (width, panel))
+            self.assertGreater(panel["above"], 8, width)  # really centred, not top-aligned
+            self.assertIsNone(panel["tabindex"], width)
+            self.assertFalse(panel["drawn"], width)
+            # The panel is as tall as the skill grid (or its 200px floor): the empty space is the panel's own.
+            self.assertAlmostEqual(panel["panelH"], max(panel["gridH"], 200), delta=2)
+            panel = self.skill_panel(page, "Crane safety")
+            self.assertEqual(len(panel["items"]), 3, width)
+            self.assertTrue(panel["over"], width)
+            self.assertLessEqual(abs(panel["above"]), 1, width)  # overflowing lines start at the top
+            self.assertEqual(panel["tabindex"], "0", width)
+            self.assertTrue(panel["nativeBar"] > 0 or (panel["drawn"] and panel["thumb"] >= 24), (width, panel))
+            self.assertEqual(panel["nested"], 0, width)
+            self.assertAlmostEqual(panel["panelH"], max(panel["gridH"], 200), delta=2)
+            # Keyboard scrolling works and the drawn thumb follows.
+            page.focus("#rp-skills-line .rp-skills__scroll")
+            page.keyboard.press("End")
+            page.wait_for_function("document.querySelector('#rp-skills-line .rp-skills__scroll').scrollTop > 0")
+            if panel["drawn"]:
+                page.wait_for_function("document.querySelector('#rp-skills-line .rp-scrollbar__thumb').style.transform !== 'translateY(0px)'")
+                # The drawn bar works with the mouse: a click on its track pages, dragging the thumb scrolls.
+                page.eval_on_selector("#rp-skills-line .rp-skills__scroll", "e => { e.scrollTop = 0; }")
+                box = page.locator("#rp-skills-line .rp-scrollbar").bounding_box()
+                page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] - 4)
+                page.wait_for_function("document.querySelector('#rp-skills-line .rp-skills__scroll').scrollTop > 0")
+                page.eval_on_selector("#rp-skills-line .rp-skills__scroll", "e => { e.scrollTop = 0; }")
+                thumb = page.locator("#rp-skills-line .rp-scrollbar__thumb").bounding_box()
+                page.mouse.move(thumb["x"] + thumb["width"] / 2, thumb["y"] + 5)
+                page.mouse.down()
+                page.mouse.move(thumb["x"] + thumb["width"] / 2, thumb["y"] + 45, steps=4)
+                page.mouse.up()
+                self.assertGreater(page.eval_on_selector("#rp-skills-line .rp-skills__scroll", "e => e.scrollTop"), 0)
+
+    def test_skill_lines_follow_the_generic_rule_in_the_adapter(self):
+        page = self.open()
+        out = page.evaluate("""() => {
+            const role = (k, org, current) => ({record_key: k, record_type: 'role', values: {employer_name: org, role_title: 'Analyst',
+                start_date: '2020-01-01', end_date: current ? null : '2021-01-01', date_precision: 'month', current_role: current}});
+            const b = (k, parent, wording) => ({record_key: k, record_type: 'accomplishment', parent_key: parent, values: {wording: wording}});
+            const m = PeerSlateResumePageModel.fromWorkspace({story_entry_key: null, items: [
+                role('r1', 'Example Works', true), role('r2', 'Sample Co', false),
+                {record_key: 's1', record_type: 'skill', values: {name: 'Budgeting', summary: null}},
+                {record_key: 's2', record_type: 'skill', values: {name: 'Go', summary: null}},
+                b('a1', 'r2', 'Mentioned budgeting once.'), b('a2', 'r1', 'Budgeting: Ran the yearly plan.'),
+                b('a3', 'r1', 'Wrote the Gopher tool and a Go service.'), b('a4', 'r1', 'Went to the go-live.'),
+                b('a5', 'r1', 'Budgetings are not a word.')]}, {displayName: ''});
+            return m.sections.skills.map(s => ({name: s.name, lines: s.lines.map(l => [l.text, l.employer, l.dates])})); }""")
+        self.assertEqual(out[0], {"name": "Budgeting", "lines": [["Ran the yearly plan.", "Example Works", "Jan 2020 \u2013 Present"],
+                                                                 ["Mentioned budgeting once.", "Sample Co", "Jan 2020 \u2013 Jan 2021"]]})
+        # Whole phrases only: "Gopher" is not "Go"; a hyphenated "go-live" is.
+        self.assertEqual([line[0] for line in out[1]["lines"]], ["Wrote the Gopher tool and a Go service.", "Went to the go-live."])
+
+    def test_skill_line_text_is_never_interpreted_as_markup(self):
+        hostile = '<img src=x onerror="window.__owned=1">Crane'
+        self.workspaces[OWNER]["items"].append(item(80, "skill", {"name": "Crane", "summary": None}))
+        self.workspaces[OWNER]["items"].append(item(81, "accomplishment", {"wording": hostile, "metric_value": None,
+                                                                             "metric_label": None}, parent_key=key(1)))
+        page = self.open()
+        page.click("button.rp-skill:has-text('Crane')")
+        self.assertIsNone(page.evaluate("window.__owned"))
+        self.assertEqual(page.eval_on_selector_all("#rp-skills img", "els => els.length"), 0)
+        self.assertIn(hostile, page.inner_text("#rp-skills-line"))
+
+    # image_guard (D1d re-check F1): one guard for every image source; only a normalised /static/ path is set
+    UNSAFE_IMAGE_SOURCES = ["/static/%2e%2e/healthz", "/static/%2E%2E/healthz", "/static/%252e%252e/healthz",
+                            "/static/..%2fhealthz", "/static/images%2f..%2f..%2fhealthz", "/static/images\\..\\..\\healthz",
+                            "/static/images%5c..%5chealthz", "//example.invalid/static/x.jpg",
+                            "https://example.invalid/static/x.jpg", "/static/./images/cinematic/future-path.jpg",
+                            "/static//images/cinematic/future-path.jpg", "/static/images/cinematic/future-path.jpg?x=1",
+                            "/static/images/cinematic/future-path.jpg#x", "/healthz", "javascript:alert(1)",
+                            " /static/images/cinematic/future-path.jpg"]
+    GOOD_IMAGE = "/static/images/cinematic/future-path.jpg"
+    GOOD_PHONE = "/static/images/cinematic/story-sunset-bg.jpg"
+
+    def open_watching_requests(self, width=1440, height=900):
+        page = self.open(width, height)
+        requests = []
+        page.on("request", lambda request: requests.append(request.url))
+        return page, requests
+
+    def test_every_image_source_rejects_traversal_and_foreign_paths(self):
+        page, requests = self.open_watching_requests()
+        render = """args => { const m = PeerSlateResumePage.state();
+            m.lookingAheadPicture = args.ahead; m.person.photo = args.photo; PeerSlateResumePage.render(m);
+            const pic = document.querySelector('#rp-looking-ahead .rp-ahead__pic'), hero = document.getElementById('resume-page-hero');
+            const heroImg = hero.querySelector('[data-rp-photo] img');
+            return {aheadPic: !!pic, aheadText: document.getElementById('rp-looking-ahead').classList.contains('rp-ahead--text'),
+                aheadSrc: pic ? pic.querySelector('img').getAttribute('src') : null,
+                phone: pic && pic.querySelector('source') ? pic.querySelector('source').getAttribute('srcset') : null,
+                heroImg: heroImg ? heroImg.getAttribute('src') : null, heroPhoto: hero.dataset.hasPhoto,
+                initials: !!hero.querySelector('[data-rp-photo] .rp-hero__initials')}; }"""
+        for bad in self.UNSAFE_IMAGE_SOURCES:
+            # A bad main picture or hero photo falls back to text and initials; nothing is requested.
+            out = page.evaluate(render, {"ahead": {"src": bad, "phoneSrc": self.GOOD_PHONE, "alt": "x"},
+                                         "photo": {"src": bad, "alt": "x"}})
+            self.assertEqual((out["aheadPic"], out["aheadText"], out["heroImg"], out["heroPhoto"], out["initials"]),
+                             (False, True, None, "false", True), bad)
+            # A bad phone variant is dropped; the good main picture still renders from its normalised path.
+            out = page.evaluate(render, {"ahead": {"src": self.GOOD_IMAGE, "phoneSrc": bad, "alt": "x"}, "photo": None})
+            self.assertEqual((out["aheadPic"], out["aheadSrc"], out["phone"]), (True, self.GOOD_IMAGE, None), bad)
         page.wait_for_timeout(300)
-        self.assertEqual(page.get_attribute("#resume-page-ask-rail", "data-state"), "compact")
+        stray = [url for url in requests if "/static/" not in url or "healthz" in url or "example.invalid" in url]
+        self.assertEqual(stray, [])
+        # Ordinary approved /static/ images still render, and alt text stays text.
+        out = page.evaluate(render, {"ahead": {"src": self.GOOD_IMAGE, "phoneSrc": self.GOOD_PHONE, "alt": '<img src=x onerror="window.__owned=1">'},
+                                     "photo": {"src": self.GOOD_PHONE, "alt": "A <b>fictional</b> member"}})
+        self.assertEqual((out["aheadSrc"], out["phone"], out["heroImg"], out["heroPhoto"]),
+                         (self.GOOD_IMAGE, self.GOOD_PHONE, self.GOOD_PHONE, "true"))
+        self.assertEqual(page.eval_on_selector("#resume-page-hero [data-rp-photo] img", "e => e.alt"), "A <b>fictional</b> member")
+        self.assertIsNone(page.evaluate("window.__owned"))
+        self.assertEqual(page.eval_on_selector("#rp-looking-ahead .rp-ahead__pic img", "e => e.alt"), '<img src=x onerror="window.__owned=1">')
+        self.assertEqual(page.eval_on_selector_all("#resume-page img[src='x'], [data-rp-photo] b, .rp-ahead__pic img + *",
+                                                   "els => els.length"), 0)
+
+    # looking_ahead_picture (D1d): the member's own picture, or no picture box at all
+    def test_looking_ahead_shows_the_members_picture_or_no_box(self):
+        page = self.open(1440, 900)
+        self.assertEqual(page.eval_on_selector_all("#rp-looking-ahead .rp-ahead__pic", "els => els.length"), 0)
+        widths = page.evaluate("""() => { const s = document.getElementById('rp-looking-ahead');
+            return [s.getBoundingClientRect().width, s.querySelector('.rp-ahead__text').getBoundingClientRect().width]; }""")
+        self.assertAlmostEqual(widths[0] - 2, widths[1], delta=2)  # the text spans the card
+        render = """pic => { const m = PeerSlateResumePage.state(); m.lookingAheadPicture = pic; PeerSlateResumePage.render(m); }"""
+        page.evaluate(render, {"src": "https://example.invalid/x.jpg", "alt": "remote"})
+        self.assertEqual(page.eval_on_selector_all("#rp-looking-ahead .rp-ahead__pic", "els => els.length"), 0)
+        picture = {"src": "/static/images/cinematic/future-path.jpg", "phoneSrc": "/static/images/cinematic/story-sunset-bg.jpg",
+                   "alt": "A fictional member on a ridge <b>at dawn</b>"}
+        page.evaluate(render, picture)
+        img = page.locator("#rp-looking-ahead .rp-ahead__pic img")
+        img.wait_for()
+        page.wait_for_function("document.querySelector('#rp-looking-ahead .rp-ahead__pic img').complete")
+        info = page.evaluate("""() => { const i = document.querySelector('#rp-looking-ahead .rp-ahead__pic img');
+            const pic = i.closest('.rp-ahead__pic').getBoundingClientRect(), text = document.querySelector('#rp-looking-ahead .rp-ahead__text').getBoundingClientRect();
+            return {alt: i.alt, src: i.currentSrc, w: Math.round(pic.width), h: Math.round(pic.height), left: pic.right <= text.left + 1,
+                    natural: i.naturalWidth}; }""")
+        self.assertEqual(info["alt"], picture["alt"])
+        self.assertTrue(info["src"].endswith("/static/images/cinematic/future-path.jpg"), info)
+        self.assertTrue(info["left"] and info["w"] > 300 and info["h"] >= 180 and info["natural"] > 0, info)
+        self.assertEqual(page.eval_on_selector_all("#rp-looking-ahead b", "els => els.length"), 0)
+        self.assertIn("Placeholder", page.text_content("#rp-looking-ahead"))  # the layout is otherwise unchanged
+        page = self.open(390, 844)
+        page.evaluate(render, picture)
+        page.wait_for_function("document.querySelector('#rp-looking-ahead .rp-ahead__pic img').complete")
+        src = page.eval_on_selector("#rp-looking-ahead .rp-ahead__pic img", "e => e.currentSrc")
+        self.assertTrue(src.endswith("/static/images/cinematic/story-sunset-bg.jpg"), src)
+        self.assertTrue(self.no_sideways_scroll(page))
 
     # truthful_ask
     def test_ask_is_truthfully_unavailable_and_keeps_the_question(self):

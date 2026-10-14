@@ -1,10 +1,13 @@
-/* Owner resume page: Ask AI panels (PS-RESUME-PAGE-OWNER-001, D1).
+/* Owner resume page: Ask AI panels (PS-RESUME-PAGE-OWNER-001, D1/D1d).
  *
- * D1 makes no AI call. The default transport answers with the truthful
+ * The page makes no AI call. The default transport answers with the truthful
  * unavailable state; the owner's private preview (PS-RESUME-PAGE-PUBLIC-001)
  * plugs in through setTransport() without changing this file's behaviour.
  * The "thinking" state is the three stones stacking, shown only while a
  * transport request is actually pending. Every answer is written as text.
+ * The main card's tabs (Ask a question, Career highlights, Compare a job) are
+ * ARIA tabs with automatic activation; the question box sits outside the tab
+ * panels, so it is reachable in every tab.
  */
 (function (global) {
     'use strict';
@@ -83,7 +86,7 @@
             turn.appendChild(thinking);
             log.replaceChildren(turn);
             panel.dataset.askState = 'thinking';
-            if (global.PeerSlateResumePage) global.PeerSlateResumePage.updateRailAsk();
+            if (global.PeerSlateResumePage) global.PeerSlateResumePage.fitRail();
             var surface = panel.getAttribute('data-rp-ask');
             return Promise.resolve()
                 .then(function () { return transport(question, {surface: surface}); })
@@ -110,7 +113,7 @@
                     busy = false;
                     go.disabled = false;
                     panel.removeAttribute('aria-busy');
-                    if (global.PeerSlateResumePage) global.PeerSlateResumePage.updateRailAsk();
+                    if (global.PeerSlateResumePage) global.PeerSlateResumePage.fitRail();
                 });
         }
 
@@ -127,6 +130,36 @@
             ask(input.value);
         });
         panel._rpAsk = ask;
+    }
+
+    function bindTabs(panel) {
+        var list = panel.querySelector('[data-rp-ask-tabs]');
+        if (!list) return;
+        var tabs = Array.prototype.slice.call(list.querySelectorAll('[role="tab"]'));
+        function select(tab, focus) {
+            tabs.forEach(function (t) {
+                var on = t === tab;
+                t.setAttribute('aria-selected', String(on));
+                t.tabIndex = on ? 0 : -1;
+                var target = doc.getElementById(t.getAttribute('aria-controls'));
+                if (target) target.hidden = !on;
+            });
+            panel.dataset.askTab = tab.getAttribute('data-rp-tab');
+            if (focus) tab.focus();
+        }
+        list.addEventListener('click', function (event) {
+            var tab = event.target.closest('[role="tab"]');
+            if (tab && list.contains(tab)) select(tab, false);
+        });
+        list.addEventListener('keydown', function (event) {
+            var index = tabs.indexOf(doc.activeElement);
+            if (index < 0) return;
+            var next = {ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: tabs.length - 1}[event.key];
+            if (next === undefined) return;
+            event.preventDefault();
+            select(tabs[(next + tabs.length) % tabs.length], true);
+        });
+        panel.dataset.askTab = 'ask';
     }
 
     function starters(model) {
@@ -159,6 +192,7 @@
     }
 
     panels.forEach(bind);
+    panels.forEach(bindTabs);
     global.PeerSlateResumePageAsk = Object.freeze({
         setTransport: function (fn) { transport = typeof fn === 'function' ? fn : unavailableTransport; },
         setStarters: setStarters,

@@ -173,14 +173,14 @@ body.rp-body .main-content { max-width: none; margin: 0; padding: 0; background:
 
 .rp-ask--main { border-radius: 12px; box-shadow: 0 5px 20px rgba(49, 94, 65, .04); }
 .rp-ask--main .rp-ask__top { min-height: 118px; display: flex; }
-.rp-ask--main .rp-ask__lead { padding: 14px 18px 12px; flex: 1; }
+.rp-ask--main .rp-ask__lead { padding: 14px 18px 12px; flex: 1; min-width: 0; }
 .rp-ask--main .rp-ask__title { margin: 8px 0 4px; }
 .rp-ask--main .rp-ask__body { padding: 12px 18px; }
 
-/* rail Ask: compact until the main card scrolls away, then grows smoothly */
+/* rail Ask: always the full panel (Pete, D1 review round 2) */
 .rp-ask--rail .rp-ask__top { padding: 10px 12px 9px; }
 .rp-ask--rail .rp-ask__kicker { font-size: 10.5px; gap: 6px; }
-.rp-ask--rail .rp-ask__art { width: 46%; background-size: 100% 100%, auto 165%; background-position: left top, right bottom; opacity: 0; transition: opacity .28s ease; }
+.rp-ask--rail .rp-ask__art { width: 46%; background-size: 100% 100%, auto 165%; background-position: left top, right bottom; }
 .rp-ask--rail .rp-ask__title { margin-top: 5px; max-width: 165px; font-size: 15.5px; }
 .rp-ask--rail .rp-ask__body { padding: 9px 12px 10px; }
 .rp-ask--rail .rp-ask__hint { font-size: 11px; }
@@ -191,13 +191,20 @@ body.rp-body .main-content { max-width: none; margin: 0; padding: 0; background:
 .rp-ask--rail .rp-ask__go { min-height: 28px; padding: 0 11px; font-size: 11.5px; }
 .rp-ask--rail .rp-ask__note { font-size: 11px; }
 .rp-ask--rail .rp-ask__log { max-height: 240px; }
-.rp-ask__more { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .32s ease, opacity .24s ease; }
-.rp-ask__more-in { min-height: 0; overflow: hidden; }
-.rp-ask--rail.is-grown .rp-ask__more { grid-template-rows: 1fr; opacity: 1; }
-.rp-ask--rail.is-grown .rp-ask__art { opacity: 1; }
-@media (prefers-reduced-motion: reduce) {
-    .rp-ask__more, .rp-ask--rail .rp-ask__art { transition: none; }
-}
+
+/* main Ask tabs (D1d): a pill tab bar inside the mountain header, as in the approved RP6 top */
+.rp-ask__tabs { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; margin-top: 10px; padding: 3px; border-radius: 17px; background: rgba(251, 247, 236, .92); border: 1px solid rgba(227, 215, 193, .55); }
+.rp-tab { display: inline-flex; align-items: center; gap: 6px; flex: none; min-height: 28px; padding: 0 13px; border: 1px solid transparent; border-radius: 14px; background: none; font: 500 12.5px/1 var(--rp-sans); color: var(--rp-ink); white-space: nowrap; cursor: pointer; }
+.rp-tab:hover { background: rgba(232, 223, 201, .5); }
+.rp-tab[aria-selected="true"] { background: var(--rp-current); border-color: var(--rp-current-line); color: var(--rp-head); }
+.rp-tab__soon { padding: 0 7px; border-radius: 8px; background: var(--rp-chip); font: 700 11px/17px var(--rp-sans); color: var(--rp-head); }
+.rp-ask__panel:focus-visible { outline-offset: 4px; }
+.rp-placeholder--ask { margin: 0 0 10px; padding: 10px 12px; }
+.rp-placeholder--ask .rp-placeholder__tag { margin-bottom: 4px; }
+.rp-placeholder__text { color: #5b4a2a; }
+.rp-soon { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; border: 1px dashed var(--rp-current-line); background: var(--rp-card-soft); }
+.rp-soon p { color: var(--rp-ink); }
+.rp-soon__tag { flex: none; padding: 0 8px; border-radius: 8px; background: var(--rp-chip); font: 700 11px/18px var(--rp-sans); color: var(--rp-head); }
 
 /* ---------- overview: hero + main Ask ---------- */
 .rp-snap { background: var(--rp-card); border: 1px solid var(--rp-card-line); border-radius: 10px; overflow: hidden; box-shadow: 0 5px 20px rgba(58, 106, 79, .035); scroll-margin-top: var(--rp-sticky-top); }
@@ -245,17 +252,32 @@ body.rp-body .main-content { max-width: none; margin: 0; padding: 0; background:
 .rp-story__pic::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--rp-card) 0, rgba(250, 248, 242, 0) 38%); }
 
 /* skills in practice */
-.rp-skills { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.rp-skills { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: stretch; }
 .rp-skills--plain { grid-template-columns: 1fr; }
-.rp-skills__grid { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.rp-skills__grid { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-self: start; }
 .rp-skill { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 40px; padding: 8px 11px; border-radius: 9px; border: 1px solid var(--rp-rail-line); background: var(--rp-card-soft); color: var(--rp-head); font: 600 12.5px/1.25 var(--rp-sans); text-align: left; }
 button.rp-skill { cursor: pointer; }
 .rp-skill svg { width: 13px; height: 13px; color: var(--rp-gold-edge); opacity: .7; }
 button.rp-skill:hover { border-color: #cfa659; }
 .rp-skill[aria-pressed="true"] { background: var(--rp-current); border-color: var(--rp-current-line); box-shadow: inset 3px 0 0 #cfa659; }
-.rp-skills__line { border-radius: 12px; background: var(--rp-panel); border: 1px solid var(--rp-rail-line); padding: 16px 18px; min-height: 100%; }
+/* The panel is as tall as the skill grid (contain: size keeps its lines from stretching the row). */
+.rp-skills__line { position: relative; contain: size; min-height: 200px; border-radius: 12px; background: var(--rp-panel); border: 1px solid var(--rp-rail-line); overflow: hidden; }
+.rp-skills__scroll { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 16px 18px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: auto; scrollbar-color: #5b7466 #e3ebe2; }
+.rp-skills__scroll:focus-visible { outline: 2px solid var(--rp-gold-edge); outline-offset: -3px; border-radius: 12px; }
+.rp-skills__scroll::-webkit-scrollbar { width: 12px; }
+.rp-skills__scroll::-webkit-scrollbar-track { background: #e3ebe2; border-radius: 6px; }
+.rp-skills__scroll::-webkit-scrollbar-thumb { background: #5b7466; border-radius: 6px; border: 2px solid #e3ebe2; }
+.rp-skills__in { margin-block: auto; }
+.rp-skills__line.has-drawn-bar .rp-skills__scroll { padding-right: 26px; }
 .rp-skills__line .rp-kicker { color: var(--rp-accent-ink); }
+.rp-skills__lines { list-style: none; padding: 0; display: grid; gap: 12px; }
+.rp-skills__item + .rp-skills__item { padding-top: 12px; border-top: 1px solid var(--rp-rail-line); }
 .rp-skills__quote { font: 500 15.5px/1.45 var(--rp-serif); color: var(--rp-head); }
+.rp-skills__src { margin-top: 4px !important; font-size: 12px; color: var(--rp-muted); }
+.rp-skills__role { margin-top: 4px; }
+/* Drawn where the browser hides its own scrollbar at rest (the Guide's J20 bar). */
+.rp-scrollbar { position: absolute; top: 8px; right: 6px; bottom: 8px; width: 12px; border-radius: 6px; background: #e3ebe2; cursor: pointer; }
+.rp-scrollbar__thumb { width: 100%; min-height: 24px; border-radius: 6px; background: #5b7466; box-shadow: inset 0 0 0 2px #e3ebe2; cursor: grab; }
 
 /* experience */
 .rp-roles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
@@ -289,7 +311,9 @@ button.rp-skill:hover { border-color: #cfa659; }
 
 /* looking ahead */
 .rp-ahead { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); min-height: 190px; padding: 0; }
-.rp-ahead__pic { background: url("../images/feed/feed-mountain-ridge-2026-07-21-1280.webp") center 40% / cover no-repeat; }
+.rp-ahead--text { grid-template-columns: minmax(0, 1fr); }
+.rp-ahead__pic { position: relative; overflow: hidden; background: var(--rp-panel); }
+.rp-ahead__pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 45%; display: block; }
 .rp-ahead__text { padding: 22px 24px; display: flex; flex-direction: column; justify-content: center; }
 .rp-ahead__line { font: 500 18px/1.4 var(--rp-serif); color: var(--rp-head); }
 .rp-placeholder { border: 1px dashed #cfa659; border-radius: 10px; background: #fbf5e9; padding: 12px 14px; }
@@ -385,10 +409,15 @@ button.rp-skill:hover { border-color: #cfa659; }
     .rp-hero__acts { min-width: 0; }
     .rp-hero__highlights { grid-template-columns: 1fr 1fr; }
     .rp-ask--main .rp-ask__art { display: none; }
+    /* Phones: the three tabs share the card width (a label may take two lines), so none hides off-screen. */
+    .rp-ask__tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; border-radius: 14px; }
+    .rp-tab { flex-wrap: wrap; justify-content: center; gap: 3px 5px; min-height: 36px; padding: 5px 6px; border-radius: 11px; white-space: normal; text-align: center; line-height: 1.25; }
     .rp-ask--main .rp-ask__title { overflow-wrap: break-word; }
     .rp-sec { margin-top: 12px; padding: 16px 14px 18px; border-radius: 12px; }
     .rp-sec__title { font-size: 20px; }
     .rp-skills { grid-template-columns: 1fr; }
+    .rp-skills__line { contain: none; min-height: 0; }
+    .rp-skills__scroll { position: relative; inset: auto; max-height: 312px; }
     .rp-skills__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .rp-story { grid-template-columns: 1fr; }
     .rp-story__pic { margin: 0; height: 170px; order: -1; }

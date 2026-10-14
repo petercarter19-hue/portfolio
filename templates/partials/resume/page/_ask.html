@@ -1,8 +1,10 @@
 {# Owner resume page: Ask AI panels (the main card and the rail panel).
-   Presentation only in D1: this page makes no AI call. The owner's private
+   Presentation only: this page makes no AI call. The owner's private
    preview transport arrives with PS-RESUME-PAGE-PUBLIC-001; until then a
-   question gets the truthful unavailable state. The rail panel starts compact
-   and grows when the main card scrolls away (resume-page.js). #}
+   question gets the truthful unavailable state. The main card has three tabs
+   (Ask a question, Career highlights, Compare a job: Soon) in its mountain
+   header; the question box stays below them in every tab. The rail panel is
+   always the full panel (Pete, D1 review round 2). Tabs: resume-page-ask.js. #}
 {% macro ask_mark(size=22) -%}
 <svg class="rp-ask-mark" viewBox="0 0 24 24" width="{{ size }}" height="{{ size }}" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="12"/><g transform="translate(12 12) scale(0.64) translate(-12 -12)"><use href="#rp-i-cairn"/></g></svg>
 {%- endmacro %}
@@ -17,22 +19,37 @@
             <p class="rp-ask__kicker">{{ ask_mark(22 if variant == 'main' else 18) }}<span id="{{ idp }}-title">{{ label }}</span></p>
             {% if variant == 'main' %}
             <h2 class="rp-ask__title">The person behind the experience.</h2>
+            <div class="rp-ask__tabs" role="tablist" aria-labelledby="{{ idp }}-title" data-rp-ask-tabs>
+                <button type="button" class="rp-tab" role="tab" id="{{ idp }}-tab-ask" aria-controls="{{ idp }}-panel-ask" aria-selected="true" tabindex="0" data-rp-tab="ask">Ask a question</button>
+                <button type="button" class="rp-tab" role="tab" id="{{ idp }}-tab-highlights" aria-controls="{{ idp }}-panel-highlights" aria-selected="false" tabindex="-1" data-rp-tab="highlights">Career highlights</button>
+                <button type="button" class="rp-tab" role="tab" id="{{ idp }}-tab-job" aria-controls="{{ idp }}-panel-job" aria-selected="false" tabindex="-1" data-rp-tab="job">Compare a job <span class="rp-tab__soon">Soon</span></button>
+            </div>
             {% else %}
-            <div class="rp-ask__more" data-rp-ask-more><div class="rp-ask__more-in">
-                <p class="rp-ask__title">The person behind the experience.</p>
-            </div></div>
+            <p class="rp-ask__title">The person behind the experience.</p>
             {% endif %}
         </div>
     </div>
     <div class="rp-ask__body">
         {% if variant == 'main' %}
-        <p class="rp-ask__hint">What visitors could ask</p>
-        <div class="rp-ask__chips" data-rp-ask-chips></div>
-        {% else %}
-        <div class="rp-ask__more" data-rp-ask-more><div class="rp-ask__more-in">
+        <div class="rp-ask__panel" role="tabpanel" id="{{ idp }}-panel-ask" aria-labelledby="{{ idp }}-tab-ask" data-rp-tabpanel="ask">
             <p class="rp-ask__hint">What visitors could ask</p>
             <div class="rp-ask__chips" data-rp-ask-chips></div>
-        </div></div>
+        </div>
+        <div class="rp-ask__panel" role="tabpanel" id="{{ idp }}-panel-highlights" aria-labelledby="{{ idp }}-tab-highlights" tabindex="0" data-rp-tabpanel="highlights" hidden>
+            <div class="rp-placeholder rp-placeholder--ask">
+                <span class="rp-placeholder__tag">Placeholder</span>
+                <p class="rp-placeholder__text">The Guide will draft your career highlights from your published resume, for your OK.</p>
+            </div>
+        </div>
+        <div class="rp-ask__panel" role="tabpanel" id="{{ idp }}-panel-job" aria-labelledby="{{ idp }}-tab-job" tabindex="0" data-rp-tabpanel="job" hidden>
+            <div class="rp-soon">
+                <span class="rp-soon__tag">Coming soon</span>
+                <p>Paste a job description to see where your published resume documents a match. No scores, no verdicts.</p>
+            </div>
+        </div>
+        {% else %}
+        <p class="rp-ask__hint">Pick a question, or type your own</p>
+        <div class="rp-ask__chips" data-rp-ask-chips></div>
         {% endif %}
         <div class="rp-ask__log" role="log" aria-live="polite" aria-label="{{ label }} answers" data-rp-ask-log hidden></div>
         <form class="rp-ask__box" data-rp-ask-form novalidate>
