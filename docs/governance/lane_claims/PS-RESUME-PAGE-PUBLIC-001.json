@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "package": "PS-RESUME-PAGE-PUBLIC-001",
+  "state": "active",
+  "outcome": "Deliver Lane D package 6, the public resume page and publish, in rounds. D6a: a fail-closed publish guard. A draft-workspace item whose B3 conversion descriptor is confirmed_private with a destination type unlike its base type is refused by review, candidate building, the shared Guide publication basis, publish and the member-visitor preview with publication_type_transition_unavailable before any destination value is merged or normalized under the old type; a malformed descriptor fails closed with its own reason; input and overlay kept; never labelled stale or orphaned; non-conversion publication byte-identical; SQL stays closed; no schema or second store. D6b: codec v1 for skill/highlight references, project arrays, qualification_kind and the same-key type/parent/links transition at Publish. Later: the public page with the evidence view, the per-section owner preview, Publish honouring private Hide. No trust-pages file, schema, paid AI or release.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude/2026-10-14/resume-page-public",
+  "branch": "work/2026-10-14-resume-page-public-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "cf9a31c5e8c1f9895f59e59199ec58a779aafbaa",
+  "owner_outcome_ref": "role:owner/pete-chat-2026-10-13/claude-manager-local_4fefa9f6/resume-page-claude-writer",
+  "surfaces": [
+    "services/resume_publication_service.py",
+    "tests/test_resume_publication_service.py",
+    "services/member_visitor_ai_repository.py",
+    "tests/test_resume_publication_type_transition.py",
+    "docs/governance/lane_claims/PS-RESUME-PAGE-PUBLIC-001.json",
+    "docs/governance/lane_claims/receipts/PS-RESUME-PAGE-PUBLIC-001.json",
+    "docs/governance/lane_claims/evidence/PS-RESUME-PAGE-PUBLIC-001.md"
+  ],
+  "domains": ["publication:resume-page", "consequential-ai:member-visitor-preview"],
+  "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-RESUME-PAGE-PUBLIC-001.md"],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
