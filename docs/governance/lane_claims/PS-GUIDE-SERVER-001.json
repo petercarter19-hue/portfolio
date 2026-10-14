@@ -47,7 +47,11 @@
     "tests/test_resume_publication_service.py",
     "services/entry_policy_service.py",
     "tests/test_entry_policy_service.py",
-    "tests/mvp1_acceptance_support.py"
+    "tests/mvp1_acceptance_support.py",
+    "services/living_resume_editor_service.py",
+    "tests/test_living_resume_editor_service.py",
+    "services/resume_publication_projection.py",
+    "tests/test_resume_publication_projection.py"
   ],
   "domains": [
     "consequential-ai:resume-guide:server",
