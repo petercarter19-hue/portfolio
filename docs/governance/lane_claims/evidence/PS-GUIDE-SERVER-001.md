@@ -285,7 +285,7 @@ Claude's actual `f2f91cf` reply settles the shared publication basis: B2 first t
 
 **Holds:** fake providers/$0; no model adoption or live quality claim, schema, identity, credentials, product release, installed-site admission or personal-site stop. The model runner's actual terminal Interview handback `fbcaeb6` resolves the ten-call scheduling request; this builder makes0 live shared calls, and any later use still needs its own real arrangement. Trust/header/footer/fonts/media/evidence-companion/Pete JSON/logo custody remains unchanged. Existing C14/C1 work continues under its own claims; this plan grants it no acceptance.
 
-```package-acceptance-json
+```json
 {
   "schema_version": 1,
   "package": "PS-GUIDE-SERVER-001",
@@ -826,3 +826,130 @@ Read-only sweep of the other `finish_input` callers:
 - `:2737` and `:2744` type input deliberately first.
 
 None of them asserts the absence of typed or unsent input, so none carries the same false-assertion risk. A named C1 follow-up is recorded for when this file returns to C1: replace the helper's instantaneous visibility check with an explicit precondition at each caller.
+
+## B2b pre-code round plan (v2): source-only receipt and bounded request guard
+
+_Plan v2 supersedes plan v1 `4c7c81dc` before any B2b code was committed. On the reviewer's direction, the busy result uses the retryable 503 shape today's intake client already keeps the request id for; the v1 409 shape would have made today's client retry under a new id._
+
+**Outcome.** B2 was accepted and merged: PR1382, main `1107ca695aa14b5c19fbcd8e260e7d2ab5088264`, CI 4633 green, independent PASS at `492b2643`. The B2 acceptance JSON above is kept as historical JSON and is no longer the active record. B2b is a small follow-on server increment under the same claim. The reviewer chose it (option a) to merge before C1.
+
+**Scope (manager rulings 96c4fd1 and the B2 review follow-ups):**
+
+1. **C1 M3 opt-in source-only first document receipt.**
+   - An initial document send with `source_only: true` commits the existing private original, source, reader and job foundation with zero organizer dispatch.
+   - It is owner-qualified, replay-safe and atomic.
+   - The existing `organize_source` owner command follows.
+   - Legacy requests and their digests are unchanged when the opt-in is absent.
+   - Unsupported compositions (SQL, or no organizer) refuse before any read or write, with the input kept.
+2. **The required bounded request-guard acquire** for the bounded local private-site pool (waitress, `WORKER_THREADS = 4`, `tools/local_reviewer/runtime.py`).
+   - An identical in-flight request waits only a bounded time.
+   - It then returns the existing retryable unavailable shape the intake routes already use: `ResumeIntakeUnavailableError` (a typed `ResumeIntakeBusyError` subclass), rendered by the submission/organize routes as HTTP 503 with `proposed_values` and `input_preserved`. The typed body adds `code: request_in_progress`, `request_id` and `retryable: true`. Today's client keeps and retries the same request id on 503 (pendingAdd and pendingOrganize), so the retry replays.
+   - An unrelated request must still complete while duplicates wait.
+3. **R3-m1:** a test that fails if the source component of the processing fence is removed.
+
+**Excluded:** client integration (C1), B3 conversation and conversion work, any model or provider change, schema, deployment and production. The organize request occupying one bounded worker during its provider call is a pre-existing C14 acceptance item, recorded there.
+
+**Holds:** fake providers only and $0; no production, 8443 stop, model switch, credentials or schema. Independent exact-SHA review by `session:16023c0e-7189-420e-8a4d-11f8012a9713`.
+
+```package-acceptance-json
+{
+  "schema_version": 1,
+  "package": "PS-GUIDE-SERVER-001",
+  "plan_sha": "c8cd0fc5414009580d16b91e2c5435b96e91758c",
+  "candidate_sha": "9695f8d123b40b536016545d35ba27fb085ab58d",
+  "baseline": [
+    {
+      "command": "X:/PeerSlate/runtimes/development/Scripts/python.exe -B -m unittest tests.test_resume_intake_service tests.test_resume_intake_sql tests.test_resume_intake_routes -q",
+      "exit_code": 0,
+      "observation": "211/211 PASS in 13.963s at accepted B2 main 1107ca69 before B2b code. Process-local CI placeholder key and fake/in-memory providers only. Raw log X:/PeerSlate/Claude/reviews/b2b-source-only-evidence/b2b-precode-baseline.log."
+    }
+  ],
+  "criteria": [
+    {
+      "id": "b2b_source_only_receipt",
+      "expected": "An opt-in source_only initial send of exactly one document stores and reads it as a private active source with zero organizer dispatch, no proposals and no canonical write, returns a truthful saved-file receipt that replays, and the existing organize_source then organizes it once. Absent or false opt-in keeps legacy behaviour and digest; switching a request id between modes is an idempotency conflict; malformed or mixed opt-in refuses before effects; SQL or no-organizer compositions refuse before any read or write with input kept.",
+      "verification": "Service tests for receipt, replay, organize follow-on and repeat refusal, legacy digest equality, mode-switch conflict, malformed/mixed refusal with empty stores, no-organizer refusal and a SQL simulator refusal with zero procedure calls; RED on the B2 main tree; focused regressions and the lock-order witness green."
+    },
+    {
+      "id": "b2b_request_guard_bounded",
+      "expected": "An identical in-flight submit or organize waits a bounded time on the request guard, then returns the existing retryable intake unavailable shape (HTTP 503, typed code request_in_progress, retryable, input preserved, request id echoed) instead of occupying a bounded worker indefinitely; an unrelated request completes while the duplicates wait; the held request still finishes, and today's intake client retries the busy reply with the same request id so the server replays rather than dispatching twice.",
+      "verification": "A held fake provider plus at least four same-request-id duplicates through a four-thread bounded waitress-style server while an unrelated GET completes within its deadline; duplicates return 503 request_in_progress with input kept; after release the original receipt replays; RED without the bounded acquire. A Playwright test through today's intake client (Guide rebuild off): a busy reply followed by the member's retry reuses the same request id and replays with the document read once; RED with a 409 busy shape."
+    },
+    {
+      "id": "b2b_fence_source_component",
+      "expected": "A test proves the processing fence's source component: changing the organized source's own row (or its bound proposals) during organizing refuses the stale prepared result while unrelated work still applies.",
+      "verification": "Mutation check: removing the source component from _processing_fence makes the new test fail; existing ProcessingFenceScopeTests stay green."
+    },
+    {
+      "id": "b2b_regression_review",
+      "expected": "Affected server suites, strict 152 normal and two-copy load and full no-Playwright discover show no new failure against base; the exact candidate receives independent PASS; current-target CI and merge remain separate gates.",
+      "verification": "Focused suites under the lock-order witness, strict 152 runs, discover comparison against main, exact-SHA independent receipt, package_acceptance check and merge preflight."
+    }
+  ],
+  "checks": [
+    {
+      "criterion_id": "b2b_source_only_receipt",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "9695f8d123b40b536016545d35ba27fb085ab58d",
+      "source_ref": "coordination:e3450da:Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B2b.md + tests.test_resume_intake_service.SourceOnlyReceiptTests + tests.test_resume_intake_sql + X:/PeerSlate/Claude/reviews/b2b-source-only-evidence/b2b-red-on-3b775498.txt",
+      "observed": "One opted-in document is stored and read as a private not_started source with zero organizer dispatch, replays, then organize_source dispatches once; legacy digest unchanged; mode switch conflicts; malformed/mixed/no-organizer/SQL refuse before effects with input kept; RED at 3b775498."
+    },
+    {
+      "criterion_id": "b2b_request_guard_bounded",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "9695f8d123b40b536016545d35ba27fb085ab58d",
+      "source_ref": "coordination:e3450da:Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B2b.md + tests.test_resume_intake_routes.BoundedWorkerPoolHttpTests + tests.test_resume_intake_routes.LegacyClientBusyRetryBrowserTests + tests.test_resume_intake_service.ProcessingFenceScopeTests + X:/PeerSlate/Claude/reviews/b2b-source-only-evidence/guard-red-without-bounded-acquire.txt + X:/PeerSlate/Claude/reviews/b2b-source-only-evidence/legacy-409-red.txt + X:/PeerSlate/Claude/reviews/b2b-source-only-evidence/single-flight-red.txt",
+      "observed": "Duplicates wait at most 2 s then get the retryable 503 request_in_progress with input kept; an unrelated GET completes on a 4-worker pool; today's client retries with the same id and replays (document read once); one organize per owner and source, so two tabs make one dispatch; each RED without its change."
+    },
+    {
+      "criterion_id": "b2b_fence_source_component",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "9695f8d123b40b536016545d35ba27fb085ab58d",
+      "source_ref": "coordination:e3450da:Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B2b.md + tests.test_resume_intake_service.ProcessingFenceScopeTests.test_a_change_to_the_organized_source_row_during_organizing_refuses_the_stale_result + X:/PeerSlate/Claude/reviews/b2b-source-only-evidence/fence-source-component-mutation-red.txt",
+      "observed": "A source-row-only change during a held organize refuses the stale result as changed; removing the fence source component makes the test fail."
+    },
+    {
+      "criterion_id": "b2b_regression_review",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "9695f8d123b40b536016545d35ba27fb085ab58d",
+      "source_ref": "coordination:e3450da:Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B2b.md + X:/PeerSlate/Claude/reviews/b2b-source-only-evidence/single-flight-witness-888.txt + X:/PeerSlate/Claude/reviews/b2b-source-only-evidence/v2-strict-load1.txt + X:/PeerSlate/Claude/reviews/b2b-source-only-evidence/v2-discover-cand.txt",
+      "observed": "Independent exact-SHA PASS at 9695f8d1; witness 888 tests with 0 lock-order violations; strict 152 normal and two-copy load pass; full no-Playwright discover failure set identical to base main."
+    }
+  ]
+}
+```
+
+### B2b implementation evidence (candidate for independent review)
+
+Fake providers only, $0. Evidence root: `X:/PeerSlate/Claude/reviews/b2b-source-only-evidence/`.
+
+- **Source-only receipt.**
+  - Opt-in `source_only: true` with exactly one document stores and reads it as a private active source.
+  - The organization state is `not_started`, with 0 organizer dispatches, no proposals and no canonical write. The message reads "Your file is saved privately. Organizing comes next."
+  - Replay works. Then `organize_source` (`retry`) dispatches once, and a repeat is `already_organized`.
+  - Absent or false opt-in keeps the legacy digest. Switching modes on one request id is `idempotency_conflict`.
+  - Malformed or mixed requests refuse with empty stores. A composition without an organizer is unavailable with input kept. The SQL simulator refuses with 0 procedure calls.
+  - `SourceOnlyReceiptTests` plus the SQL test: 8 RED at `3b775498` (`b2b-red-on-3b775498.txt`), GREEN now.
+- **Bounded request guard.**
+  - `resume_request_guard` waits at most `REQUEST_GUARD_WAIT_SECONDS = 2.0`, then raises `ResumeRequestInProgress`.
+  - Submit and organize surface it as `ResumeIntakeBusyError`, a `ResumeIntakeUnavailableError` subclass, through the existing 503 helper. The body carries `code: request_in_progress`, `retryable: true`, the `request_id` echoed, `proposed_values` and `input_preserved`.
+  - `BoundedWorkerPoolHttpTests` uses a held provider plus 4 duplicates on a 4-worker pool server. The unrelated GET completes, the duplicates get the busy 503, and the held request finishes and replays. It is RED without the bounded acquire: the unrelated GET times out (`guard-red-without-bounded-acquire.txt`).
+  - `LegacyClientBusyRetryBrowserTests` drives today's intake client (Guide rebuild off) through Playwright. A busy reply, then the member's retry, reuses the same request id and replays, with the document read once. It is RED with the plan-v1 409 shape (`legacy-409-red.txt`). This test is skipped in no-Playwright discover, and no CI browser job module list includes it; it is local proof.
+- **R3-m1 fence source component.** `test_a_change_to_the_organized_source_row_during_organizing_refuses_the_stale_result` changes only the organized source row during a held organize and gets `changed`. Removing the fence's source component makes it fail (`fence-source-component-mutation-red.txt`). A purge is also caught by the epoch component, so it is not the sole witness.
+- **Runs.**
+  - Witness over 21 modules: 886 tests, 0 failures, 0 lock-order violations.
+  - Strict 152: normal 152/152 in 317 s; two concurrent copies 152/152 each in 298 s.
+  - Full no-Playwright discover: candidate 7834 run / 304 skipped / 16 errors / 19 failures; base main `cf9a31c5` 7825 / 303 / 16 / 19. The failure sets are identical, and the extra skip is the new browser test.
+
+### B2b delta: one organize per source (reviewer-approved option a)
+
+A reload or a second tab could send a second `organize_source` under a new request id for the same file, so the paid organize could run twice. The organize guard is now keyed by owner plus `organize_source:<source_key>`, with the same 2 s bounded wait and the same retryable 503 `request_in_progress` reply. Eligibility (already organized) and replay are re-read inside the guard, before any dispatch. An identical request id still replays after completion.
+
+Tests:
+- **One source, two request ids, provider held:** checked for both an unavailable source ("Try organizing again" in two tabs) and a source-only `not_started` source. Exactly one dispatch; the second request gets the busy 503 and then `already_organized`. RED without the change (`single-flight-red.txt`).
+- **Two different sources of one owner:** both dispatch independently. This test is a no-regression guard and passes on both versions.
+- **Runs:** witness 888/888 with 0 lock-order violations; strict 152 normal 152/152.

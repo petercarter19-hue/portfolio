@@ -1484,6 +1484,18 @@ class ResumeIntakeSqlTests(unittest.TestCase):
             replay["submission"]["submission_key"], second_command["submission_key"]
         )
 
+    def test_source_only_document_send_refuses_before_any_sql_read_or_write(self):
+        from services.resume_intake_service import ResumeIntakeUnavailableError
+        simulator = DeclaredIntakeSimulator()
+        service, _repository, _catalog, _draft = _sql_service(simulator)
+        body = {"request_id": str(uuid4()), "source_only": True, "attachments": [{"client_key": "document",
+            "kind": "document", "declared_content_type": "text/plain", "filename": "fictional-resume.txt"}]}
+        with self.assertRaises(ResumeIntakeUnavailableError) as caught:
+            service.submit("owner-a", body, files={"document": _Upload(b"Engineer at Fictional Orchard",
+                "text/plain")})
+        self.assertEqual(caught.exception.proposed["attachments"][0]["filename"], "fictional-resume.txt")
+        self.assertEqual(simulator.calls, [])
+
     def test_recording_persists_honestly_and_replays(self):
         simulator = DeclaredIntakeSimulator()
         service, repository, _catalog, _draft = _sql_service(simulator)

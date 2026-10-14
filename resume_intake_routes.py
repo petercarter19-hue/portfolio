@@ -183,6 +183,10 @@ def _submitted_files():
 
 def _unavailable(error, default_message):
     payload = {"success": False, "code": "unavailable", "message": default_message}
+    if getattr(error, "code", None) == "request_in_progress":
+        # Same retryable 503 shape; the client keeps and retries this request id.
+        payload.update(code="request_in_progress", message=str(error),
+                       request_id=getattr(error, "request_id", None), retryable=True)
     if getattr(error, "proposed", None) is not None:
         payload["proposed_values"] = error.proposed
         payload["input_preserved"] = True

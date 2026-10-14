@@ -1315,6 +1315,144 @@ if __name__ == "__main__":
 
 
 # Selected model/private assistance integration regressions; fixtures only.
+class BoundedWorkerPoolHttpTests(unittest.TestCase):
+    """B2b: same-request duplicates give their worker back on a fixed pool.
+
+    The local private sites serve from a fixed pool of worker threads
+    (waitress, four). While one submit holds its fake provider, duplicates
+    of that exact request must return the existing retryable intake conflict
+    instead of holding every worker, so an unrelated request still completes.
+    """
+
+    WORKERS = 4
+
+    def setUp(self):
+        import threading
+        from concurrent.futures import ThreadPoolExecutor
+        from werkzeug.serving import BaseWSGIServer
+        from services.my_data_extraction_adapter import DeterministicFakeExtractionAdapter
+
+        import app as app_module
+        self.original = {key: app.config.get(key) for key in CONFIG_KEYS}
+        # Rate limits are not under test here; keep this test's requests from
+        # spending the shared in-memory quota other tests rely on.
+        limiter_was_enabled = app_module.limiter.enabled
+        app_module.limiter.enabled = False
+        self.addCleanup(setattr, app_module.limiter, 'enabled', limiter_was_enabled)
+        self.entered, self.released = threading.Event(), threading.Event()
+        self.addCleanup(self.released.set)
+        self.adapter = DeterministicFakeExtractionAdapter([{'record_type': 'skill',
+            'values': {'name': 'Radio restoration'}, 'quote': 'I restore fictional radios.',
+            'outcome': 'new', 'confidence': 'certain'}])
+        provider, dispatches = self.adapter._provider, []
+        self.dispatches = dispatches
+
+        def held(request, **kwargs):
+            dispatches.append(1)
+            self.entered.set()
+            if not self.released.wait(30):
+                raise AssertionError('The bounded fake provider was never released')
+            return provider(request, **kwargs)
+
+        self.adapter._provider = held
+        catalog = InMemoryCanonicalCatalog()
+        repository = InMemoryResumeIntakeRepository()
+        self.service = ResumeIntakeService(repository=repository,
+            draft_service=ResumeDraftService(repository=InMemoryResumeDraftRepository(), catalog=catalog),
+            policy=selected_policy_for_tests(), extraction_adapter=self.adapter)
+        app.config.update(TESTING=True, PEERSLATE_ALLOW_DEV_IDENTITY=True, PEERSLATE_DEV_USER_KEY='member-a',
+            PEERSLATE_TRUST_EASYAUTH_HEADERS=False, PEERSLATE_RESUME_INTAKE_ENABLED=True,
+            PEERSLATE_RESUME_INTAKE_FIXTURE_POLICY_ENABLED=True, RESUME_INTAKE_SERVICE=self.service,
+            RESUME_GUIDE_SERVICE=ResumeGuideService(repository=repository))
+        self.addCleanup(app.config.update, self.original)
+
+        class BoundedPoolServer(BaseWSGIServer):
+            """A fixed worker pool, like waitress's: no thread per request."""
+
+            def __init__(server, *args, workers, **kwargs):
+                super().__init__(*args, **kwargs)
+                server.pool = ThreadPoolExecutor(max_workers=workers)
+
+            def process_request(server, request, client_address):
+                server.pool.submit(server._handle, request, client_address)
+
+            def _handle(server, request, client_address):
+                try:
+                    server.finish_request(request, client_address)
+                except Exception:
+                    server.handle_error(request, client_address)
+                finally:
+                    server.shutdown_request(request)
+
+        self.server = BoundedPoolServer('127.0.0.1', 0, app, workers=self.WORKERS)
+        thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        thread.start()
+        self.addCleanup(self.server.pool.shutdown, wait=False)
+        self.addCleanup(self.server.shutdown)
+        self.url = f'http://127.0.0.1:{self.server.server_port}'
+
+    def _call(self, path, *, payload=None, timeout):
+        import time
+        import urllib.error
+        import urllib.request
+        data, headers = None, {}
+        if payload is not None:
+            boundary = 'b2bprobe' + uuid4().hex
+            data = (f'--{boundary}\r\nContent-Disposition: form-data; name="request"\r\n\r\n'
+                    f'{json.dumps(payload)}\r\n--{boundary}--\r\n').encode()
+            headers = {'Content-Type': 'multipart/form-data; boundary=' + boundary,
+                       'X-PeerSlate-Request': 'same-origin'}
+        start = time.monotonic()
+        try:
+            with urllib.request.urlopen(urllib.request.Request(self.url + path, data=data, headers=headers),
+                                        timeout=timeout) as response:
+                return response.status, json.loads(response.read() or b'{}'), time.monotonic() - start
+        except urllib.error.HTTPError as error:
+            return error.code, json.loads(error.read() or b'{}'), time.monotonic() - start
+
+    def test_duplicates_of_a_held_request_return_busy_and_an_unrelated_request_completes(self):
+        import threading
+        payload = {'request_id': str(uuid4()), 'text': 'I restore fictional radios.'}
+        results = {}
+
+        def run(name, path, body=None):
+            try:
+                results[name] = self._call(path, payload=body, timeout=20)
+            except Exception as error:  # a timed-out client is a starved worker pool
+                results[name] = ('error', repr(error), None)
+
+        holder = threading.Thread(target=run, args=('holder', '/api/resume-intake/me/submissions', payload),
+                                  daemon=True)
+        holder.start()
+        self.assertTrue(self.entered.wait(10), 'The real submit route must reach its held fake provider')
+        duplicates = [threading.Thread(target=run, args=(f'dup{i}', '/api/resume-intake/me/submissions', payload),
+                                       daemon=True) for i in range(self.WORKERS)]
+        for thread in duplicates:
+            thread.start()
+        try:
+            unrelated = self._call('/api/resume-intake/me', timeout=8)
+        finally:
+            for thread in duplicates:
+                thread.join(10)
+            self.released.set()
+            holder.join(10)
+        self.assertEqual(unrelated[0], 200, 'An unrelated request must complete while duplicates wait')
+        for i in range(self.WORKERS):
+            status, body, _seconds = results[f'dup{i}']
+            # The retryable 503 shape today's client keeps the request id for.
+            self.assertEqual(status, 503, results[f'dup{i}'])
+            self.assertEqual(body['code'], 'request_in_progress')
+            self.assertTrue(body['retryable'])
+            self.assertTrue(body['input_preserved'])
+            self.assertEqual(body['proposed_values']['text'], 'I restore fictional radios.')
+            self.assertEqual(body['request_id'], payload['request_id'])
+        self.assertEqual(results['holder'][0], 200, results['holder'])
+        replay = self._call('/api/resume-intake/me/submissions', payload=payload, timeout=10)
+        self.assertEqual(replay[0], 200)
+        self.assertTrue(replay[1]['replayed'])
+        self.assertEqual(len(self.dispatches), 1)
+
+
 class RouteBoundaryTests(unittest.TestCase):
     def test_too_large_context_is_explained_in_plain_words_before_any_model_call(self):
         from tests.test_resume_onboarding_conversation import ConversationTests
@@ -1678,3 +1816,63 @@ class TypedExtractionReviewBrowserTests(unittest.TestCase):
         self.assertEqual(summary.input_value(), 'My unsaved manual wording')
         self.assertEqual(len(self.catalog.list_items(owner)), 2)
         self.assertEqual(page.locator('#resume-editor-lists h3').filter(has_text='New strength').count(), 0)
+
+
+@unittest.skipUnless(sync_playwright is not None and CHROME_EXECUTABLE,
+    'Playwright and Chrome required for the busy-retry client proof')
+class LegacyClientBusyRetryBrowserTests(unittest.TestCase):
+    """B2b: today's intake client (Guide rebuild off) keeps the same request id
+    across a busy reply, so the retry replays instead of dispatching twice."""
+
+    @classmethod
+    def setUpClass(cls):
+        install_intake_runtime_fixtures(cls)
+        start_browser(cls)
+
+    def test_busy_reply_then_retry_reuses_the_same_request_and_stores_once(self):
+        from unittest.mock import patch
+        from services.resume_intake_service import ResumeIntakeBusyError
+        owner = 'busy-retry-browser-member'
+        seen, real = [], self.intake_service.submit
+        documents_before = len(self.received_documents)
+
+        def busy_once(member, payload, **kwargs):
+            seen.append(payload.get('request_id'))
+            if len(seen) == 1:
+                # The original request completes on the server, but this client
+                # only sees the busy reply the bounded guard gives a duplicate
+                # (as after a lost response and an automatic retry).
+                real(member, payload, **kwargs)
+                raise ResumeIntakeBusyError(payload.get('request_id'),
+                    proposed={'text': None, 'items': [], 'attachments': payload.get('attachments')})
+            return real(member, payload, **kwargs)
+
+        with patch.dict(app.config, {'PEERSLATE_DEV_USER_KEY': owner,
+                                     'PEERSLATE_GUIDE_REBUILD_ENABLED': False}), \
+                patch.object(self.intake_service, 'submit', side_effect=busy_once):
+            context = self.browser.new_context(viewport={'width': 1440, 'height': 1000})
+            self.addCleanup(context.close)
+            page = context.new_page()
+            page.set_default_timeout(7000)
+            page.route('https://fonts.**', lambda route: route.abort())
+            page.goto(self.base_url + '/app/resume')
+            if not page.locator('#resume-intake[open]').count():
+                page.locator('#resume-intake-reopen').click()
+            if page.locator('#resume-intake-welcome').is_visible():
+                page.locator('#resume-intake-start-type').click()
+            page.locator('#resume-intake-file').set_input_files({'name': 'synthetic-resume.txt',
+                'mimeType': 'text/plain', 'buffer': b'Skills\nSQL.'})
+            with page.expect_response(lambda response: response.url.endswith('/api/resume-intake/me/submissions')
+                                      and response.status == 503) as busy:
+                page.locator('#resume-intake-add').click()
+            self.assertEqual(busy.value.json()['code'], 'request_in_progress')
+            page.wait_for_function("() => !document.getElementById('resume-intake-add').disabled")
+            with page.expect_response(lambda response: response.url.endswith('/api/resume-intake/me/submissions')
+                                      and response.status == 200) as retried:
+                page.locator('#resume-intake-add').click()
+            self.assertTrue(retried.value.json()['replayed'], 'The retry must replay, not dispatch again')
+        self.assertEqual(len(seen), 2)
+        self.assertEqual(seen[0], seen[1], 'The retry must reuse the busy request id')
+        stored = self.repository.load_owner(owner)
+        self.assertEqual(list(stored['receipts']), [seen[0]])
+        self.assertEqual(len(self.received_documents) - documents_before, 1, 'The document is read once')

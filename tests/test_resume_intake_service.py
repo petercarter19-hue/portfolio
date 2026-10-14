@@ -1268,6 +1268,15 @@ class ProcessingFenceScopeTests(unittest.TestCase):
                 'decision': 'reject'})
         elif kind == 'unrelated_edit':
             self._edit(case, case['other'], 'Edited while organizing.')
+        elif kind == 'source_row_change':
+            # A direct change to the organized source's own row (a version
+            # bump), with no epoch or bound-proposal change: only the fence's
+            # source component can see it.
+            with service.repository.owner_guard(owner):
+                snapshot = service.repository.load_owner(owner)
+                row = snapshot['sources'][case['source_key']]
+                row['version'] = int(row.get('version') or 1) + 1
+                service.repository.save_owner(owner, snapshot)
         elif kind == 'matched_target_edit':
             # The saved fact the organized detail was matched against changes.
             entry = shared.policy.get_entry(owner, case['role'])['entry']
@@ -1310,6 +1319,83 @@ class ProcessingFenceScopeTests(unittest.TestCase):
                              if row.get('target_key') == case['role'] and row['state'] == 'pending']
                     self.assertTrue(bound, 'The organized detail for the matched role must be kept')
 
+    def test_a_change_to_the_organized_source_row_during_organizing_refuses_the_stale_result(self):
+        case, result = self._run('organize_source', 'source_row_change')
+        self.assertIsInstance(result.get('error'), ResumeIntakeConflictError, result)
+        self.assertEqual(result['error'].error_code, 'changed')
+        stored = case['service'].repository.load_owner(case['owner'])
+        self.assertFalse([row for row in stored['proposals'].values() if row.get('target_key') == case['role']])
+
+    def _second_source(self, case, payload_extra=None):
+        upload = {'request_id': str(uuid4()), 'attachments': [{'client_key': 'document', 'kind': 'document',
+            'declared_content_type': 'text/plain', 'filename': 'second-fictional-resume.txt'}], **(payload_extra or {})}
+        return case['service'].submit(case['owner'], upload, files={'document': FakeUpload('text/plain',
+            b'Second fictional file bytes', 'second-fictional-resume.txt')})['submission']['source_keys'][0]
+
+    def test_a_second_organize_of_the_same_source_under_a_new_request_id_never_dispatches_twice(self):
+        # "Try organizing again" in two tabs (an unavailable source) and the
+        # first organize after a source-only receipt (a not_started source).
+        from services.resume_intake_service import ResumeIntakeBusyError
+        for initial in ('unavailable', 'not_started'):
+            with self.subTest(initial=initial):
+                case = self._case('organize_source')
+                service, owner, source_key = case['service'], case['owner'], case['source_key']
+                if initial == 'not_started':
+                    case['released'].set()
+                    source_key = self._second_source(case, {'source_only': True})
+                    case['released'].clear(); case['entered'].clear(); case['dispatches'].clear()
+                    first = {'request_id': str(uuid4()), 'source_key': source_key, 'mode': 'retry'}
+                    invoke = lambda: service.organize_source(owner, first)
+                else:
+                    invoke = case['invoke']
+                result = {}
+                def produce():
+                    try:
+                        result['value'] = invoke()
+                    except BaseException as error:
+                        result['error'] = error
+                producer = threading.Thread(target=produce, daemon=True)
+                producer.start()
+                self.assertTrue(case['entered'].wait(self.DEADLINE))
+                second = {'request_id': str(uuid4()), 'source_key': source_key, 'mode': 'retry'}
+                try:
+                    with self.assertRaises(ResumeIntakeBusyError) as busy:
+                        service.organize_source(owner, second)
+                    self.assertEqual(busy.exception.code, 'request_in_progress')
+                finally:
+                    case['released'].set()
+                producer.join(self.DEADLINE)
+                self.assertNotIn('error', result, repr(result.get('error')))
+                self.assertEqual(service.organize_source(owner, second)['outcome'], 'already_organized')
+                self.assertEqual(len(case['dispatches']), 1, 'One paid organize per source')
+
+    def test_organizing_two_different_sources_of_one_owner_proceeds_independently(self):
+        case = self._case('organize_source')
+        case['released'].set()
+        other_key = self._second_source(case, {'source_only': True})
+        case['released'].clear(); case['entered'].clear(); case['dispatches'].clear()
+        service, owner = case['service'], case['owner']
+        results, threads = {}, []
+        for name, key in (('first', case['source_key']), ('second', other_key)):
+            def run(name=name, key=key):
+                try:
+                    results[name] = service.organize_source(owner, {'request_id': str(uuid4()), 'source_key': key,
+                                                                    'mode': 'retry'})
+                except BaseException as error:
+                    results[name] = error
+            threads.append(threading.Thread(target=run, daemon=True))
+        for thread in threads:
+            thread.start()
+        deadline = time.monotonic() + self.DEADLINE
+        while len(case['dispatches']) < 2 and time.monotonic() < deadline:
+            time.sleep(0.02)
+        both_dispatched = len(case['dispatches']) == 2
+        case['released'].set()
+        for thread in threads:
+            thread.join(self.DEADLINE)
+        self.assertTrue(both_dispatched, 'A different source must not wait on another source')
+        self.assertTrue(all(isinstance(value, dict) and value['success'] for value in results.values()), results)
+
     def test_an_edit_to_the_matched_target_during_organizing_reports_stale_and_forces_nothing(self):
         for mode in ('submit', 'organize_source'):
             with self.subTest(mode=mode):
@@ -1324,6 +1410,111 @@ class ProcessingFenceScopeTests(unittest.TestCase):
                     self.assertEqual(stored['sources'][case['source_key']]['state'], 'active')
                 self.assertEqual(case['shared'].canonical.get_item(case['owner'], case['role'])['values']['location_text'],
                                  'Edited Town')
+
+
+class SourceOnlyReceiptTests(unittest.TestCase):
+    """Opt-in first document receipt: store and read now, organize later (96c4fd1)."""
+    WORDS = 'Experience\nEngineer at Fictional Orchard\n'
+
+    def _service(self):
+        from services.my_data_extraction_adapter import DeterministicFakeExtractionAdapter
+        from tests.mvp1_acceptance_support import SharedMvp1Fixture
+        from tests.test_my_data_intake_sources import extracted_pipeline
+        shared = SharedMvp1Fixture()
+        adapter = DeterministicFakeExtractionAdapter([{'record_type': 'role', 'values': {
+            'role_title': 'Engineer', 'employer_name': 'Fictional Orchard'},
+            'quote': 'Engineer at Fictional Orchard', 'outcome': 'new', 'confidence': 'certain'}])
+        service = ResumeIntakeService(repository=InMemoryResumeIntakeRepository(), draft_service=shared.draft,
+            policy=selected_policy_for_tests(), document_pipeline=extracted_pipeline(self.WORDS),
+            extraction_adapter=adapter)
+        return service, adapter, shared
+
+    def _send(self, service, owner, request_id, *, source_only=True, extra=None):
+        body = {'request_id': request_id, 'attachments': [{'client_key': 'document', 'kind': 'document',
+            'declared_content_type': 'text/plain', 'filename': 'fictional-resume.txt'}], **(extra or {})}
+        if source_only is not None:
+            body['source_only'] = source_only
+        return service.submit(owner, body, files={'document': FakeUpload('text/plain', self.WORDS.encode(),
+            'fictional-resume.txt')})
+
+    def test_source_only_stores_and_reads_the_file_with_no_organizer_dispatch_then_organize_source_follows(self):
+        service, adapter, shared = self._service()
+        owner, request_id = 'source-only-member', str(uuid4())
+        receipt = self._send(service, owner, request_id)
+        self.assertTrue(receipt['success'])
+        self.assertTrue(receipt['persisted'])
+        self.assertEqual(len(adapter.calls), 0, 'A source-only receipt must not dispatch the organizer')
+        source_key = receipt['submission']['source_keys'][0]
+        self.assertEqual(receipt['message'], 'Your file is saved privately. Organizing comes next.')
+        self.assertEqual(receipt['proposals'], [])
+        self.assertEqual(receipt['results'][0]['organization']['state'], 'not_started')
+        stored = service.repository.load_owner(owner)
+        self.assertEqual(stored['sources'][source_key]['state'], 'active')
+        self.assertEqual(stored['sources'][source_key]['text'], self.WORDS)
+        self.assertEqual(stored['proposals'], {})
+        self.assertEqual(shared.canonical.list_items(owner), [])
+        replay = self._send(service, owner, request_id)
+        self.assertTrue(replay['replayed'])
+        self.assertEqual(replay['submission']['source_keys'], [source_key])
+        self.assertEqual(len(adapter.calls), 0)
+        organized = service.organize_source(owner, {'request_id': str(uuid4()), 'source_key': source_key,
+            'mode': 'retry'})
+        self.assertTrue(organized['success'])
+        self.assertEqual(len(adapter.calls), 1)
+        self.assertTrue(service.repository.load_owner(owner)['proposals'])
+        again = service.organize_source(owner, {'request_id': str(uuid4()), 'source_key': source_key,
+            'mode': 'retry'})
+        self.assertEqual(again['outcome'], 'already_organized')
+        self.assertEqual(len(adapter.calls), 1)
+
+    def test_absent_or_false_opt_in_keeps_the_legacy_request_and_digest(self):
+        service, adapter, _shared = self._service()
+        legacy = self._send(service, 'legacy-member', str(uuid4()), source_only=None)
+        self.assertEqual(len(adapter.calls), 1)
+        self.assertNotEqual(legacy['message'], 'Your file is saved privately. Organizing comes next.')
+        request_id = str(uuid4())
+        absent = self._send(service, 'digest-member', request_id, source_only=None)
+        explicit_false = self._send(service, 'digest-member', request_id, source_only=False)
+        self.assertTrue(explicit_false['replayed'])
+        self.assertEqual(absent['request_digest'], explicit_false['request_digest'])
+
+    def test_same_request_id_cannot_switch_between_source_only_and_legacy(self):
+        service, adapter, _shared = self._service()
+        request_id = str(uuid4())
+        self._send(service, 'switch-member', request_id)
+        with self.assertRaises(ResumeIntakeConflictError) as caught:
+            self._send(service, 'switch-member', request_id, source_only=None)
+        self.assertEqual(caught.exception.error_code, 'idempotency_conflict')
+        self.assertEqual(len(adapter.calls), 0)
+
+    def test_malformed_or_mixed_source_only_requests_refuse_before_any_effect(self):
+        service, adapter, _shared = self._service()
+        owner = 'refused-member'
+        for name, kwargs in (('non_boolean', {'source_only': 'yes'}),
+                             ('with_text', {'extra': {'text': 'Also this note.'}}),
+                             ('with_item', {'extra': {'items': [{'client_key': 's1', 'record_type': 'skill',
+                                 'values': {'name': 'Fictional skill'}}]}})):
+            with self.subTest(case=name), self.assertRaises(ResumeIntakeValidationError):
+                self._send(service, owner, str(uuid4()), **kwargs)
+        with self.assertRaises(ResumeIntakeValidationError):
+            service.submit(owner, {'request_id': str(uuid4()), 'source_only': True, 'attachments': [
+                {'client_key': 'a', 'kind': 'document', 'declared_content_type': 'text/plain', 'filename': 'a.txt'},
+                {'client_key': 'b', 'kind': 'document', 'declared_content_type': 'text/plain', 'filename': 'b.txt'}]},
+                files={'a': FakeUpload('text/plain', b'One'), 'b': FakeUpload('text/plain', b'Two')})
+        self.assertEqual(len(adapter.calls), 0)
+        stored = service.repository.load_owner(owner)
+        self.assertEqual((stored['sources'], stored['receipts'], stored['proposals']), ({}, {}, {}))
+
+    def test_without_an_organizer_the_source_only_send_is_unavailable_and_keeps_input(self):
+        from tests.mvp1_acceptance_support import SharedMvp1Fixture
+        from tests.test_my_data_intake_sources import extracted_pipeline
+        shared = SharedMvp1Fixture()
+        service = ResumeIntakeService(repository=InMemoryResumeIntakeRepository(), draft_service=shared.draft,
+            policy=selected_policy_for_tests(), document_pipeline=extracted_pipeline(self.WORDS))
+        with self.assertRaises(ResumeIntakeUnavailableError) as caught:
+            self._send(service, 'no-organizer-member', str(uuid4()))
+        self.assertEqual(caught.exception.proposed['attachments'][0]['filename'], 'fictional-resume.txt')
+        self.assertEqual(service.repository.load_owner('no-organizer-member')['sources'], {})
 
 
 class ExplicitAddTests(unittest.TestCase):

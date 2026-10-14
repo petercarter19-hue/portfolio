@@ -51,17 +51,36 @@ class _RequestLock:
         self.lock = threading.Lock()
 
 
+# How long an identical in-flight request may wait for the first one. The
+# local private sites serve from a fixed pool of worker threads, so a waiter
+# must give its worker back instead of holding it for a whole provider call.
+REQUEST_GUARD_WAIT_SECONDS = 2.0
+
+
+class ResumeRequestInProgress(Exception):
+    """The same request is still being processed; the caller may replay it later."""
+
+
 @contextmanager
-def resume_request_guard(owner, request_id):
-    """Serialize one provider request across service instances, without stores."""
+def resume_request_guard(owner, request_id, *, wait_seconds=None):
+    """Serialize one provider request across service instances, without stores.
+
+    A duplicate waits at most ``wait_seconds`` and then raises
+    ``ResumeRequestInProgress``; it never holds a worker for the whole call.
+    """
     key = (type(owner), str(owner), str(request_id))
     with _OWNER_LOCKS_GUARD:
         lock = _REQUEST_LOCKS.get(key)
         if lock is None:
             lock = _RequestLock()
             _REQUEST_LOCKS[key] = lock
-    with lock.lock:
+    wait = REQUEST_GUARD_WAIT_SECONDS if wait_seconds is None else wait_seconds
+    if not lock.lock.acquire(timeout=wait):
+        raise ResumeRequestInProgress()
+    try:
         yield
+    finally:
+        lock.lock.release()
 
 
 @contextmanager

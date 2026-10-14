@@ -102,6 +102,7 @@ from services.resume_intake_repository import (
     InMemoryResumeIntakeRepository,
     SqlIntakeUnitOfWork,
     ResumeIntakeStoreUnavailable,
+    ResumeRequestInProgress,
     resume_request_guard,
     empty_intake_snapshot,
     validate_snapshot,
@@ -268,6 +269,16 @@ class ResumeIntakeUnavailableError(Exception):
         super().__init__(message)
         self.code = "unavailable"
         self.proposed = proposed
+
+
+class ResumeIntakeBusyError(ResumeIntakeUnavailableError):
+    """The identical request is still being processed: retry the same request id."""
+
+    def __init__(self, request_id, proposed=None):
+        super().__init__("This is still being processed. Try again in a moment; your input is kept.",
+                         proposed=proposed)
+        self.code = "request_in_progress"
+        self.request_id = request_id
 
 
 def _moment_utc(value):
@@ -622,6 +633,9 @@ class _ItemPlan:
     dispatch_id: str | None = None
     parsed_document: object = None
     extraction: tuple | None = None
+    # Source-only: store and read the document now; organize later through
+    # the existing organize_source owner command. No organizer dispatch here.
+    source_only: bool = False
     # The matching shortlist the provider saw, to fence its matched targets.
     shortlist: list | None = None
 
@@ -2393,12 +2407,31 @@ class ResumeIntakeService:
 
     def submit(self, owner, payload, *, files=None, allow_fixture_policy=False, now=None):
         request_id = str(payload.get("request_id") if isinstance(payload, dict) else None)
-        # Only an identical in-flight request waits; owner/store locks are
-        # never held across its provider call. Replay is checked before dispatch.
-        with resume_request_guard(owner, "submission:" + request_id):
-            return self._submit_guarded(
-                owner, payload, files=files, allow_fixture_policy=allow_fixture_policy, now=now,
-            )
+        # Only an identical in-flight request waits, and only briefly; owner/store
+        # locks are never held across its provider call. Replay is checked before dispatch.
+        try:
+            with resume_request_guard(owner, "submission:" + request_id):
+                return self._submit_guarded(
+                    owner, payload, files=files, allow_fixture_policy=allow_fixture_policy, now=now,
+                )
+        except ResumeRequestInProgress:
+            raise self._request_in_progress(request_id, self._in_progress_hint(payload)) from None
+
+    def _in_progress_hint(self, payload):
+        try:
+            raw = self._normalize_add(payload)
+        except ResumeIntakeValidationError:
+            return None
+        return {"text": raw["text"], "items": [
+            {"client_key": item["client_key"], "record_type": item["record_type"],
+             "values": item["values"], "explicit_clears": item["explicit_clears"]} for item in raw["items"]],
+            "attachments": raw["attachments"]}
+
+    @staticmethod
+    def _request_in_progress(request_id, proposed):
+        # A retryable 503: today's clients keep the same request id on 503
+        # and retry it, so the retry replays instead of dispatching again.
+        return ResumeIntakeBusyError(request_id, proposed=proposed)
 
     def _submit_guarded(self, owner, payload, *, files=None, allow_fixture_policy=False, now=None):
         if isinstance(payload, dict) and payload.get("type") == "keep_extracted_separate":
@@ -2423,6 +2456,13 @@ class ResumeIntakeService:
         }
         recording_keys = [row["source_key"] for row in raw["attachments"]
                           if row["kind"] == "recording" and row.get("source_key")]
+        if raw.get("source_only") and (
+                not isinstance(self.repository, InMemoryResumeIntakeRepository)
+                or self._extraction_adapter is None
+                or not hasattr(self._extraction_adapter, "organize_resume")):
+            # SQL has no reviewed source-only procedure yet, and a file that
+            # could never be organized later must not be stored as "next".
+            raise ResumeIntakeUnavailableError(proposed=proposed_hint)
         try:
             with self.repository.owner_guard(owner):
                 snapshot = self._load(owner)
@@ -2444,6 +2484,8 @@ class ResumeIntakeService:
                                          proposed=command["proposed"])
             fence = self._processing_fence(owner, snapshot, source_keys=recording_keys)
             plans = self._plan_items(command, prepared)
+            for plan in plans:
+                plan.source_only = bool(command.get("source_only")) and plan.kind == "document"
             duplicate_keys = {plan.client_key for plan in plans if self._duplicate_document(snapshot, plan) is not None}
         # Parse and model work are detached preparation. The actual source,
         # proposal, canonical writes and receipt remain one fenced transaction.
@@ -2548,7 +2590,9 @@ class ResumeIntakeService:
                     "proposals": [present_proposal(row) for row in proposals],
                     "saved_items": canonical_view,
                     "publishes": False,
-                    "message": _receipt_message(summary),
+                    "message": ("Your file is saved privately. Organizing comes next."
+                                if command.get("source_only") and summary["failed"] == 0 and summary["duplicates"] == 0
+                                else _receipt_message(summary)),
                 }
                 # The immutable stored receipt never carries the member's words:
                 # the mutable source and proposal rows hold them and are the
@@ -2660,6 +2704,9 @@ class ResumeIntakeService:
             if not parsed.ok:
                 return
             plan.source_text, plan.quote, plan.document = parsed.text, (parsed.text or "")[:300], parsed.as_receipt()
+            if plan.source_only:
+                plan.extraction = ([], None, ResumeOrganization("not_started", [], [], []))
+                return
         if self._extraction_adapter is not None:
             plan.extraction = self._extract_with_adapter(owner, plan)
         else:
@@ -4116,11 +4163,17 @@ class ResumeIntakeService:
             attachments.append(entry)
         if not items and not attachments and not text:
             raise ResumeIntakeValidationError("Add something before saving.")
+        source_only = payload.get("source_only", False)
+        if source_only is not True and source_only is not False:
+            raise ResumeIntakeValidationError("Invalid source-only request.")
+        if source_only and (text or items or len(attachments) != 1 or attachments[0]["kind"] != "document"):
+            raise ResumeIntakeValidationError("A source-only send carries exactly one file and nothing else.")
         return {
             "request_id": request_id,
             "text": text,
             "items": items,
             "attachments": attachments,
+            "source_only": source_only,
         }
 
     def _prepare_inputs(self, raw, files, policy, snapshot):
@@ -4211,12 +4264,15 @@ class ResumeIntakeService:
             payload = prepared.get(attachment["client_key"])
             entry["sha256"] = payload.get("sha256") if payload else None
             digest_attachments.append(entry)
-        digest = _json_digest({
+        digest_body = {
             "type": "add_submission",
             "text": raw["text"],
             "items": digest_items,
             "attachments": digest_attachments,
-        })
+        }
+        if raw.get("source_only"):
+            digest_body["source_only"] = True
+        digest = _json_digest(digest_body)
         proposed = {
             "text": raw["text"],
             "items": [
@@ -4236,6 +4292,7 @@ class ResumeIntakeService:
             "prepared": prepared,
             "request_digest": digest,
             "proposed": proposed,
+            "source_only": bool(raw.get("source_only")),
         }
 
     def _plan_items(self, command, prepared):
@@ -4503,6 +4560,8 @@ class ResumeIntakeService:
                 summary["reason"] = reason
                 result["provider_issue"] = {"code": reason, "retryable": True}
                 result["message"] = "I read your résumé but couldn't organize it right now. Nothing is lost."
+            elif organization.state == "not_started":
+                result["message"] = "Your file is saved privately. Organizing comes next."
             context = (source.get("structured_values") or {}).get("resume_conversation_v1")
             if isinstance(context, dict):
                 context["organization"] = summary
@@ -4651,7 +4710,7 @@ class ResumeIntakeService:
         organization = self._source_meta(source).get("organization")
         bound = self._bound_proposals(snapshot, source["source_key"])
         if isinstance(organization, dict):
-            if organization.get("state") not in {"unavailable", "member_sorted"}:
+            if organization.get("state") not in {"unavailable", "member_sorted", "not_started"}:
                 return None
         elif not bound:
             return None
@@ -4669,7 +4728,7 @@ class ResumeIntakeService:
                     and source.get("sha256") == digest):
                 meta = self._source_meta(source)
                 organization = meta.get("organization")
-                unorganized = isinstance(organization, dict) and organization.get("state") == "unavailable"
+                unorganized = isinstance(organization, dict) and organization.get("state") in {"unavailable", "not_started"}
                 if unorganized or any(row["state"] == "pending"
                                       for row in self._bound_proposals(snapshot, source["source_key"])):
                     return source
@@ -4704,8 +4763,15 @@ class ResumeIntakeService:
 
     def organize_source(self, owner, payload, *, allow_fixture_policy=False):
         request_id = str(payload.get("request_id") if isinstance(payload, dict) else None)
-        with resume_request_guard(owner, "organize_source:" + request_id):
-            return self._organize_source_guarded(owner, payload, allow_fixture_policy=allow_fixture_policy)
+        source_key = str(payload.get("source_key") if isinstance(payload, dict) else None)
+        # One organize per owner and source at a time, whatever the request id: a
+        # reload or a second tab must not pay for a second organize of the same
+        # file. Eligibility and replay are re-read inside this guard, before any dispatch.
+        try:
+            with resume_request_guard(owner, "organize_source:" + source_key):
+                return self._organize_source_guarded(owner, payload, allow_fixture_policy=allow_fixture_policy)
+        except ResumeRequestInProgress:
+            raise self._request_in_progress(request_id, None) from None
 
     def _organize_source_guarded(self, owner, payload, *, allow_fixture_policy=False):
         """Organize an uploaded résumé again, or let the member sort it by hand.
