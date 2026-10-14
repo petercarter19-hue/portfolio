@@ -87,6 +87,66 @@ def _wording_map(wording) -> dict[str, str | None]:
     return {item.field: item.value for item in wording}
 
 
+# D6a publisher side of the B3 conversion contract. B3 writes one optional
+# ``conversion`` object on the same owner draft-workspace item; only its shape
+# is read here. Destination values are never merged, normalized or encoded
+# under the old canonical type, because codec v1 has no same-key type
+# transition yet (D6b). The revision/token fields are informational in D6a and
+# the operation reference is opaque: it is type-checked, never parsed.
+TYPE_TRANSITION_UNAVAILABLE = "publication_type_transition_unavailable"
+CONVERSION_DESCRIPTOR_INVALID = "publication_conversion_descriptor_invalid"
+CONVERSION_REASONS = frozenset({TYPE_TRANSITION_UNAVAILABLE, CONVERSION_DESCRIPTOR_INVALID})
+CONVERSION_DESCRIPTOR_KEYS = frozenset({"state", "base_record_type", "destination_record_type",
+    "destination_parent_ref", "base_content_token", "base_access_revision", "conversion_op_ref"})
+CONVERSION_REFUSAL_MESSAGE = "Publishing an item moved to another section is not available yet. Your saved changes are kept."
+
+
+def conversion_publication_blocker(item) -> str | None:
+    """Return the named refusal for one draft-workspace item's conversion, else None.
+
+    None means the item carries no descriptor (absent or null), so every
+    existing path is unchanged. Any present descriptor refuses: a confirmed
+    private cross-type move is ``publication_type_transition_unavailable``;
+    every other shape (not an object, missing or unknown keys, wrong types, a
+    state other than ``confirmed_private``, or no actual type change) fails
+    closed as ``publication_conversion_descriptor_invalid``.
+    """
+
+    if type(item) is not dict or item.get("conversion") is None:
+        return None
+    descriptor = item["conversion"]
+    if type(descriptor) is not dict or set(descriptor) != CONVERSION_DESCRIPTOR_KEYS:
+        return CONVERSION_DESCRIPTOR_INVALID
+
+    def named(value):
+        return type(value) is str and bool(value) and value == value.strip()
+
+    if (descriptor["state"] != "confirmed_private"
+            or not all(named(descriptor[name]) for name in (
+                "base_record_type", "destination_record_type", "base_content_token", "conversion_op_ref"))
+            or not (descriptor["destination_parent_ref"] is None or named(descriptor["destination_parent_ref"]))
+            or type(descriptor["base_access_revision"]) is not int or descriptor["base_access_revision"] < 0
+            or descriptor["destination_record_type"] == descriptor["base_record_type"]):
+        return CONVERSION_DESCRIPTOR_INVALID
+    return TYPE_TRANSITION_UNAVAILABLE
+
+
+def _conversion_blockers(items) -> list[dict]:
+    """Every conversion refusal in workspace order, as refs and reasons only."""
+
+    blocked = []
+    for item in items or ():
+        reason = conversion_publication_blocker(item)
+        if reason is not None:
+            blocked.append({"item_ref": item.get("record_key"), "reason": reason})
+    return blocked
+
+
+def _conversion_refusal_reason(blocked) -> str:
+    reasons = {item["reason"] for item in blocked}
+    return TYPE_TRANSITION_UNAVAILABLE if TYPE_TRANSITION_UNAVAILABLE in reasons else CONVERSION_DESCRIPTOR_INVALID
+
+
 def memory_resume_publication_service(**kwargs):
     """Explicit in-memory stores for tests. Production construction never calls this."""
 
@@ -259,6 +319,8 @@ class ResumePublicationService:
         result = self.review_for_owner(owner, review_payload,
             candidate=reviewed.candidate if reviewed is not None else None)
         if result.reviewed is None:
+            if result.reason in CONVERSION_REASONS:
+                raise PublicationConflictError(result.reason, CONVERSION_REFUSAL_MESSAGE)
             raise PublicationDenied(result.reason, "The reviewed candidate is no longer current.")
         current = result.reviewed
         if payload.get("reviewed_digest") != current.digest:
@@ -298,6 +360,8 @@ class ResumePublicationService:
         else:
             result = self.review_for_owner(owner)
             if result.reviewed is None:
+                if result.reason in CONVERSION_REASONS:
+                    raise PublicationConflictError(result.reason, CONVERSION_REFUSAL_MESSAGE)
                 raise PublicationConflictError("stale_preview", "The private preview changed. Review again.")
             reviewed = result.reviewed
         from services.resume_publication_validation import _placement
@@ -409,9 +473,15 @@ class ResumePublicationService:
                     raise PublicationUnavailableError("Resume draft is unavailable.") from error
                 if workspace.get("capabilities", {}).get("canonical_read") != "ok":
                     raise PublicationUnavailableError("Resume draft is unavailable.")
+                conversions = _conversion_blockers(workspace.get("items", ()))
                 if any(item.get("has_draft") and (item.get("draft_is_stale") or item.get("orphaned"))
-                       for item in workspace.get("items", ())):
+                       for item in workspace.get("items", ()) if conversion_publication_blocker(item) is None):
                     raise PublicationConflictError("stale_draft", "Saved information changed. Review your Resume edits again.")
+                if conversions:
+                    # Before media, codec checks or candidate building: no
+                    # destination value reaches an old-type merge or codec.
+                    return ValidationResult(ReadState.UNAVAILABLE, _conversion_refusal_reason(conversions),
+                        blocked_items=tuple((item["item_ref"], item["reason"]) for item in conversions))
             draft_items = workspace.get("items", ()) if workspace else ()
             if self.draft_service is not None and self.media_application is None:
                 try:
@@ -558,12 +628,15 @@ class ResumePublicationService:
         if "highlight_refs" in (workspace or {}):
             blocked.append({"item_ref":"resume","reason":"publication_codec_highlight_references"})
         blocked.extend({"item_ref":item["record_key"],"reason":"publication_codec_skill_references"}
-            for item in (workspace or {}).get("items",[]) if "evidence_refs" in item)
+            for item in (workspace or {}).get("items",[])
+            if "evidence_refs" in item and conversion_publication_blocker(item) is None)
         for row in rows:
             if row.get("lifecycle") != "active":
                 continue
             key = row["entry_key"]
             item = items.get(key) or {}
+            if conversion_publication_blocker(item) is not None:
+                continue  # Refused whole by _basis_diagnostics; never merged under the old type.
             values = {**(row.get("values") or {}), **(item.get("values") or {}), **(item.get("proposed_values") or {})}
             choice = selected.get(key) or {}
             publishing = bool(choice.get("resume_display", choice.get("display", row.get("resume_display")))
@@ -600,7 +673,11 @@ class ResumePublicationService:
     def _basis_diagnostics(rows, workspace, payload=None):
         blocked, ineligible = [], []
         for item in workspace["items"]:
-            if item.get("orphaned") is True:
+            conversion = conversion_publication_blocker(item)
+            if conversion is not None:
+                blocked.append({"item_ref": item["record_key"], "reason": conversion})
+                ineligible.append({"item_ref": item["record_key"], "reason": conversion})
+            elif item.get("orphaned") is True:
                 blocked.append({"item_ref": item["record_key"], "reason": "orphaned"})
             elif item.get("draft_is_stale") is True:
                 blocked.append({"item_ref": item["record_key"], "reason": "stale_draft"})

@@ -133,7 +133,7 @@ def _same_rowversion(left, right):
 def _with_private_draft(document, workspace):
     """Project owner-saved draft wording without writing canonical/public state."""
     from services.resume_publication_projection import committed_source_bytes
-    from services.resume_publication_service import _codec_values
+    from services.resume_publication_service import _codec_values, conversion_publication_blocker
 
     if (workspace['capabilities']['canonical_read'] != 'ok'
             or workspace['draft_version'] != document['draft_revision']):
@@ -146,6 +146,10 @@ def _with_private_draft(document, workspace):
         if key in seen:
             raise ValueError('duplicate draft entry')
         seen.add(key)
+        conversion = conversion_publication_blocker(item)
+        if conversion is not None:
+            # D6a: a B3 move's destination values never reach the old-type codec.
+            raise ValueError(conversion)
         if not item['has_draft']:
             continue
         row = rows.get(key)
