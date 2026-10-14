@@ -29,7 +29,8 @@
     "tests/test_guide_panel_contract.py",
     "docs/governance/lane_claims/PS-GUIDE-PANEL-001.json",
     "docs/governance/lane_claims/receipts/PS-GUIDE-PANEL-001.json",
-    "docs/governance/lane_claims/evidence/PS-GUIDE-PANEL-001.md"
+    "docs/governance/lane_claims/evidence/PS-GUIDE-PANEL-001.md",
+    "tests/test_mvp1_acceptance_browser_runner.py"
   ],
   "domains": [
     "presentation:resume-guide:panel"
