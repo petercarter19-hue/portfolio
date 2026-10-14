@@ -18,7 +18,14 @@
     "tests/test_resume_publication_type_transition.py",
     "docs/governance/lane_claims/PS-RESUME-PAGE-PUBLIC-001.json",
     "docs/governance/lane_claims/receipts/PS-RESUME-PAGE-PUBLIC-001.json",
-    "docs/governance/lane_claims/evidence/PS-RESUME-PAGE-PUBLIC-001.md"
+    "docs/governance/lane_claims/evidence/PS-RESUME-PAGE-PUBLIC-001.md",
+    "services/resume_publication_contracts.py",
+    "services/resume_publication_projection.py",
+    "tests/test_resume_publication_projection.py",
+    "services/resume_publication_adapters.py",
+    "services/resume_publication_validation.py",
+    "services/member_visitor_ai_sources.py",
+    "tests/test_resume_publication_contracts.py"
   ],
   "domains": ["publication:resume-page", "consequential-ai:member-visitor-preview"],
   "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-RESUME-PAGE-PUBLIC-001.md"],
