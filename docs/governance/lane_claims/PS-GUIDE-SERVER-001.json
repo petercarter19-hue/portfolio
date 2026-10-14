@@ -57,7 +57,8 @@
     "tests/test_my_data_intake_ai.py",
     "resume_publication_routes.py",
     "tests/test_resume_publication_routes.py",
-    "services/resume_publication_contracts.py"
+    "services/resume_publication_contracts.py",
+    "tests/test_resume_intake_sql.py"
   ],
   "domains": [
     "consequential-ai:resume-guide:server",
