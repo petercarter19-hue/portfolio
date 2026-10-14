@@ -30,7 +30,8 @@
     "docs/governance/lane_claims/PS-GUIDE-PANEL-001.json",
     "docs/governance/lane_claims/receipts/PS-GUIDE-PANEL-001.json",
     "docs/governance/lane_claims/evidence/PS-GUIDE-PANEL-001.md",
-    "tests/test_mvp1_acceptance_browser_runner.py"
+    "tests/test_mvp1_acceptance_browser_runner.py",
+    "tests/test_resume_intake_browser.py"
   ],
   "domains": [
     "presentation:resume-guide:panel"
