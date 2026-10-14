@@ -28,8 +28,7 @@
     "docs/LOCAL_REVIEWER.md",
     "docs/governance/lane_claims/PS-ONBOARDING-PRIVATE-SITES-001.json",
     "docs/governance/lane_claims/receipts/PS-ONBOARDING-PRIVATE-SITES-001.json",
-    "docs/governance/lane_claims/evidence/PS-ONBOARDING-PRIVATE-SITES-001.md",
-    "tests/mvp1_acceptance_support.py"
+    "docs/governance/lane_claims/evidence/PS-ONBOARDING-PRIVATE-SITES-001.md"
   ],
   "domains": [
     "tooling:local-reviewer:onboarding-isolation",
@@ -44,32 +43,32 @@
   "closed_at": null,
   "handoff": null,
   "scope_release": {
-    "checkpoint_sha": "2ff7f0e9c5ea4094d81486d2fd118fbd684a2b8c",
-    "control_branch": "work/2026-10-13-delivery-release-surfaces-mvp1-fixture",
-    "control_lease_sha256": "74754d47576bbe4420b1cae6333cfb7e2fa60004aae9a962052ce9b79dd52f28",
+    "checkpoint_sha": "51335865ed8852f69ff88a8e8b593596c011d703",
+    "control_branch": "work/2026-10-13-delivery-release-surfaces-b2-readonly-fixture",
+    "control_lease_sha256": "eb5742f563c37ca4467ae8803192237e8dd8dace398aa6729c02ee70701782b2",
     "fixed_evidence_ref": "docs/governance/lane_claims/evidence/PS-ONBOARDING-PRIVATE-SITES-001.md",
     "index_schema": 4,
     "new_domains": [
       "tooling:local-reviewer:onboarding-isolation",
       "privacy:local-reviewer:payer-ledgers"
     ],
-    "operation_id": "3efc8aa84689989d537dd2c31685e6099ff526b4c01f1b5b4a346d0e63091539",
-    "prepared_from_main": "e9987210b2affaad5702c0762b7cfc35008969a0",
-    "prior_claim_sha256": "5611add5375d9ce5e1d6adaac8cf8545d3ea9060cf844468831ddb0f523c79fc",
+    "operation_id": "951096c82e58621eed61ba85b650d942a7f886d721aae48fe63ea7522b13f608",
+    "prepared_from_main": "7dff63651d4effd580266d9b641352b11d260524",
+    "prior_claim_sha256": "23e4f3b8ce21f65081b138f9bdbbc6d9c6cf7c6a77e2b027f86bab40c72c84a1",
     "prior_domains": [
       "tooling:local-reviewer:onboarding-isolation",
       "privacy:local-reviewer:payer-ledgers"
     ],
-    "quiescence_ref": "session:01a132fe-1f81-77f3-8821-d53d157ca025/c14-2ff7f0e9-quiescent-for-d4",
-    "reduction_sha256": "d7e1d2105b19f4799472e626679a48a0928e75c6599b637271b66885a3d4fa7f",
+    "quiescence_ref": "session:01a132fe-1f81-77f3-8821-d53d157ca025/c14-51335865-quiescent-for-b2-readonly-fixture",
+    "reduction_sha256": "2c53c2886668fa7ebe9ca1b597c4c0a37f0849118af1147c3b1e391e8a858397",
     "registry_schema": 2,
-    "release_rationale": "Claude routing87af064 confirms the unchanged MVP1 fixture file moves to one bounded same-writer D4 slice; preserve the full C14 checkpoint, acceptance plan and all other custody.",
+    "release_rationale": "Same owning session temporarily releases unchanged canonical fixture to B2 to remove the reproduced nested expiry write from Guide/publication reads, then restores fixture custody after accepted B2. Preserve C14 implementation, plan and remaining surfaces.",
     "released_file_proofs": [
       {
         "accepted_introduction": null,
-        "checkpoint_blob": "5f0632abc131ca68f906e261888d90ecb1329cae",
+        "checkpoint_blob": "72d87f858e99ae63ad18a272af791b9f9f4b4c75",
         "checkpoint_mode": "100644",
-        "main_blob": "5f0632abc131ca68f906e261888d90ecb1329cae",
+        "main_blob": "72d87f858e99ae63ad18a272af791b9f9f4b4c75",
         "main_mode": "100644",
         "path": "tests/mvp1_acceptance_support.py",
         "unpublished_delta": false
@@ -81,11 +80,11 @@
     "retained_responsibilities": [
       {
         "domain": "tooling:local-reviewer:onboarding-isolation",
-        "responsibility": "C14 private-site root/process isolation and rehearsal; fixture slice separately admitted"
+        "responsibility": "C14 private-site root/process isolation and full zero-cost rehearsal"
       },
       {
         "domain": "privacy:local-reviewer:payer-ledgers",
-        "responsibility": "Independent per-payer ledgers, conservative failure settlement and operator recovery"
+        "responsibility": "Independent payer ledgers and conservative failure/operator recovery"
       }
     ],
     "schema_version": 1
