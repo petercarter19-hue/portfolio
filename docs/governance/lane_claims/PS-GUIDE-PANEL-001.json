@@ -4,7 +4,7 @@
   "state": "active",
   "outcome": "Implement the exact owner-approved R6q Guide panel in rounds C1-C4 against the B1/C1 API frozen in server checkpoint 2efdb52c6eabeebf142a44d3c837d2bbd3dc1c60. Preserve truthful server state/receipts, no implicit saves, manual edits, progressive sections, conversation availability, approved scrolling/reflow/drag/fold and accessible controls. Each panel round merges after its matching server round. C3 includes F2 complete Move-to keyboard/focus semantics and consumes F1 staged conversion. Claude PC independently reviews exact Protected candidates and side-by-side visual evidence, and obtains Pete's screenshot OK. No new visual direction, resume-page/Ask-card redesign, shared header/logo/fonts, app.py change, schema, paid calls or production release.",
   "assignment": "implementation",
-  "writer_ref": "session:01a132fe-1f81-77f3-8821-d53d157ca025",
+  "writer_ref": "agent:claude/2026-10-14/guide-build",
   "branch": "codex/2026-10-13-guide-panel-001",
   "delivery_path": "Protected",
   "repository_authority": "through_merge",
@@ -39,7 +39,12 @@
     "docs/governance/lane_claims/evidence/PS-GUIDE-PANEL-001.md"
   ],
   "review_requirement": "independent",
-  "handoff": null,
+  "handoff": {
+    "from_ref": "session:01a132fe-1f81-77f3-8821-d53d157ca025",
+    "to_ref": "agent:claude/2026-10-14/guide-build",
+    "checkpoint_sha": "e18db23fb13f8413cfec1027ac9fa64368b13ace",
+    "relinquished": true
+  },
   "checkpoint_sha": null,
   "merged_sha": null,
   "closed_at": null,
