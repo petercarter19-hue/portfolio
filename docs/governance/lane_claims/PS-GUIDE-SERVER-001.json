@@ -53,7 +53,11 @@
     "services/resume_publication_projection.py",
     "tests/test_resume_publication_projection.py",
     "tests/test_resume_onboarding_conversation.py",
-    "tests/test_resume_intake_browser.py"
+    "tests/test_resume_intake_browser.py",
+    "tests/test_my_data_intake_ai.py",
+    "resume_publication_routes.py",
+    "tests/test_resume_publication_routes.py",
+    "services/resume_publication_contracts.py"
   ],
   "domains": [
     "consequential-ai:resume-guide:server",
