@@ -25,18 +25,62 @@
     "static/js/guide-speech.js",
     "scripts/run_mvp1_acceptance_browser_tests.py",
     "tests/test_mvp1_acceptance_browser.py",
-    "tests/test_resume_intake_browser.py",
     "tests/test_guide_panel_browser.py",
     "tests/test_guide_panel_contract.py",
     "docs/governance/lane_claims/PS-GUIDE-PANEL-001.json",
     "docs/governance/lane_claims/receipts/PS-GUIDE-PANEL-001.json",
     "docs/governance/lane_claims/evidence/PS-GUIDE-PANEL-001.md"
   ],
-  "domains": ["presentation:resume-guide:panel"],
-  "evidence_surfaces": ["docs/governance/lane_claims/evidence/PS-GUIDE-PANEL-001.md"],
+  "domains": [
+    "presentation:resume-guide:panel"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-GUIDE-PANEL-001.md"
+  ],
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
   "merged_sha": null,
-  "closed_at": null
+  "closed_at": null,
+  "scope_release": {
+    "checkpoint_sha": "d58a1f930f3b79be1d34ea513c55553f92f95aa1",
+    "control_branch": "work/2026-10-14-delivery-release-surfaces-c1-browser-fence",
+    "control_lease_sha256": "96a1aa739f2e365774331a3251f3929549253020a9f28bdf265436e1ce092da6",
+    "fixed_evidence_ref": "docs/governance/lane_claims/evidence/PS-GUIDE-PANEL-001.md",
+    "index_schema": 4,
+    "new_domains": [
+      "presentation:resume-guide:panel"
+    ],
+    "operation_id": "63439b238915f217120ea844d41f9f08b7010b409bfe24c2be9f5ba5a732943e",
+    "prepared_from_main": "be2e9126d3aaa38b587262f7a8e47b20497ef2a8",
+    "prior_claim_sha256": "5885db4c36527d800e833eb51e5c3b7d0b05cac760504e881a67b83d9dab5e99",
+    "prior_domains": [
+      "presentation:resume-guide:panel"
+    ],
+    "quiescence_ref": "session:01a132fe-1f81-77f3-8821-d53d157ca025/c1-d58a1f93-quiescent-for-b2-retained-browser-fence",
+    "reduction_sha256": "459521a5929efa7b609369e271fbc84ad1ce9e0a6fa2688e935a4da2f13796c6",
+    "registry_schema": 2,
+    "release_rationale": "Same writer temporarily releases the unchanged retained browser test file to B2 to correct only the existing saved-record restoration assertion for the mandatory draft-revision publish fence. Preserve all retained tests and deadlines. Return custody after accepted B2; C1 is quiescent at d58a1f930f3b79be1d34ea513c55553f92f95aa1.",
+    "released_file_proofs": [
+      {
+        "accepted_introduction": null,
+        "checkpoint_blob": "55d3f989943d41930bd3f836ad32a17235ed79ed",
+        "checkpoint_mode": "100644",
+        "main_blob": "55d3f989943d41930bd3f836ad32a17235ed79ed",
+        "main_mode": "100644",
+        "path": "tests/test_resume_intake_browser.py",
+        "unpublished_delta": false
+      }
+    ],
+    "released_surfaces": [
+      "tests/test_resume_intake_browser.py"
+    ],
+    "retained_responsibilities": [
+      {
+        "domain": "presentation:resume-guide:panel",
+        "responsibility": "R6q Guide shell, state and owner transport panel implementation with required browser proof"
+      }
+    ],
+    "schema_version": 1
+  }
 }
