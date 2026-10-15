@@ -70,7 +70,16 @@
     "tests/test_member_overview_renderer.py",
     "tests/test_owner_voice_ui.py",
     "tests/test_resume2.py",
-    "safe_return.py"
+    "safe_return.py",
+    "docs/governance/PACKAGE_REGISTRY.json",
+    "tests/test_living_resume_preview.py",
+    "community_routes.py",
+    "templates/community_pilot_policy.html",
+    "tests/test_community_public_pilot.py",
+    "services/ask_pete/response.py",
+    "tests/ask_pete/test_service.py",
+    "tests/test_resume_sage_mist_browser.py",
+    "tests/ask_pete/run_recruiter_evidence_browser.py"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-PUBLIC-TRUST-PAGES-001.md"
