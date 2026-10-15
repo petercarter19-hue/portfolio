@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "package": "PS-ASK-PETE-DEADLINE-TEST-002",
+  "state": "active",
+  "outcome": "Remove every wall-clock deadline from tests/ask_pete/test_live_foundry.py with one shared deterministic helper: the patched request deadline expires only once a named test event is set (the worker is blocked at the point under test), the request's bounded wait in run_bounded then really times out, and every later worker check has expired. Apply it to the five remaining 30-50 ms deadline tests (test_generation_timeout_cannot_retry, test_slow_credential_returns_by_deadline_and_never_starts_late_post, test_stalled_event_sink_is_marked_late_when_terminal_writes_first, test_real_logger_formats_late_at_write_after_stalled_info_call, test_abandoned_work_retains_slot_until_real_completion) and move the PS-ASK-PETE-DEADLINE-TEST-001 test onto the same helper. Every existing behavioral assertion is kept; a wall-clock bound may be replaced only by an event-ordered check proving the same property. Test-only: no product code, fake providers only, no deployment.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude/2026-10-15/ask-pete-deadline-test-002",
+  "branch": "work/2026-10-15-ask-pete-deadline-test-002",
+  "delivery_path": "Routine",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "433ffbe803a24e5dc8491992da41bdad4b942c69",
+  "owner_outcome_ref": "manager-routed same-class follow-up of PS-ASK-PETE-DEADLINE-TEST-001 under Pete's standing session authority (2026-10-15)",
+  "surfaces": [
+    "tests/ask_pete/test_live_foundry.py",
+    "docs/governance/lane_claims/PS-ASK-PETE-DEADLINE-TEST-002.json",
+    "docs/governance/lane_claims/receipts/PS-ASK-PETE-DEADLINE-TEST-002.json",
+    "docs/governance/lane_claims/evidence/PS-ASK-PETE-DEADLINE-TEST-002.md"
+  ],
+  "domains": [
+    "testing:ask-pete:deadline-telemetry"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-ASK-PETE-DEADLINE-TEST-002.md"
+  ],
+  "review_requirement": "self",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
