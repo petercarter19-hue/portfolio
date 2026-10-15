@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-RESUME-PAGE-PUBLIC-001",
-  "candidate_sha": "200304d4339fa918372f6ae7ab6c5d8bb7e8199d",
+  "candidate_sha": "da054668943f8e620865b913e6e05b4d0f445bd9",
   "review_type": "independent",
   "reviewer_ref": "agent:claude/2026-10-14/guide-build",
   "result": "pass",
-  "reviewed_at": "2026-10-14T20:46:26Z",
+  "reviewed_at": "2026-10-15T02:19:25Z",
   "findings": [],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-RESUME-PAGE-PUBLIC-001.md"
 }

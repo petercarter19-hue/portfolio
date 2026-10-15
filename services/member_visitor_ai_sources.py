@@ -236,7 +236,7 @@ def build_sources(document: dict, *, owner: str | None = None,
         evidence.append(item)
         source_refs.append(source_ref)
         sources.append(source)
-        manifest.append(ManifestEntry(ref, tuple(Wording(k, str(v)) for k, v in decoded.items() if v is not None), (source_ref,)))
+        manifest.append(ManifestEntry(ref, tuple(Wording(k, tuple(v) if type(v) is list else str(v)) for k, v in decoded.items() if v is not None), (source_ref,)))
     if choices is not None and set(choices) - seen:
         raise ContractError('candidate contains unavailable source')
     media = []

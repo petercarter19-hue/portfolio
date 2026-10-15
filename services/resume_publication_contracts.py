@@ -84,6 +84,32 @@ CANONICAL_SOURCE_FIELDS = (
 )
 _BOOLEAN_SOURCE_FIELDS = frozenset({"current_role", "accomplishment_to_achievement"})
 
+# D6b: an additive v2 codec. It is the v1 field list followed by the fields B2
+# now stores. Encoders write the exact v1 bytes under the v1 label whenever no
+# v2-only field holds a value, so existing evidence never changes.
+CANONICAL_SOURCE_CODEC_V2 = "resume-canonical-source.v2"
+CANONICAL_SOURCE_CODECS = (CANONICAL_SOURCE_CODEC, CANONICAL_SOURCE_CODEC_V2)
+CANONICAL_SOURCE_V2_ONLY_FIELDS = (
+    "qualification_kind",
+    "project_url",
+    "additional_project_urls",
+    "project_category",
+    "organization_name",
+    "project_role",
+)
+CANONICAL_SOURCE_FIELDS_V2 = CANONICAL_SOURCE_FIELDS + CANONICAL_SOURCE_V2_ONLY_FIELDS
+_LIST_SOURCE_FIELDS = frozenset({"additional_project_urls"})
+# Publication-only presentation wording resolved at Publish: owner-bound
+# identities of other published entries, never copied text. They are never
+# canonical values and never enter the evidence codec.
+PUBLISHED_EVIDENCE_REFS_FIELD = "published_evidence_refs"
+PUBLISHED_HIGHLIGHT_ORDER_FIELD = "published_highlight_order"
+_LIST_WORDING_FIELDS = _LIST_SOURCE_FIELDS | {PUBLISHED_EVIDENCE_REFS_FIELD}
+
+
+def _string_list(value: object) -> bool:
+    return type(value) in (tuple, list) and all(type(item) is str for item in value)
+
 
 def _utf8(value: str) -> bytes:
     try:
@@ -96,14 +122,21 @@ def _utf8(value: str) -> bytes:
 
 
 def encode_canonical_source(fields: dict[str, object]) -> bytes:
-    """Closed length-prefixed codec. No trim, normalize, or str() coercion."""
+    """Closed length-prefixed codec. No trim, normalize, or str() coercion.
+
+    Writes v1 unless a v2-only field holds a value; then writes v2. A field
+    that is absent or None is written as N in either version.
+    """
     if type(fields) is not dict:
         raise ContractError("typed codec fields required")
-    unknown = set(fields) - set(CANONICAL_SOURCE_FIELDS)
+    unknown = set(fields) - set(CANONICAL_SOURCE_FIELDS_V2)
     if unknown:
         raise ContractError("unknown codec field")
-    parts = [_utf8(CANONICAL_SOURCE_CODEC)]
-    for name in CANONICAL_SOURCE_FIELDS:
+    v2 = any(fields.get(name) is not None for name in CANONICAL_SOURCE_V2_ONLY_FIELDS)
+    codec, names = ((CANONICAL_SOURCE_CODEC_V2, CANONICAL_SOURCE_FIELDS_V2) if v2
+                    else (CANONICAL_SOURCE_CODEC, CANONICAL_SOURCE_FIELDS))
+    parts = [_utf8(codec)]
+    for name in names:
         name_bytes = _utf8(name)
         parts.append(f"{len(name_bytes):d}:".encode("ascii") + name_bytes)
         if name not in fields or fields[name] is None:
@@ -115,11 +148,30 @@ def encode_canonical_source(fields: dict[str, object]) -> bytes:
                 raise ContractError("boolean codec field required")
             parts.append(b"B1" if value else b"B0")
             continue
+        if name in _LIST_SOURCE_FIELDS:
+            if not _string_list(value):
+                raise ContractError("string list codec field required")
+            parts.append(b"L" + f"{len(value):d}:".encode("ascii"))
+            for item in value:
+                raw = _utf8(item)
+                parts.append(f"{len(raw):d}:".encode("ascii") + raw)
+            continue
         if type(value) is not str:
             raise ContractError("string codec field required")
         raw = _utf8(value)
         parts.append(b"S" + f"{len(raw):d}:".encode("ascii") + raw)
     return b"".join(parts)
+
+
+def canonical_source_codec(payload: bytes) -> str:
+    """The exact codec label of committed bytes; unknown labels fail closed."""
+    if type(payload) is not bytes:
+        raise ContractError("codec bytes required")
+    for codec in CANONICAL_SOURCE_CODECS:
+        prefix = _utf8(codec)
+        if payload[:len(prefix)] == prefix:
+            return codec
+    raise ContractError("unsupported codec")
 
 
 def decode_canonical_source(payload: bytes) -> dict[str, object]:
@@ -138,9 +190,20 @@ def decode_canonical_source(payload: bytes) -> dict[str, object]:
             raise ContractError("truncated codec")
         tag = payload[cursor:cursor + 1]
         cursor += 1
-        if tag not in (b"N", b"B", b"S"):
+        if tag not in (b"N", b"B", b"S", b"L"):
             raise ContractError("unsupported codec tag")
         return tag.decode("ascii")
+
+    def take_count() -> int:
+        nonlocal cursor
+        start = cursor
+        while cursor < len(payload) and 48 <= payload[cursor] <= 57:
+            cursor += 1
+        if start == cursor or cursor >= len(payload) or payload[cursor:cursor + 1] != b":":
+            raise ContractError("malformed codec length")
+        count = int(payload[start:cursor].decode("ascii"))
+        cursor += 1
+        return count
 
     def take_len_prefixed() -> bytes:
         nonlocal cursor
@@ -158,18 +221,26 @@ def decode_canonical_source(payload: bytes) -> dict[str, object]:
         cursor = end
         return chunk
 
-    prefix = _utf8(CANONICAL_SOURCE_CODEC)
-    if payload[:len(prefix)] != prefix:
-        raise ContractError("unsupported codec")
-    cursor = len(prefix)
+    codec = canonical_source_codec(payload)
+    fields = CANONICAL_SOURCE_FIELDS_V2 if codec == CANONICAL_SOURCE_CODEC_V2 else CANONICAL_SOURCE_FIELDS
+    cursor = len(_utf8(codec))
     decoded: dict[str, object] = {}
-    for expected in CANONICAL_SOURCE_FIELDS:
+    for expected in fields:
         name = take_len_prefixed().decode("utf-8")
         if name != expected:
             raise ContractError("codec field order")
         kind = take_tag()
+        if kind == "L" and expected not in _LIST_SOURCE_FIELDS:
+            raise ContractError("list codec field required")
+        if kind != "L" and kind != "N" and expected in _LIST_SOURCE_FIELDS:
+            raise ContractError("list codec field required")
         if kind == "N":
             decoded[name] = None
+        elif kind == "L":
+            count = take_count()
+            if count > 16:
+                raise ContractError("codec list too long")
+            decoded[name] = [take_len_prefixed().decode("utf-8") for _ in range(count)]
         elif kind == "B":
             if cursor >= len(payload) or payload[cursor:cursor + 1] not in (b"0", b"1"):
                 raise ContractError("malformed boolean")
@@ -183,6 +254,8 @@ def decode_canonical_source(payload: bytes) -> dict[str, object]:
                 raise ContractError("boolean codec field required")
     if cursor != len(payload):
         raise ContractError("trailing codec bytes")
+    if codec == CANONICAL_SOURCE_CODEC_V2 and all(decoded[name] is None for name in CANONICAL_SOURCE_V2_ONLY_FIELDS):
+        raise ContractError("v2 codec without v2 fields")  # Exactly one encoding per value set.
     return decoded
 
 
@@ -357,6 +430,11 @@ class Wording:
         text(self.field)
         if type(self.value) is bool and self.field in _BOOLEAN_SOURCE_FIELDS:
             return
+        if self.field in _LIST_WORDING_FIELDS and type(self.value) in (tuple, list):
+            if not _string_list(self.value):
+                raise ContractError("string list wording required")
+            object.__setattr__(self, "value", tuple(self.value))
+            return
         if self.value is not None:
             text(self.value, empty=True)
 
@@ -369,8 +447,14 @@ class EditorialDelta:
 
     def __post_init__(self):
         text(self.field)
-        for value in (self.before, self.after):
+        for name in ("before", "after"):
+            value = getattr(self, name)
             if type(value) is bool and self.field in _BOOLEAN_SOURCE_FIELDS:
+                continue
+            if self.field in _LIST_SOURCE_FIELDS and type(value) in (tuple, list):
+                if not _string_list(value):
+                    raise ContractError("string list delta required")
+                object.__setattr__(self, name, tuple(value))
                 continue
             if value is not None:
                 text(value, empty=True)
@@ -490,7 +574,7 @@ class PublicationEvidenceVersion:
     def __post_init__(self):
         for value in (self.owner_key, self.entry_key, self.evidence_key, self.evidence_version_key, self.codec, self.canonical_token):
             text(value)
-        if self.codec != CANONICAL_SOURCE_CODEC:
+        if self.codec not in CANONICAL_SOURCE_CODECS:
             raise ContractError("unsupported evidence codec")
         revision(self.version)
         if self.version == 0:
@@ -501,6 +585,8 @@ class PublicationEvidenceVersion:
         revision(self.access_revision)
         if type(self.content) is not bytes:
             raise ContractError("committed codec bytes required")
+        if canonical_source_codec(self.content) != self.codec:
+            raise ContractError("evidence codec label mismatch")
         digest(self.content_sha256)
         if hashlib.sha256(self.content).hexdigest() != self.content_sha256:
             raise ContractError("evidence digest mismatch")

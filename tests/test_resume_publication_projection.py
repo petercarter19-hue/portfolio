@@ -138,5 +138,53 @@ class ResumePublicationProjectionTests(unittest.TestCase):
         )
 
 
+from services.resume_publication_contracts import ContractError  # noqa: E402
+
+
+class D6bProjectionV2Tests(unittest.TestCase):
+    def test_v2_extras_are_carried_only_when_v1_cannot_say_them(self):
+        base = {"name": "Fictional", "issuer": "Fictional Board", "issue_date": "2021-05-01"}
+        plain = canonical_fields_from_values("credential", {"credential_name": "Fictional", "issuer_name": "Fictional Board",
+                                                            "issue_date": "2021-05-01"})
+        certification = canonical_fields_from_values("credential", {"credential_name": "Fictional",
+            "issuer_name": "Fictional Board", "issue_date": "2021-05-01", "qualification_kind": "certification"})
+        self.assertEqual(certification, plain)
+        for kind in ("license", "publication", "membership"):
+            fields = canonical_fields_from_values("credential", {"credential_name": "Fictional",
+                "issuer_name": "Fictional Board", "issue_date": "2021-05-01", "qualification_kind": kind})
+            self.assertEqual(fields["qualification_kind"], kind)
+            self.assertTrue(committed_source_bytes("credential", {**base, "credential_name": "Fictional",
+                "issuer_name": "Fictional Board", "qualification_kind": kind}).startswith(b"resume-canonical-source.v2"))
+        with self.assertRaises(ContractError):
+            canonical_fields_from_values("credential", {"credential_name": "x", "qualification_kind": "diploma"})
+        project = {"project_name": "Fictional", "summary": "Fictional."}
+        self.assertEqual(canonical_fields_from_values("project", {**project, "date_precision": "day",
+                                                                  "additional_project_urls": []}),
+                         canonical_fields_from_values("project", project))
+        rich = canonical_fields_from_values("project", {**project, "project_category": "software",
+            "organization_name": "Fictional Institute", "project_role": "Lead", "project_url": "https://a.test",
+            "additional_project_urls": ["https://b.test"], "date_precision": "month"})
+        self.assertEqual((rich["project_category"], rich["organization_name"], rich["project_role"], rich["project_url"],
+                          rich["additional_project_urls"], rich["date_precision"]),
+                         ("software", "Fictional Institute", "Lead", "https://a.test", ("https://b.test",), "month"))
+        for bad in ({"date_precision": "decade"}, {"additional_project_urls": "https://b.test"},
+                    {"project_category": 7}):
+            with self.subTest(bad=bad), self.assertRaises(ContractError):
+                canonical_fields_from_values("project", {**project, **bad})
+        # Publication-only reference wording never enters the evidence codec.
+        self.assertEqual(canonical_fields_from_values("skill", {"name": "Fictional", "published_evidence_refs": ["entry:k"]}),
+                         canonical_fields_from_values("skill", {"name": "Fictional"}))
+
+    def test_evidence_version_label_follows_its_bytes(self):
+        common = dict(owner_key="owner", entry_key="entry", evidence_key="evidence:entry",
+                      evidence_version_key="evidence:entry:1", version=1, canonical_token="1", policy_content_version=1,
+                      access_revision=1, display_eligible=True, visitor_ai_eligible=False)
+        plain = publication_evidence_version(canonical_type="project", values={"project_name": "Fictional"}, **common)
+        rich = publication_evidence_version(canonical_type="project",
+            values={"project_name": "Fictional", "project_role": "Lead"}, **common)
+        self.assertEqual((plain.codec, rich.codec), ("resume-canonical-source.v1", "resume-canonical-source.v2"))
+        self.assertEqual(decode_canonical_source(rich.content)["project_role"], "Lead")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -13,6 +13,7 @@ from services.resume_publication_contracts import (
     CANONICAL_SOURCE_FIELDS,
     ContractError,
     PublicationEvidenceVersion,
+    canonical_source_codec,
     encode_canonical_source,
     hash_canonical_source,
 )
@@ -68,6 +69,41 @@ TYPE_FIELD_MAP = {
     ),
     "knowledge": ("title", "summary"),
 }
+
+# D6b: fields the v2 codec adds per type. Each is written only when it holds
+# a value that v1 could not represent, so every existing entry keeps v1 bytes.
+TYPE_FIELD_MAP_V2_EXTRAS = {
+    "credential": ("qualification_kind",),
+    "project": ("project_url", "additional_project_urls", "project_category", "organization_name",
+                "project_role", "date_precision"),
+}
+
+
+def _v2_extra(canonical_type, name, value):
+    """The stored value as v2 carries it, or None when v1 already says it."""
+    if value is None:
+        return None
+    if canonical_type == "credential" and name == "qualification_kind":
+        # Absent means certification (269ab17), so it never forces v2.
+        if value == "certification":
+            return None
+        if value not in {"license", "publication", "membership"}:
+            raise ContractError("Unsupported qualification kind.")
+        return value
+    if canonical_type == "project" and name == "date_precision":
+        # v1 project dates are full ISO dates; day precision adds nothing.
+        if value == "day":
+            return None
+        if value not in {"year", "month"}:
+            raise ContractError("Unsupported project date precision.")
+        return value
+    if name == "additional_project_urls":
+        if type(value) not in (list, tuple) or any(type(item) is not str for item in value):
+            raise ContractError("Project links must be a list of links.")
+        return tuple(value) or None
+    if type(value) is not str:
+        raise ContractError("Project details must be text.")
+    return value or None
 
 RESUME_CORE_SECTIONS = (
     ("impact_statement", "Impact Statement"), ("skills", "Skills"), ("experience", "Experience"),
@@ -185,6 +221,10 @@ def canonical_fields_from_values(canonical_type: str, values: dict[str, object])
         if name not in mapped:
             continue
         fields[name] = mapped[name]
+    for name in TYPE_FIELD_MAP_V2_EXTRAS.get(canonical_type, ()):
+        extra = _v2_extra(canonical_type, name, mapped.get(name))
+        if extra is not None:
+            fields[name] = extra
     return fields
 
 
@@ -215,7 +255,7 @@ def publication_evidence_version(
         evidence_key=evidence_key,
         evidence_version_key=evidence_version_key,
         version=version,
-        codec="resume-canonical-source.v1",
+        codec=canonical_source_codec(payload),
         canonical_token=canonical_token,
         policy_content_version=policy_content_version,
         access_revision=access_revision,

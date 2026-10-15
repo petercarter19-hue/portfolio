@@ -466,5 +466,83 @@ class PublicationContractTests(unittest.TestCase):
         assert result.state is ReadState.UNAVAILABLE and result.reviewed is None
 
 
+class D6bCanonicalSourceV2Tests(unittest.TestCase):
+    """Additive v2: exact v1 bytes unless a v2-only field holds a value."""
+
+    def _fields(self, **values):
+        from services.resume_publication_contracts import CANONICAL_SOURCE_FIELDS
+        fields = {name: None for name in CANONICAL_SOURCE_FIELDS}
+        fields.update(canonical_type="project", title="Fictional project")
+        fields.update(values)
+        return fields
+
+    def test_v1_fields_alone_encode_exact_v1_bytes_and_v2_fields_round_trip(self):
+        from services.resume_publication_contracts import (
+            canonical_source_codec, decode_canonical_source, encode_canonical_source)
+        v1 = encode_canonical_source(self._fields())
+        self.assertTrue(v1.startswith(b"resume-canonical-source.v1"))
+        self.assertEqual(encode_canonical_source({**self._fields(), "project_category": None}), v1)
+        v2 = encode_canonical_source(self._fields(project_category="software",
+            additional_project_urls=("https://example.test/a", "https://example.test/b")))
+        self.assertEqual(canonical_source_codec(v2), "resume-canonical-source.v2")
+        decoded = decode_canonical_source(v2)
+        self.assertEqual(decoded["additional_project_urls"], ["https://example.test/a", "https://example.test/b"])
+        self.assertEqual(decoded["project_category"], "software")
+        self.assertIsNone(decoded["qualification_kind"])
+        self.assertEqual(encode_canonical_source({**decoded}), v2)
+        self.assertNotIn("project_category", decode_canonical_source(v1))
+
+    def test_decoder_rejects_every_ambiguous_or_malformed_shape(self):
+        from services.resume_publication_contracts import decode_canonical_source, encode_canonical_source, ContractError
+        v1 = encode_canonical_source(self._fields())
+        v2 = encode_canonical_source(self._fields(additional_project_urls=["https://example.test/a"]))
+        bad = [
+            b"resume-canonical-source.v3" + v1[len(b"resume-canonical-source.v1"):],
+            b"resume-canonical-source.v2" + v1[len(b"resume-canonical-source.v1"):],  # v2 label, no v2 field
+            v2 + b"N",
+            v2.replace(b"23:additional_project_urlsL1:", b"23:additional_project_urlsS"),
+            v2.replace(b"18:qualification_kindN", b"18:qualification_kindL0:"),
+            v2.replace(b"L1:", b"L17:"),
+        ]
+        for payload in bad:
+            with self.subTest(payload=payload[-40:]), self.assertRaises(ContractError):
+                decode_canonical_source(payload)
+        for value in ([7], "https://example.test/a", [None]):
+            with self.subTest(value=value), self.assertRaises(ContractError):
+                encode_canonical_source(self._fields(additional_project_urls=value))
+        with self.assertRaises(ContractError):
+            encode_canonical_source(self._fields(unknown_field="x"))
+
+    def test_list_wording_and_deltas_are_only_for_named_list_fields(self):
+        from services.resume_publication_contracts import ContractError, EditorialDelta, Wording
+        self.assertEqual(Wording("additional_project_urls", ["https://a.test"]).value, ("https://a.test",))
+        self.assertEqual(Wording("published_evidence_refs", ("entry:k",)).value, ("entry:k",))
+        for field, value in (("summary", ("x",)), ("additional_project_urls", (7,)), ("project_url", ["x"])):
+            with self.subTest(field=field), self.assertRaises(ContractError):
+                Wording(field, value)
+        delta = EditorialDelta("additional_project_urls", None, ["https://a.test"])
+        self.assertEqual(delta.after, ("https://a.test",))
+        with self.assertRaises(ContractError):
+            EditorialDelta("additional_project_urls", ("https://a.test",), ["https://a.test"])
+        with self.assertRaises(ContractError):
+            EditorialDelta("published_evidence_refs", None, ("entry:k",))  # Never a canonical edit.
+
+    def test_committed_evidence_accepts_both_labels_only_for_matching_bytes(self):
+        import hashlib
+        from services.resume_publication_contracts import (
+            ContractError, PublicationEvidenceVersion, encode_canonical_source)
+        v1 = encode_canonical_source(self._fields())
+        v2 = encode_canonical_source(self._fields(project_role="Lead"))
+        def evidence(codec, content):
+            return PublicationEvidenceVersion("owner", "entry", "evidence:entry", "evidence:entry:1", 1, codec, "1", 1, 1,
+                                              content, hashlib.sha256(content).hexdigest(), True, False)
+        self.assertEqual(evidence("resume-canonical-source.v1", v1).codec, "resume-canonical-source.v1")
+        self.assertEqual(evidence("resume-canonical-source.v2", v2).codec, "resume-canonical-source.v2")
+        for codec, content in (("resume-canonical-source.v1", v2), ("resume-canonical-source.v2", v1),
+                               ("resume-canonical-source.v3", v1)):
+            with self.subTest(codec=codec), self.assertRaises(ContractError):
+                evidence(codec, content)
+
+
 if __name__ == "__main__":
     unittest.main()

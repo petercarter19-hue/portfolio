@@ -43,9 +43,18 @@ from services.resume_publication_contracts import (
     UsePurpose,
     VersionTuple,
     Wording,
+    _LIST_WORDING_FIELDS,
     _context_from_authorized_server,
 )
 from services.resume_media_repository import MediaPlacement
+
+
+def _wording_value(name, value):
+    """Scalars as before; a named list field keeps its ordered strings (D6b)."""
+    if type(value) in (str, bool, type(None)):
+        return True
+    return (name in _LIST_WORDING_FIELDS and type(value) in (list, tuple)
+            and all(type(item) is str for item in value))
 
 
 class SnapshotPolicyPort:
@@ -110,6 +119,7 @@ def policy_snapshot_from_entries(
     sources: tuple[SourceState, ...] = (),
     wording_fields=None,
     wording_values=None,
+    wording_extra=None,
 ) -> PolicySnapshot:
     refs = []
     states = []
@@ -123,10 +133,12 @@ def policy_snapshot_from_entries(
         values = dict((wording_values or {}).get(str(item["entry_key"]), item.get("values") or {}))
         for name in (wording_fields or {}).get(str(item["entry_key"]), ()):
             values.setdefault(name, None)
+        # Publication-only references resolved by the publisher (never canonical).
+        values.update((wording_extra or {}).get(str(item["entry_key"]), {}))
         wording = tuple(
             Wording(str(key), value)
             for key, value in sorted(values.items())
-            if type(value) in (str, bool, type(None))
+            if _wording_value(str(key), value)
         )
         refs.append(ref)
         states.append(
@@ -171,8 +183,10 @@ class OwnerPolicyPort:
         draft_bases=(),
         media_versions=(),
         wording_values=None,
+        wording_extra=None,
     ) -> None:
         self.policy_service = policy_service
+        self.wording_extra = wording_extra
         self.resume_key = resume_key
         self.draft_revision = draft_revision
         self.publication_revision = publication_revision
@@ -224,6 +238,7 @@ class OwnerPolicyPort:
             sources=self.sources,
             wording_fields=self.wording_fields,
             wording_values=self.wording_values,
+            wording_extra=self.wording_extra,
         )
         if tuple(item.identity for item in refs) != tuple(
             item.identity for item in snapshot.versions.entries
@@ -376,6 +391,7 @@ def build_owner_review_candidate(
     profile_identity=None,
     draft_items=(),
     story_entry_key=None,
+    wording_extra=None,
 ):
     """Build an owner review candidate from durable list/get rows. Review does not write."""
 
@@ -421,6 +437,7 @@ def build_owner_review_candidate(
         sources=sources,
         wording_fields=wording_fields,
         wording_values={key: item.get("values") or {} for key, item in workspace_items.items()},
+        wording_extra=wording_extra,
     )
     context = _context_from_authorized_server(
         subject_key=owner,
@@ -454,6 +471,8 @@ def build_owner_review_candidate(
                 raise ContractError("stale Resume draft")
             before = {item.field: item.value for item in state.wording}
             for name, value in (overlay.get("proposed_values") or {}).items():
+                if name in _LIST_WORDING_FIELDS and type(value) is list:
+                    value = tuple(value)
                 if value != before.get(name):
                     deltas.append(EditorialDelta(name, before.get(name), value))
         choice = choice_map.get(state.ref.entry_key)

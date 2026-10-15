@@ -254,6 +254,9 @@ class IntegratedDraftPublicationTests(unittest.TestCase):
                 key = saved["item"]["record_key"]
                 pending = copy.deepcopy(shared.publication._pending_reviews)
                 selections = {"entries": [{"entry_key": key, "resume_display": True, "visitor_ai": False}]}
+                # D6b: the in-memory codec carries the kind; only SQL keeps the v1 limit.
+                self.assertEqual(shared.publication.read_publication_basis_for_owner(owner, selections)["read_state"], "current")
+                shared.publication.sql_repository = Mock()
                 reviewed = shared.publication.review_for_owner(owner, selections)
                 self.assertIsNone(reviewed.reviewed)
                 basis = shared.publication.read_publication_basis_for_owner(owner, selections)
@@ -262,6 +265,7 @@ class IntegratedDraftPublicationTests(unittest.TestCase):
                 self.assertIn({"item_ref": key, "reason": "publication_codec_qualification_kind"}, basis["blocked_items"])
                 self.assertEqual(shared.publication._pending_reviews, pending)
                 self.assertEqual(shared.canonical.get_item(owner, key)["values"]["qualification_kind"], kind)
+                shared.publication.sql_repository.commit_command.assert_not_called()
 
     def test_local_project_links_category_and_organization_cannot_silently_drop_at_publish(self):
         for extras, reason in (({"project_url": "https://example.test/demo"}, "publication_codec_project_links"),
@@ -274,8 +278,14 @@ class IntegratedDraftPublicationTests(unittest.TestCase):
                     "record_key": str(uuid4()), "record_type": "project", "values": {"project_name": "Fictional Orchard",
                         "summary": "Fictional work.", **extras}})
                 key = saved["item"]["record_key"]
-                basis = shared.publication.read_publication_basis_for_owner(owner,
-                    {"entries": [{"entry_key": key, "resume_display": True, "visitor_ai": False}]})
+                selections = {"entries": [{"entry_key": key, "resume_display": True, "visitor_ai": False}]}
+                # D6b: the in-memory codec carries these; only SQL keeps the v1 limit.
+                current = shared.publication.read_publication_basis_for_owner(owner, selections)
+                self.assertEqual(current["read_state"], "current")
+                for name, value in extras.items():
+                    self.assertEqual(current["proposed"]["display"][key]["wording"][name], value)
+                shared.publication.sql_repository = Mock()
+                basis = shared.publication.read_publication_basis_for_owner(owner, selections)
                 self.assertEqual(basis["read_state"], "blocked")
                 self.assertIn({"item_ref": key, "reason": reason}, basis["blocked_items"])
                 self.assertEqual(shared.publication._pending_reviews, {})
@@ -1414,6 +1424,407 @@ class SqlShapedPublicationReplayTests(unittest.TestCase):
         after = self.port.load_owner(self.owner)
         self.assertFalse(after["sharing_enabled"])
         self.assertEqual(after["publication_revision"], first["publication_revision"])
+
+
+# --- D6b: codec extension (references, project fields, qualification kinds) ---
+
+D6B_EVIDENCE = "published_evidence_refs"
+D6B_HIGHLIGHT = "published_highlight_order"
+# v1 bytes produced by main 51588a1c's encoder for these exact values
+# (X:/PeerSlate/Claude/plans/resume-page/build-D6/d6b-golden-v1.json).
+D6B_GOLDEN_V1 = {
+    "achievement": {
+        "hex": "726573756d652d63616e6f6e6963616c2d736f757263652e763131343a63616e6f6e6963616c5f747970655331313a616368696576656d656e7431303a726f6c655f7469746c654e31333a656d706c6f7965725f6e616d654e31333a6c6f636174696f6e5f746578744e373a73756d6d6172794e31303a73746172745f646174654e383a656e645f646174654e31343a646174655f707265636973696f6e4e31353a656d706c6f796d656e745f747970654e31323a63757272656e745f726f6c654e353a7469746c654e31363a696e737469747574696f6e5f6e616d654e31313a6465677265655f6e616d654e31343a6669656c645f6f665f73747564794e31363a656475636174696f6e5f7374617475734e31303a67726164655f746578744e31353a63726564656e7469616c5f6e616d654e31313a6973737565725f6e616d654e32313a63726564656e7469616c5f6964656e7469666965724e31303a69737375655f646174654e31353a65787069726174696f6e5f646174654e343a6e616d654e31333a736b696c6c5f73756d6d6172794e373a776f7264696e675332383a5261697365642066696374696f6e616c206f7574707574203230252e31323a6d65747269635f76616c756553333a32302531323a6d65747269635f6c6162656c53363a6f757470757432393a6163636f6d706c6973686d656e745f746f5f616368696576656d656e744e32313a706172656e745f63616e6f6e6963616c5f747970654e",
+        "sha256": "56a5552966b1ffd8b3bdad10145bb48939ef4dcd6c66a4d3d2bd9f268317d59e",
+        "values": {
+            "metric_label": "output",
+            "metric_value": "20%",
+            "wording": "Raised fictional output 20%."
+        }
+    },
+    "credential": {
+        "hex": "726573756d652d63616e6f6e6963616c2d736f757263652e763131343a63616e6f6e6963616c5f747970655331303a63726564656e7469616c31303a726f6c655f7469746c654e31333a656d706c6f7965725f6e616d654e31333a6c6f636174696f6e5f746578744e373a73756d6d6172794e31303a73746172745f646174654e383a656e645f646174654e31343a646174655f707265636973696f6e4e31353a656d706c6f796d656e745f747970654e31323a63757272656e745f726f6c654e353a7469746c654e31363a696e737469747574696f6e5f6e616d654e31313a6465677265655f6e616d654e31343a6669656c645f6f665f73747564794e31363a656475636174696f6e5f7374617475734e31303a67726164655f746578744e31353a63726564656e7469616c5f6e616d655331343a46696374696f6e616c206365727431313a6973737565725f6e616d655331353a46696374696f6e616c20426f61726432313a63726564656e7469616c5f6964656e7469666965724e31303a69737375655f646174655331303a323032312d30352d303131353a65787069726174696f6e5f646174654e343a6e616d654e31333a736b696c6c5f73756d6d6172794e373a776f7264696e674e31323a6d65747269635f76616c75654e31323a6d65747269635f6c6162656c4e32393a6163636f6d706c6973686d656e745f746f5f616368696576656d656e744e32313a706172656e745f63616e6f6e6963616c5f747970654e",
+        "sha256": "a7d97cf4db9913a7cd14ef6f6a42f142c553585aa5976ac0e3c58566562c0972",
+        "values": {
+            "issue_date": "2021-05-01",
+            "issuer": "Fictional Board",
+            "name": "Fictional cert"
+        }
+    },
+    "education": {
+        "hex": "726573756d652d63616e6f6e6963616c2d736f757263652e763131343a63616e6f6e6963616c5f7479706553393a656475636174696f6e31303a726f6c655f7469746c654e31333a656d706c6f7965725f6e616d654e31333a6c6f636174696f6e5f746578744e373a73756d6d6172794e31303a73746172745f646174654e383a656e645f646174655331303a323031392d30312d303131343a646174655f707265636973696f6e53343a7965617231353a656d706c6f796d656e745f747970654e31323a63757272656e745f726f6c654e353a7469746c6553333a42536331363a696e737469747574696f6e5f6e616d655332303a46696374696f6e616c20556e697665727369747931313a6465677265655f6e616d6553333a42536331343a6669656c645f6f665f737475647953373a46696374696f6e31363a656475636174696f6e5f7374617475734e31303a67726164655f746578744e31353a63726564656e7469616c5f6e616d654e31313a6973737565725f6e616d654e32313a63726564656e7469616c5f6964656e7469666965724e31303a69737375655f646174654e31353a65787069726174696f6e5f646174654e343a6e616d654e31333a736b696c6c5f73756d6d6172794e373a776f7264696e674e31323a6d65747269635f76616c75654e31323a6d65747269635f6c6162656c4e32393a6163636f6d706c6973686d656e745f746f5f616368696576656d656e744e32313a706172656e745f63616e6f6e6963616c5f747970654e",
+        "sha256": "8ebe0dd23244c5f0eb5d323a59ee067d0369b027ceca0431fe58a3cef914bd5e",
+        "values": {
+            "date_precision": "year",
+            "degree_name": "BSc",
+            "end_date": "2019-01-01",
+            "field_of_study": "Fiction",
+            "institution_name": "Fictional University",
+            "title": "BSc"
+        }
+    },
+    "knowledge": {
+        "hex": "726573756d652d63616e6f6e6963616c2d736f757263652e763131343a63616e6f6e6963616c5f7479706553393a6b6e6f776c6564676531303a726f6c655f7469746c654e31333a656d706c6f7965725f6e616d654e31333a6c6f636174696f6e5f746578744e373a73756d6d6172795331383a46696374696f6e616c2073756d6d6172792e31303a73746172745f646174654e383a656e645f646174654e31343a646174655f707265636973696f6e4e31353a656d706c6f796d656e745f747970654e31323a63757272656e745f726f6c654e353a7469746c655332303a50726f66657373696f6e616c2073756d6d61727931363a696e737469747574696f6e5f6e616d654e31313a6465677265655f6e616d654e31343a6669656c645f6f665f73747564794e31363a656475636174696f6e5f7374617475734e31303a67726164655f746578744e31353a63726564656e7469616c5f6e616d654e31313a6973737565725f6e616d654e32313a63726564656e7469616c5f6964656e7469666965724e31303a69737375655f646174654e31353a65787069726174696f6e5f646174654e343a6e616d654e31333a736b696c6c5f73756d6d6172794e373a776f7264696e674e31323a6d65747269635f76616c75654e31323a6d65747269635f6c6162656c4e32393a6163636f6d706c6973686d656e745f746f5f616368696576656d656e744e32313a706172656e745f63616e6f6e6963616c5f747970654e",
+        "sha256": "d213f62192001592135276b05e2431c4296fa9f09955054d3505a03e0535aaec",
+        "values": {
+            "classification": "work",
+            "title": "Professional summary",
+            "wording": "Fictional summary."
+        }
+    },
+    "project": {
+        "hex": "726573756d652d63616e6f6e6963616c2d736f757263652e763131343a63616e6f6e6963616c5f7479706553373a70726f6a65637431303a726f6c655f7469746c654e31333a656d706c6f7965725f6e616d654e31333a6c6f636174696f6e5f746578744e373a73756d6d6172795331353a46696374696f6e616c20776f726b2e31303a73746172745f646174655331303a323032322d30312d3031383a656e645f646174655331303a323032322d30362d303131343a646174655f707265636973696f6e4e31353a656d706c6f796d656e745f747970654e31323a63757272656e745f726f6c654e353a7469746c655331373a46696374696f6e616c2070726f6a65637431363a696e737469747574696f6e5f6e616d654e31313a6465677265655f6e616d654e31343a6669656c645f6f665f73747564794e31363a656475636174696f6e5f7374617475734e31303a67726164655f746578744e31353a63726564656e7469616c5f6e616d654e31313a6973737565725f6e616d654e32313a63726564656e7469616c5f6964656e7469666965724e31303a69737375655f646174654e31353a65787069726174696f6e5f646174654e343a6e616d654e31333a736b696c6c5f73756d6d6172794e373a776f7264696e674e31323a6d65747269635f76616c75654e31323a6d65747269635f6c6162656c4e32393a6163636f6d706c6973686d656e745f746f5f616368696576656d656e744e32313a706172656e745f63616e6f6e6963616c5f747970654e",
+        "sha256": "eaa6cd2eacb2dd3cd1f5542ba859dfd8219c450ed6fb755a76cb55fd434c1713",
+        "values": {
+            "end_date": "2022-06-01",
+            "project_name": "Fictional project",
+            "start_date": "2022-01-01",
+            "summary": "Fictional work."
+        }
+    },
+    "role": {
+        "hex": "726573756d652d63616e6f6e6963616c2d736f757263652e763131343a63616e6f6e6963616c5f7479706553343a726f6c6531303a726f6c655f7469746c655331383a46696374696f6e616c20656e67696e65657231333a656d706c6f7965725f6e616d655331373a46696374696f6e616c204f72636861726431333a6c6f636174696f6e5f746578744e373a73756d6d6172795332313a4c656420612066696374696f6e616c207465616d2e31303a73746172745f646174655331303a323032302d30312d3031383a656e645f646174654e31343a646174655f707265636973696f6e53353a6d6f6e746831353a656d706c6f796d656e745f747970654e31323a63757272656e745f726f6c654231353a7469746c654e31363a696e737469747574696f6e5f6e616d654e31313a6465677265655f6e616d654e31343a6669656c645f6f665f73747564794e31363a656475636174696f6e5f7374617475734e31303a67726164655f746578744e31353a63726564656e7469616c5f6e616d654e31313a6973737565725f6e616d654e32313a63726564656e7469616c5f6964656e7469666965724e31303a69737375655f646174654e31353a65787069726174696f6e5f646174654e343a6e616d654e31333a736b696c6c5f73756d6d6172794e373a776f7264696e674e31323a6d65747269635f76616c75654e31323a6d65747269635f6c6162656c4e32393a6163636f6d706c6973686d656e745f746f5f616368696576656d656e744e32313a706172656e745f63616e6f6e6963616c5f747970654e",
+        "sha256": "42e3b89954d72bb0b6908b73cd70f553be134ccf7ab1da07922b40a9c86f8517",
+        "values": {
+            "current_role": True,
+            "date_precision": "month",
+            "employer_name": "Fictional Orchard",
+            "end_date": None,
+            "role_title": "Fictional engineer",
+            "start_date": "2020-01-01",
+            "summary": "Led a fictional team."
+        }
+    },
+    "skill": {
+        "hex": "726573756d652d63616e6f6e6963616c2d736f757263652e763131343a63616e6f6e6963616c5f7479706553353a736b696c6c31303a726f6c655f7469746c654e31333a656d706c6f7965725f6e616d654e31333a6c6f636174696f6e5f746578744e373a73756d6d6172794e31303a73746172745f646174654e383a656e645f646174654e31343a646174655f707265636973696f6e4e31353a656d706c6f796d656e745f747970654e31323a63757272656e745f726f6c654e353a7469746c654e31363a696e737469747574696f6e5f6e616d654e31313a6465677265655f6e616d654e31343a6669656c645f6f665f73747564794e31363a656475636174696f6e5f7374617475734e31303a67726164655f746578744e31353a63726564656e7469616c5f6e616d654e31313a6973737565725f6e616d654e32313a63726564656e7469616c5f6964656e7469666965724e31303a69737375655f646174654e31353a65787069726174696f6e5f646174654e343a6e616d655331353a46696374696f6e616c20736b696c6c31333a736b696c6c5f73756d6d6172795331393a46696374696f6e616c2070726163746963652e373a776f7264696e674e31323a6d65747269635f76616c75654e31323a6d65747269635f6c6162656c4e32393a6163636f6d706c6973686d656e745f746f5f616368696576656d656e744e32313a706172656e745f63616e6f6e6963616c5f747970654e",
+        "sha256": "714bc8b13c14d605dc90b1d14df613df2c79c3260df77d5cb1e45b4a4c38b36e",
+        "values": {
+            "name": "Fictional skill",
+            "summary": "Fictional practice."
+        }
+    }
+}
+
+
+class _D6bOwner:
+    """One fictional owner whose records are created through the shared fixture."""
+
+    def __init__(self, owner="d6b-fictional-owner", slug="d6b-fictional"):
+        self.shared, self.owner, self.slug = SharedMvp1Fixture(), owner, slug
+        self.shared.publication.bind_slug(owner, slug)
+
+    def create(self, record_type, values, parent_key=None):
+        return self.shared.canonical.create_private(self.owner, {"command_id": str(uuid4()),
+            "record_type": record_type, "values": values, "parent_key": parent_key})["record_key"]
+
+    def create_draft(self, record_type, values):
+        return self.shared.draft.commit(self.owner, {"type": "create_private_item", "request_id": str(uuid4()),
+            "record_key": str(uuid4()), "record_type": record_type, "values": values})["item"]["record_key"]
+
+    def item(self, key):
+        return next(row for row in self.shared.draft.get_workspace(self.owner)["items"] if row["record_key"] == key)
+
+    def references(self, kind, references, item_key=None):
+        workspace = self.shared.draft.get_workspace(self.owner)
+        item = None
+        if item_key is not None:
+            row = self.item(item_key)
+            item = {"item_ref": item_key, "saved_revision": row["content_token"],
+                    "saved_access_revision": row["access_revision"]}
+        self.shared.draft.save_private_guide_references(self.owner, request_id=str(uuid4()),
+            request_digest=str(uuid4()), expected_version=workspace["draft_version"], kind=kind, item=item,
+            references=references, validate_current=lambda: True)
+
+    def selections(self, shown, ai=()):
+        rows = self.shared.policy.list_entries(self.owner)["entries"]
+        return {"entries": [{"entry_key": row["entry_key"], "resume_display": row["entry_key"] in shown,
+                             "visitor_ai": row["entry_key"] in ai} for row in rows if row["lifecycle"] == "active"]}
+
+    def publish(self, selections):
+        basis = self.shared.publication.read_publication_basis_for_owner(self.owner, selections)
+        assert basis["read_state"] == "current", basis
+        self.shared.publication.commit(self.owner, {"type": "publish", "request_id": str(uuid4()), "slug": self.slug,
+            "profile_identity": None, "reviewed_digest": basis["reviewed_digest"], "candidate": basis["candidate"]})
+        return basis
+
+    def stores(self):
+        shared = self.shared
+        return copy.deepcopy((shared.policy.repository.load_owner(self.owner),
+                              shared.draft.repository.load_owner(self.owner),
+                              shared.publication.repository.load_owner(self.owner)))
+
+
+def _line_digest(line):
+    return hashlib.sha256(line.encode("utf-8")).hexdigest()
+
+
+class D6bReferencePublicationTests(unittest.TestCase):
+    def _career(self):
+        owner = _D6bOwner()
+        role = owner.create("role", {"role_title": "Fictional lead", "employer_name": "Fictional Orchard",
+                                     "summary": "Grew the fictional orchard.\nPlanted fictional rows."})
+        wins = [owner.create("accomplishment", {"wording": f"Fictional win {n}.", "metric_value": f"{n}0%",
+                                                "metric_label": "yield"}, parent_key=role) for n in range(1, 8)]
+        quiet = owner.create("accomplishment", {"wording": "Fictional win without a number."}, parent_key=role)
+        skill = owner.create("skill", {"name": "Fictional pruning", "summary": "Pruning in practice."})
+        return owner, role, wins, quiet, skill
+
+    def test_skill_evidence_refs_publish_as_ordered_owner_bound_identities_with_named_drops(self):
+        owner, role, wins, quiet, skill = self._career()
+        hidden = wins[4]
+        line = {"role_record_key": role, "line_digest": _line_digest("Planted fictional rows.")}
+        owner.references("skill", [wins[1], wins[0], hidden, line, wins[0], {"bad": "shape"}, "fictional-missing",
+                                   {"role_record_key": role, "line_digest": _line_digest("Not in the summary.")},
+                                   wins[2]], item_key=skill)
+        shown = {role, skill, *wins[:4], quiet}
+        before_draft = copy.deepcopy(owner.item(skill)["evidence_refs"])
+        basis = owner.shared.publication.read_publication_basis_for_owner(owner.owner, owner.selections(shown))
+        self.assertEqual(basis["read_state"], "current")
+        row = basis["proposed"]["display"][skill]["wording"]
+        self.assertEqual(row[D6B_EVIDENCE], ["entry:" + wins[1], "entry:" + wins[0],
+                                             "line:" + role + ":" + line["line_digest"]])
+        self.assertNotIn("Fictional win", json.dumps(row))  # Identity only, never copied text.
+        dropped = {(item["reference"], item["reason"]) for item in basis["dropped_references"]}
+        self.assertEqual(dropped, {
+            ("entry:" + hidden, "reference_not_published"),
+            ("entry:" + wins[0], "reference_duplicate"),
+            (None, "reference_invalid"),
+            ("entry:fictional-missing", "reference_target_missing"),
+            ("line:" + role + ":" + _line_digest("Not in the summary."), "reference_line_changed"),
+            ("entry:" + wins[2], "reference_over_limit"),
+        })
+        self.assertTrue(all(item["item_ref"] == skill for item in basis["dropped_references"]))
+        owner.publish(owner.selections(shown))
+        guest = owner.shared.publication.guest_read(slug=owner.slug)
+        self.assertEqual(guest["display"][skill]["wording"][D6B_EVIDENCE], row[D6B_EVIDENCE])
+        self.assertNotIn(hidden, guest["display"])
+        # Publish consumes wording, never the member's private references.
+        self.assertEqual(owner.item(skill)["evidence_refs"], before_draft)
+        self.assertFalse(owner.item(skill)["draft_is_stale"])
+        after = owner.shared.publication.read_publication_basis_for_owner(owner.owner, owner.selections(shown))
+        self.assertEqual(after["change_count"], 0)
+
+    def test_reference_changes_are_reviewed_changes_and_never_expand_permissions(self):
+        owner, role, wins, quiet, skill = self._career()
+        owner.references("skill", [wins[0]], item_key=skill)
+        shown = {role, skill, wins[0], wins[1]}
+        first = owner.publish(owner.selections(shown, ai={skill}))
+        owner.references("skill", [wins[1], wins[0]], item_key=skill)
+        basis = owner.shared.publication.read_publication_basis_for_owner(owner.owner, owner.selections(shown, ai={skill}))
+        self.assertNotEqual(basis["reviewed_digest"], first["reviewed_digest"])
+        self.assertEqual(basis["change_count"], 1)
+        self.assertEqual([row["item_ref"] for row in basis["items"] if row["changed"]], [skill])
+        # A reference to a record that is not shown grants nothing.
+        owner.references("skill", [wins[5]], item_key=skill)
+        basis = owner.shared.publication.read_publication_basis_for_owner(owner.owner, owner.selections(shown, ai={skill}))
+        self.assertNotIn(wins[5], basis["membership"]["display"])
+        self.assertEqual(basis["membership"]["visitor_ai"], [skill])
+        self.assertNotIn(D6B_EVIDENCE, basis["proposed"]["display"][skill]["wording"])
+        self.assertIn({"item_ref": skill, "reference": "entry:" + wins[5], "reason": "reference_not_published"},
+                      basis["dropped_references"])
+
+    def test_up_to_four_highlights_publish_in_order_with_named_drops(self):
+        owner, role, wins, quiet, skill = self._career()
+        hidden = wins[3]
+        owner.references("highlights", [wins[0], quiet, hidden, wins[1], wins[0], wins[2], wins[4], wins[5], wins[6]])
+        shown = {role, skill, quiet, *wins[:3], *wins[4:]}
+        basis = owner.shared.publication.read_publication_basis_for_owner(owner.owner, owner.selections(shown))
+        display = basis["proposed"]["display"]
+        order = {key: display[key]["wording"].get(D6B_HIGHLIGHT) for key in display}
+        self.assertEqual({key: value for key, value in order.items() if value},
+                         {wins[0]: "1", wins[1]: "2", wins[2]: "3", wins[4]: "4"})
+        dropped = {(item["reference"], item["reason"]) for item in basis["dropped_references"]}
+        self.assertEqual(dropped, {("entry:" + quiet, "highlight_metric_missing"),
+                                   ("entry:" + hidden, "reference_not_published"),
+                                   ("entry:" + wins[0], "reference_duplicate"),
+                                   ("entry:" + wins[5], "reference_over_limit"),
+                                   ("entry:" + wins[6], "reference_over_limit")})
+        self.assertTrue(all(item["item_ref"] == "resume" for item in basis["dropped_references"]))
+        owner.publish(owner.selections(shown))
+        guest = owner.shared.publication.guest_read(slug=owner.slug)["display"]
+        self.assertEqual(guest[wins[1]]["wording"][D6B_HIGHLIGHT], "2")
+        self.assertEqual(owner.shared.draft.repository.load_owner(owner.owner)["highlight_refs"][0], wins[0])
+
+    def test_a_publication_without_new_fields_keeps_its_digest_and_bytes(self):
+        owner = _D6bOwner()
+        role = owner.create("role", {"role_title": "Fictional lead", "employer_name": "Fictional Orchard",
+                                     "summary": "Grew the fictional orchard."})
+        basis = owner.shared.publication.read_publication_basis_for_owner(owner.owner, owner.selections({role}, ai={role}))
+        self.assertEqual(basis["dropped_references"], [])
+        owner.publish(owner.selections({role}, ai={role}))
+        current = owner.shared.publication.owner_preview(owner.owner)["current"]
+        evidence = owner.shared.publication._current(owner.shared.publication.repository.load_owner(owner.owner))["evidence"][role]
+        self.assertEqual(evidence.codec, "resume-canonical-source.v1")
+        self.assertNotIn(D6B_EVIDENCE, current["display"][role]["wording"])
+
+
+class D6bProjectAndQualificationTests(unittest.TestCase):
+    def test_project_links_category_organization_role_and_dates_publish_and_reach_visitor_ai_evidence(self):
+        from services.resume_publication_contracts import decode_canonical_source
+        owner = _D6bOwner()
+        values = {"project_name": "Fictional orchard map", "summary": "Mapped fictional rows.",
+                  "project_url": "https://example.test/map",
+                  "additional_project_urls": ["https://example.test/code", "https://example.test/notes"],
+                  "project_category": "software", "organization_name": "Fictional Institute",
+                  "project_role": "Lead", "start_date": "2022-01-01", "end_date": "2023-01-01", "date_precision": "year"}
+        key = owner.create_draft("project", values)
+        owner.publish(owner.selections({key}, ai={key}))
+        wording = owner.shared.publication.guest_read(slug=owner.slug)["display"][key]["wording"]
+        for name, value in values.items():
+            self.assertEqual(wording[name], value, name)
+        evidence = owner.shared.publication._current(owner.shared.publication.repository.load_owner(owner.owner))["evidence"][key]
+        self.assertEqual(evidence.codec, "resume-canonical-source.v2")
+        decoded = decode_canonical_source(evidence.content)
+        self.assertEqual(decoded["additional_project_urls"], values["additional_project_urls"])
+        for name in ("project_url", "project_category", "organization_name", "project_role", "date_precision"):
+            self.assertEqual(decoded[name], values[name], name)
+        self.assertEqual(decoded["title"], values["project_name"])
+
+    def test_unusable_project_links_block_by_name_and_stay_unchanged(self):
+        for links in (["http://example.test/a"], ["https://example.test/a"] * 2, ["https://a.test/1", "https://a.test/2",
+                      "https://a.test/3"], ["https://"], ["https://example.test/" + "x" * 1000]):
+            with self.subTest(links=links[:1]):
+                owner = _D6bOwner()
+                key = owner.create_draft("project", {"project_name": "Fictional", "summary": "Fictional."})
+                # Historical stored values: today's editor refuses these links on save.
+                stored = owner.shared.policy.repository.load_owner(owner.owner)
+                stored["entries"][key]["values"]["additional_project_urls"] = list(links)
+                owner.shared.policy.repository.save_owner(owner.owner, stored)
+                before = owner.stores()
+                basis = owner.shared.publication.read_publication_basis_for_owner(owner.owner, owner.selections({key}))
+                self.assertEqual(basis["read_state"], "blocked")
+                self.assertIn({"item_ref": key, "reason": "publication_project_links_invalid"}, basis["blocked_items"])
+                self.assertEqual(owner.stores(), before)
+                self.assertEqual(owner.shared.canonical.get_item(owner.owner, key)["values"]["additional_project_urls"], links)
+
+    def test_publications_and_memberships_publish_in_their_own_sections_with_their_kind(self):
+        from services.resume_publication_contracts import decode_canonical_source
+        owner = _D6bOwner()
+        cert = owner.create_draft("credential", {"name": "Fictional cert", "issuer": "Fictional Board",
+                                           "issue_date": "2021-05-01", "completion_status": "completed"})
+        paper = owner.create_draft("credential", {"qualification_kind": "publication", "name": "Fictional paper",
+                                            "issuer": "Fictional Press", "issue_date": "2022-01-01",
+                                            "issue_date_precision": "year", "completion_status": "completed"})
+        member = owner.create_draft("credential", {"qualification_kind": "membership", "name": None,
+                                             "issuer": "Fictional Society", "issue_date": "2020-01-01",
+                                             "issue_date_precision": "year", "completion_status": "completed"})
+        role = owner.create("role", {"role_title": "Fictional lead", "employer_name": "Fictional Orchard"})
+        owner.publish(owner.selections({cert, paper, member, role}, ai={paper, member}))
+        display = owner.shared.publication.guest_read(slug=owner.slug)["display"]
+        from services.resume_publication_projection import resume_section_for
+        sections = {key: resume_section_for(row["canonical_type"], row["wording"]) for key, row in display.items()}
+        self.assertEqual((sections[cert], sections[paper], sections[member]), ("certifications", "publications", "memberships"))
+        # One shared order: Experience, Certifications, then the optional groups by first appearance.
+        self.assertEqual(list(display)[:2], [role, cert])
+        self.assertEqual(set(list(display)[2:]), {paper, member})
+        evidence = owner.shared.publication._current(owner.shared.publication.repository.load_owner(owner.owner))["evidence"]
+        self.assertEqual(decode_canonical_source(evidence[paper].content)["qualification_kind"], "publication")
+        self.assertEqual(decode_canonical_source(evidence[member].content)["qualification_kind"], "membership")
+        self.assertIsNone(decode_canonical_source(evidence[member].content)["credential_name"])
+        self.assertEqual(evidence[cert].codec, "resume-canonical-source.v1")
+
+
+class D6bCodecGoldenAndOldSnapshotTests(unittest.TestCase):
+    def test_entries_without_new_fields_keep_mains_exact_v1_bytes_for_every_type(self):
+        from services.resume_publication_projection import committed_source_bytes
+        from services.resume_publication_service import _codec_values
+        for kind, golden in D6B_GOLDEN_V1.items():
+            with self.subTest(kind=kind):
+                raw = committed_source_bytes(kind, _codec_values(golden["values"], kind))
+                self.assertEqual(raw.hex(), golden["hex"])
+                self.assertEqual(hashlib.sha256(raw).hexdigest(), golden["sha256"])
+        for kind, values in (("credential", {**D6B_GOLDEN_V1["credential"]["values"], "qualification_kind": "certification"}),
+                             ("project", {**D6B_GOLDEN_V1["project"]["values"], "date_precision": "day",
+                                          "additional_project_urls": []})):
+            with self.subTest(equivalent=kind):
+                self.assertEqual(committed_source_bytes(kind, _codec_values(values, kind)).hex(), D6B_GOLDEN_V1[kind]["hex"])
+
+    def test_a_stored_v1_publication_still_reads_unchanged(self):
+        from services.resume_publication_contracts import PublicationEvidenceVersion, decode_canonical_source
+        owner = _D6bOwner()
+        role = owner.create("role", D6B_GOLDEN_V1["role"]["values"])
+        owner.publish(owner.selections({role}, ai={role}))
+        snapshot = owner.shared.publication.repository.load_owner(owner.owner)
+        current = owner.shared.publication._current(snapshot)
+        stored = current["evidence"][role]
+        old = PublicationEvidenceVersion(stored.owner_key, stored.entry_key, stored.evidence_key, stored.evidence_version_key,
+            stored.version, "resume-canonical-source.v1", stored.canonical_token, stored.policy_content_version,
+            stored.access_revision, bytes.fromhex(D6B_GOLDEN_V1["role"]["hex"]), D6B_GOLDEN_V1["role"]["sha256"],
+            stored.display_eligible, stored.visitor_ai_eligible)
+        current["evidence"][role] = old
+        owner.shared.publication.repository.save_owner(owner.owner, snapshot)
+        before = json.dumps(owner.shared.publication.guest_read(slug=owner.slug)["display"], sort_keys=True)
+        for _ in range(2):
+            self.assertEqual(json.dumps(owner.shared.publication.guest_read(slug=owner.slug)["display"], sort_keys=True), before)
+            self.assertEqual(owner.shared.publication._current(owner.shared.publication.repository.load_owner(owner.owner))
+                             ["evidence"][role].content.hex(), D6B_GOLDEN_V1["role"]["hex"])
+        self.assertEqual(decode_canonical_source(old.content)["role_title"], "Fictional engineer")
+        self.assertEqual(owner.shared.publication.read_publication_basis_for_owner(owner.owner,
+                         owner.selections({role}, ai={role}))["read_state"], "current")
+
+
+class D6bVisitorAiSourceTests(unittest.TestCase):
+    def test_visitor_ai_sources_read_v2_evidence_with_its_list_and_kind(self):
+        from services.member_visitor_ai_sources import build_sources
+        from services.resume_publication_contracts import encode_canonical_source
+        from tests.test_member_visitor_ai_sources import snapshot
+        document = snapshot()
+        raw = encode_canonical_source({"canonical_type": "project", "title": "Fictional map",
+            "project_category": "software", "additional_project_urls": ["https://example.test/a"]})
+        digest = hashlib.sha256(raw).hexdigest()
+        document["entries"][0].update(canonical_type="project", content_hex=raw.hex(), content_sha256=digest,
+                                      current_content_sha256=digest, codec="resume-canonical-source.v2")
+        bundle = build_sources(document, slug="member-a")
+        wording = {item.field: item.value for item in bundle.manifest.entries[0].wording}
+        self.assertEqual(wording["additional_project_urls"], ("https://example.test/a",))
+        self.assertEqual(wording["project_category"], "software")
+        document["entries"][0]["codec"] = "resume-canonical-source.v1"  # Label must match the bytes.
+        with self.assertRaises(Exception):
+            build_sources(document, slug="member-a")
+
+
+class D6bSqlStaysClosedTests(unittest.TestCase):
+    def _sql(self, owner):
+        port = Mock()
+        port.get_receipt.return_value = None
+        owner.shared.publication.sql_repository = port
+        return port
+
+    def test_sql_backed_review_keeps_v1_blockers_and_publish_never_reaches_the_procedure(self):
+        cases = (("project", {"project_name": "Fictional", "summary": "Fictional.", "project_category": "software"},
+                  "publication_codec_project_category"),
+                 ("project", {"project_name": "Fictional", "summary": "Fictional.",
+                              "additional_project_urls": ["https://example.test/a"]}, "publication_codec_project_links"),
+                 ("credential", {"qualification_kind": "membership", "issuer": "Fictional Society",
+                                 "issue_date": "2020-01-01", "issue_date_precision": "year",
+                                 "completion_status": "completed"}, "publication_codec_qualification_kind"))
+        for record_type, values, reason in cases:
+            with self.subTest(reason=reason):
+                owner = _D6bOwner()
+                key = owner.create_draft(record_type, values)
+                port = self._sql(owner)
+                result = owner.shared.publication.review_for_owner(owner.owner, owner.selections({key}))
+                self.assertIsNone(result.reviewed)
+                self.assertIn((key, reason), result.blocked_items)
+                port.commit_command.assert_not_called()
+
+    def test_sql_backed_publish_refuses_references_and_v2_values_before_the_procedure(self):
+        owner = _D6bOwner()
+        role = owner.create("role", {"role_title": "Fictional lead", "employer_name": "Fictional Orchard"})
+        lic = owner.create_draft("credential", {"qualification_kind": "license", "name": "Fictional licence",
+                                          "issuer": "Fictional Board", "issue_date": "2021-05-01",
+                                          "completion_status": "completed"})
+        selections = owner.selections({role, lic})
+        reviewed = owner.shared.publication.review_for_owner(owner.owner, selections).reviewed
+        payload = {"type": "publish", "request_id": str(uuid4()), "slug": owner.slug, "profile_identity": None,
+                   "reviewed_digest": reviewed.digest, "candidate": owner.shared.publication.publish_candidate(reviewed)}
+        port = self._sql(owner)
+        before = owner.stores()
+        with self.assertRaises(PublicationConflictError) as caught:
+            owner.shared.publication.commit(owner.owner, payload)
+        self.assertEqual(caught.exception.code, "publication_codec_sql_unavailable")
+        port.commit_command.assert_not_called()
+        self.assertEqual(owner.stores(), before)
 
 
 if __name__ == "__main__":

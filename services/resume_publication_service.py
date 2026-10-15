@@ -32,6 +32,8 @@ from services.resume_publication_adapters import (
     build_owner_review_candidate,
 )
 from services.resume_publication_contracts import (
+    PUBLISHED_EVIDENCE_REFS_FIELD,
+    PUBLISHED_HIGHLIGHT_ORDER_FIELD,
     CandidateInput,
     ContractError,
     PublicationEvidenceVersion,
@@ -84,7 +86,7 @@ def _digest(payload: dict) -> str:
 def _wording_map(wording) -> dict[str, str | None]:
     if isinstance(wording, dict):
         return dict(wording)
-    return {item.field: item.value for item in wording}
+    return {item.field: list(item.value) if type(item.value) is tuple else item.value for item in wording}
 
 
 # D6a publisher side of the B3 conversion contract. B3 writes one optional
@@ -145,6 +147,172 @@ def _conversion_blockers(items) -> list[dict]:
 def _conversion_refusal_reason(blocked) -> str:
     reasons = {item["reason"] for item in blocked}
     return TYPE_TRANSITION_UNAVAILABLE if TYPE_TRANSITION_UNAVAILABLE in reasons else CONVERSION_DESCRIPTOR_INVALID
+
+
+# D6b: references resolve at Publish only to records this same publication
+# displays. The public copy keeps owner-bound identities, never copied text.
+SKILL_EVIDENCE_LIMIT = 3
+HIGHLIGHT_LIMIT = 4
+SQL_EXTENDED_CODEC_UNAVAILABLE = "publication_codec_sql_unavailable"
+
+
+def _reference_identity(ref):
+    if type(ref) is str and ref:
+        return "entry:" + ref
+    if type(ref) is dict and set(ref) == {"role_record_key", "line_digest"} and all(
+            type(ref[name]) is str and ref[name] for name in ref):
+        return "line:" + ref["role_record_key"] + ":" + ref["line_digest"]
+    return None
+
+
+def _valid_project_links(values) -> bool:
+    from urllib.parse import urlsplit
+    links = []
+    if values.get("project_url") is not None:
+        links.append(values["project_url"])
+    extra = values.get("additional_project_urls")
+    if extra is not None:
+        if type(extra) is not list or len(extra) > 2:
+            return False
+        links.extend(extra)
+    for link in links:
+        if type(link) is not str or len(link) > 1000 or link != link.strip():
+            return False
+        try:
+            parts = urlsplit(link)
+        except ValueError:
+            return False
+        if parts.scheme != "https" or not parts.hostname:
+            return False
+    return len(links) == len(set(links))
+
+
+def _resolve_publication_references(rows, workspace, payload=None):
+    """Resolve draft references against this candidate's own display set.
+
+    Returns (wording_extra, dropped). Only this owner's active entries that the
+    candidate displays count; every reference not carried is named.
+    """
+    import hashlib
+    payload = payload or {}
+    choices = payload.get("entries") or payload.get("selections") or []
+    if type(choices) is not list or any(type(item) is not dict for item in choices):
+        raise PublicationValidationError("Invalid entry selections.")
+    selected = {item.get("entry_key"): item for item in choices}
+    items = {item["record_key"]: item for item in (workspace or {}).get("items", []) if type(item) is dict}
+    active = {row["entry_key"]: row for row in rows if row.get("lifecycle") == "active"}
+
+    def displayed(key):
+        row = active.get(key)
+        if row is None:
+            return False
+        choice = selected.get(key) or {}
+        return bool(choice.get("resume_display", choice.get("display", row.get("resume_display"))))
+
+    def kind(key):
+        row, item = active.get(key) or {}, items.get(key) or {}
+        if row.get("canonical_type") == "achievement" or item.get("record_type") == "accomplishment":
+            return "accomplishment"
+        return row.get("canonical_type")
+
+    def effective(key):
+        row, item = active.get(key) or {}, items.get(key) or {}
+        return {**(row.get("values") or {}), **(item.get("values") or {}), **(item.get("proposed_values") or {})}
+
+    def parent(key):
+        item, row = items.get(key) or {}, active.get(key) or {}
+        return item.get("parent_key") or row.get("parent_key")
+
+    def accomplishment_reason(key):
+        if key not in active:
+            return "reference_target_missing"
+        if kind(key) != "accomplishment":
+            return "reference_invalid"
+        role = parent(key)
+        if not displayed(key) or role is None or not displayed(role) or kind(role) != "role":
+            return "reference_not_published"
+        return None
+
+    extra, dropped = {}, []
+    for key in sorted(items):
+        refs = items[key].get("evidence_refs")
+        if refs is None or not displayed(key) or kind(key) != "skill":
+            continue  # Nothing about this skill is published.
+        kept, seen = [], set()
+        for ref in refs if type(refs) is list else [refs]:
+            identity = _reference_identity(ref)
+            reason = None
+            if identity is None:
+                reason = "reference_invalid"
+            elif identity in seen:
+                reason = "reference_duplicate"
+            elif type(ref) is str:
+                reason = accomplishment_reason(ref)
+            else:
+                role = ref["role_record_key"]
+                if role not in active:
+                    reason = "reference_target_missing"
+                elif kind(role) != "role":
+                    reason = "reference_invalid"
+                elif not displayed(role):
+                    reason = "reference_not_published"
+                else:
+                    summary = effective(role).get("summary")
+                    lines = summary.splitlines() if isinstance(summary, str) else []
+                    if not any(line.strip() and hashlib.sha256(line.encode("utf-8")).hexdigest() == ref["line_digest"]
+                               for line in lines):
+                        reason = "reference_line_changed"
+            if reason is None and len(kept) == SKILL_EVIDENCE_LIMIT:
+                reason = "reference_over_limit"
+            if identity is not None:
+                seen.add(identity)
+            if reason is None:
+                kept.append(identity)
+            else:
+                dropped.append({"item_ref": key, "reference": identity, "reason": reason})
+        if kept:
+            extra.setdefault(key, {})[PUBLISHED_EVIDENCE_REFS_FIELD] = tuple(kept)
+    highlights = (workspace or {}).get("highlight_refs")
+    if highlights is not None:
+        kept, seen = [], set()
+        for ref in highlights if type(highlights) is list else [highlights]:
+            identity = _reference_identity(ref) if type(ref) is str else None
+            reason = None
+            if identity is None:
+                reason = "reference_invalid"
+            elif identity in seen:
+                reason = "reference_duplicate"
+            else:
+                reason = accomplishment_reason(ref)
+                metric = effective(ref).get("metric_value") if reason is None else None
+                if reason is None and (not isinstance(metric, str) or not metric.strip()):
+                    reason = "highlight_metric_missing"
+            if reason is None and len(kept) == HIGHLIGHT_LIMIT:
+                reason = "reference_over_limit"
+            if identity is not None:
+                seen.add(identity)
+            if reason is None:
+                kept.append(ref)
+            else:
+                dropped.append({"item_ref": "resume", "reference": identity, "reason": reason})
+        for position, key in enumerate(kept, start=1):
+            extra.setdefault(key, {})[PUBLISHED_HIGHLIGHT_ORDER_FIELD] = str(position)
+    return extra, dropped
+
+
+def _needs_extended_codec(reviewed) -> bool:
+    """True when a reviewed entry carries anything only the v2/in-memory path keeps."""
+    from services.resume_publication_contracts import CANONICAL_SOURCE_V2_ONLY_FIELDS
+    for manifest in (reviewed.display.entries, reviewed.visitor_ai.entries, reviewed.owner_entries):
+        for entry in manifest:
+            for item in entry.wording:
+                if type(item.value) is tuple or item.field in {PUBLISHED_EVIDENCE_REFS_FIELD,
+                                                               PUBLISHED_HIGHLIGHT_ORDER_FIELD}:
+                    return True
+                if (item.field in CANONICAL_SOURCE_V2_ONLY_FIELDS and item.value is not None
+                        and not (item.field == "qualification_kind" and item.value == "certification")):
+                    return True
+    return False
 
 
 def memory_resume_publication_service(**kwargs):
@@ -502,10 +670,13 @@ class ResumePublicationService:
                     placements, media_states = durable_media_port.read_draft(owner, workspace["draft_version"])
                 except Exception as error:
                     raise PublicationUnavailableError("Resume media is unavailable.") from error
-            codec_blockers = self._publication_format_blockers(entries, workspace, payload)
+            extended = self.sql_repository is None
+            codec_blockers = self._publication_format_blockers(entries, workspace, payload, extended=extended)
             if codec_blockers:
                 return ValidationResult(ReadState.UNAVAILABLE, "publication_codec_unavailable",
                     blocked_items=tuple((item["item_ref"], item["reason"]) for item in codec_blockers))
+            wording_extra = (_resolve_publication_references(entries, workspace, payload)[0]
+                             if extended and workspace is not None else {})
             candidate, policy, media = build_owner_review_candidate(
                 owner=owner,
                 resume_key=str(payload.get("resume_key") or f"resume:{owner}"),
@@ -521,6 +692,7 @@ class ResumePublicationService:
                 placements=placements,
                 media_versions=tuple(item.ref for item in media_states),
                 media_states=media_states,
+                wording_extra=wording_extra,
             )
             policy_port = OwnerPolicyPort(
                 read_policy,
@@ -535,6 +707,7 @@ class ResumePublicationService:
                 draft_service=self.draft_service,
                 draft_bases=candidate.draft_bases,
                 media_versions=candidate.prior.media,
+                wording_extra=wording_extra,
             )
             if durable_media_port is not None:
                 durable_media_port.versions = candidate.prior
@@ -571,12 +744,13 @@ class ResumePublicationService:
         return result
 
     @staticmethod
-    def _unavailable_basis(*, blocked=(), ineligible=()):
+    def _unavailable_basis(*, blocked=(), ineligible=(), dropped=()):
         return {"read_state": "blocked" if blocked else "unavailable", "publication_state": "unknown",
             "basis_revision": None, "publication_revision": None, "sharing_enabled": None,
             "change_count": None, "membership": None, "items": None, "proposed": None,
             "story": None, "contact": None, "profile": None, "candidate": None, "reviewed_digest": None,
-            "blocked_items": list(blocked), "ineligible_items": list(ineligible)}
+            "blocked_items": list(blocked), "ineligible_items": list(ineligible),
+            "dropped_references": list(dropped)}
 
     def _basis_authorities(self, owner):
         if self.policy_service is None or self.draft_service is None:
@@ -611,7 +785,7 @@ class ResumePublicationService:
         return rows, workspace, snapshot, current
 
     @staticmethod
-    def _publication_format_blockers(rows, workspace, payload=None, *, selected_only=True):
+    def _publication_format_blockers(rows, workspace, payload=None, *, selected_only=True, extended=False):
         """Fail closed for ruled local fields that codec v1 cannot preserve.
 
         List-valued project data also exceeds v1's complete-candidate scalar
@@ -625,11 +799,11 @@ class ResumePublicationService:
         selected = {item.get("entry_key"): item for item in choices}
         items = {item["record_key"]: item for item in (workspace or {}).get("items", [])}
         blocked = []
-        if "highlight_refs" in (workspace or {}):
+        if "highlight_refs" in (workspace or {}) and not extended:
             blocked.append({"item_ref":"resume","reason":"publication_codec_highlight_references"})
         blocked.extend({"item_ref":item["record_key"],"reason":"publication_codec_skill_references"}
             for item in (workspace or {}).get("items",[])
-            if "evidence_refs" in item and conversion_publication_blocker(item) is None)
+            if "evidence_refs" in item and conversion_publication_blocker(item) is None and not extended)
         for row in rows:
             if row.get("lifecycle") != "active":
                 continue
@@ -649,28 +823,47 @@ class ResumePublicationService:
                 except GuideTextLimitError as error:
                     reasons.append(error.code)
             if row["canonical_type"] == "credential":
-                if values.get("qualification_kind") in {"publication", "membership"}:
+                kind = values.get("qualification_kind")
+                if extended:
+                    if kind not in {None, "certification", "license", "publication", "membership"}:
+                        reasons.append("publication_codec_qualification_kind")
+                elif kind in {"publication", "membership"}:
                     reasons.append("publication_codec_qualification_kind")
                 if values.get("verification_url"):
                     reasons.append("publication_codec_verification_url")
             elif row["canonical_type"] == "project":
                 structured_links = isinstance(values.get("additional_project_urls"), list)
-                if values.get("project_url") or structured_links:
-                    reasons.append("publication_codec_project_links")
-                for field, reason in (("project_category", "category"), ("organization_name", "organization"),
-                                      ("project_role", "role"), ("project_status", "status"), ("location_text", "location")):
-                    if values.get(field):
-                        reasons.append("publication_codec_project_" + reason)
-                if (values.get("start_date") or values.get("end_date")) and values.get("date_precision") not in {None, "day"}:
-                    reasons.append("publication_codec_project_date_precision")
-                if structured_links:
-                    publishing = True  # v1 cannot construct a scalar Wording from this field.
+                if extended:
+                    if (values.get("project_url") is not None or values.get("additional_project_urls") is not None) \
+                            and not _valid_project_links(values):
+                        reasons.append("publication_project_links_invalid")
+                        publishing = True  # An unusable link list can never be carried as wording.
+                    for field, reason in (("project_category", "category"), ("organization_name", "organization"),
+                                          ("project_role", "role")):
+                        if values.get(field) is not None and type(values[field]) is not str:
+                            reasons.append("publication_codec_project_" + reason)
+                    for field, reason in (("project_status", "status"), ("location_text", "location")):
+                        if values.get(field):
+                            reasons.append("publication_codec_project_" + reason)
+                    if values.get("date_precision") not in {None, "day", "month", "year"}:
+                        reasons.append("publication_codec_project_date_precision")
+                else:
+                    if values.get("project_url") or structured_links:
+                        reasons.append("publication_codec_project_links")
+                    for field, reason in (("project_category", "category"), ("organization_name", "organization"),
+                                          ("project_role", "role"), ("project_status", "status"), ("location_text", "location")):
+                        if values.get(field):
+                            reasons.append("publication_codec_project_" + reason)
+                    if (values.get("start_date") or values.get("end_date")) and values.get("date_precision") not in {None, "day"}:
+                        reasons.append("publication_codec_project_date_precision")
+                    if structured_links:
+                        publishing = True  # v1 cannot construct a scalar Wording from this field.
             if publishing or not selected_only:
                 blocked.extend({"item_ref": key, "reason": reason} for reason in reasons)
         return blocked
 
     @staticmethod
-    def _basis_diagnostics(rows, workspace, payload=None):
+    def _basis_diagnostics(rows, workspace, payload=None, *, extended=False):
         blocked, ineligible = [], []
         for item in workspace["items"]:
             conversion = conversion_publication_blocker(item)
@@ -685,8 +878,9 @@ class ResumePublicationService:
                 ineligible.append({"item_ref": item["record_key"], "reason": "publication_ineligible"})
         ineligible.extend({"item_ref": row["entry_key"], "reason": "deleted"}
                           for row in rows if row["lifecycle"] != "active")
-        blocked.extend(ResumePublicationService._publication_format_blockers(rows, workspace, payload))
-        ineligible.extend(ResumePublicationService._publication_format_blockers(rows, workspace, payload, selected_only=False))
+        blocked.extend(ResumePublicationService._publication_format_blockers(rows, workspace, payload, extended=extended))
+        ineligible.extend(ResumePublicationService._publication_format_blockers(rows, workspace, payload, selected_only=False,
+                                                                                extended=extended))
         return blocked, ineligible
 
     @owner_composed
@@ -701,15 +895,17 @@ class ResumePublicationService:
         except Exception:
             try:
                 rows, workspace, _, _ = self._basis_authorities(owner)
-                blocked, ineligible = self._basis_diagnostics(rows, workspace, payload)
+                blocked, ineligible = self._basis_diagnostics(rows, workspace, payload, extended=self.sql_repository is None)
                 return self._unavailable_basis(blocked=blocked, ineligible=ineligible)
             except Exception:
                 return self._unavailable_basis()
         try:
             rows, workspace, snapshot, current = self._basis_authorities(owner)
-            blocked, ineligible = self._basis_diagnostics(rows, workspace, payload)
+            extended = self.sql_repository is None
+            blocked, ineligible = self._basis_diagnostics(rows, workspace, payload, extended=extended)
             if result.state is not ReadState.CURRENT or result.reviewed is None or blocked:
                 return self._unavailable_basis(blocked=blocked, ineligible=ineligible)
+            dropped = _resolve_publication_references(rows, workspace, payload)[1] if extended else []
             reviewed = result.reviewed
             versions = reviewed.versions
             if (versions.subject_key != owner or versions.draft_revision != workspace["draft_version"]
@@ -799,7 +995,8 @@ class ResumePublicationService:
                             "changed": contact_changed},
                 "profile": {"published_reference": before_profile, "proposed_reference": profile, "changed": profile_changed},
                 "media_changed_slots": media_changes, "candidate": self.publish_candidate(reviewed),
-                "reviewed_digest": reviewed.digest, "blocked_items": [], "ineligible_items": ineligible}
+                "reviewed_digest": reviewed.digest, "blocked_items": [], "ineligible_items": ineligible,
+                "dropped_references": dropped}
         except Exception:
             return self._unavailable_basis()
 
@@ -1106,6 +1303,9 @@ class ResumePublicationService:
                 raise PublicationUnavailableError("Publication is unavailable.") from error
         if command_type == "publish":
             reviewed = self._review_publish(owner, payload, reviewed)
+            if _needs_extended_codec(reviewed):
+                raise PublicationConflictError(SQL_EXTENDED_CODEC_UNAVAILABLE,
+                    "This publication needs details the saved database can't publish yet. Your input is kept.")
         try:
             return self.sql_repository.commit_command(owner, request_id, command)
         except PublicationConflictError:
@@ -1169,6 +1369,7 @@ class ResumePublicationService:
         if draft_before["draft_version"] != reviewed.versions.draft_revision:
             raise PublicationConflictError("stale_draft", "The draft changed.")
         display_choices = snapshot.setdefault("guide_display_choices", {})
+        retained_refs = {}
         if type(display_choices) is not dict:
             raise PublicationUnavailableError("Display choice history is unavailable. Your input is kept.")
         for choice in reviewed.candidate.selections:
@@ -1190,13 +1391,26 @@ class ResumePublicationService:
             # Publish explicitly confirms the complete reviewed list, including
             # false/false choices whose canonical flags need no revision bump.
             display_choices[choice.entry.entry_key] = "explicitly_chosen"
-            draft_after["items"].pop(choice.entry.entry_key, None)
+            consumed = draft_after["items"].pop(choice.entry.entry_key, None)
+            if consumed is not None and "evidence_refs" in consumed:
+                # Publish consumes wording, never the member's private references.
+                retained_refs[choice.entry.entry_key] = {name: copy.deepcopy(consumed[name])
+                    for name in ("evidence_refs", "evidence_refs_manual") if name in consumed}
         draft_after["draft_version"] += 1
         draft_after["base_publication_version"] = snapshot["publication_revision"]
         # Save only once per store, restoring every snapshot on injected failure.
         # This is not multi-process/durable transaction evidence.
         try:
             repository.save_owner(owner, policy_after)
+            for key, references in retained_refs.items():
+                # Re-base the reference-only overlay on the just-published record.
+                item = self.draft_service.catalog.get_item(owner, key)
+                if item is None:
+                    raise PublicationUnavailableError("Saved references are unavailable. Your input is kept.")
+                draft_after["items"][key] = {"record_key": key, "record_type": item["record_type"],
+                    "base_content_token": item["content_token"], "base_access_revision": item["access_revision"],
+                    "proposed_values": {}, "intended_permission_expansions": {"resume_display": False, "visitor_ai": False},
+                    "is_new": False, **references}
             self.draft_service.repository.save_owner(owner, draft_after)
             self._save(owner, snapshot)
         except Exception:

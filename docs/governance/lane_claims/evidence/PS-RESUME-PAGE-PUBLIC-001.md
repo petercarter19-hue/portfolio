@@ -21,127 +21,169 @@
 - The member-visitor private preview (`_with_private_draft`) refuses a converting item before the old-type codec; the preview fails closed as unavailable, exactly like a stale draft.
 - Routes are unchanged: the review route already carries named `blocked_items` (B2 m1, merged), and the commit and preview routes already return the conflict code.
 
-## Acceptance plan (D6a, committed before code)
+## D6a acceptance record (merged, squash `7dfbbbcf`, PR 1388)
+
+D6a's plan was `610459d2`. All 8 of its criteria passed at the independently reviewed candidate `200304d4339fa918372f6ae7ab6c5d8bb7e8199d`:
+- confirmed_overlay_blocks_by_name
+- no_destination_value_reaches_old_type_codec
+- malformed_descriptor_fails_closed
+- stale_and_orphaned_keep_their_reasons
+- non_conversion_publication_unchanged
+- replay_and_reads_write_nothing
+- sql_and_visitor_preview_stay_closed
+- review_and_delivery
+
+Proof: independent PASS by `agent:claude/2026-10-14/guide-build` (coordination `59a2cbd`); `package_acceptance.py check` PASS 8/8; merge preflight PASS; Azure CI 4644 green. That exact record is preserved on main at `7dfbbbcf` and in the branch history (`5d3691df`). D6b keeps the D6a guard exactly as it is.
+
+## D6b round (codec extension, required before MVP1 acceptance)
+
+**Assignment:** the manager, 2026-10-14. Publication must carry what B2 now stores, without silent loss:
+1. skill `evidence_refs` (ordered) and up to four draft-root `highlight_refs`, resolved at Publish;
+2. the project arrays and fields;
+3. `credential.qualification_kind`.
+
+Item 4 (the visitor-preview named reason) moved to the Guide server's next increment. The same-key cross-type transition at Publish is D6c, after B3.
+
+**Rulings:** `269ab17` (type mapping), `8eff4fc` (references stay on the draft until D6; owner-bound; resolve only to saved, visible records; no copied text, no second store), `6b9a5b7` (display provenance), visitor AI never defaults on, unsupported SQL stays closed with input kept, no schema change.
+
+**Design:**
+- An additive evidence codec `resume-canonical-source.v2` = the v1 field list plus the new fields.
+- When no v2-only field holds a value, the encoder writes v1 bytes under the v1 label; for every entry that main could already publish these are the exact v1 bytes. (Corrected after review: a project with month or year date_precision and no other new field publishes v1-labelled bytes with the v1 date_precision slot filled, where main left it N and blocked the publish; main's decoder reads them. A golden test for this case is a D6c item.) Existing and unchanged entries therefore keep their bytes and digests, even across a republish. The decoder reads both versions.
+- v2 is used only by the qualified in-memory publication path. The SQL procedures produce v1, so a SQL-backed candidate that needs v2, list values or references is refused with a named reason before the command procedure runs.
+- Resolved references are stored in the public copy as owner-bound identity strings, never as copied text. Their resolution is part of the reviewed candidate digest, and every dropped reference is named in the shared Guide publication basis.
 
 ```package-acceptance-json
 {
   "schema_version": 1,
   "package": "PS-RESUME-PAGE-PUBLIC-001",
-  "plan_sha": "610459d2b5940920068405d34c118af0697a8808",
+  "plan_sha": "f082b76995d740a9c3fbc449a0e4499317614f9b",
   "baseline": [
     {
-      "command": "python -B -m unittest tests.test_resume_publication_service tests.test_member_visitor_ai_repository tests.test_resume_publication_routes -q",
+      "command": "python -B -m unittest tests.test_resume_publication_service tests.test_resume_publication_contracts tests.test_resume_publication_projection tests.test_resume_publication_type_transition tests.test_member_visitor_ai_sources tests.test_member_visitor_ai_repository tests.test_resume_publication_routes -q",
       "exit_code": 0,
-      "observation": "Pre-change at main 1ce0150f (activation merge; publication code equals 465738bf): 88 tests PASS in 0.84s (54 publication service, 5 member-visitor repository, 29 publication route; fictional members, in-memory stores, placeholder key). No reader of a B3 conversion descriptor exists: read_review_for_owner rejects any stale or orphaned draft and otherwise merges row, item and proposed values under the old canonical type in the codec-format check and candidate builder, and _with_private_draft encodes proposed values with the old-type codec."
+      "observation": "Pre-change at 51588a1c (accepted main, D6a and B2b merged): 145 tests PASS in 0.67s, with fictional members, in-memory stores and a placeholder key. The codec v1 field list has no qualification_kind, project_category, organization_name, project_role, project_url or list field. Wording and editorial deltas accept only scalars. Evidence accepts only resume-canonical-source.v1. A publish candidate carrying highlight_refs, skill evidence_refs, project links, category, organization, role, a non-day project date precision, or a publication/membership qualification_kind is blocked with a publication_codec_* reason."
     }
   ],
   "criteria": [
     {
-      "id": "confirmed_overlay_blocks_by_name",
-      "expected": "When an owner draft-workspace item carries a well-formed conversion descriptor with state confirmed_private and a destination_record_type different from its base_record_type, read_review_for_owner and review_for_owner return no reviewed candidate, state unavailable, reason publication_type_transition_unavailable and blocked_items naming that item; the shared Guide publication basis is read_state blocked with that item and reason in blocked_items and ineligible_items and no candidate or change count; publish and the private preview refuse with that conflict code; this holds whether or not the item is selected for display; the review, publish and preview routes return 409 with that code and the review route names the item; canonical values, the draft overlay, publication state, receipts and review memory are unchanged.",
-      "verification": "tests.test_resume_publication_type_transition (service and route cases), RED at main 465738bf."
+      "id": "skill_evidence_refs_published",
+      "expected": "At explicit Publish in the qualified in-memory path, a skill's ordered evidence_refs resolve against that same publication. Each reference must name this owner's saved accomplishment that is displayed in this publication with its displayed parent role, or a displayed role whose published summary still contains the referenced line. At most three are kept, in stored order, without duplicates. The public display row stores the resolved reference identities (opaque owner-bound identity strings), never copied text. The reviewed digest covers them, and a change to them counts as one change in the basis. Each dropped reference (not published, hidden, deleted, wrong type, line changed, over the limit) is named in the shared Guide publication basis with its own reason and never silently disappears. The private draft references are unchanged.",
+      "verification": "New service tests, RED at 51588a1c and GREEN at the candidate: resolution, order, the limit, each drop reason, digest coverage, no copied text, owner isolation."
     },
     {
-      "id": "no_destination_value_reaches_old_type_codec",
-      "expected": "With a converting item present, no destination value reaches build_owner_review_candidate, validate_candidate, policy_snapshot_from_entries, _codec_values, committed_source_bytes, validate_guide_text_limits or normalize_editor_values on any review, basis, publish or preview path, and the candidate builder is never called; a control case proves the same spies do observe those seams for an ordinary draft.",
-      "verification": "Spy test in tests.test_resume_publication_type_transition that fails on the destination marker, plus the spy control test."
+      "id": "highlight_refs_published",
+      "expected": "Up to four draft-root highlight_refs publish in their stored order. Each must be this owner's displayed accomplishment with a metric value and a displayed parent role. The public copy records each highlight as an identity and order on the accomplishment's display row, never copied text, inside the reviewed digest. Each dropped highlight (not published, hidden, deleted, no metric, over four, duplicate) is named in the basis with its reason.",
+      "verification": "New service tests, RED at 51588a1c and GREEN at the candidate."
     },
     {
-      "id": "malformed_descriptor_fails_closed",
-      "expected": "A present descriptor that is not an object, misses or adds a key, has a state other than confirmed_private, a wrong-typed or empty field, a negative or non-integer base_access_revision, or no actual type change fails closed with publication_conversion_descriptor_invalid on review, basis and publish, never builds a candidate, never publishes under the old type, never crashes and writes nothing; the opaque conversion_op_ref is type-checked only, never parsed.",
-      "verification": "Malformed-descriptor matrix and reader-contract test in tests.test_resume_publication_type_transition."
+      "id": "project_fields_published",
+      "expected": "A project publishes project_url, additional_project_urls (up to two more, https with a host, unique, at most 1000 characters each, kept as strings and never fetched), project_category, organization_name, project_role and its dates with any date_precision. This holds in the public display and in the visitor-AI evidence (codec v2), with list order kept and nothing dropped. Links that break those rules block that publish with a named reason and stay unchanged in the draft. Fields still outside the codec (project_status, location_text, credential verification_url) stay blocked with their existing named reasons.",
+      "verification": "New service and codec tests, RED at 51588a1c and GREEN at the candidate, including the decoded visitor-AI evidence."
     },
     {
-      "id": "stale_and_orphaned_keep_their_reasons",
-      "expected": "A non-conversion stale or orphaned draft still refuses review with stale_draft and appears in the basis as stale_draft or orphaned, alone and beside a conversion item; a converting item is never labelled stale_draft or orphaned even when the workspace flags it, and carries only its conversion reason.",
-      "verification": "Stale/orphaned tests in tests.test_resume_publication_type_transition; existing stale/orphaned tests in tests.test_resume_publication_service unchanged."
+      "id": "qualification_kind_sections",
+      "expected": "A credential with qualification_kind publication or membership publishes under Publications or Memberships in the one shared section order, never as a Certification. Its evidence carries qualification_kind. A membership may publish without a name. Certification and absent kinds keep today's Certifications section and today's bytes; a license stays in Certifications and its kind is carried in the evidence.",
+      "verification": "New service, projection and codec tests, RED at 51588a1c and GREEN at the candidate."
     },
     {
-      "id": "non_conversion_publication_unchanged",
-      "expected": "A draft with no descriptor, or with conversion null, gives the same reviewed digest, the same publication basis bytes and the same publish outcome as before; every existing publication service, publication route and member-visitor repository test passes unchanged.",
-      "verification": "Null-descriptor equivalence test, the baseline suites, and the whole no-Playwright discover base vs candidate with the same failure set."
+      "id": "codec_v2_writes_exact_v1_bytes",
+      "expected": "The canonical-source encoder writes byte-for-byte the v1 bytes under the v1 codec label whenever no v2-only field holds a value, for every canonical type. It writes resume-canonical-source.v2 (v1 fields plus the new fields, with a closed list tag of strings) only when one does. The decoder reads both and rejects unknown codecs, tags, field orders, list members and trailing bytes. PublicationEvidenceVersion accepts both labels. Previously stored v1 publication snapshots and evidence still read, guest-read and preview unchanged, and existing published bytes stay byte-identical until the member's next explicit Publish.",
+      "verification": "Codec golden-byte tests against main's encoder output for every type, round-trip and malformed-input tests, and an old-snapshot read test using bytes produced at 51588a1c."
     },
     {
-      "id": "replay_and_reads_write_nothing",
-      "expected": "Repeated basis and review reads with a converting item return identical results and call no store save; a refused publish retried with the same request id refuses each time and records no receipt; a publish receipt made before the move replays its prior outcome without writing.",
-      "verification": "Replay tests in tests.test_resume_publication_type_transition with save spies on the policy, draft and publication stores."
+      "id": "sql_stays_closed",
+      "expected": "When the publication service is SQL-backed, any candidate that would need codec v2, a list value or a resolved reference is refused with a named reason before the command procedure runs, with input and drafts kept. The SQL migration and procedure files are unchanged, and there is no schema change or second store.",
+      "verification": "SQL-shaped port tests asserting that commit_command is never called; the changed-path list shows no SQL file."
     },
     {
-      "id": "sql_and_visitor_preview_stay_closed",
-      "expected": "A SQL-backed publish with a converting item refuses before the command procedure is called; the member-visitor private preview refuses a converting or malformed item before the old-type codec and fails closed as unavailable, while a preview with no descriptor or a null descriptor is unchanged; no schema, migration or second store is added.",
-      "verification": "SQL-shaped port and member-visitor preview tests in tests.test_resume_publication_type_transition; changed-path list shows no SQL or schema file."
+      "id": "provenance_and_visitor_ai_defaults_unchanged",
+      "expected": "Display-selection provenance (6b9a5b7) and the default rule are unchanged: only never_selected new items default into the proposed display, visitor AI is never enabled by default or by a reference, and a reference never expands any permission or publishes a record the member did not include.",
+      "verification": "Existing provenance tests unchanged, plus new tests showing that references to unselected or AI-off records grant nothing."
+    },
+    {
+      "id": "d6a_guard_and_existing_behaviour_unchanged",
+      "expected": "The D6a conversion guard and its 14 tests are unchanged. A publication without the new fields gives the same reviewed digest and published bytes as before, and the same basis apart from one added dropped_references list that is empty. Every existing publication, Guide, draft, route and visitor-AI test passes unchanged.",
+      "verification": "The baseline suites, the affected suites, and the whole no-Playwright discover base vs candidate with the same failure set."
     },
     {
       "id": "review_and_delivery",
-      "expected": "Each new test fails at main 465738bf and passes at the candidate; the affected publication, Guide, draft, route and member-visitor suites pass; because the guarded review/basis functions sit on browser-exercised Guide and publication paths (behaviour unchanged without a descriptor), the retained strict 152 browser runner passes normally and as two simultaneous copies; one complete self-review of the diff; the MVP1 builder session independently passes the exact candidate before merge.",
-      "verification": "Writer verification log, affected-suite runs, whole no-Playwright discover base vs candidate, independent review receipt, merge preflight and current-target Azure CI."
+      "expected": "Each new test fails at 51588a1c and passes at the candidate. The affected suites pass. The retained strict 152 browser runner passes normally and as two simultaneous copies if a browser-exercised path changes. One complete self-review is done. Custody comes through the released codec files plus the exact-file extension. The Guide builder session independently passes the exact candidate before merge.",
+      "verification": "Writer verification log, independent review receipt, merge preflight and current-target Azure CI."
     }
   ],
-  "candidate_sha": "200304d4339fa918372f6ae7ab6c5d8bb7e8199d",
+  "candidate_sha": "da054668943f8e620865b913e6e05b4d0f445bd9",
   "checks": [
     {
-      "criterion_id": "confirmed_overlay_blocks_by_name",
-      "candidate_sha": "200304d4339fa918372f6ae7ab6c5d8bb7e8199d",
+      "criterion_id": "skill_evidence_refs_published",
+      "candidate_sha": "da054668943f8e620865b913e6e05b4d0f445bd9",
       "kind": "automated",
       "result": "pass",
-      "source_ref": "tests.test_resume_publication_type_transition.ConfirmedConversionPublicationGuardTests.test_confirmed_cross_type_overlay_blocks_review_basis_publish_and_preview_by_name + tests.test_resume_publication_type_transition.ReviewRouteTests + X:/PeerSlate/Claude/plans/resume-page/build-D6/d6a-green.txt + X:/PeerSlate/Claude/plans/resume-page/build-D6/d6a-red.txt",
-      "observed": "With a confirmed knowledge-to-project descriptor, review returns unavailable with reason publication_type_transition_unavailable and blocked_items naming the item, selected or not; the basis is blocked with no candidate or change count; commit and both previews raise that conflict code; the review, commands and preview routes return 409 with it and no destination text; all stores and review memory are byte-identical before and after. RED at base, GREEN at the candidate."
+      "source_ref": "tests.test_resume_publication_service.D6bReferencePublicationTests + X:/PeerSlate/Claude/plans/resume-page/build-D6/d6b-red.txt + X:/PeerSlate/Claude/plans/resume-page/build-D6/d6b-focused-final.txt + coordination:dddafd8:Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_REVIEW_PS-RESUME-PAGE-PUBLIC-001_D6b.md",
+      "observed": "Skill evidence_refs resolve against the candidate's own displayed active entries: kept in order up to three as entry:/line: identities with no copied text; hidden, duplicate, invalid, missing, changed-line and over-limit references are named in dropped_references; a reference change is one reviewed change with a new digest; the private references survive Publish and the re-based overlay is not stale. RED at base, GREEN at the candidate."
     },
     {
-      "criterion_id": "no_destination_value_reaches_old_type_codec",
-      "candidate_sha": "200304d4339fa918372f6ae7ab6c5d8bb7e8199d",
+      "criterion_id": "highlight_refs_published",
+      "candidate_sha": "da054668943f8e620865b913e6e05b4d0f445bd9",
       "kind": "automated",
       "result": "pass",
-      "source_ref": "tests.test_resume_publication_type_transition.ConfirmedConversionPublicationGuardTests.test_no_destination_value_reaches_an_old_type_merge_normalizer_or_codec + test_spies_observe_the_same_seams_for_an_ordinary_draft + coordination:59a2cbd:Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_REVIEW_PS-RESUME-PAGE-PUBLIC-001_D6a.md",
-      "observed": "Spies on build_owner_review_candidate, validate_candidate, policy_snapshot_from_entries, _codec_values, committed_source_bytes, validate_guide_text_limits and normalize_editor_values never see the destination marker on review, basis, publish or preview, and the candidate builder is never called; at base the marker reached validate_guide_text_limits. The control test shows the same spies fire for an ordinary draft. The reviewer's Guide-basis probe saw 0 seam calls."
+      "source_ref": "tests.test_resume_publication_service.D6bReferencePublicationTests.test_up_to_four_highlights_publish_in_order_with_named_drops",
+      "observed": "Up to four highlights with metrics on displayed accomplishments under displayed roles publish as published_highlight_order 1..4 on their own display rows; missing-metric, hidden, duplicate and over-limit highlights are named; the draft highlight_refs stay unchanged after Publish."
     },
     {
-      "criterion_id": "malformed_descriptor_fails_closed",
-      "candidate_sha": "200304d4339fa918372f6ae7ab6c5d8bb7e8199d",
+      "criterion_id": "project_fields_published",
+      "candidate_sha": "da054668943f8e620865b913e6e05b4d0f445bd9",
       "kind": "automated",
       "result": "pass",
-      "source_ref": "tests.test_resume_publication_type_transition.MalformedConversionDescriptorTests + X:/PeerSlate/Claude/plans/resume-page/build-D6/d6a-green.txt",
-      "observed": "Fifty-plus malformed shapes (non-object, list, empty, each key missing, unknown key, other states, wrong-typed, empty or padded strings, bool, float, string or negative revision, no type change) each give publication_conversion_descriptor_invalid on review, basis and publish, never build a candidate, and leave every store unchanged; any non-empty trimmed conversion_op_ref is accepted without parsing."
+      "source_ref": "tests.test_resume_publication_service.D6bProjectAndQualificationTests + tests.test_resume_publication_service.D6bVisitorAiSourceTests + tests.test_resume_publication_projection.D6bProjectionV2Tests",
+      "observed": "A project's url, two additional links, category, organization, role and year-precision dates appear unchanged in the public display and in decoded v2 visitor-AI evidence with list order kept; http, duplicate, three-extra, hostless and over-length stored links block as publication_project_links_invalid and stay unchanged; status, location and verification_url keep their existing blockers."
     },
     {
-      "criterion_id": "stale_and_orphaned_keep_their_reasons",
-      "candidate_sha": "200304d4339fa918372f6ae7ab6c5d8bb7e8199d",
+      "criterion_id": "qualification_kind_sections",
+      "candidate_sha": "da054668943f8e620865b913e6e05b4d0f445bd9",
       "kind": "automated",
       "result": "pass",
-      "source_ref": "tests.test_resume_publication_type_transition.StaleAndOrphanedReasonsTests + tests.test_resume_publication_type_transition.ConfirmedConversionPublicationGuardTests.test_a_valid_conversion_is_never_labelled_stale_or_orphaned + tests.test_resume_publication_service",
-      "observed": "A non-conversion stale or deleted draft still refuses review with stale_draft and shows stale_draft or orphaned in the basis, alone and beside a conversion; a converting item flagged stale and/or orphaned by the workspace carries only publication_type_transition_unavailable. The existing publication service suite passes unchanged."
+      "source_ref": "tests.test_resume_publication_service.D6bProjectAndQualificationTests.test_publications_and_memberships_publish_in_their_own_sections_with_their_kind + tests.test_resume_publication_projection.D6bProjectionV2Tests",
+      "observed": "Publication and membership credentials (the membership with no name) publish in Publications and Memberships after Certifications with their kind in v2 evidence; a plain certification keeps v1 evidence; certification and absent kinds produce identical fields, and a license carries its kind in v2."
     },
     {
-      "criterion_id": "non_conversion_publication_unchanged",
-      "candidate_sha": "200304d4339fa918372f6ae7ab6c5d8bb7e8199d",
+      "criterion_id": "codec_v2_writes_exact_v1_bytes",
+      "candidate_sha": "da054668943f8e620865b913e6e05b4d0f445bd9",
       "kind": "automated",
       "result": "pass",
-      "source_ref": "tests.test_resume_publication_type_transition.NonConversionPublicationTests + X:/PeerSlate/Claude/plans/resume-page/build-D6/baseline-d6a.txt + X:/PeerSlate/Claude/plans/resume-page/build-D6/affected-candidate.txt + X:/PeerSlate/Claude/plans/resume-page/build-D6/discover-base.txt + X:/PeerSlate/Claude/plans/resume-page/build-D6/discover-candidate.txt",
-      "observed": "With conversion null the reviewed digest, reason and basis JSON equal the plain draft's, and publish shows the saved wording with change count 0 after. 1096 affected-suite tests pass (1 skipped); whole no-Playwright discover base 7825 vs candidate 7839 run with identical 12E/13F failure sets outside publication; the reviewer's discover also had identical sets."
+      "source_ref": "tests.test_resume_publication_service.D6bCodecGoldenAndOldSnapshotTests + tests.test_resume_publication_contracts.D6bCanonicalSourceV2Tests + X:/PeerSlate/Claude/plans/resume-page/build-D6/d6b-golden-v1.json + coordination:dddafd8:Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_REVIEW_PS-RESUME-PAGE-PUBLIC-001_D6b.md",
+      "observed": "For all seven types the candidate encoder reproduces main 51588a1c's golden v1 hex and sha256, including certification kind, day precision and empty-list equivalents; v2 round-trips its list and fields; the decoder rejects v3, v2-without-v2-fields, swapped tags, list overflow and trailing bytes; evidence labels must match their bytes; a stored v1 publication reads unchanged twice. Reviewer confirmed; the month/year project precision note is recorded in the design section."
     },
     {
-      "criterion_id": "replay_and_reads_write_nothing",
-      "candidate_sha": "200304d4339fa918372f6ae7ab6c5d8bb7e8199d",
+      "criterion_id": "sql_stays_closed",
+      "candidate_sha": "da054668943f8e620865b913e6e05b4d0f445bd9",
       "kind": "automated",
       "result": "pass",
-      "source_ref": "tests.test_resume_publication_type_transition.ReplayAndRepeatedReadTests",
-      "observed": "Three basis reads and three review reads with a converting item return identical results and call no save_owner on the policy, draft or publication store; the same refused publish request three times refuses each time and records no receipt; a publish receipt made before the move replays its prior receipt without writing and the guest view is unchanged."
+      "source_ref": "tests.test_resume_publication_service.D6bSqlStaysClosedTests",
+      "observed": "With a SQL-shaped port the v1 blockers still name project category, links and membership kind and commit_command is never called; a license credential publish refuses with publication_codec_sql_unavailable before the procedure with every store unchanged; no SQL or schema file changed."
     },
     {
-      "criterion_id": "sql_and_visitor_preview_stay_closed",
-      "candidate_sha": "200304d4339fa918372f6ae7ab6c5d8bb7e8199d",
+      "criterion_id": "provenance_and_visitor_ai_defaults_unchanged",
+      "candidate_sha": "da054668943f8e620865b913e6e05b4d0f445bd9",
       "kind": "automated",
       "result": "pass",
-      "source_ref": "tests.test_resume_publication_type_transition.SqlBackedPublishTests + tests.test_resume_publication_type_transition.MemberVisitorPreviewTests",
-      "observed": "A SQL-port publish with a converting item raises the named conflict and commit_command is never called; the member-visitor preview raises SourcesUnavailable and _with_private_draft raises the reason name before _codec_values (zero spied calls, document unchanged), while absent or null descriptors preview exactly as before. Changed paths contain no SQL, migration or schema file."
+      "source_ref": "tests.test_resume_publication_service.D6bReferencePublicationTests.test_reference_changes_are_reviewed_changes_and_never_expand_permissions + tests.test_resume_publication_service.GuideDisplayProvenanceTests + coordination:dddafd8:Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_REVIEW_PS-RESUME-PAGE-PUBLIC-001_D6b.md",
+      "observed": "A reference to an unselected record adds it to neither display nor visitor AI and is named as not published; visitor-AI membership stays exactly the explicit choice; the existing display-provenance tests pass unchanged; the re-based overlay carries no permission expansion."
+    },
+    {
+      "criterion_id": "d6a_guard_and_existing_behaviour_unchanged",
+      "candidate_sha": "da054668943f8e620865b913e6e05b4d0f445bd9",
+      "kind": "automated",
+      "result": "pass",
+      "source_ref": "tests.test_resume_publication_type_transition + X:/PeerSlate/Claude/plans/resume-page/build-D6/d6b-affected-final.txt + X:/PeerSlate/Claude/plans/resume-page/build-D6/d6b-discover2-base.txt + X:/PeerSlate/Claude/plans/resume-page/build-D6/d6b-discover2-candidate.txt",
+      "observed": "The 14 D6a guard tests pass unchanged; a role-only publication keeps v1 evidence and an empty dropped_references list; 1181 affected-suite tests pass (1 skipped) after B2c; whole no-Playwright discover base ee476daf 7850 vs candidate 7868 with identical 12E/13F failure sets (reviewer: identical sets too)."
     },
     {
       "criterion_id": "review_and_delivery",
-      "candidate_sha": "200304d4339fa918372f6ae7ab6c5d8bb7e8199d",
+      "candidate_sha": "da054668943f8e620865b913e6e05b4d0f445bd9",
       "kind": "automated",
       "result": "pass",
-      "source_ref": "coordination:59a2cbd:Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_REVIEW_PS-RESUME-PAGE-PUBLIC-001_D6a.md + X:/PeerSlate/Claude/plans/resume-page/build-D6/strict-normal.txt + X:/PeerSlate/Claude/plans/resume-page/build-D6/strict-load-1.txt + X:/PeerSlate/Claude/plans/resume-page/build-D6/strict-load-2.txt",
-      "observed": "All 14 new tests fail at base and pass at 200304d4; strict 152 normal 152/152 and two simultaneous copies 152/152 each at the candidate; complete self-review found no open finding; the independent reviewer agent:claude/2026-10-14/guide-build passed the exact SHA (311/311 affected, strict 152 second run 152/152 after one load timeout reproduced 5/5 on base and candidate). Merge preflight and Azure CI follow."
+      "source_ref": "coordination:dddafd8:Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_REVIEW_PS-RESUME-PAGE-PUBLIC-001_D6b.md + X:/PeerSlate/Claude/plans/resume-page/build-D6/d6b-final-strict-normal.txt + X:/PeerSlate/Claude/plans/resume-page/build-D6/d6b-final-strict-load-1.txt + X:/PeerSlate/Claude/plans/resume-page/build-D6/d6b-final-strict-load-2.txt",
+      "observed": "New tests failed at base and pass at da054668; strict 152 normal 152/152 and two simultaneous copies 152/152 each; complete self-review done; custody through PR 1389 and PR 1390; the Guide-held test edits landed as B2c ee476daf; independent PASS by agent:claude/2026-10-14/guide-build at the exact SHA."
     }
   ]
 }
@@ -154,3 +196,19 @@
 - Carried into D6b (reviewer note 1): the member-visitor preview should return the named `publication_type_transition_unavailable` while a move is in progress instead of the generic unavailable state.
 - B3 dependency (reviewer note 2): B3 carries `conversion` through `ResumeDraftService.get_workspace` / `_present_item`, fixed as a B3 plan criterion.
 - Merge is repository truth only: no deployment, schema or enablement. The claim stays active for D6b.
+
+## D6b execution record
+
+- Candidate `da054668` (plan `f082b769`); independent PASS by `agent:claude/2026-10-14/guide-build` (coordination `dddafd8`).
+- Writer logs: `X:/PeerSlate/Claude/plans/resume-page/build-D6/`; reviewer evidence: `X:/PeerSlate/Claude/reviews/d6b-da054668/`.
+- Merge is repository truth only: no deployment, schema or enablement. The claim stays active.
+
+### Release notes (named release-plan item)
+
+- **Codec v2 rollback boundary (forward-fix only).** Code before D6b cannot decode `resume-canonical-source.v2`. Once any member publishes a v2 entry, rolling the application back to a commit without a v2 reader would make that member's published resume and visitor-AI sources unreadable. Any production release that includes D6b must either be planned forward-only or name a rollback target that already carries a v2 reader.
+
+### Carried to D6c
+
+- A golden test for a month/year-precision project with no other new field (v1-labelled bytes with `date_precision` filled).
+- Codec tightening: an encoder-side list cap matching the decoder's, and rejection of leading zeros in length and count prefixes.
+- The same-key cross-type transition at Publish (F1), after B3's overlay is on main.
