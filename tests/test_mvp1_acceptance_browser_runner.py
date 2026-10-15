@@ -9,7 +9,12 @@ from scripts import run_mvp1_acceptance_browser_tests as runner
 class Mvp1BrowserRunnerTests(unittest.TestCase):
     def test_exact_required_collection(self):
         suite = runner.selected_suite()
-        self.assertEqual(suite.countTestCases(), len(runner.EXPECTED_METHODS) + len(runner.INTAKE_METHODS))
+        expected = sum(len(methods) for methods in (
+            runner.EXPECTED_METHODS, runner.INTAKE_METHODS,
+            runner.GUIDE_CONTRACT_METHODS, runner.GUIDE_REAL_API_METHODS,
+            runner.LEGACY_BUSY_RETRY_METHODS,
+        ))
+        self.assertEqual(suite.countTestCases(), expected)
 
     def test_missing_empty_changed_and_skipped_suites_fail(self):
         with tempfile.TemporaryDirectory() as folder:

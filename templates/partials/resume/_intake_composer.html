@@ -1,6 +1,8 @@
 {# One owner-guided dialog. The editor behind it is the actual private document.
    Source suggestions become facts only through explicit acknowledged decisions. #}
-<dialog class="resume-intake" id="resume-intake"
+<dialog class="resume-intake" id="resume-intake"{% if config.get('PEERSLATE_GUIDE_REBUILD_ENABLED', false) %}
+    data-guide-rebuild-enabled="true"
+    data-guide-member-key="{{ member.user_key }}"{% endif %}
     data-intake-workspace-url="{{ url_for('resume_intake.get_intake_workspace') }}"
     data-intake-submit-url="{{ url_for('resume_intake.post_submission') }}"
     data-intake-recording-url="{{ url_for('resume_intake.post_recording') }}"
@@ -56,7 +58,7 @@
         <div class="resume-intake__inset resume-intake__recording" id="resume-intake-recording" hidden>
           <p id="resume-intake-recording-label">Recording</p>
           <div class="resume-intake__wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-          <p class="resume-intake__hint">Your transcript appears after you stop. You can edit it before continuing.</p>
+          <p class="resume-intake__hint">{% if config.get('PEERSLATE_GUIDE_REBUILD_ENABLED', false) %}Live words are off. Keep talking; I’ll write it out when you stop.{% else %}Your transcript appears after you stop. You can edit it before continuing.{% endif %}</p>
         </div>
         <form class="resume-intake__composer" id="resume-intake-composer" enctype="multipart/form-data">
             <label class="resume-intake__sr" for="resume-intake-text">Your answer</label>
@@ -318,6 +320,13 @@
     </section>
   </details>
 </div>
+{%- if config.get('PEERSLATE_GUIDE_REBUILD_ENABLED', false) %}
+<script src="{{ url_for('static', filename='js/guide-state.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/guide-api.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/guide-view.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/guide-shell.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/guide-conversation.js') }}" defer></script>
+{%- endif %}
 <div class="resume-intake__reopen">
   <button type="button" class="resume-intake__reopen-button" id="resume-intake-reopen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>Guide me<span class="resume-intake__reopen-hint">Continue where you left off.</span></button>
 </div>

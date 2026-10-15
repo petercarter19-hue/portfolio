@@ -3534,7 +3534,8 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
                     self.assertTrue(page.evaluate(inside), key)
 
     def test_the_guide_button_never_sits_on_the_bottom_tab_bar(self):
-        # B10: at 200% zoom on a laptop (720x450) and on a phone, the floating "Guide me" button clears the site's tab bar.
+        # B10: at 200% zoom on a laptop (720x450) and on a phone, the floating "Guide me" button is fully on screen,
+        # never covered, and clears the site's tab bar where one shows (round-5 phones have none).
         for index, (width, height) in enumerate(((720, 450), (390, 844))):
             with self.subTest(width=width):
                 page = self.page(width, height, expect_guide=index == 0)
@@ -3543,11 +3544,18 @@ class ResumeIntakeBrowserTests(unittest.TestCase):
                 page.locator('#resume-intake-reopen').wait_for(state='visible')
                 boxes = page.evaluate("""() => {
                     const r = el => el && el.getClientRects().length ? el.getBoundingClientRect() : null;
-                    const reopen = r(document.querySelector('#resume-intake-reopen')), tab = r(document.querySelector('#mobile-tabbar'));
-                    return {reopen: reopen && [reopen.top, reopen.bottom], tab: tab && [tab.top, tab.bottom]};
+                    const button = document.querySelector('#resume-intake-reopen');
+                    const reopen = r(button), tab = r(document.querySelector('#mobile-tabbar'));
+                    const top = reopen && document.elementFromPoint((reopen.left + reopen.right) / 2, (reopen.top + reopen.bottom) / 2);
+                    return {reopen: reopen && [reopen.top, reopen.bottom, reopen.left, reopen.right],
+                            tab: tab && [tab.top, tab.bottom], uncovered: !!top && button.contains(top)};
                 }""")
-                self.assertIsNotNone(boxes['tab'], 'the tab bar shows at this width')
-                self.assertLessEqual(boxes['reopen'][1], boxes['tab'][0], boxes)
+                self.assertIsNotNone(boxes['reopen'], boxes)
+                top, bottom, left, right = boxes['reopen']
+                self.assertTrue(0 <= top and bottom <= height and 0 <= left and right <= width, boxes)
+                self.assertTrue(boxes['uncovered'], 'Nothing covers the Guide button: ' + str(boxes))
+                if boxes['tab'] is not None:
+                    self.assertLessEqual(bottom, boxes['tab'][0], boxes)
 
     def test_a_change_that_would_lower_the_other_date_is_asked_about_and_the_card_is_unchanged(self):
         # R3-1 and R4c-1: a year-only new end date on a month-level entry is not made; the Guide asks for the month, and

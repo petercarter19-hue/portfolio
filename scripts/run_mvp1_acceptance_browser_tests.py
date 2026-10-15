@@ -170,17 +170,93 @@ INTAKE_METHODS = (
 )
 
 
+GUIDE_CONTRACT_METHODS = (
+    'test_composer_enter_shift_enter_and_ime_preserve_the_input_frontier',
+    'test_header_uses_one_row_and_compact_privacy_at_real_panel_widths',
+    'test_flag_off_template_omits_feature_attributes_and_extra_script_whitespace',
+    'test_unavailable_or_malformed_read_never_becomes_an_empty_resume',
+    'test_saved_alias_keeps_selection_and_navigation_does_not_write',
+    'test_sources_publication_and_section_order_stay_server_truth',
+    'test_duplicate_or_ambiguous_item_references_fail_closed',
+    'test_api_reads_only_owner_route_with_private_request_options',
+    'test_api_refusal_cannot_expose_failed_or_stale_payload',
+    'test_late_read_or_failure_cannot_replace_the_newest_working_set',
+    'test_non_tab_reference_and_waiting_child_count_are_separate_from_cards',
+    'test_approved_geometry_table_phone_fold_and_live_column_edge',
+    'test_window_reads_live_page_rail_on_relayout_and_falls_back_without_recentering',
+    'test_drag_clamp_and_bottom_growth_preserve_visible_bounds',
+    'test_corrected_count_fields_are_required_without_inventing_defaults',
+    'test_detached_tabs_keep_server_order_card_counts_safe_text_and_no_writes',
+    'test_detached_window_moves_by_keyboard_clamps_growth_and_folds_without_reset',
+    'test_detached_frame_actions_and_escape_never_close_or_save_without_a_receipt',
+    'test_publication_header_full_and_narrow_follow_the_manager_ruling_without_a_guessed_count',
+    'test_welcome_starts_are_explicit_safe_text_and_truthful_about_record_then_transcribe',
+    'test_organizing_shows_only_matching_source_milestones_and_real_elapsed_time',
+    'test_detached_composer_keeps_newer_words_across_stale_restore_and_acknowledgment',
+    'test_attached_file_can_send_without_words_and_late_ack_keeps_newer_files',
+    'test_saved_composer_words_grow_and_scroll_when_opened_and_resized_without_sending',
+    'test_composer_adopts_the_existing_input_and_preserves_transport_and_voice_frontiers',
+)
+
+
+GUIDE_REAL_API_METHODS = (
+    'test_opt_in_actual_header_and_settled_width_at_620_704_and_390',
+    'test_opt_in_welcome_vertical_components_match_locked_704_dimensions',
+    'test_opt_in_leave_prompt_focus_and_preview_follow_D88',
+    'test_opt_in_clear_position_on_close_minimize_and_reload',
+    'test_opt_in_empty_pause_does_not_invent_an_unsent_message',
+    'test_opt_in_local_note_is_absent_and_session_copy_recovers_below_text_cap',
+    'test_opt_in_exact_type_spacing_and_visible_short_window_body_track',
+    'test_opt_in_unavailable_retry_and_restored_discard_use_approved_control_scale',
+    'test_opt_in_reopen_defers_working_set_without_discarding_unknown_formdata',
+    'test_opt_in_record_stop_transcribes_through_the_existing_owner_transport',
+    'test_opt_in_visual_zoom_keeps_the_dialog_inside_the_visible_viewport',
+    'test_opt_in_app_geometry_reflows_at_phone_short_window_and_double_text_size',
+    'test_opt_in_delayed_upload_shows_actual_busy_state_and_keeps_newer_words_and_files',
+    'test_opt_in_browser_session_keeps_only_unsent_words_and_filenames_and_clears_for_another_member',
+    'test_opt_in_failed_workspace_load_keeps_words_and_refuses_a_raw_extraction_fallback',
+    'test_opt_in_finish_asks_first_and_never_checkpoints_unsent_box_words',
+    'test_opt_in_failed_pause_status_keeps_visible_retry_and_the_unsent_message',
+    'test_opt_in_preserves_older_server_box_draft_but_does_not_restore_it_into_a_new_tab',
+    'test_opt_in_storage_failure_warns_and_sign_out_intent_clears_without_reading',
+    'test_opt_in_file_attachment_and_remove_use_the_incumbent_unsent_file_state',
+    'test_opt_in_app_bootstrap_is_manual_only_and_uses_the_incumbent_input',
+    'test_real_working_set_renders_card_counts_without_child_inflation_or_writes',
+    'test_real_unavailable_read_clears_authority_and_shows_unavailable',
+    'test_real_owner_cookie_never_reads_the_other_members_working_set',
+    'test_opt_in_busy_organize_reply_keeps_the_same_request_and_organizes_once',
+    'test_opt_in_words_and_a_file_are_sent_one_at_a_time_and_nothing_is_sent_by_itself',
+    'test_opt_in_a_message_over_the_limit_is_kept_whole_and_cannot_be_sent',
+    'test_opt_in_the_phone_header_shortens_to_guide_without_an_ellipsis',
+    'test_opt_in_the_message_box_shows_the_guide_focus_ring_not_the_page_ring',
+    'test_opt_in_a_reload_names_only_what_was_lost',
+    'test_opt_in_a_file_on_its_way_is_never_called_unsent_or_offered_again',
+    'test_opt_in_reload_with_a_stored_file_waiting_organizes_it_once',
+)
+# Today's intake client keeps its request id across the retryable busy reply (B2b).
+LEGACY_BUSY_RETRY_METHODS = (
+    'test_busy_reply_then_retry_reuses_the_same_request_and_stores_once',
+)
+
+
 def selected_suite():
     return unittest.TestSuite([
         load_selected_suite(ROOT / 'tests/test_mvp1_acceptance_browser.py',
             'required_mvp1_acceptance_browser', 'Mvp1AcceptanceBrowserTests', EXPECTED_METHODS),
         load_selected_suite(ROOT / 'tests/test_resume_intake_browser.py',
             'required_mvp1_retained_intake_browser', 'ResumeIntakeBrowserTests', INTAKE_METHODS),
+        load_selected_suite(ROOT / 'tests/test_guide_panel_contract.py',
+            'required_guide_panel_contract_browser', 'GuidePanelContractTests', GUIDE_CONTRACT_METHODS),
+        load_selected_suite(ROOT / 'tests/test_guide_panel_browser.py',
+            'required_guide_panel_real_api_browser', 'GuidePanelBrowserTests', GUIDE_REAL_API_METHODS),
+        load_selected_suite(ROOT / 'tests/test_resume_intake_routes.py',
+            'required_legacy_client_busy_retry_browser', 'LegacyClientBusyRetryBrowserTests', LEGACY_BUSY_RETRY_METHODS),
     ])
 
 
 def main():
-    expected = len(EXPECTED_METHODS) + len(INTAKE_METHODS)
+    expected = (len(EXPECTED_METHODS) + len(INTAKE_METHODS) + len(GUIDE_CONTRACT_METHODS) + len(GUIDE_REAL_API_METHODS)
+                + len(LEGACY_BUSY_RETRY_METHODS))
     try:
         os.environ['PEERSLATE_CHROME'] = str(resolve_browser_executable())
         ok, summary = execute_suite(selected_suite(), expected)

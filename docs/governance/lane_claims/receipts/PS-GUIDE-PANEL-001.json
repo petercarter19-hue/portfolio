@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-GUIDE-PANEL-001",
+  "candidate_sha": "c3cd4e10c1b8f0a6f9759aa096994a52a2c2807e",
+  "review_type": "independent",
+  "reviewer_ref": "session:16023c0e-7189-420e-8a4d-11f8012a9713",
+  "result": "pass",
+  "reviewed_at": "2026-10-15T15:00:00Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-GUIDE-PANEL-001.md"
+}

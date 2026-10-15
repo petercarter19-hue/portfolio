@@ -20,8 +20,8 @@
  *  - one adaptive foreground guide; the actual private document stays behind
  *    it and only acknowledged facts cause the background to become clearer.
  *
- * No draft is written to browser storage: sensitive drafts are not persisted
- * client-side. Owner-scoped durable drafts use the selected retention policy.
+ * The legacy Guide retains owner-scoped durable drafts. R6q keeps only unsent
+ * words and filenames in same-tab sessionStorage, never file/audio bytes.
  */
 (function () {
     'use strict';
@@ -30,6 +30,10 @@
     if (!root) {
         return;
     }
+    var rebuildEnabled = root.getAttribute('data-guide-rebuild-enabled') === 'true';
+    var rebuild = null, rebuildWorkspaceReady = false;
+    var serverBoxDraft = {text: null, attachments: [], navigation_history: []};
+    var unsentCopy = null, pendingLeave = null, leavingPage = false;
 
     var urls = {
         workspace: root.getAttribute('data-intake-workspace-url'),
@@ -58,7 +62,7 @@
     var fileInput = document.getElementById('resume-intake-file');
     var micButton = document.getElementById('resume-intake-mic');
     var cancelRecordingButton = document.getElementById('resume-intake-cancel-recording');
-    var recordingGeneration = 0;
+    var recordingGeneration = 0, microphoneCapture = null;
     var addButton = document.getElementById('resume-intake-add');
     var composer = document.getElementById('resume-intake-composer');
     var receiptBox = document.getElementById('resume-intake-receipt');
@@ -160,6 +164,9 @@
     var proposalDrafts = {};
     var reviewOverview = null, reviewScope = 'batch', allPendingRows = [], unplacedChoice = null;
     var pendingOrganize = null, organizeBusy = false, pausing = false, pauseNoticeTimer = null;
+    // Two-step file send (96c4fd1): a stored file is organized next, and words
+    // sent with it wait until organizing has finished.
+    var queuedFirstOrganize = null, organizeRetryTimer = null, organizeWaiting = null;
     var SAVE_TIMEOUT = 15000;
     var screen = 'welcome';
     var initialized = false;
@@ -326,6 +333,27 @@
             Object.values(correctionInputs).some(function (value) { return Boolean(value.trim()); }) || Object.keys(proposalDrafts).length
         );
     }
+    function inFlightGuideKeys() {
+        // A file whose request is on its way is not unsent: its receipt says what
+        // happened to it. Only a request whose outcome is unknown can be retried.
+        return new Set(pendingAdd && addOperation ? pendingAdd.request.attachments.map(function (row) { return row.client_key; }) : []);
+    }
+    function unsentGuideAttachments() {
+        var inFlight = inFlightGuideKeys();
+        return attachments.filter(function (row) { return row.status !== 'cancelled' && !inFlight.has(row.client_key) &&
+            !(row.kind === 'recording' && row.source_key && row.status === 'ready' && !row.restored); });
+    }
+    function hasUnsentGuideMessage() {
+        return Boolean(textarea.value.trim() || unsentGuideAttachments().length || microphonePending ||
+            recorder && recorder.state === 'recording' || heldRecording || pendingAdd && !addOperation || pendingConversation);
+    }
+    function guideOrganizingOperation() {
+        // Between re-asks of a busy organize (another tab, or after a reload) the
+        // file is still being organized: keep the organizing view and its timer.
+        return activityOperations.find(function (row) { return row.kind === 'organize' ||
+            row.kind === 'add' && pendingAdd && pendingAdd.request.attachments.some(function (file) { return file.kind === 'document'; }); }) ||
+            organizeWaiting;
+    }
 
     function refreshDraftLabel() {
         if (!draftLabel) {
@@ -344,7 +372,7 @@
             return;
         }
         unsavedBeforeUnload = function (event) {
-            if (!hasUnsavedInput() || (savedDraftSignature === signatureOf(draftContents()) &&
+            if (leavingPage || !hasUnsavedInput() || (!rebuildEnabled && savedDraftSignature === signatureOf(draftContents()) &&
                     !heldRecording && !microphonePending && !(recorder && recorder.state === 'recording') &&
                     !attachments.some(function (row) { return row.file || row.blob; }))) {
                 return undefined;
@@ -364,6 +392,7 @@
         statusBox.setAttribute('data-kind', kind || 'ok');
         manualStatus.textContent = message || '';
         manualStatus.setAttribute('data-kind', kind || 'ok');
+        if (rebuild) rebuild.render();
     }
 
     // Only locally outstanding work is busy. A pending/recovery HTTP receipt
@@ -390,10 +419,11 @@
         var destination = root.hidden ? reopenButton.parentNode : activitySlot;
         if (activityBox.parentNode !== destination) destination.insertBefore(activityBox, destination.firstChild);
         activityBox.classList.toggle('resume-intake__activity--outside', root.hidden);
+        if (rebuild) rebuild.render();
     }
 
     function beginActivity(kind) {
-        var operation = {kind: kind, longWait: false, timer: null};
+        var operation = {kind: kind, longWait: false, timer: null, startedAt: performance.now()};
         activityOperations.push(operation);
         operation.timer = window.setTimeout(function () {
             if (activityOperations.indexOf(operation) === -1) return;
@@ -656,6 +686,8 @@
             // saved draft is not, so it is shown and can be removed: nothing is sent that the member cannot see.
             if (row.kind === 'recording' && row.source_key && row.status === 'ready' && !row.restored) return;
             var item = document.createElement('li');
+            item.dataset.clientKey = row.client_key;
+            item.hidden = rebuildEnabled && row.kind === 'document';
             var tag = document.createElement('span');
             tag.className = 'resume-intake__tag';
             tag.textContent = row.kind === 'recording' ? 'Recording' : 'File';
@@ -680,6 +712,7 @@
                 remove.type = 'button';
                 remove.className = 'resume-intake__quiet';
                 remove.textContent = 'Remove';
+                remove.setAttribute('data-guide-remove-attachment', '');
                 remove.setAttribute('aria-label', 'Remove ' + row.label);
                 remove.disabled = Boolean(pendingAdd) || addButton.disabled;
                 remove.addEventListener('click', function () {
@@ -711,6 +744,7 @@
             }
             attachmentList.appendChild(item);
         });
+        if (rebuild) rebuild.render();
     }
 
     function renderReceipt(receipt) {
@@ -851,6 +885,7 @@
             root.querySelector('.resume-intake__surface').scrollTop = 0;
             document.getElementById('resume-intake-title').focus({preventScroll: true});
         }
+        if (rebuild) rebuild.render();
     }
     // Why a suggestion's dates have less detail than may be expected; nothing is ever guessed to fill the gap.
     var DATE_NOTES = {
@@ -938,19 +973,26 @@
         });
         return parts.join(' · ');
     }
-    function organizeSource(mode) {
+    function organizeSource(mode, sourceKey) {
         var overview = batchOverview();
-        if (!overview || organizeBusy) return;
+        var key = sourceKey || (overview && overview.batch.source_key);
+        if (!key || organizeBusy) return Promise.resolve(false);
+        if (organizeRetryTimer) { window.clearTimeout(organizeRetryTimer); organizeRetryTimer = null; }
         // One unacknowledged request keeps its id, so a dropped reply is safely retried.
-        if (!pendingOrganize || pendingOrganize.mode !== mode) {
-            pendingOrganize = {request_id: requestId(), source_key: overview.batch.source_key, mode: mode};
+        if (!pendingOrganize || pendingOrganize.mode !== mode || pendingOrganize.source_key !== key) {
+            pendingOrganize = {request_id: requestId(), source_key: key, mode: mode};
         }
         var attempt = pendingOrganize;
         organizeBusy = true;
         var operation = beginActivity('organize');
         setStatus(mode === 'retry' ? 'Organizing your résumé…' : 'Setting your details out one by one…', 'ok');
-        postJson(urls.organize, attempt).then(function (result) {
+        return postJson(urls.organize, attempt).then(function (result) {
             if (!result.response.ok) {
+                if (result.response.status === 503 && result.payload.code === 'request_in_progress') {
+                    // The same organize is still running (another tab or a lost reply):
+                    // keep this request id and ask again; it replays rather than redoing it.
+                    var busy = new Error(result.payload.message || 'This is still being processed.'); busy.busy = true; throw busy;
+                }
                 if (result.response.status !== 503) pendingOrganize = null;
                 throw new Error(result.payload.message || 'That did not finish. Nothing was changed.');
             }
@@ -958,7 +1000,7 @@
             if (payload.success !== true || payload.request_id !== attempt.request_id) {
                 throw new Error('No valid reply arrived. You can try again.');
             }
-            pendingOrganize = null;
+            pendingOrganize = null; organizeWaiting = null;
             var message = payload.outcome === 'organized' ? 'Organized. Nothing is saved until you review it.'
                 : payload.outcome === 'already_organized' ? 'This résumé is already organized.'
                 : (payload.message || 'The organizer is unavailable right now. Nothing was changed.');
@@ -969,9 +1011,17 @@
                 setStatus(message, payload.outcome === 'unavailable' ? 'error' : 'ok');
             });
         }).catch(function (error) {
+            if (error.busy) {
+                organizeWaiting = organizeWaiting || {kind: 'organize', startedAt: operation.startedAt};
+                organizeRetryTimer = window.setTimeout(function () { organizeRetryTimer = null; organizeSource(mode, attempt.source_key); }, 4000);
+                return;
+            }
+            organizeWaiting = null;
             setStatus(error.name !== 'TypeError' && error.message ? error.message :
                 'The connection dropped. Nothing was changed; you can try again.', 'error');
-        }).finally(function () { endActivity(operation); organizeBusy = false; renderBatchOverview(); });
+        }).finally(function () {
+            endActivity(operation); organizeBusy = false; renderBatchOverview();
+        });
     }
     function renderBatchOverview() {
         var region = document.getElementById('resume-intake-batch');
@@ -994,7 +1044,9 @@
             return;
         }
         region.appendChild(node('h3', 'Your uploaded résumé'));
-        if (batch.retry_available) {
+        if (batch.organization && batch.organization.state === 'not_started') {
+            region.appendChild(node('p', 'Organizing your file…'));
+        } else if (batch.retry_available) {
             region.appendChild(node('p', batch.retry_reason === 'legacy'
                 ? 'I read this résumé, but its details were split into loose pieces. I can try organizing it again. Nothing you confirmed changes.'
                 : 'I read your résumé but couldn’t organize it right now. Nothing is lost.'));
@@ -1109,8 +1161,16 @@
         });
         row.append(retry, close); box.appendChild(row);
         retry.focus({preventScroll: true});
+        if (rebuild) rebuild.render();
     }
     function pauseGuide(status) {
+        if (pendingLeave) return Promise.resolve(false);
+        if (rebuildEnabled && hasUnsentGuideMessage()) {
+            return confirmUnsentLeave().then(function (leave) { if (!leave) return false; discardUnsentGuideInput(); return finishPause(status); });
+        }
+        return finishPause(status);
+    }
+    function finishPause(status) {
         if (pausing) return Promise.resolve(false);
         pausing = true;
         // Whatever happens to the requests, closing and trying again must stay possible.
@@ -1124,14 +1184,17 @@
         var label = status === 'skipped' ? 'Manual editing' : 'Paused';
         // A pending choice between two draft copies already keeps both safe; there is nothing newer to save.
         var holding = Boolean(draftRecovery || draftRecoveryBusy);
-        var kept = holding ? ' Both copies of your draft are kept; you’ll choose between them when you return.'
+        var hadBoxMessage = Boolean(textarea.value.trim());
+        var kept = rebuildEnabled ? (hadBoxMessage ? ' Your unsent message has not been sent.' : '') : holding ? ' Both copies of your draft are kept; you’ll choose between them when you return.'
                            : ' Your draft is saved privately.';
         return Promise.resolve(conversationSupported && !holding ? checkpointDraft() : true).then(function (saved) {
             if (conversationSupported && !saved) { showPauseFailure(status); return false; }
             hideGuide();
             return setGuideStatus(status).then(function (recorded) {
                 if (recorded) { pauseNotice(label + '.' + kept, null, true); return true; }
-                pauseNotice('Draft saved, but ' + (status === 'skipped' ? 'switching to manual editing' : 'pausing') + ' wasn’t recorded.', function () {
+                pauseNotice((rebuildEnabled ? hadBoxMessage ? 'Your message is not sent, and ' : '' : 'Draft saved, but ') +
+                    (status === 'skipped' ? rebuildEnabled && !hadBoxMessage ? 'Switching to manual editing' : 'switching to manual editing' :
+                        rebuildEnabled && !hadBoxMessage ? 'Pausing' : 'pausing') + ' wasn’t recorded.', function () {
                     setGuideStatus(status).then(function (ok) { if (ok) pauseNotice(label + '.' + kept, null, true); });
                 });
                 return false;
@@ -1717,7 +1780,7 @@
         }
         if (['paused', 'completed', 'skipped'].indexOf(status) !== -1 || guideDismissed) return;
         if (!proposals.length) showScreen(batchNeedsAttention() ? 'review' : status === 'not_started' && !workspace.receipts_count ? 'welcome' : 'input', false);
-        reopenGuide();
+        if (!rebuildEnabled) reopenGuide(); // C2 owns qualified automatic first arrival.
     }
 
     function refreshOriginals() {
@@ -1883,16 +1946,20 @@
         return getWithRetry(urls.workspace)
             .then(function (result) {
                 if (result.response.status === 0 || result.response.status === 502 || result.response.status === 503 || result.response.status === 504) {
+                    rebuildWorkspaceReady = false;
                     if (!initialized) showScreen('input', false);
                     setStatus(result.payload.message ||
                         'The site is busy right now, so your saved information could not be loaded. Your typing stays here, unsent. Reload the page in a moment.', 'error');
                     return null;
                 }
                 if (!result.response.ok) {
+                    rebuildWorkspaceReady = false;
                     if (!initialized) showScreen('input', false);
                     setStatus(result.payload.message || 'The composer could not be loaded.', 'error');
                     return null;
                 }
+                rebuildWorkspaceReady = true;
+                if (rebuild) rebuild.refresh();
                 var policyText = document.getElementById('resume-intake-policy');
                 var policy = result.payload.policy || {};
                 conversationSupported = (result.payload.capabilities || {}).supports_resume_conversation === true;
@@ -1908,6 +1975,9 @@
                     (turn.proposals || []).forEach(function (row) { proposalInvitations[row.proposal_key] = turn.next_question; });
                 });
                 reviewOverview = result.payload.review_overview || null;
+                var waiting = reviewOverview && reviewOverview.batch && reviewOverview.batch.organization &&
+                    reviewOverview.batch.organization.state === 'not_started' ? reviewOverview.batch.source_key : null;
+                organizeWaitingSource(waiting);
                 allPendingRows = result.payload.pending_proposals || [];
                 renderProposals(scopedRows(allPendingRows), initialized);
                 renderBatchOverview();
@@ -2022,10 +2092,10 @@
         Array.prototype.forEach.call(manual.querySelectorAll('input[id],select[id],textarea[id]'), function (input) {
             fields[input.id] = input.type === 'checkbox' ? input.checked : input.value;
         });
-        return {text: textarea.value || null,
+        return {text: rebuildEnabled ? serverBoxDraft.text : textarea.value || null,
             items: queuedFacts.map(function (row) { return {client_key: row.client_key, record_type: row.record_type,
                 values: row.values, explicit_clears: row.explicit_clears, parent_key: row.parent_key || null}; }),
-            attachments: attachments.filter(function (row) { return row.status !== 'cancelled'; }).map(function (row) {
+            attachments: rebuildEnabled ? serverBoxDraft.attachments : attachments.filter(function (row) { return row.status !== 'cancelled'; }).map(function (row) {
                 return {client_key: row.client_key, kind: row.kind, filename: row.filename || null,
                     declared_content_type: row.declared_content_type || null, source_key: row.source_key || null,
                     duration_seconds: row.duration_seconds || null}; }),
@@ -2035,9 +2105,10 @@
                 question: questionPrompt.textContent, context: questionContext.textContent,
                 guide_hidden: guideHidden, conversation_intent: conversationIntent,
                 manual_type: typeSelect.value, manual_fields: fields, pending_conversation: pendingConversation,
-                seen_questions: seenQuestions.slice(-50), navigation_history: navigationHistory}};
+                seen_questions: seenQuestions.slice(-50), navigation_history: rebuildEnabled ? serverBoxDraft.navigation_history : navigationHistory}};
     }
     function scheduleDraft() {
+        if (unsentCopy) unsentCopy.save();
         if (!draftReady || !conversationSupported || restoringDraft) return;
         clearTimeout(draftTimer);
         draftTimer = setTimeout(function () { checkpointDraft().catch(function () {}); }, 1500);
@@ -2152,6 +2223,7 @@
                 // preparation. Return restores the words for a new turn, never
                 // the abandoned request identity. Unknown dispatch is blocked.
                 if (pendingConversation) heldDraftCopy.contents.guide_state.pending_conversation = null;
+                if (rebuildEnabled) rememberServerBox(fresh);
                 applyDraftCopy(fresh, true);
                 draftVersion = fresh.version; savedDraftSignature = signatureOf(draftContents());
                 draftRecovery = null;
@@ -2162,6 +2234,7 @@
                 // A fresh read supplies the fence; the explicit choice supplies
                 // intent. A second race still returns409, never a forced save.
                 retainDraftCopy(fresh, null);
+                if (rebuildEnabled) rememberServerBox(fresh);
                 draftVersion = fresh ? fresh.version : null; draftRecovery = null;
                 return checkpointDraft().then(function (saved) {
                     if (saved) {
@@ -2185,11 +2258,11 @@
     });
     function applyDraftCopy(draft, replace) {
         restoringDraft = true;
-        if (replace || !textarea.value) textarea.value = draft.text || '';
+        if (!rebuildEnabled && (replace || !textarea.value)) textarea.value = draft.text || '';
         if (replace || !queuedFacts.length) queuedFacts = (draft.items || []).map(function (row) {
             return Object.assign({}, row, {label: row.values.role_title || row.values.title || row.values.name || row.values.wording});
         });
-        if (replace || !attachments.length) attachments = (draft.attachments || []).map(function (row) {
+        if (!rebuildEnabled && (replace || !attachments.length)) attachments = (draft.attachments || []).map(function (row) {
             return Object.assign({}, row, {label: row.filename || 'Recording', restored: Boolean(row.source_key && !row.needs_reattach),
                 status: row.source_key && !row.needs_reattach ? 'ready' : 'needs_reattach',
                 message: row.source_key && !row.needs_reattach ? 'Transcript retained privately.' : 'Choose the original file again before submitting.'});
@@ -2210,7 +2283,7 @@
             proposalDrafts = state.proposal_drafts || {}; conversationIntent = state.conversation_intent;
             pendingConversation = state.pending_conversation || null;
             undispatchedConversationKey = null;
-            seenQuestions = state.seen_questions || []; navigationHistory = state.navigation_history || [];
+            seenQuestions = state.seen_questions || []; navigationHistory = rebuildEnabled ? [] : state.navigation_history || [];
             questionPrompt.textContent = state.question || 'What would you like to add or change?';
             questionContext.textContent = state.context || ''; questionContext.hidden = !questionContext.textContent;
             if (state.screen === 'next') document.getElementById('resume-intake-followup').textContent = state.question || '';
@@ -2236,6 +2309,7 @@
             if (!result.response.ok) return false;
             var typedBefore = Boolean((textarea.value || '').trim() || queuedFacts.length || attachments.length);
             var draft = result.payload.draft;
+            if (rebuildEnabled) rememberServerBox(draft);
             var differs = Boolean(draft) && typedBefore && !draftSaysSameAsPage(draft);
             if (differs) {
                 // The member typed on this page while the saved draft could not be read, and the saved draft says
@@ -2374,6 +2448,10 @@
     function submitCorrection() { return sendConversation(); }
     function submit(event, mode) {
         if (event) event.preventDefault();
+        if (rebuildEnabled && mode !== 'manual' && (!rebuild || !rebuild.canSend())) {
+            setStatus('The Guide is still starting up. Your message is kept; I’ll try again in a moment.', 'error');
+            return;
+        }
         if (mode === 'guide' && correctionTarget) { submitCorrection(); return; }
         mode = mode || 'guide';
         if (mode === 'guide' && conversationSupported && root.getAttribute('data-interview-enabled') === 'true' && !attachments.some(function (row) { return row.kind === 'document' && row.status !== 'cancelled'; })) {
@@ -2394,6 +2472,8 @@
             // Documents enter source extraction; accompanying words enter
             // conversation after the document receipt so commands stay commands.
             if (mode === 'guide' && conversationSupported && root.getAttribute('data-interview-enabled') === 'true') request.text = null;
+            if (rebuildEnabled && mode === 'guide' && !request.text && !request.items.length &&
+                    request.attachments.length === 1 && request.attachments[0].kind === 'document') request.source_only = true;
             if (!request.text && !request.items.length && !request.attachments.length) {
                 setStatus('Add something before saving.', 'error'); return;
             }
@@ -2436,6 +2516,8 @@
                 ? 'I organized ' + Object.keys(groups).map(function (label) { return pluralLabel(groups[label], label); }).join(', ') + '.'
                 : newestProposalKeys.length + (newestProposalKeys.length === 1 ? ' suggestion is' : ' suggestions are') + ' ready.') + ' Review before saving.';
             renderReceipt(receipt);
+            var storedFirst = receipt.results.some(function (row) { return (row.organization || {}).state === 'not_started'; });
+            if (storedFirst) { lastAcknowledgement = ''; queuedFirstOrganize = (receipt.submission.source_keys || [])[0] || null; }
             var duplicate = receipt.results.some(function (row) { return row.code === 'duplicate_document'; });
             var unorganized = receipt.results.some(function (row) { return (row.organization || {}).state === 'unavailable'; });
             if (unorganized) lastAcknowledgement = '';
@@ -2455,7 +2537,7 @@
             var savedCount = receipt.results.filter(function (row) { return row.outcome === 'saved'; }).length;
             if (savedCount) factSaved(savedCount);
             renderQueued(); renderAttachments(); refreshDraftLabel();
-            setStatus(failure.length ? (receipt.message || 'Some input still needs attention.') : duplicate ? 'You’ve already uploaded this file. Let’s continue with it.' : unorganized ? 'I read your résumé but couldn’t organize it right now. Nothing is lost.' : (attempt.mode === 'guide' ? 'I received your answer. ' + newestProposalKeys.length + ' new suggestions are ready for your review; nothing is saved yet.' : (receipt.message || 'Saved privately.')), failure.length ? 'error' : 'ok');
+            setStatus(failure.length ? (receipt.message || 'Some input still needs attention.') : storedFirst ? 'Your file is saved privately' : duplicate ? 'You’ve already uploaded this file. Let’s continue with it.' : unorganized ? 'I read your résumé but couldn’t organize it right now. Nothing is lost.' : (attempt.mode === 'guide' ? 'I received your answer. ' + newestProposalKeys.length + ' new suggestions are ready for your review; nothing is saved yet.' : (receipt.message || 'Saved privately.')), failure.length ? 'error' : 'ok');
             return loadParentCandidates().then(load).then(function () {
                 // The review overview states the counts for an uploaded résumé; a second, differently
                 // counted sentence would disagree with it.
@@ -2469,7 +2551,10 @@
                     else showScreen(savedCount ? 'next' : 'input');
                     receiptBox.hidden = !failure.length;
                 }
-                if (attempt.mode === 'guide' && conversationSupported && !failure.length && textarea.value.trim()) return sendConversation();
+                // The rebuilt Guide never sends the box by itself: words go with their own Send (W-B288).
+                if (!rebuildEnabled && attempt.mode === 'guide' && conversationSupported && !failure.length && textarea.value.trim()) {
+                    return sendConversation();
+                }
             });
         }).catch(function (error) {
             setStatus(error.name !== 'TypeError' && error.message ? error.message : 'The connection dropped before a receipt arrived. Your input is kept. Retry the same submission to find out whether it was received.', 'error');
@@ -2478,6 +2563,22 @@
             document.getElementById('resume-intake-add-label').textContent = pendingAdd ? 'Retry submission' : 'Continue';
             manualSave.textContent = pendingAdd && pendingAdd.mode === 'manual' ? 'Retry saving queued details' : 'Save queued details privately';
             renderAttachments(); renderQueued();
+            if (queuedFirstOrganize) { var stored = queuedFirstOrganize; queuedFirstOrganize = null; startFirstOrganize(stored); }
+        });
+    }
+    var organizeScheduled = null;
+    function organizeWaitingSource(sourceKey) {
+        // A saved file whose organizing has not started (a reload or another tab
+        // cut off its first send) is organized once, from whichever read sees it first.
+        if (!sourceKey || organizeScheduled || organizeBusy || addOperation || pendingAdd || queuedFirstOrganize || organizeRetryTimer) return;
+        organizeScheduled = sourceKey;
+        window.setTimeout(function () { organizeScheduled = null; organizeSource('retry', sourceKey); }, 0);
+    }
+    function startFirstOrganize(sourceKey) {
+        // Refresh first so the organizing view can name the saved, read file
+        // from the server's own record, then organize it as its own command.
+        return Promise.resolve(rebuild ? rebuild.refresh() : null).then(function () {
+            return organizeSource('retry', sourceKey);
         });
     }
 
@@ -2629,12 +2730,14 @@
             setStatus('Recording is not supported in this browser. You can keep typing.', 'error');
             return;
         }
-        var generation = recordingGeneration;
+        var generation = recordingGeneration, capture = {discarded: false};
+        microphoneCapture = capture;
         microphonePending = true;
         cancelRecordingButton.hidden = false;
         cancelRecordingButton.textContent = 'Cancel recording';
         navigator.mediaDevices.getUserMedia({audio: true}).then(function (stream) {
-            if (generation !== recordingGeneration) { stream.getTracks().forEach(function (track) { track.stop(); }); return; }
+            if (capture.discarded || generation !== recordingGeneration) { stream.getTracks().forEach(function (track) { track.stop(); }); return; }
+            if (microphoneCapture === capture) microphoneCapture = null;
             microphonePending = false;
             var recordedChunks = [];
             try { recorder = new MediaRecorder(stream); }
@@ -2650,7 +2753,7 @@
                 stream.getTracks().forEach(function (track) { track.stop(); });
                 if (recorder === activeRecorder) micButton.setAttribute('aria-pressed', 'false');
                 syncRecordingCancel();
-                if (generation !== recordingGeneration) return;
+                if (activeRecorder.discardLocal || generation !== recordingGeneration) return;
                 var blob = new Blob(recordedChunks, {type: activeRecorder.mimeType || 'audio/webm'});
                 if (!blob.size) {
                     cancelRecordingButton.hidden = true;
@@ -2668,11 +2771,12 @@
                 } else uploadRecording(blob, clientKey, null, duration);
             });
             activeRecorder.start();
+            activeRecorder.guideStartedAt = performance.now();
             micButton.setAttribute('aria-pressed', 'true');
             syncRecordingCancel();
             setStatus('Recording. Press the microphone again to stop.', 'ok');
         }).catch(function () {
-            if (generation !== recordingGeneration) return;
+            if (capture.discarded || generation !== recordingGeneration) return;
             microphonePending = false;
             cancelRecordingButton.hidden = true;
             setStatus('Microphone permission was not granted. You can keep typing.', 'error');
@@ -2682,6 +2786,7 @@
     /* -- guide --------------------------------------------------------- */
 
     function hideGuide() {
+        if (rebuild) rebuild.closeGeometry();
         if (window.PeerSlateResumeFieldVoice) window.PeerSlateResumeFieldVoice.stop();
         conversationNavigationEpoch += 1;
         guideHidden = true; guideDismissed = true;
@@ -2722,6 +2827,7 @@
         if (editorSection) editorSection.classList.add('resume-editor--onboarding');
         document.body.classList.add('resume-onboarding-open');
         if (!root.open) root.showModal();
+        if (rebuild) { rebuild.render(); rebuild.refresh(); }
         renderActivity();
         if (heldRecording) setStatus('Your recording is kept here. Choose Transcribe recording when you’re ready.', 'ok');
         showScreen(entryScreen(screen));
@@ -2887,7 +2993,8 @@
         renderAttachments();
         refreshDraftLabel();
         scheduleDraft();
-        setStatus('Attached. Nothing is uploaded until you choose Continue.', 'ok');
+        setStatus(rebuildEnabled ? 'Attached. Nothing is uploaded until you choose Send.' :
+            'Attached. Nothing is uploaded until you choose Continue.', 'ok');
     });
     cancelRecordingButton.addEventListener('click', function () {
         recordingGeneration += 1;
@@ -2990,6 +3097,331 @@
             if (tab) tab.focus();
         }
     });
+    function rememberServerBox(draft) {
+        serverBoxDraft = {text: draft && draft.text || null,
+            attachments: JSON.parse(JSON.stringify(draft && draft.attachments || [])),
+            navigation_history: JSON.parse(JSON.stringify(draft && draft.guide_state && draft.guide_state.navigation_history || []))};
+    }
+    function discardUnsentGuideInput() {
+        // Leave anyway discards the local box, not an immutable request whose
+        // server acknowledgement is still unknown. Its FormData/File objects
+        // and retry identity remain owned by pendingAdd/pendingConversation.
+        var protectedKeys = new Set(pendingAdd ? pendingAdd.request.attachments.map(function (row) { return row.client_key; }) : []);
+        textarea.value = ''; fileInput.value = '';
+        if (microphoneCapture) { microphoneCapture.discarded = true; microphoneCapture = null; }
+        microphonePending = false;
+        if (recorder && recorder.state === 'recording') { recorder.discardLocal = true; stopRecording(); }
+        attachments = attachments.filter(function (row) { return protectedKeys.has(row.client_key) || row.transcribing || row.source_key; });
+        if (heldRecording && attachments.indexOf(heldRecording) === -1) heldRecording = null;
+        textarea.dispatchEvent(new Event('input', {bubbles: true}));
+        if (unsentCopy) unsentCopy.discard();
+        renderAttachments(); syncRecordingCancel(); refreshDraftLabel();
+    }
+    function confirmUnsentLeave() {
+        if (pendingLeave) return pendingLeave.promise;
+        var settle;
+        var promise = new Promise(function (resolve) { settle = resolve; });
+        pendingLeave = {promise: promise, resolve: settle};
+        if (rebuild) rebuild.render();
+        return promise;
+    }
+    function renderUnsentLeave(host) {
+        var heading = document.createElement('h3'); heading.className = 'ps-guide-screen-heading'; heading.textContent = 'Leave without sending?';
+        heading.tabIndex = -1;
+        var detail = document.createElement('p'); detail.className = 'ps-guide-screen-copy';
+        detail.textContent = 'If you leave now, these won’t be kept:';
+        var list = document.createElement('ul'); list.className = 'ps-guide-leave-list';
+        function item(text, status, icon) {
+            var node = document.createElement('li'), label = document.createElement('span'), state = document.createElement('span');
+            label.textContent = text; state.textContent = status;
+            node.append(window.PeerSlateGuideView.icon(icon), label, state); list.appendChild(node);
+        }
+        if (textarea.value.trim()) item('Your message: “' + textarea.value.slice(0, 100) + (textarea.value.length > 100 ? '…' : '') + '”', 'Not sent', 'chat');
+        unsentGuideAttachments().forEach(function (row) {
+            if (row.kind === 'document') item(row.filename, 'Not sent', 'doc');
+            else item('Your recording', 'Recordings are never kept', 'mic');
+        });
+        if (microphonePending || recorder && recorder.state === 'recording') item('Your recording', 'Recordings are never kept', 'mic');
+        var actions = document.createElement('div'); actions.className = 'ps-guide-leave-actions';
+        function button(label, leave) {
+            var node = document.createElement('button'); node.type = 'button'; node.className = leave ? 'ps-guide-leave' : 'ps-guide-stay'; node.textContent = label;
+            node.addEventListener('click', function () {
+                var waiting = pendingLeave; pendingLeave = null;
+                if (rebuild) rebuild.render();
+                waiting.resolve(leave);
+                if (!leave) textarea.focus();
+            }); return node;
+        }
+        actions.append(button('Stay', false), button('Leave anyway', true));
+        host.append(heading, detail, list);
+        if (organizeBusy || guideOrganizingOperation()) { var ongoing = document.createElement('p'); ongoing.className = 'ps-guide-leave-hint'; ongoing.textContent = 'Organizing carries on without you.'; host.appendChild(ongoing); }
+        host.appendChild(actions);
+        actions.querySelector('.ps-guide-stay').focus({preventScroll: true});
+    }
+    function installUnsentCopy(host) {
+        var prefix = 'peerslate.guide.unsent.', memberKey = root.getAttribute('data-guide-member-key');
+        var key = memberKey ? prefix + memberKey : null, storage = null, available = false, stopped = false, restored = false, suspended = false;
+        var note = document.createElement('p'); note.className = 'resume-intake__hint'; note.setAttribute('role', 'status');
+        var discard = document.createElement('button'); discard.type = 'button'; discard.className = 'ps-guide-discard';
+        var tag = document.createElement('span'); tag.className = 'ps-guide-recovery-tag'; tag.textContent = 'Not sent yet'; tag.hidden = true;
+        var box = host.querySelector('.ps-guide-compose-box'); if (box) box.prepend(tag);
+        discard.textContent = 'Discard the message'; discard.hidden = true; host.prepend(note, discard);
+        function clear() {
+            if (!storage) return;
+            Object.keys(storage).filter(function (name) { return name.indexOf(prefix) === 0; }).forEach(function (name) { storage.removeItem(name); });
+        }
+        function updateNote() {
+            var present = hasUnsentGuideMessage(), organizing = Boolean(guideOrganizingOperation());
+            note.hidden = Boolean(pendingLeave) || !present || available && !restored && !organizing;
+            if (!available) note.textContent = 'If you leave, close or reload this page first, they won’t be kept: this browser can’t keep a copy.';
+            else if (restored) {
+                // Only what actually was lost is named: a file chosen again is one that was never sent.
+                var lost = attachments.filter(function (row) { return row.status === 'needs_reattach'; }).length;
+                note.textContent = [textarea.value ? 'Your message is back, not sent.' : '',
+                    lost === 1 ? 'The file wasn’t kept.' : lost > 1 ? 'The files weren’t kept.' : ''].filter(Boolean).join(' ');
+            }
+            else if (organizing) {
+                var pieces = [], files = unsentGuideAttachments().filter(function (row) { return row.kind === 'document'; }).length;
+                var recordings = unsentGuideAttachments().filter(function (row) { return row.kind === 'recording'; }).length;
+                if (textarea.value.trim()) pieces.push('your message');
+                if (files) pieces.push(files + (files === 1 ? ' file' : ' files'));
+                if (recordings || microphonePending || recorder && recorder.state === 'recording') pieces.push((recordings || 1) + ' recording');
+                // Name only what is really unsent; with nothing to name, say nothing.
+                var count = (textarea.value.trim() ? 1 : 0) + files + (recordings || microphonePending || recorder && recorder.state === 'recording' ? (recordings || 1) : 0), one = count === 1;
+                note.textContent = pieces.length ? 'Not sent yet: ' + pieces.join(', ') + '. You can send ' + (one ? 'it' : 'them') +
+                    ' once I’ve finished organizing. If you leave or close this page first, ' + (one ? 'it' : 'they') + ' won’t be kept.' : '';
+                if (!pieces.length) note.hidden = true;
+            } else note.textContent = '';
+            discard.hidden = !restored || !textarea.value || Boolean(pendingLeave);
+            tag.hidden = !restored || !textarea.value || Boolean(pendingLeave);
+        }
+        try {
+            if (!key) throw new Error('Member namespace unavailable');
+            storage = window.sessionStorage;
+            Object.keys(storage).filter(function (name) { return name.indexOf(prefix) === 0 && name !== key; }).forEach(function (name) { storage.removeItem(name); });
+            var navigation = performance.getEntriesByType('navigation')[0];
+            if (!navigation || ['reload', 'back_forward'].indexOf(navigation.type) === -1) storage.removeItem(key);
+            var raw = storage.getItem(key), copy = raw ? JSON.parse(raw) : null;
+            if (copy && Object.keys(copy).sort().join(',') === 'filenames,text' && typeof copy.text === 'string' && copy.text.length <= 20000 &&
+                    Array.isArray(copy.filenames) && copy.filenames.length <= 12 && copy.filenames.every(function (name) { return typeof name === 'string' && name.length <= 300; })) {
+                if (!textarea.value) textarea.value = copy.text;
+                copy.filenames.forEach(function (name) { attachments.push({client_key: requestId(), kind: 'document', filename: name,
+                    label: name, status: 'needs_reattach', file: null, declared_content_type: 'application/octet-stream'}); });
+                restored = Boolean(copy.text || copy.filenames.length);
+            } else if (raw) storage.removeItem(key);
+            storage.setItem(key, JSON.stringify({text: '', filenames: []})); storage.removeItem(key); available = true;
+        } catch (error) { available = false; }
+        function save() {
+            if (stopped) return;
+            if (suspended) { updateNote(); return; }
+            if (storage && key) try {
+                // A file whose request was sent is never kept for choosing again, even
+                // when a reload cuts the request off: the server may already have it.
+                var sent = new Set(pendingAdd ? pendingAdd.request.attachments.map(function (row) { return row.client_key; }) : []);
+                var filenames = attachments.filter(function (row) { return row.kind === 'document' && row.status !== 'cancelled' && !sent.has(row.client_key); }).map(function (row) { return row.filename; });
+                var withinBound = textarea.value.length <= 20000 && filenames.length <= 12 && filenames.every(function (name) { return typeof name === 'string' && name.length <= 300; });
+                if (!withinBound) {
+                    // A content cap is not a browser failure: the composer says why Send is
+                    // unavailable, and the copy returns once the text fits.
+                    storage.removeItem(key);
+                } else if (textarea.value || filenames.length) {
+                    storage.setItem(key, JSON.stringify({text: textarea.value, filenames: filenames})); available = true;
+                } else { storage.removeItem(key); restored = false; available = true; }
+            } catch (error) {
+                available = false;
+                try { storage.removeItem(key); } catch (ignored) {}
+            }
+            updateNote();
+        }
+        function discardCopy() {
+            restored = false; suspended = true;
+            if (storage && key) try { storage.removeItem(key); } catch (error) { available = false; }
+            updateNote();
+        }
+        unsentCopy = {save: save, discard: discardCopy};
+        discard.addEventListener('click', function () { textarea.value = ''; textarea.dispatchEvent(new Event('input', {bubbles: true})); discardCopy(); if (rebuild) rebuild.render(); textarea.focus(); });
+        function edited() { if (!stopped) { suspended = false; save(); } }
+        textarea.addEventListener('input', edited); fileInput.addEventListener('change', edited);
+        function signOut(target) {
+            try { var url = new URL(target, window.location.href); return url.origin === window.location.origin && ['/auth/sign-out', '/.auth/logout'].indexOf(url.pathname) !== -1; }
+            catch (error) { return false; }
+        }
+        document.addEventListener('submit', function (event) {
+            if (event.target.tagName === 'FORM' && signOut(event.target.action)) { stopped = true; leavingPage = true; try { clear(); } catch (ignored) {} }
+        }, true);
+        document.addEventListener('click', function (event) {
+            var link = event.target.closest && event.target.closest('a[href]');
+            if (!link) return;
+            if (signOut(link.href)) { stopped = true; leavingPage = true; try { clear(); } catch (ignored) {} return; }
+            if (event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || link.target === '_blank' || link.hasAttribute('download')) return;
+            var destination = new URL(link.href, window.location.href);
+            if (!root.open || !hasUnsentGuideMessage() || destination.href.split('#')[0] === window.location.href.split('#')[0]) return;
+            event.preventDefault();
+            confirmUnsentLeave().then(function (leave) { if (leave) { discardUnsentGuideInput(); stopped = true; leavingPage = true; try { clear(); } catch (ignored) {} window.location.assign(destination.href); } });
+        }, true);
+        window.addEventListener('pagehide', save);
+        save();
+    }
+
+    function installRebuildShell() {
+        if (!rebuildEnabled || !window.PeerSlateGuideView || !window.PeerSlateGuideConversation ||
+            !window.PeerSlateGuideShell || !window.PeerSlateGuideApi || !window.PeerSlateGuideState) return;
+        var transport = document.createElement('div'); transport.hidden = true;
+        Array.from(root.childNodes).forEach(function (child) { transport.appendChild(child); });
+        var frame = window.PeerSlateGuideView.frame(root, {publicationState: 'unknown', onAction: function (action) {
+            if (action === 'manual') {
+                pauseGuide('paused').then(function (closed) {
+                    if (!closed) return;
+                    var details = manual.querySelector('details');
+                    if (details) { details.open = true; details.querySelector('summary').focus({preventScroll: true}); }
+                    manual.scrollIntoView({block: 'start'});
+                });
+            } else pauseGuide('paused');
+        }});
+        root.appendChild(transport);
+        var launcherIcon = reopenButton.querySelector('svg');
+        if (launcherIcon) { var cairn = window.PeerSlateGuideView.icon('cairn'); cairn.style.stroke = 'none'; launcherIcon.replaceWith(cairn); }
+        var state = window.PeerSlateGuideState.create(), api = window.PeerSlateGuideApi.create();
+        var binding = null, reading = null, refreshQueued = false, elapsedView = null, moved = [];
+        var input = window.PeerSlateGuideConversation.createComposer(frame.composer, {input: textarea,
+            // Known only once the workspace has loaded, so asked on every update.
+            separateWordsAndFiles: function () { return conversationSupported && root.getAttribute('data-interview-enabled') === 'true'; },
+            onInput: function () { if (unsentCopy) unsentCopy.save(); },
+            onSend: function () { composer.dispatchEvent(new Event('submit', {cancelable: true})); },
+            onAction: function (action, detail) {
+                if (action === 'attach') fileInput.click();
+                else if (action === 'record') {
+                    if (!rebuildWorkspaceReady || state.loadState() !== 'loaded') { setStatus('The Guide is still starting up. Your message is kept; I’ll try again in a moment.', 'error'); return; }
+                    showScreen('input', false); micButton.click();
+                } else if (action === 'remove_attachment') {
+                    var row = attachments.find(function (file) { return file.client_key === detail.clientKey; });
+                    if (row) {
+                        var item = Array.from(attachmentList.children).find(function (entry) { return entry.dataset.clientKey === detail.clientKey; });
+                        var button = item && item.querySelector('[data-guide-remove-attachment]');
+                        if (button) button.click();
+                    }
+                }
+            }});
+        var starters = document.createElement('div'); starters.className = 'ps-guide-starters';
+        var starterLabel = document.createElement('span'); starterLabel.textContent = 'Try saying:'; starters.appendChild(starterLabel);
+        ['Start with my current job', 'I have a file to upload', 'What happens to my file?'].forEach(function (text) {
+            var button = document.createElement('button'); button.type = 'button'; button.textContent = text;
+            button.addEventListener('click', function () {
+                // A starter prepares words for review. Only the member's Send
+                // dispatches them; never replace words already in the box.
+                if (!textarea.value.trim()) { textarea.value = text; textarea.dispatchEvent(new Event('input', {bubbles: true})); }
+                showScreen('input', false); textarea.focus();
+            }); starters.appendChild(button);
+        });
+        frame.composer.appendChild(starters);
+        frame.controls.finish.setAttribute('data-guide-controller', 'incumbent');
+        var footer = root.querySelector('.ps-guide-footer');
+        footer.append(statusBox, receiptBox);
+        questionPrompt.classList.add('ps-guide-screen-heading');
+        questionContext.classList.add('ps-guide-screen-copy');
+        function move(node) {
+            if (!node) return;
+            moved.push({node: node, parent: node.parentNode}); frame.body.appendChild(node);
+        }
+        function park() {
+            moved.forEach(function (entry) { entry.parent.appendChild(entry.node); }); moved = [];
+        }
+        function canSend() { return rebuildWorkspaceReady && conversationSupported && state.loadState() === 'loaded'; }
+        function render() {
+            if (unsentCopy) unsentCopy.save();
+            var operation = guideOrganizingOperation();
+            var hasDocuments = attachments.some(function (row) { return row.kind === 'document' && row.status !== 'cancelled'; });
+            var attachedWelcomeFile = screen === 'welcome' && hasDocuments;
+            starters.hidden = screen !== 'welcome' || Boolean(pendingLeave || operation || attachedWelcomeFile || pendingConversation);
+            statusBox.hidden = Boolean(operation || hasDocuments || recorder && recorder.state === 'recording') &&
+                statusBox.getAttribute('data-kind') !== 'error';
+            input.setRecording(Boolean(recorder && recorder.state === 'recording'));
+            if (!(recorder && recorder.state === 'recording')) textarea.placeholder = screen === 'welcome'
+                ? operation ? 'Ask a question or make a change…' : attachedWelcomeFile ? 'Add a note, or just send…'
+                    : 'Tell me about your work, or attach a file…' : 'Ask a question or make a change…';
+            input.setBusy(!canSend() || Boolean(addOperation || interviewBusy || organizeBusy || pausing || pendingAdd || pendingConversation));
+            var inFlight = inFlightGuideKeys();
+            input.setAttachments(attachments.filter(function (row) { return row.kind === 'document' && row.status !== 'cancelled' && !inFlight.has(row.client_key); }).map(function (row) {
+                var submitted = pendingAdd && pendingAdd.request.attachments.some(function (file) { return file.client_key === row.client_key; });
+                return {clientKey: row.client_key, filename: row.filename || row.label, removable: !pendingAdd && !addButton.disabled,
+                    phase: submitted && addOperation ? 'sending' : submitted ? 'unknown' :
+                        !row.file && !row.blob && !row.source_key ? 'needs_reattach' : 'attached'};
+            }));
+            if (!root.open || root.hidden) return;
+            var top = frame.body.scrollTop;
+            park(); frame.body.replaceChildren();
+            frame.body.removeAttribute('data-guide-view');
+            if (pendingLeave) {
+                elapsedView = null;
+                renderUnsentLeave(frame.body);
+            } else if (operation) {
+                var organizingSource = operation.kind === 'organize' && pendingOrganize && state.loadState() === 'loaded'
+                    ? (state.data().active_sources || []).find(function (row) { return row.source_key === pendingOrganize.source_key; }) : null;
+                elapsedView = window.PeerSlateGuideView.organizing(frame.body, {state: state, inFlight: true,
+                    elapsedSeconds: Math.max(0, Math.floor((performance.now() - operation.startedAt) / 1000)),
+                    sourceRef: organizingSource ? {sourceKey: organizingSource.source_key, version: organizingSource.source_version} : undefined});
+            } else if (!canSend()) {
+                frame.body.dataset.guideView = 'unavailable';
+                elapsedView = null;
+                var unavailable = document.createElement('p'); unavailable.setAttribute('role', 'status');
+                unavailable.textContent = reading ? 'Still starting up. Your message is kept.' : 'The Guide is unavailable right now.';
+                var retry = document.createElement('button'); retry.type = 'button'; retry.className = 'ps-guide-retry'; retry.textContent = 'Retry';
+                retry.addEventListener('click', function () { load().then(refresh); }); frame.body.append(unavailable, retry);
+            } else if (screen === 'welcome') {
+                elapsedView = null;
+                window.PeerSlateGuideView.welcome(frame.body, {mode: 'manual', onAction: function (action) {
+                    var name = {upload: 'start-upload', talk: 'start-voice', type: 'start-type', no_resume: 'start-type'}[action];
+                    var button = document.getElementById('resume-intake-' + name); if (button) button.click();
+                }});
+                if (attachedWelcomeFile) frame.body.querySelector('.ps-guide-start-tiles').hidden = true;
+            } else if (screen === 'input') {
+                frame.body.dataset.guideView = 'input';
+                elapsedView = null;
+                move(questionPrompt); move(questionContext);
+                ['resume-intake-recording', 'resume-intake-cancel-recording',
+                    'resume-intake-draft-recovery', 'resume-intake-retry-add', 'resume-intake-retry-guide'].forEach(function (id) { move(document.getElementById(id)); });
+                if (attachments.some(function (row) { return row.kind === 'recording'; })) move(attachmentList);
+            } else {
+                frame.body.dataset.guideView = screen;
+                elapsedView = null;
+                move(document.getElementById('resume-intake-' + (screen === 'correction' ? 'review' : screen)));
+            }
+            move(document.getElementById('resume-intake-pause-failure'));
+            frame.body.scrollTop = top;
+            var data = state.data(); frame.publication(data ? data.publication_state : 'unknown');
+            if (!binding) binding = window.PeerSlateGuideShell.bind(root, frame.grip, {dragHandle: frame.header});
+            else binding.relayout();
+        }
+        function refresh() {
+            if (addOperation || organizeBusy || pendingAdd) { refreshQueued = true; return Promise.resolve(false); }
+            refreshQueued = false;
+            if (reading) return reading;
+            reading = api.refresh(state).then(function (result) {
+                var data = state.loadState() === 'loaded' ? state.data() : null;
+                var waiting = data && (data.active_sources || []).find(function (row) { return row.organization.state === 'not_started'; });
+                if (waiting) organizeWaitingSource(waiting.source_key);
+                return result;
+            }).finally(function () { reading = null; render(); }); return reading;
+        }
+        var timer = window.setInterval(function () {
+            if (refreshQueued && !addOperation && !organizeBusy && !pendingAdd) refresh();
+            if (recorder && recorder.state === 'recording' && Number.isFinite(recorder.guideStartedAt)) {
+                var seconds = Math.max(0, Math.floor((performance.now() - recorder.guideStartedAt) / 1000));
+                document.getElementById('resume-intake-recording-label').textContent = 'Recording · ' + Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
+            }
+            if (!elapsedView) return;
+            var operation = activityOperations.find(function (row) { return row.kind === 'add' || row.kind === 'organize'; });
+            if (operation) elapsedView.elapsed(Math.max(0, Math.floor((performance.now() - operation.startedAt) / 1000)));
+        }, 1000);
+        rebuild = {render: render, refresh: refresh, canSend: canSend, closeGeometry: function () {
+            if (binding) { binding.dispose({clearPosition: true}); binding = null; }
+        }};
+        installUnsentCopy(frame.composer);
+        window.addEventListener('pagehide', function () { window.clearInterval(timer); rebuild.closeGeometry(); input.dispose(); api.invalidate(); });
+        guideHidden = true; guideDismissed = true; reopenButton.hidden = false;
+        refresh();
+    }
+    installRebuildShell();
     root.hidden = true;
     window.addEventListener('pagehide', function () { recordingGeneration += 1; stopRecording(); });
     protectNavigation();
