@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "package": "PS-ASK-PETE-DEADLINE-TEST-001",
+  "candidate_sha": "f6f9235633ecea0bd3d3d7078b4ca8f8782a058d",
+  "review_type": "self",
+  "reviewer_ref": "agent:claude/2026-10-15/ask-pete-deadline-test",
+  "result": "pass",
+  "reviewed_at": "2026-10-15T16:49:52Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "Self-review of 4057dfc8: the request's deadline check raised before run_bounded's bounded wait, so the test no longer exercised the real TimeoutError branch that the original test used. Fixed in f6f92356: once the worker is blocked in the credential stub, the request's wait check returns a 10 ms budget and the wait genuinely times out; a probe confirmed the TimeoutError cause."
+    },
+    {
+      "status": "informational",
+      "summary": "Out of this claim's outcome: test_stalled_event_sink_is_marked_late_when_terminal_writes_first and test_real_logger_formats_late_at_write_after_stalled_info_call in the same module still use a 50 ms wall-clock deadline and could flake the same way under a long pause. Proposed as a separate follow-up package."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-ASK-PETE-DEADLINE-TEST-001.md"
+}

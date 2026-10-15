@@ -8,7 +8,7 @@ from dataclasses import replace
 import json
 import os
 from pathlib import Path
-from threading import BoundedSemaphore, Event
+from threading import BoundedSemaphore, Event, get_ident
 from time import monotonic
 from types import SimpleNamespace
 from unittest import TestCase
@@ -461,9 +461,30 @@ class TelemetryTests(TestCase):
             slots.release()
 
     def test_deadline_terminal_remains_unknown_with_late_worker_events(self):
-        release, finished = Event(), Event()
-        events = []
+        release, finished, credential, submitted = Event(), Event(), Event(), Event()
+        events, request_thread = [], []
+        class CredentialStageDeadline(RequestDeadline):
+            # Slow source loading or a GC pause on a busy agent cannot spend it
+            # early. The request's bounded wait starts only once the worker is
+            # blocked in the credential stub, so that wait really times out;
+            # every later worker check has expired.
+            def remaining(self):
+                if submitted.is_set() and get_ident() == request_thread[0]:
+                    credential.wait(2)
+                    return .01
+                if not credential.is_set():
+                    return 2.0
+                raise deadline_module.AskPeteDeadlineError("deadline_exceeded")
+        def start():
+            request_thread.append(get_ident())
+            return CredentialStageDeadline(monotonic() + 2)
+        submit = deadline_module._POOL.submit
+        def submit_work(work):
+            future = submit(work)
+            submitted.set()
+            return future
         def blocked_token():
+            credential.set()
             release.wait(2)
             return "secret-token"
         def sink(event):
@@ -471,7 +492,8 @@ class TelemetryTests(TestCase):
             if event.get("late"): finished.set()
         try:
             with patch.object(runtime, "_foundry_token", side_effect=blocked_token), \
-                 patch.object(RequestDeadline, "start", return_value=RequestDeadline(monotonic() + .05)), \
+                 patch.object(RequestDeadline, "start", side_effect=start), \
+                 patch.object(deadline_module._POOL, "submit", side_effect=submit_work), \
                  patch.object(app_module, "_record_ask_pete_execution", side_effect=sink), \
                  patch("services.ask_pete.foundry_provider.UrllibTransport") as transport:
                 response = self.call()
