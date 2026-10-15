@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "package": "PS-ASK-PETE-DEADLINE-TEST-001",
+  "state": "active",
+  "outcome": "Make TelemetryTests.test_deadline_terminal_remains_unknown_with_late_worker_events in tests/ask_pete/test_live_foundry.py deterministic. Its 50 ms wall-clock deadline could expire during source loading on a slow CI agent (PR 1394 build 4668: last_stage sources instead of credential). The test deadline must expire only on its first check after the worker enters the credential stub, with the request's wait check held until then, so the terminal record still proves outcome unavailable, reason deadline_exceeded and last_stage credential, late worker events never change the one terminal record, and the transport is never called. Test-only: no product code, fake providers only, no deployment.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude/2026-10-15/ask-pete-deadline-test",
+  "branch": "work/2026-10-15-ask-pete-deadline-test-001",
+  "delivery_path": "Routine",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "bd07b1ee95c62ffa8c40e1341680073b880fc195",
+  "owner_outcome_ref": "role:owner/pete-chat-2026-10-15/claude-session-efc7c162/ask-pete-deadline-test-flake",
+  "surfaces": [
+    "tests/ask_pete/test_live_foundry.py",
+    "docs/governance/lane_claims/PS-ASK-PETE-DEADLINE-TEST-001.json",
+    "docs/governance/lane_claims/receipts/PS-ASK-PETE-DEADLINE-TEST-001.json",
+    "docs/governance/lane_claims/evidence/PS-ASK-PETE-DEADLINE-TEST-001.md"
+  ],
+  "domains": [
+    "testing:ask-pete:deadline-telemetry"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-ASK-PETE-DEADLINE-TEST-001.md"
+  ],
+  "review_requirement": "self",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
