@@ -1,26 +1,16 @@
 {
   "schema_version": 1,
   "package": "PS-GUIDE-SERVER-001",
-  "candidate_sha": "9695f8d123b40b536016545d35ba27fb085ab58d",
+  "candidate_sha": "33513fdae43dd704d8477c4a883aa781d5d6bb0a",
   "review_type": "independent",
   "reviewer_ref": "session:16023c0e-7189-420e-8a4d-11f8012a9713",
   "result": "pass",
-  "reviewed_at": "2026-10-14T20:38:11Z",
+  "reviewed_at": "2026-10-15T00:30:45Z",
   "findings": [
     {
-      "id": "B2b-f1-c14-runtime-lock",
+      "id": "B2c-f1-g12-add-target",
       "status": "informational",
-      "disposition": "Major in C14 scope, before MVP1 acceptance on 8444: the tools/local_reviewer runtime serializes every request behind one site-wide lock, so another member waits out a whole organize; make it per-owner or none across provider calls, with a two-member real-runtime test."
-    },
-    {
-      "id": "B2b-f2-recording-wait",
-      "status": "informational",
-      "disposition": "Bound the recording/transcribe request wait the same way in the next server increment."
-    },
-    {
-      "id": "B2b-f3-ci-registration",
-      "status": "informational",
-      "disposition": "Register LegacyClientBusyRetryBrowserTests in the CI browser module list with its count before MVP1; C1 adds the Guide-client equivalent (keep the id on 503 request_in_progress)."
+      "disposition": "Fixed B3 criterion: a new/add outcome carrying an existing match_reference where a null target is required is refused with a named reason and never applied; fake-provider case modelled on bake-off G12."
     }
   ],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-GUIDE-SERVER-001.md"

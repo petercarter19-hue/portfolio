@@ -240,7 +240,7 @@ class ResumePublicationRouteTests(unittest.TestCase):
         shared, owner = SharedMvp1Fixture(), "codec-route-fictional"
         saved = shared.draft.commit(owner, {"type": "create_private_item", "request_id": str(uuid4()),
             "record_key": str(uuid4()), "record_type": "project", "values": {"project_name": "Fictional Orchard",
-                "summary": "Fictional work.", "project_url": "https://example.test/demo"}})
+                "summary": "Fictional work.", "location_text": "Fictional town"}})
         key = saved["item"]["record_key"]
         with patch.dict(app.config, {"RESUME_PUBLICATION_SERVICE": shared.publication,
                 "RESUME_DRAFT_SERVICE": shared.draft, "ENTRY_POLICY_SERVICE": shared.policy,
@@ -251,8 +251,8 @@ class ResumePublicationRouteTests(unittest.TestCase):
         body = response.get_json()
         self.assertEqual(body["code"], "publication_codec_unavailable")
         self.assertEqual(body["state"], "unavailable")
-        self.assertEqual(body["blocked_items"], [{"item_ref": key, "reason": "publication_codec_project_links"}])
-        self.assertNotIn("example.test", response.get_data(as_text=True))
+        self.assertEqual(body["blocked_items"], [{"item_ref": key, "reason": "publication_codec_project_location"}])
+        self.assertNotIn("Fictional town", response.get_data(as_text=True))
         self.assertEqual(shared.publication._pending_reviews, {})
         self.assertIsNone(shared.publication.owner_preview(owner)["current"])
 

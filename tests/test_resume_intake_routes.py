@@ -75,7 +75,10 @@ class GuideProposalHttpTests(unittest.TestCase):
                 self.assertEqual(json.load(response)['outcome'],'saved_privately')
             with post(payload) as response:
                 self.assertTrue(json.load(response)['replayed'])
-            current = read()
+            # D6b carries references on the in-memory publisher; a SQL-backed one keeps them closed.
+            from unittest.mock import Mock, patch as _patch
+            with _patch.object(server.shared.publication,'sql_repository',Mock()):
+                current = read()
             self.assertEqual(current['references']['skill_evidence'][skill][0]['text'],'Reviewed 12 fictional records.')
             self.assertEqual(current['publication']['read_state'],'blocked')
             self.assertIsNone(current['publication']['change_count'])

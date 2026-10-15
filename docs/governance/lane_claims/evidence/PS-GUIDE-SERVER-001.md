@@ -851,7 +851,7 @@ _Plan v2 supersedes plan v1 `4c7c81dc` before any B2b code was committed. On the
 
 **Holds:** fake providers only and $0; no production, 8443 stop, model switch, credentials or schema. Independent exact-SHA review by `session:16023c0e-7189-420e-8a4d-11f8012a9713`.
 
-```package-acceptance-json
+```json
 {
   "schema_version": 1,
   "package": "PS-GUIDE-SERVER-001",
@@ -953,3 +953,75 @@ Tests:
 - **One source, two request ids, provider held:** checked for both an unavailable source ("Try organizing again" in two tabs) and a source-only `not_started` source. Exactly one dispatch; the second request gets the busy 503 and then `already_organized`. RED without the change (`single-flight-red.txt`).
 - **Two different sources of one owner:** both dispatch independently. This test is a no-regression guard and passes on both versions.
 - **Runs:** witness 888/888 with 0 lock-order violations; strict 152 normal 152/152.
+
+## B2c pre-code round plan: keep three B2 codec tests true for D6b
+
+_The B2b acceptance JSON above is kept as historical JSON and is no longer the active record._
+
+**Why.** Lane D package 6 (`agent:claude/2026-10-14/resume-page-public`) asked for three test edits in files this claim holds (coordination `58a3287`). D6b lets the in-memory publication path carry skill references, highlights and project links. Three B2 tests use exactly those as their examples of "blocked until D6", so they fail on the D6b candidate `f16fde93`.
+
+**Scope.** Test files only:
+- `tests/test_resume_publication_routes.py`: the codec-blocked review test uses `location_text`, which D6b still blocks;
+- `tests/test_resume_intake_service.py` and `tests/test_resume_intake_routes.py`: the reference tests read the publication basis through a SQL-backed publisher, which keeps the v1 limits.
+
+**Excluded:** any runtime change, B3, the G12 add-target refusal (planned for B3), model or provider changes, schema, deployment and production.
+
+**Holds:** fake providers only and $0. Independent exact-SHA review by `session:16023c0e-7189-420e-8a4d-11f8012a9713`.
+
+```package-acceptance-json
+{
+  "schema_version": 1,
+  "package": "PS-GUIDE-SERVER-001",
+  "plan_sha": "90b10b878f3a2aaf02300b60b98cc0fbabf25a57",
+  "candidate_sha": "33513fdae43dd704d8477c4a883aa781d5d6bb0a",
+  "baseline": [
+    {
+      "command": "X:/PeerSlate/runtimes/development/Scripts/python.exe -B -m unittest tests.test_resume_publication_routes tests.test_resume_intake_service tests.test_resume_intake_routes -q",
+      "exit_code": 0,
+      "observation": "204/204 PASS in 25.799s on an export of main 831127ef before the B2c edits. Fake/in-memory providers only. Raw log X:/PeerSlate/Claude/reviews/b2c-d6b-test-edits/b2c-precode-baseline.log."
+    }
+  ],
+  "criteria": [
+    {
+      "id": "b2c_d6b_test_intent",
+      "expected": "The three B2 tests that used D6b-carried content as their blocked examples keep their intent: a codec-blocked review still names each blocked item and saves nothing, and references stay closed where the codec cannot carry them. They pass on the B2 branch and on top of the D6b candidate f16fde93, where the old versions fail.",
+      "verification": "The three modules on the branch; the same edited files on an export of f16fde93; the old versions run on f16fde93 to show the RED the edits resolve."
+    },
+    {
+      "id": "b2c_regression_review",
+      "expected": "Test and evidence files only, with no runtime change; the affected modules pass; the exact candidate receives independent PASS; current-target CI and merge remain separate gates.",
+      "verification": "git diff name list against main, affected module runs, exact-SHA independent receipt, package_acceptance check and merge preflight."
+    }
+  ],
+  "checks": [
+    {
+      "criterion_id": "b2c_d6b_test_intent",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "33513fdae43dd704d8477c4a883aa781d5d6bb0a",
+      "source_ref": "coordination:48a64ad:Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B2c.md + tests.test_resume_publication_routes + tests.test_resume_intake_service + tests.test_resume_intake_routes + X:/PeerSlate/Claude/reviews/b2c-d6b-test-edits/branch-modules.txt + X:/PeerSlate/Claude/reviews/b2c-d6b-test-edits/on-d6b-f16fde93.txt + X:/PeerSlate/Claude/reviews/b2c-d6b-test-edits/old-tests-on-d6b-red.txt",
+      "observed": "The codec-blocked review still names its blocked item (location_text, publication_codec_project_location) and saves nothing; references stay blocked through a SQL-backed publisher. 204/204 on the branch and 204/204 on top of D6b f16fde93; the old versions fail there (200 != 409, 'current' != 'blocked' twice)."
+    },
+    {
+      "criterion_id": "b2c_regression_review",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "33513fdae43dd704d8477c4a883aa781d5d6bb0a",
+      "source_ref": "coordination:48a64ad:Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B2c.md + X:/PeerSlate/Claude/reviews/b2c-d6b-test-edits/b2c-precode-baseline.log",
+      "observed": "Independent exact-SHA PASS at 33513fda; the diff against main is three test files plus evidence, with no runtime change; baseline 204/204 on main 831127ef is unchanged by the edits."
+    }
+  ]
+}
+```
+
+### B2c: three test edits for D6b (Lane D request), for independent review
+
+D6b (PS-RESUME-PAGE-PUBLIC-001) lets the in-memory publication path carry skill references, highlights and project links. Three B2 tests used exactly those as their examples of "blocked until D6", so they fail on the D6b candidate `f16fde93` (`old-tests-on-d6b-red.txt`: `200 != 409`, `'current' != 'blocked'` twice). Each edit keeps the test's intent:
+- the route review still names its blocked item and saves nothing, now through `location_text`, which D6b still blocks;
+- the two reference tests still prove that references stay closed where the codec can't carry them, now through a SQL-backed publisher, which keeps the v1 limits.
+
+D6b's own tests cover the new in-memory behaviour. Test files only; no runtime change. The three modules pass 204/204 on this branch (`branch-modules.txt`) and 204/204 with the edited files on top of `f16fde93` (`on-d6b-f16fde93.txt`). Evidence root: `X:/PeerSlate/Claude/reviews/b2c-d6b-test-edits/`.
+
+Manager question (final model routing, the G12 add-target risk): today's extraction validation refuses an unknown `match_reference`, and refuses a missing one for `equivalent`, `additional_detail` and `contradiction`. It does **not** yet refuse a `new` outcome that carries a listed `match_reference`. That refusal, with a fake-provider test modelled on G12, goes into the next server increment's plan (B3).
+
+**B2c review:** independent PASS at exact `33513fda` (coordination `48a64ad`). The edits-before-plan order was accepted with no revert: the plan `90b10b87` is a single-parent evidence-only commit on main and an ancestor of the candidate, and the edits are Lane D's verbatim, test-only specification.

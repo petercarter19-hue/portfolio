@@ -215,7 +215,10 @@ class GuideReferenceCommandTests(unittest.TestCase):
         view = self.service.guide_reference_view(self.owner,self.service.working_set(self.owner))
         self.assertEqual(view['skill_evidence'][self.skill][0]['text'],'Reviewed 12 fictional records.')
         self.assertEqual(view['highlight_tiles'][0]['metric_value'],'12')
-        basis = self.shared.publication.read_publication_basis_for_owner(self.owner)
+        # D6b carries references on the in-memory publisher; a SQL-backed one keeps them closed.
+        from unittest.mock import Mock, patch as _patch
+        with _patch.object(self.shared.publication,'sql_repository',Mock()):
+            basis = self.shared.publication.read_publication_basis_for_owner(self.owner)
         self.assertEqual(basis['read_state'],'blocked')
         self.assertIn({'item_ref':self.skill,'reason':'publication_codec_skill_references'},basis['blocked_items'])
         self.assertIn({'item_ref':'resume','reason':'publication_codec_highlight_references'},basis['blocked_items'])
