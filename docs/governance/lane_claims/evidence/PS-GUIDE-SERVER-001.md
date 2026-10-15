@@ -968,7 +968,7 @@ _The B2b acceptance JSON above is kept as historical JSON and is no longer the a
 
 **Holds:** fake providers only and $0. Independent exact-SHA review by `session:16023c0e-7189-420e-8a4d-11f8012a9713`.
 
-```package-acceptance-json
+```json
 {
   "schema_version": 1,
   "package": "PS-GUIDE-SERVER-001",
@@ -1025,3 +1025,202 @@ D6b's own tests cover the new in-memory behaviour. Test files only; no runtime c
 Manager question (final model routing, the G12 add-target risk): today's extraction validation refuses an unknown `match_reference`, and refuses a missing one for `equivalent`, `additional_detail` and `contradiction`. It does **not** yet refuse a `new` outcome that carries a listed `match_reference`. That refusal, with a fake-provider test modelled on G12, goes into the next server increment's plan (B3).
 
 **B2c review:** independent PASS at exact `33513fda` (coordination `48a64ad`). The edits-before-plan order was accepted with no revert: the plan `90b10b87` is a single-parent evidence-only commit on main and an ancestor of the candidate, and the edits are Lane D's verbatim, test-only specification.
+
+## B3a pre-code round plan: turn contract hardening
+
+_The B2c acceptance JSON above is kept as historical JSON and is no longer the active record._
+
+**Why and how B3 is split.** Codex's prepared B3 plan has seven tasks. To keep each independent review small, the writer splits B3 into three rounds under this claim, and each gets its own pre-code plan:
+- **B3a (this round):** hardening the turn contract the Guide already uses;
+- **B3b:** F1 same-key private conversion, the stage and confirm route, revision-safe Undo and PQ1 spoken save;
+- **B3c:** the acknowledged held-turn queue, precise matching, and source merge, purge and repair.
+
+C3 consumes B3b and B3c.
+
+**What exists (map at `0222d2d2`).** `POST /api/resume-interview/me/turn` goes to `ResumeIntakeService.converse`. It has:
+- a closed operation set (`add_content`, `revise_content`, `exclude_content`, `restore_content`, `clarify`, `answer_question`, `skip_topic`);
+- a server validator, which already refuses an `add_content` that carries a target (`target_binding`);
+- a `request_id` digest with reserve → completed/failed;
+- replies composed from committed proposals.
+
+It is missing:
+- an immutable receipt (a replay recomputes from pending proposals);
+- a named conflict (it returns `changed`);
+- a bounded request guard (`resume_request_guard` covers only submit and organize);
+- stable B1 `item_ref` targets (it uses `record:`/`proposal:` refs);
+- an operation identity;
+- an explicit source lifecycle.
+
+**Scope.**
+1. **G12 add-target refusal (manager's fixed criterion).**
+   - The organize extraction adapter refuses a `new` outcome that carries a `match_reference`, with a named reason. Today it accepts a listed one and silently drops it.
+   - The turn path's existing `target_binding` refusal of a targeted `add_content` gets a fake-provider case modelled on bake-off G12.
+   - Both report honestly and apply nothing.
+2. **Bounded request guard for turns and recordings.**
+   - `converse` and recording stop/transcribe take the same bounded per-owner request guard as submit and organize.
+   - An identical in-flight request returns the retryable `503 request_in_progress` with input kept, instead of occupying a worker. This is B2b review follow-up f2.
+3. **Immutable turn receipt and named conflict.**
+   - A replay returns the result stored at commit: reply, next question, proposal keys, operation results and control bindings. Later confirms or edits do not rewrite it.
+   - The same `request_id` with a changed payload returns `409 idempotency_conflict`, checked before any current-state check.
+   - A reserved or failed turn is never sent to the model again.
+4. **Stable B1 targets.**
+   - A turn may name its focus by the B1 `item_ref` from the working set. The server resolves it to the owner's current record or proposal.
+   - A foreign or unknown ref returns a neutral refusal, never a guess.
+   - The `record:`/`proposal:` form stays accepted.
+5. **Operation identity and source lifecycle.**
+   - Each applied operation gets the server identity `(turn_id, op_index)`, recorded in the turn receipt so B3b's inverse ledger can key on it.
+   - Each source contribution moves attached → sent(turn_id) → consumed. Only this turn's sent sources are processed, and a replay never re-consumes one.
+
+**Excluded:**
+- conversion, Undo, PQ1 auto-save, the held queue, entity matching and purge (B3b and B3c);
+- any client change (C rounds);
+- model, provider or payer changes;
+- schema, deployment and production.
+
+SQL keeps refusing turns before any effect.
+
+**Holds:** fake providers only and $0. No production, 8443 stop, model switch or credentials. Independent exact-SHA review by `session:16023c0e-7189-420e-8a4d-11f8012a9713`.
+
+```package-acceptance-json
+{
+  "schema_version": 1,
+  "package": "PS-GUIDE-SERVER-001",
+  "plan_sha": "8f86c36a1b761aa20a8be5b06a8f631e70dafd43",
+  "candidate_sha": "8b654d677924197981525b7828b1c5a18c1d6958",
+  "baseline": [
+    {
+      "command": "X:/PeerSlate/runtimes/development/Scripts/python.exe -B -m unittest tests.test_resume_onboarding_conversation tests.test_resume_intake_routes tests.test_resume_intake_service tests.test_resume_intake_runtime tests.test_resume_intake_sql tests.test_my_data_extraction_adapter -q",
+      "exit_code": 0,
+      "observation": "394/394 PASS in 25.184s on an export of main ee476daf before B3a code. Fake/in-memory providers only. Raw log X:/PeerSlate/Claude/reviews/b3a-turn-contract/b3a-precode-baseline.log."
+    }
+  ],
+  "criteria": [
+    {
+      "id": "b3a_add_target_refusal",
+      "expected": "A new/add outcome that carries an existing target where a null target is required is refused with a named reason and never applied: the organize extraction adapter refuses outcome new with any match_reference, and the turn path keeps refusing a targeted add_content (target_binding). No proposal, draft or canonical change results, and the member's input is kept.",
+      "verification": "Fake-provider cases modelled on bake-off G12 for organize and for a turn, RED for the adapter on the main tree; store snapshots unchanged; existing adapter and conversation suites green."
+    },
+    {
+      "id": "b3a_bounded_turn_guard",
+      "expected": "An identical in-flight turn or recording stop/transcribe request waits at most the bounded guard time, then returns the retryable 503 request_in_progress with the request id echoed and input kept; an unrelated request completes meanwhile; the held request finishes and a retry with the same id replays without a second provider call.",
+      "verification": "Held fake provider plus same-id duplicates through a four-worker bounded server for a turn and for a recording; an unrelated GET completes; RED without the guard."
+    },
+    {
+      "id": "b3a_immutable_turn_receipt",
+      "expected": "A replayed turn returns exactly the result stored at commit (reply, next question, proposal keys, operation results, control bindings) even after later confirms or edits; the same request id with a changed payload returns 409 idempotency_conflict before any current-state check; a reserved or failed turn is never dispatched again.",
+      "verification": "Replay after confirm/edit returns the stored result byte-equal; changed-payload conflict precedes stale-state checks; provider call counts; legacy clients' handling of the conflict code checked."
+    },
+    {
+      "id": "b3a_item_ref_targets",
+      "expected": "A turn may name its focus and operation targets by the working set's stable B1 item_ref; the server resolves it to the owner's current record or proposal; a foreign, unknown or stale ref returns a neutral refusal without revealing foreign facts; the record:/proposal: form keeps working.",
+      "verification": "Turns targeting saved and pending items by item_ref, alias successors after a save, a second owner's item_ref and an unknown ref; legacy target form regression."
+    },
+    {
+      "id": "b3a_operation_identity_sources",
+      "expected": "Each applied turn operation carries the server identity (turn_id, op_index) in the stored turn receipt; each source contribution moves attached to sent(turn_id) to consumed; only this turn's sent sources are processed, and a replay or retry never re-consumes a source or mints a second identity.",
+      "verification": "Receipts list operation identities in order; source state transitions observed; replay and lost-response retry keep identities and consumption counts unchanged; an injected failure after the first operation leaves no partial consumption."
+    },
+    {
+      "id": "b3a_regression_review",
+      "expected": "Affected server suites, strict browser runner normal and two-copy load, and full no-Playwright discover show no new failure against base; SQL still refuses turns before effects; the exact candidate receives independent PASS; current-target CI and merge remain separate gates.",
+      "verification": "Focused suites under the lock-order witness, strict runs, discover comparison against main, exact-SHA independent receipt, package_acceptance check and merge preflight."
+    }
+  ],
+  "checks": [
+    {
+      "criterion_id": "b3a_add_target_refusal",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "8b654d677924197981525b7828b1c5a18c1d6958",
+      "source_ref": "coordination:ce0a025:Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3a.md + tests.test_my_data_extraction_adapter.G12AddTargetRefusalTests + tests.test_my_data_intake_ai.MatchedTargetBindingTests + tests.test_resume_onboarding_conversation.ConversationTests.test_g12_an_add_aimed_at_an_existing_item_is_refused_and_applies_nothing + X:/PeerSlate/Claude/reviews/b3a-turn-contract/g12-red.txt + X:/PeerSlate/Claude/reviews/b3a-turn-contract/g12-green.txt",
+      "observed": "A new outcome naming a listed record is refused as new_needs_no_match in validation and organizing (only that candidate, lines kept unplaced), fails closed to untargeted wording in the service, and the turn path refuses a targeted add_content; nothing is applied and input is kept; RED on the parent."
+    },
+    {
+      "criterion_id": "b3a_bounded_turn_guard",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "8b654d677924197981525b7828b1c5a18c1d6958",
+      "source_ref": "coordination:ce0a025:Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3a.md + tests.test_resume_onboarding_conversation.ConversationTests.test_b3a_a_duplicate_of_an_in_flight_turn_gets_the_busy_reply_then_replays_once + tests.test_resume_intake_routes.RouteBoundaryTests.test_b3a_a_busy_turn_is_the_retryable_503_with_its_request_id_and_words + tests.test_resume_intake_service.BoundedRecordingGuardTests + X:/PeerSlate/Claude/reviews/b3a-turn-contract/guard-red.txt + X:/PeerSlate/Claude/reviews/b3a-turn-contract/guard-green.txt",
+      "observed": "A duplicate in-flight turn or recording returns the retryable 503 request_in_progress within the 2 s bound with its request id and words kept; the held request finishes and a retry replays with one provider call; cross-instance recordings keep the store claim's pending reply; RED on the parent (the recording duplicate waited the full 30 s hold)."
+    },
+    {
+      "criterion_id": "b3a_immutable_turn_receipt",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "8b654d677924197981525b7828b1c5a18c1d6958",
+      "source_ref": "coordination:ce0a025:Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3a.md + tests.test_resume_onboarding_conversation.ConversationTests.test_b3a_replay_keeps_what_the_turn_did_and_a_changed_reuse_is_a_named_conflict + tests.test_resume_intake_routes.RouteBoundaryTests.test_b3a_a_reused_turn_id_with_changed_words_is_a_409_idempotency_conflict + X:/PeerSlate/Claude/reviews/b3a-turn-contract/receipt-red.txt + X:/PeerSlate/Claude/reviews/b3a-turn-contract/receipt-green.txt",
+      "observed": "A replay returns the reply, next question, proposal keys and operations fixed at commit while cards stay hydrated (ruled); a reused id with changed words is 409 idempotency_conflict before any current-state check, with no second model call."
+    },
+    {
+      "criterion_id": "b3a_item_ref_targets",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "8b654d677924197981525b7828b1c5a18c1d6958",
+      "source_ref": "coordination:ce0a025:Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3a.md + tests.test_resume_onboarding_conversation.ConversationTests.test_b3a_a_turn_names_its_focus_by_the_stable_item_ref + tests.test_resume_onboarding_conversation.ConversationTests.test_b3a_an_unknown_or_foreign_item_ref_is_a_neutral_not_found_without_a_model_call + X:/PeerSlate/Claude/reviews/b3a-turn-contract/itemref-red.txt + X:/PeerSlate/Claude/reviews/b3a-turn-contract/itemref-green.txt",
+      "observed": "item:<item_ref> resolves after replay through the owner's working set, aliases included, to the saved record or current pending proposal; unknown and foreign refs are a neutral not_found with no model call; legacy forms still work."
+    },
+    {
+      "criterion_id": "b3a_operation_identity_sources",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "8b654d677924197981525b7828b1c5a18c1d6958",
+      "source_ref": "coordination:ce0a025:Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3a.md + tests.test_resume_onboarding_conversation.ConversationTests.test_b3a_each_operation_carries_turn_id_and_op_index_fixed_on_replay + tests.test_resume_onboarding_conversation.ConversationTests.test_b3a_a_recording_is_sent_then_consumed_once_and_a_failed_turn_releases_it + X:/PeerSlate/Claude/reviews/b3a-turn-contract/opid-red.txt + X:/PeerSlate/Claude/reviews/b3a-turn-contract/opid-green.txt",
+      "observed": "Each proposal carries turn_id and op_index and the receipt operations list is unchanged on replay; a recording is sent while its turn is reserved and consumed on completion, another turn cannot send it again, and a turn failing after its first operation consumes nothing."
+    },
+    {
+      "criterion_id": "b3a_regression_review",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "8b654d677924197981525b7828b1c5a18c1d6958",
+      "source_ref": "coordination:ce0a025:Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3a.md + X:/PeerSlate/Claude/reviews/b3a-turn-contract/opid-affected.txt + X:/PeerSlate/Claude/reviews/b3a-turn-contract/witness.txt + X:/PeerSlate/Claude/reviews/b3a-turn-contract/witness-base-coverage.txt + X:/PeerSlate/Claude/reviews/b3a-turn-contract/strict-normal.txt + X:/PeerSlate/Claude/reviews/b3a-turn-contract/strict-load1.txt + X:/PeerSlate/Claude/reviews/b3a-turn-contract/discover-cand.txt",
+      "observed": "Independent exact-SHA PASS at 8b654d67; affected suites 647/647; witness violations only from one base-identical coverage test; strict 152 normal and two-copy load pass; discover failure set identical to base ee476daf; SQL still refuses turns before effects."
+    }
+  ]
+}
+```
+
+### B3a implementation evidence (candidate for independent review)
+
+Fake providers only, $0. Evidence root: `X:/PeerSlate/Claude/reviews/b3a-turn-contract/`.
+
+Order: plan `8f86c36a`, adopted at `83296601` and repaired at `0ba06d82`. That commit carried conflict markers in the evidence file, now removed; `git diff 8f86c36a 0ba06d82` is the one `plan_sha` line. All B3a code follows the plan. Runtime source is `3e58fc5d`.
+
+- **G12 add-target refusal (`c92e51ee`).**
+  - Extraction validation refuses outcome `new` with any `match_reference` (`new_needs_no_match`, the `matching` rule). The retry-rule sentence now says a new outcome always has a null `match_reference`; the main instructions are unchanged.
+  - Organizing rejects only that candidate: no role is made, its lines stay visible as unplaced wording, and no draft carries a reference.
+  - The service fails closed for unvalidated candidates: they become `inferred_wording` with no target, and the existing record is unchanged.
+  - The turn path's existing `target_binding` refusal of a targeted `add_content` gets a G12 case: the turn is failed with that diagnostic, the catalog is unchanged and no proposal is pending.
+  - Three cases fail without the change (`g12-red.txt`) and pass with it (`g12-green.txt`).
+  - One older test, `test_all_matched_outcomes_require_same_record_type`, now expects `new_needs_no_match` for `new`. It is still refused, now before the type check.
+- **Bounded turn and recording guard (`9bc080a8`).**
+  - `converse` runs under `resume_request_guard(owner, 'conversation:' + request_id)`. A duplicate waits at most 2.0 s, then gets `ResumeIntakeBusyError`. The turn route renders it through `_unavailable`: 503 with `code: request_in_progress`, `retryable`, the `request_id` and `proposed_values.statement`, plus `input_preserved`.
+  - The held turn completes, and a retry replays it with one model call.
+  - The per-instance recording lock now acquires with the same 2.0 s bound, then gives the same busy reply. Other instances still meet the store claim's `pending` reply, and both existing cross-instance tests are unchanged.
+  - An attempt to drop the lock entirely broke the existing same-process contract, so it was not used (`recording-store-claim-attempt-red.txt`).
+  - Three tests fail on the parent (`guard-red.txt`): the recording duplicate waited the full 30 s hold. They pass with the change (`guard-green.txt`).
+- **Fixed turn receipt and a named conflict (`858295c3`).**
+  - A replay returns the reply, the next question and the proposal keys fixed at commit.
+  - Its proposal cards stay hydrated to their current state. That keeps the existing approved behaviour (`test_replay_hydrates_current_revision_and_never_redispatches`, PR1265), so a decided proposal is never offered again. **Ruling invited** if you want the cards frozen too.
+  - A reused request id with different words returns 409 `idempotency_conflict`, found before the draft-version check, with no second call. The client already treats any 409 the same way.
+  - RED: `receipt-red.txt`. GREEN: `receipt-green.txt`.
+- **Stable `item_ref` targets (`83046247`).**
+  - `selected_target` accepts `item:<item_ref>`. After the replay and draft-version checks, it resolves through `working_item` (aliases included): a saved item becomes `record:<key>`, a pending suggestion becomes `proposal:<key>`.
+  - Unknown, foreign and non-target refs give a neutral `not_found` with no model call.
+  - Proven for a saved item, a pending suggestion, and the same suggestion's alias after it is saved. RED: `itemref-red.txt`. GREEN: `itemref-green.txt`.
+- **Operation identity and the recording lifecycle (`3e58fc5d`).**
+  - Each proposal a turn makes carries `turn_id` and `op_index`. The turn receipt lists `operations` (`op_index`, `operation`, `proposal_key`) for the operations that produced proposals, unchanged on replay.
+  - A recording is sent while its turn is reserved and consumed once that turn completes. Another turn can't send it again (`not_found`).
+  - A turn that fails after its first operation consumes nothing, leaves no pending proposal, and its recording can be sent again.
+  - RED: `opid-red.txt`. GREEN: `opid-green.txt`.
+  - **Limits:** recordings attached by turns from before B3a aren't retroactively marked consumed. A turn whose process died while reserved keeps its recording sent, matching the existing rule that it is never sent again.
+
+**Runs on an export of `3e58fc5d`:**
+- Affected suites (the six baseline suites plus my-data, coverage, sources, draft and guide modules): 647/647.
+- Lock-order witness over 22 modules: 965 tests, 0 failures or errors, 3 violations.
+  - All 3 come from `test_resume_onboarding_coverage.test_actual_shared_policy_catalog_rolls_back_only_touched_owner_and_replays_success`. Its mock deliberately commits for an unrelated owner from inside one owner's draft creation, to prove rollback isolation.
+  - The same 3 occur on base main `ee476daf` (`witness-base-coverage.txt`).
+  - The B2b 21-module set alone shows 0. This is a test construct, not a product path.
+- Strict required browser runner (this branch selects 152): normal 152/152 in 289 s; two concurrent copies 152/152 each in 296 s.
+- Full no-Playwright discover, candidate vs base main `ee476daf`: candidate 7863 run / 304 skipped / 16 errors / 19 failures; base 7850 / 304 / 16 / 19. The failure and error sets are identical, and the +13 are the new B3a tests.
+
+**B3a review:** independent PASS at exact `8b654d67` (coordination `ce0a025`). No new findings. The B2b recording Minor is closed by the bounded guards. Replayed cards stay hydrated, per the ruling.

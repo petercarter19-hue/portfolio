@@ -395,6 +395,47 @@ class ConversationTests(unittest.TestCase):
         self.behavior = catalog_ref
         self._assert_failed_diagnostic(self.command('Engineer at Example Labs.'), 'operation_contract', 'source_ref_binding')
 
+    def test_g12_an_add_aimed_at_an_existing_item_is_refused_and_applies_nothing(self):
+        key = self.seed(employer_name='Cedar Systems')
+        before = copy.deepcopy(self.intake.draft_service.catalog.list_items(self.owner))
+        self.behavior = lambda ctx: {'response':'Added.','next_question':'','operations':[
+            operation(ctx, op='add_content', ref='record:'+key, values={'summary':'Led eight or nine people.'})]}
+        self._assert_failed_diagnostic(self.command(
+            'I led eight or nine people at Cedar Systems, and waste fell, but I do not have a percentage.'),
+            'operation_contract', 'target_binding')
+        self.assertEqual(self.intake.draft_service.catalog.list_items(self.owner), before)
+        self.assertEqual([row for row in self.intake.repository.load_owner(self.owner)['proposals'].values()
+                          if row.get('state') == 'pending'], [])
+
+    def test_b3a_a_duplicate_of_an_in_flight_turn_gets_the_busy_reply_then_replays_once(self):
+        import threading, time
+        from services.resume_intake_service import ResumeIntakeBusyError
+        entered, released = threading.Event(), threading.Event()
+        self.addCleanup(released.set)
+        def held(ctx):
+            entered.set()
+            if not released.wait(30):
+                raise AssertionError('The held fake turn was never released')
+            return {'response': 'Which detail should change?', 'next_question': '', 'operations': []}
+        self.behavior = held
+        command = self.command('I restore fictional radios.')
+        results = {}
+        worker = threading.Thread(target=lambda: results.setdefault('first',
+            self.intake.converse(self.owner, copy.deepcopy(command), assistance=self.assistance)))
+        worker.start()
+        self.assertTrue(entered.wait(5))
+        started = time.monotonic()
+        with self.assertRaises(ResumeIntakeBusyError) as busy:
+            self.intake.converse(self.owner, copy.deepcopy(command), assistance=self.assistance)
+        self.assertLess(time.monotonic() - started, 5)
+        self.assertEqual((busy.exception.code, busy.exception.request_id), ('request_in_progress', command['request_id']))
+        self.assertEqual(busy.exception.proposed, {'statement': command['statement']})
+        released.set(); worker.join(10)
+        self.assertIn('first', results)
+        replay = self.intake.converse(self.owner, copy.deepcopy(command), assistance=self.assistance)
+        self.assertTrue(replay.get('replayed'))
+        self.assertEqual(len(self.calls), 1)
+
     def test_revision_is_durable_and_untouched_fields_remain_after_confirmation(self):
         key = self.seed()
         before = self.intake.draft_service.get_workspace(self.owner)['items'][0]['values']
@@ -697,6 +738,124 @@ class ConversationTests(unittest.TestCase):
         self.assertTrue(replay['replayed']); self.assertEqual(replay['proposals'], [])
         altered = {**command, 'statement': 'Different words'}
         with self.assertRaises(SynthesisError): self.intake.converse(self.owner, altered, assistance=self.assistance)
+
+    def test_b3a_replay_keeps_what_the_turn_did_and_a_changed_reuse_is_a_named_conflict(self):
+        key = self.seed()
+        self.behavior = lambda ctx: {'response': 'Changed location.', 'next_question': 'Anything else?',
+            'operations': [operation(ctx, ref='record:' + key, values={'location_text': 'Boulder'})]}
+        command = self.command('Change my location to Boulder.')
+        first = self.intake.converse(self.owner, command, assistance=self.assistance)
+        keys = [row['proposal_key'] for row in first['proposals']]
+        self.assertEqual(first['proposal_keys'], keys)
+        self.confirm(first['proposals'][0])
+        replay = self.intake.converse(self.owner, command, assistance=self.assistance)
+        # What the turn did is fixed at commit; the cards stay hydrated to their current state.
+        self.assertEqual((replay['response'], replay['next_question'], replay['proposal_keys']),
+                         (first['response'], first['next_question'], keys))
+        self.assertTrue(replay['replayed']); self.assertEqual(replay['proposals'], [])
+        # A reused request id with changed words is a named conflict, found before any current-state check.
+        altered = {**command, 'statement': 'Different words', 'expected_draft_version': command['expected_draft_version'] + 7}
+        with self.assertRaises(SynthesisError) as conflict:
+            self.intake.converse(self.owner, altered, assistance=self.assistance)
+        self.assertEqual(conflict.exception.code, 'idempotency_conflict')
+        self.assertEqual(len(self.calls), 1)
+
+    def _working_ref(self, *, origin):
+        working = self.intake.working_set(self.owner)
+        def walk(items):
+            for item in items:
+                yield item
+                yield from walk(item['children'])
+        rows = [row for section in working['sections'] for row in walk(section['items'])]
+        return next(row for row in rows if row['origin'] == origin)
+
+    def test_b3a_a_turn_names_its_focus_by_the_stable_item_ref(self):
+        seen = []
+        def capture(ctx):
+            seen.append(ctx['selected_target'])
+            return {'response': 'Which detail should change?', 'next_question': '', 'operations': []}
+        key = self.seed()
+        saved = self._working_ref(origin='saved')
+        self.behavior = capture
+        self.turn('Tell me about this job.', 'item:' + saved['item_ref'])
+        self.assertEqual(seen[-1], 'record:' + key)
+        # A pending suggestion is reached by its own item_ref, and after it is saved, by its alias.
+        self.behavior = lambda ctx: {'response': 'Added.', 'next_question': '', 'operations': [
+            operation(ctx, op='add_content', record_type='skill', section='Skills', values={'name': 'Radio restoration'})]}
+        result = self.turn('One of my skills is Radio restoration.')
+        pending = self._working_ref(origin='pending')
+        self.behavior = capture
+        self.turn('About that skill.', 'item:' + pending['item_ref'])
+        self.assertEqual(seen[-1], 'proposal:' + result['proposals'][0]['proposal_key'])
+        accepted = self.confirm(result['proposals'][0], values=result['proposals'][0]['proposed_values'])
+        saved_key = accepted['item']['record_key']
+        self.turn('About that skill again.', 'item:' + pending['item_ref'])
+        self.assertEqual(seen[-1], 'record:' + saved_key)
+        self.assertEqual(len(self.calls), 4)
+
+    def test_b3a_an_unknown_or_foreign_item_ref_is_a_neutral_not_found_without_a_model_call(self):
+        from uuid import uuid4 as fresh
+        self.seed()
+        other_owner, self.owner = self.owner, 'synthetic-other-owner'
+        self.seed(employer_name='Foreign Labs')
+        foreign = self._working_ref(origin='saved')['item_ref']
+        self.owner = other_owner
+        for ref in (str(fresh()), foreign):
+            with self.subTest(ref=ref), self.assertRaises(SynthesisError) as missing:
+                self.turn('Tell me about this job.', 'item:' + ref)
+            self.assertEqual(missing.exception.code, 'not_found')
+        self.assertEqual(self.calls, [])
+
+    def _recording(self, words):
+        from services.resume_intake_transcription_adapter import ResumeTranscriptionAdapter
+        from tests.test_my_data_intake_sources import StubTranscriber, recording_payload, wav_bytes
+        self.intake.transcription_adapter = ResumeTranscriptionAdapter(service=StubTranscriber(words))
+        upload, payload = recording_payload('audio/wav', wav_bytes(), 4.0)
+        return self.intake.transcribe_recording(self.owner, upload, payload)['source_key']
+
+    def test_b3a_each_operation_carries_turn_id_and_op_index_fixed_on_replay(self):
+        self.behavior = lambda ctx: {'response': 'Added.', 'next_question': '', 'operations': [
+            operation(ctx, op='add_content', record_type='skill', section='Skills', values={'name': 'Python'}),
+            operation(ctx, op='add_content', record_type='skill', section='Skills', values={'name': 'SQL'})]}
+        command = self.command('My skills are Python and SQL.')
+        first = self.intake.converse(self.owner, command, assistance=self.assistance)
+        rows = first['operations']
+        self.assertEqual([row['op_index'] for row in rows], [0, 1])
+        self.assertEqual([row['proposal_key'] for row in rows], first['proposal_keys'])
+        stored = self.intake.repository.load_owner(self.owner)['proposals']
+        for row in rows:
+            meta = stored[row['proposal_key']]['resume_conversation_v1']
+            self.assertEqual((meta['turn_id'], meta['op_index']), (command['request_id'], row['op_index']))
+        self.confirm(first['proposals'][0], values=first['proposals'][0]['proposed_values'])
+        replay = self.intake.converse(self.owner, command, assistance=self.assistance)
+        self.assertEqual(replay['operations'], rows)
+        self.assertEqual(len(self.calls), 1)
+
+    def test_b3a_a_recording_is_sent_then_consumed_once_and_a_failed_turn_releases_it(self):
+        clip = self._recording('I restore fictional radios.')
+        self.behavior = lambda ctx: {'response': 'Which detail should change?', 'next_question': '', 'operations': []}
+        command = {**self.command('Use my recording.'), 'source_keys': [clip]}
+        self.intake.converse(self.owner, command, assistance=self.assistance)
+        # Consumed by that turn: a new turn cannot send it again, and its replay never re-consumes it.
+        with self.assertRaises(SynthesisError) as used:
+            self.intake.converse(self.owner, {**self.command('Use it again.'), 'source_keys': [clip]}, assistance=self.assistance)
+        self.assertEqual(used.exception.code, 'not_found')
+        self.assertTrue(self.intake.converse(self.owner, command, assistance=self.assistance)['replayed'])
+        self.assertEqual(len(self.calls), 1)
+        # A turn that fails after its first operation consumes nothing; its recording can be sent again.
+        other = self._recording('I also repair fictional clocks.')
+        self.behavior = lambda ctx: {'response': 'Added.', 'next_question': '', 'operations': [
+            operation(ctx, op='add_content', record_type='skill', section='Skills', values={'name': 'Clock repair'}),
+            operation(ctx, op='add_content', record_type='skill', section='Skills', values={'job_title': 'Bad field'})]}
+        with self.assertRaises(SynthesisError):
+            self.intake.converse(self.owner, {**self.command('Use the clock recording.'), 'source_keys': [other]},
+                                 assistance=self.assistance)
+        self.assertEqual([row for row in self.intake.repository.load_owner(self.owner)['proposals'].values()
+                          if row.get('state') == 'pending'], [])
+        self.behavior = lambda ctx: {'response': 'Which detail should change?', 'next_question': '', 'operations': []}
+        retry = self.intake.converse(self.owner, {**self.command('Use the clock recording now.'), 'source_keys': [other]},
+                                     assistance=self.assistance)
+        self.assertFalse(retry['replayed'])
 
     def test_timeout_reservation_cannot_repeat_paid_call(self):
         self.behavior = lambda ctx: (_ for _ in ()).throw(TimeoutError('synthetic'))

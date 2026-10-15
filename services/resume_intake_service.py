@@ -102,6 +102,7 @@ from services.resume_intake_repository import (
     InMemoryResumeIntakeRepository,
     SqlIntakeUnitOfWork,
     ResumeIntakeStoreUnavailable,
+    REQUEST_GUARD_WAIT_SECONDS,
     ResumeRequestInProgress,
     resume_request_guard,
     empty_intake_snapshot,
@@ -713,6 +714,8 @@ class ResumeIntakeService:
 
     @contextmanager
     def _recording_request_lock(self, owner, request_id):
+        # Same-instance duplicates wait, but only as long as the shared request guard
+        # (B3a): then the retryable busy reply. Other instances meet the store claim.
         key = (str(owner), str(request_id))
         with self._recording_locks_guard:
             state = self._recording_locks.get(key)
@@ -721,8 +724,12 @@ class ResumeIntakeService:
                 self._recording_locks[key] = state
             state["users"] += 1
         try:
-            with state["lock"]:
+            if not state["lock"].acquire(timeout=REQUEST_GUARD_WAIT_SECONDS):
+                raise ResumeRequestInProgress()
+            try:
                 yield
+            finally:
+                state["lock"].release()
         finally:
             with self._recording_locks_guard:
                 state["users"] -= 1
@@ -1472,6 +1479,9 @@ class ResumeIntakeService:
             'request_id': meta.get('request_id'), 'base_revision': meta.get('base_revision'),
             'response': meta.get('response') or 'This turn is no longer available.',
             'next_question': meta.get('next_question') or '', 'proposals': rows,
+            # Fixed at commit: what the turn did. The rows above stay hydrated to their current state.
+            'proposal_keys': list(meta.get('proposal_keys') or []),
+            'operations': copy.deepcopy(meta.get('operations') or []),
             'topic_skipped': meta.get('topic_skipped') is True,
             'saved': False, 'publishes': False, 'confirmation_required': bool(rows), 'replayed': replayed}
 
@@ -1844,6 +1854,33 @@ class ResumeIntakeService:
             return self._conversation_response(snapshot, source)
 
     def converse(self, owner, payload, *, assistance, allow_fixture_policy=False):
+        # Only an identical in-flight turn waits, and only briefly: on a fixed worker
+        # pool a duplicate gets the retryable busy reply instead of a worker. The owner
+        # lock is still released during the paid call, and replay is checked first.
+        request_id = str(payload.get('request_id') if isinstance(payload, dict) else None)
+        try:
+            with resume_request_guard(owner, 'conversation:' + request_id):
+                return self._converse_guarded(owner, payload, assistance=assistance,
+                                              allow_fixture_policy=allow_fixture_policy)
+        except ResumeRequestInProgress:
+            statement = payload.get('statement') if isinstance(payload, dict) else None
+            raise self._request_in_progress(
+                request_id, {'statement': statement} if isinstance(statement, str) else None) from None
+
+    def _turn_target_for_item(self, owner, item_ref):
+        """The current turn target for a stable B1 item_ref: a saved record or a pending suggestion."""
+        from services.resume_intake_runtime import SynthesisError
+        try:
+            item = self.working_item(owner, item_ref)
+        except ResumeIntakeNotFoundError:
+            raise SynthesisError('not_found') from None
+        if item['origin'] == 'saved':
+            return 'record:' + item['item_ref']
+        if item['origin'] == 'pending' and isinstance(item.get('proposal_key'), str):
+            return 'proposal:' + item['proposal_key']
+        raise SynthesisError('not_found')
+
+    def _converse_guarded(self, owner, payload, *, assistance, allow_fixture_policy=False):
         from services.resume_intake_runtime import SynthesisError
         from services.resume_onboarding_document_reader import inventory_source
         if not getattr(self.repository, 'supports_resume_conversation', False):
@@ -1864,7 +1901,7 @@ class ResumeIntakeService:
         command['source_keys'] = [_as_uuid(key, field='source key') for key in payload['source_keys']]
         if command['selected_target'] is not None:
             parts = command['selected_target'].split(':')
-            if len(parts) != 2 or parts[0] not in {'record', 'proposal'}:
+            if len(parts) != 2 or parts[0] not in {'record', 'proposal', 'item'}:
                 raise SynthesisError('invalid')
             _as_uuid(parts[1], field='selected target')
         if len(set(command['source_keys'])) != len(command['source_keys']):
@@ -1879,7 +1916,8 @@ class ResumeIntakeService:
                 if old_meta.get('request_id') != command['request_id']:
                     continue
                 if old_meta.get('request_digest') != request_digest:
-                    raise SynthesisError('changed')
+                    # A reused request id with different words: named, before any current-state check.
+                    raise SynthesisError('idempotency_conflict')
                 if old_source.get('state') != 'active':
                     raise SynthesisError('changed')
                 if old_meta.get('turn_state') == 'completed':
@@ -1889,6 +1927,9 @@ class ResumeIntakeService:
             canonical = assistance._context(owner, [], allow_empty=True)
             if canonical['draft_version'] != command['expected_draft_version']:
                 raise SynthesisError('changed')
+            if command['selected_target'] is not None and command['selected_target'].startswith('item:'):
+                # Resolved after replay, from the owner's own working set (aliases included).
+                command['selected_target'] = self._turn_target_for_item(owner, command['selected_target'][len('item:'):])
             snapshot['policy_version'] = policy.version
             reserve = min(assistance.limits['maximum_input_bytes'] // 2, 2 * len(command['statement'].encode('utf-8')) + 4096)
             context = self._conversation_view(snapshot, canonical,
@@ -1900,6 +1941,15 @@ class ResumeIntakeService:
                 source = snapshot['sources'].get(key)
                 if not source or source.get('state') != 'active' or source.get('kind') != 'recording':
                     raise SynthesisError('not_found')
+            # A recording is attached until a turn sends it, sent while that turn is reserved, and consumed once it
+            # completes; a failed turn releases it. Another turn never sends a sent or consumed recording again.
+            taken = set()
+            for other in snapshot['sources'].values():
+                other_meta = (other.get('structured_values') or {}).get('resume_conversation_v1') or {}
+                if other_meta.get('turn_state') in {'reserved', 'completed'}:
+                    taken.update(other_meta.get('sent_source_keys') or [])
+            if taken & set(command['source_keys']):
+                raise SynthesisError('not_found')
             submission_key, source_key = str(uuid4()), str(uuid4())
             snapshot['submissions'][submission_key] = {'submission_key': submission_key, 'version': 1,
                 'state': 'active', 'source_keys': [source_key], 'created_at': _utc(None).isoformat()}
@@ -1911,6 +1961,7 @@ class ResumeIntakeService:
             source['structured_values'] = {'resume_conversation_v1': {
                 'schema_version': 1, 'request_id': command['request_id'], 'request_digest': request_digest,
                 'base_revision': canonical['draft_version'], 'turn_state': 'reserved',
+                'sent_source_keys': list(command['source_keys']),
                 'turn_order': 1 + max([0] + [((row.get('structured_values') or {}).get('resume_conversation_v1') or {}).get('turn_order', 0)
                     for row in snapshot['sources'].values()]),
                 'source_units': inventory_source(command['statement']),
@@ -1967,6 +2018,10 @@ class ResumeIntakeService:
                     **({'date_question': question} if question else {}),
                     'next_question': '' if topic_skipped else result['next_question'],
                     'topic_skipped': topic_skipped, 'proposal_keys': [p['proposal_key'] for p in proposals],
+                    'operations': [{'op_index': p['resume_conversation_v1']['op_index'],
+                                    'operation': p['resume_conversation_v1']['operation'],
+                                    'proposal_key': p['proposal_key']} for p in proposals],
+                    'consumed_source_keys': list(meta.get('sent_source_keys') or []),
                     'control_bindings': {'record_keys': sorted({target['target_ref'].split(':', 1)[1]
                         for target in context['targets'] if target['target_ref'].startswith('record:')}),
                         'sources': [{'source_key': row['source_key'], 'version': row['version']} for row in context['materials']]}})
@@ -2088,7 +2143,7 @@ class ResumeIntakeService:
                                      'unit_id': context['current_turn']['units'][0]['unit_id']}],
                     'presentation_section': target_map[request[0]].get('presentation_section') or {
                         'role': 'Experience', 'education': 'Education'}[target_map[request[0]]['record_type']]})
-        for operation in operations:
+        for op_index, operation in enumerate(operations):
             if not isinstance(operation, dict) or set(operation) != CONVERSATION_OPERATION_FIELDS:
                 raise conversation_rejection('invalid_output', 'operation_contract', 'operation_shape')
             if operation['operation'] not in CONVERSATION_OPERATIONS:
@@ -2365,6 +2420,8 @@ class ResumeIntakeService:
             proposal['resume_conversation_v1'] = {'unit_ids': [b['unit_id'] for b in source_refs],
                 'source_refs': copy.deepcopy(source_refs), 'source_bindings': dependencies,
                 'presentation_section': section, 'operation': op, 'revision_of': (old or {}).get('proposal_key'),
+                # Server operation identity (B3a): which turn and which of its operations made this proposal.
+                'turn_id': command['request_id'], 'op_index': op_index,
                 'excluded_bullets': excluded, 'bullet_edits': copy.deepcopy(operation['bullet_edits']),
                 'target_values_digest': (captured_values_digest or _json_digest({k: v for k, v in (target or {}).get('values', {}).items()
                     if k != 'resume_credential_wording'})) if canonical_target and not old else
@@ -2738,19 +2795,22 @@ class ResumeIntakeService:
             {"type": "transcribe_recording", "client_key": client_key,
              "duration_seconds": duration, "audio_sha256": audio_sha256}
         )
-        with self._recording_request_lock(owner, request_id):
-            return self._transcribe_recording_once(
-                owner=owner,
-                request_id=request_id,
-                client_key=client_key,
-                duration=duration,
-                moment=moment,
-                data=data,
-                audio_sha256=audio_sha256,
-                content_type=content_type,
-                digest=digest,
-                policy=policy,
-            )
+        try:
+            with self._recording_request_lock(owner, request_id):
+                return self._transcribe_recording_once(
+                    owner=owner,
+                    request_id=request_id,
+                    client_key=client_key,
+                    duration=duration,
+                    moment=moment,
+                    data=data,
+                    audio_sha256=audio_sha256,
+                    content_type=content_type,
+                    digest=digest,
+                    policy=policy,
+                )
+        except ResumeRequestInProgress:
+            raise self._request_in_progress(request_id, None) from None
 
     def _transcribe_recording_once(
         self, *, owner, request_id, client_key, duration, moment, data,
@@ -5191,7 +5251,10 @@ class ResumeIntakeService:
         drafts = []
         for candidate in candidates:
             record_type = candidate.record_type
-            if record_type == "unspecified" or candidate.outcome == "uncertain":
+            if (record_type == "unspecified" or candidate.outcome == "uncertain"
+                    or candidate.outcome == "new" and candidate.match_reference is not None):
+                # A new fact that names an existing record is contradictory (bake-off G12):
+                # it never becomes a fact, only wording the member reviews.
                 kind = "inferred_wording"
             elif candidate.outcome == "new":
                 kind = "new_fact"

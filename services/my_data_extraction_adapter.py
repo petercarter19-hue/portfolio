@@ -497,6 +497,9 @@ def _validate_candidate(
     elif outcome in {"additional_detail", "contradiction"}:
         if not isinstance(match_reference, str) or match_reference not in shortlist:
             raise ExtractionError("matched_needs_listed_match")
+    elif outcome == "new" and match_reference is not None:
+        # A new fact matches nothing listed: an add never targets an existing record (bake-off G12).
+        raise ExtractionError("new_needs_no_match")
     elif match_reference is not None and (
         not isinstance(match_reference, str) or match_reference not in shortlist
     ):
@@ -590,8 +593,8 @@ RESUME_VALIDATOR_RULES = {
     "quote": ("quote is one exact contiguous passage that occurs exactly once within the candidate's selected "
               "units and does not reach into units it did not select."),
     "matching": ("Use outcome equivalent, additional_detail or contradiction only with a match_reference "
-                 "naming an exact listed record of the same record_type; parent_reference only on an "
-                 "accomplishment, naming a listed role."),
+                 "naming an exact listed record of the same record_type; a new outcome always has a null "
+                 "match_reference; parent_reference only on an accomplishment, naming a listed role."),
     "knowledge": "Knowledge placed under My Story is personal; all other knowledge is work.",
     "size": "Keep every field value under 8000 bytes.",
 }
@@ -604,7 +607,7 @@ RESUME_REJECTION_RULES = {
     "quote_outside_selected_units": "quote",
     "equivalent_needs_listed_match": "matching", "matched_needs_listed_match": "matching",
     "unknown_match_reference": "matching", "matched_record_type_mismatch": "matching",
-    "unknown_parent_reference": "matching", "unknown_confidence": "binding",
+    "new_needs_no_match": "matching", "unknown_parent_reference": "matching", "unknown_confidence": "binding",
     "unknown_category": "binding", "malformed_provided_fields": "binding",
     "knowledge_section_mismatch": "knowledge", "field_limit": "size",
     "unsupported_record_identity": "identity",

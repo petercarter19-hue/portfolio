@@ -3060,5 +3060,41 @@ class GuideRemainingMappingTests(unittest.TestCase):
 
 
 
+
+class BoundedRecordingGuardTests(unittest.TestCase):
+    """B3a: a same-instance duplicate waits only the bounded guard time, then gets the busy reply."""
+
+    def test_duplicate_recording_returns_busy_quickly_then_replays_with_one_transcription(self):
+        import threading, time
+        from services.resume_intake_service import ResumeIntakeBusyError
+        from tests.test_my_data_intake_sources import StubTranscriber, build_service, recording_payload, wav_bytes
+        entered, released = threading.Event(), threading.Event()
+        self.addCleanup(released.set)
+        stub = StubTranscriber('I restore fictional radios.')
+        real = stub.transcribe
+        def held(*args, **kwargs):
+            entered.set()
+            if not released.wait(30):
+                raise AssertionError('The held fake transcription was never released')
+            return real(*args, **kwargs)
+        stub.transcribe = held
+        service = build_service(transcriber=stub)
+        upload, payload = recording_payload('audio/wav', wav_bytes(), 12.0)
+        results = {}
+        worker = threading.Thread(target=lambda: results.setdefault('first',
+            service.transcribe_recording('member-a', upload, dict(payload))))
+        worker.start()
+        self.assertTrue(entered.wait(5))
+        started = time.monotonic()
+        with self.assertRaises(ResumeIntakeBusyError) as busy:
+            service.transcribe_recording('member-a', recording_payload('audio/wav', wav_bytes(), 12.0)[0], dict(payload))
+        self.assertLess(time.monotonic() - started, 5)
+        self.assertEqual((busy.exception.code, busy.exception.request_id), ('request_in_progress', payload['request_id']))
+        released.set(); worker.join(10)
+        replay = service.transcribe_recording('member-a', recording_payload('audio/wav', wav_bytes(), 12.0)[0], dict(payload))
+        self.assertEqual(replay['source_key'], results['first']['source_key'])
+        self.assertEqual(len(stub.calls), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

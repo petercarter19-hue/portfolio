@@ -676,6 +676,8 @@ _ASSISTANCE_MESSAGES = {
     'input_too_large': 'There is too much to read at once, so I did not send this. Nothing was changed and nothing was spent. '
                        'Finish or set aside some earlier items, or use the manual editor. Your words are kept.',
     'changed': 'Your résumé changed while I was working, so I stopped. Nothing was saved. Try again. Your words are kept.',
+    'idempotency_conflict': 'That message was already sent with different words, so I did not use it. Send it again as a '
+                            'new message. Nothing was changed and your words are kept.',
     'no_eligible_sources': 'There is nothing saved yet for me to work from. Add a detail first, or use the manual editor.',
     'target_locked': 'That part cannot be changed here right now. Use the manual editor. Your words are kept.',
     'not_found': 'That item is no longer there. Reload the page to see what is current. Your words are kept.',
@@ -758,7 +760,8 @@ def _private_assistance(kind, method):
         return _policy_response(error)
     except SynthesisError as error:
         code = error.code
-        status = 404 if code == 'not_found' else 409 if code == 'changed' else 503 if code == 'unavailable' else 400
+        status = (404 if code == 'not_found' else 409 if code in {'changed', 'idempotency_conflict'}
+                  else 503 if code == 'unavailable' else 400)
         diagnostic = conversation_failure_diagnostic(error)
         message = _ASSISTANCE_MESSAGES.get(code)
         if code == 'invalid_output':
@@ -769,7 +772,10 @@ def _private_assistance(kind, method):
             body['diagnostic'] = diagnostic
         return jsonify(body), status
     except (ProviderUnavailableError, ExecutionLimitError, TimeoutError, ResumeDraftUnavailableError,
-            ResumeIntakeUnavailableError):
+            ResumeIntakeUnavailableError) as error:
+        if getattr(error, 'code', None) == 'request_in_progress':
+            # The same turn is still being processed: retry this request id, words kept.
+            return jsonify(_unavailable(error, '')), 503
         return jsonify({'success': False, 'code': 'unavailable',
             'message': 'Private assistance is unavailable. Your manual editor remains available.'}), 503
     except (ValueError, TypeError, KeyError, ResumeDraftValidationError, ResumeIntakeValidationError, ExtractionError):

@@ -52,5 +52,48 @@ class GuideAdapterAdmissionTests(unittest.TestCase):
             provider.assert_called_once()
 
 
+
+class G12AddTargetRefusalTests(unittest.TestCase):
+    """Bake-off G12: a new (add) outcome never targets an existing listed record."""
+    SHORTLIST = [{"record_key": "rec-1", "record_type": "role", "values": {}}]
+
+    def test_plain_extraction_refuses_a_new_outcome_carrying_a_listed_match(self):
+        from services.my_data_extraction_adapter import validate_extraction_payload
+        text = "I led eight or nine people at Cedar Systems"
+        raw = {"record_type": "role", "values": {"employer_name": "Cedar Systems"}, "outcome": "new",
+               "span_start": 30, "span_end": len(text), "quote": "Cedar Systems", "match_reference": "rec-1"}
+        fields = {"role": frozenset({"role_title", "employer_name"})}
+        with self.assertRaises(ExtractionError) as refused:
+            validate_extraction_payload({"candidates": [dict(raw)]}, text=text, allowed_fields=fields,
+                                        shortlist=self.SHORTLIST)
+        self.assertEqual(refused.exception.code, "new_needs_no_match")
+        accepted = validate_extraction_payload({"candidates": [dict(raw, match_reference=None)]}, text=text,
+                                               allowed_fields=fields, shortlist=self.SHORTLIST)
+        self.assertEqual((accepted[0].outcome, accepted[0].match_reference), ("new", None))
+
+    def test_resume_organize_rejects_only_that_candidate_and_keeps_its_units_unplaced(self):
+        from services.my_data_extraction_adapter import RESUME_REJECTION_RULES, organize_resume_extraction
+        from services.resume_intake_service import EDITOR_FIELDS
+        from services.resume_onboarding_document_reader import inventory_source
+        from tests.test_resume_onboarding_coverage import complete_resume_candidate
+        text = "Experience\nEngineer, Cedar Systems, 2019-2021\nLed eight or nine people.\nSkills\nSQL."
+        units = inventory_source(text, document=True)
+        content = [unit for unit in units if unit["kind"] == "content"]
+        role = complete_resume_candidate("role", {"role_title": "Engineer", "employer_name": "Cedar Systems"},
+                                         content[0]["text"], content[:2], "Experience")
+        role["match_reference"] = "rec-1"
+        skill = complete_resume_candidate("skill", {"name": "SQL"}, "SQL.", content[2:], "Skills")
+        organization = organize_resume_extraction({"candidates": [role, skill]}, text=text, source_units=units,
+                                                  allowed_fields=EDITOR_FIELDS, shortlist=self.SHORTLIST)
+        self.assertEqual([row["code"] for row in organization.rejections], ["new_needs_no_match"])
+        # No role is made from the refused candidate; its lines stay visible as unplaced wording.
+        self.assertNotIn("role", [draft["record_type"] for draft in organization.drafts])
+        self.assertEqual([draft["record_type"] for draft in organization.drafts if draft["record_type"] != "unspecified"],
+                         ["skill"])
+        self.assertTrue({unit["unit_id"] for unit in content[:2]} <= set(organization.unplaced_unit_ids))
+        self.assertTrue(all(draft["match_reference"] is None for draft in organization.drafts))
+        self.assertEqual(RESUME_REJECTION_RULES["new_needs_no_match"], "matching")
+
+
 if __name__ == "__main__":
     unittest.main()

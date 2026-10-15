@@ -1500,6 +1500,41 @@ class RouteBoundaryTests(unittest.TestCase):
         self.assertEqual(meta['text'], command['statement'])
         self.assertEqual(len(fixture.calls), 1)
 
+    def test_b3a_a_busy_turn_is_the_retryable_503_with_its_request_id_and_words(self):
+        from tests.test_resume_onboarding_conversation import ConversationTests
+        from services.resume_intake_service import ResumeIntakeBusyError
+        from unittest.mock import patch
+        fixture = ConversationTests(); fixture.setUp()
+        self.app.config['RESUME_PRIVATE_ASSISTANCE_SERVICE'] = fixture.assistance
+        command = fixture.command('I restore fictional radios.')
+        busy = ResumeIntakeBusyError(command['request_id'], proposed={'statement': command['statement']})
+        with patch.object(self.routes, '_service', return_value=fixture.intake),                 patch.object(fixture.intake, 'converse', side_effect=busy):
+            response = self.client.post('/api/resume-interview/me/turn', json=command,
+                headers={'X-PeerSlate-Request': 'same-origin'})
+        self.assertEqual(response.status_code, 503)
+        body = response.get_json()
+        self.assertEqual((body['code'], body['retryable'], body['request_id']),
+                         ('request_in_progress', True, command['request_id']))
+        self.assertEqual((body['input_preserved'], body['proposed_values']), (True, {'statement': command['statement']}))
+        self.assertEqual(response.headers['Cache-Control'], 'private, no-store')
+        self.assertEqual(fixture.calls, [])
+
+    def test_b3a_a_reused_turn_id_with_changed_words_is_a_409_idempotency_conflict(self):
+        from tests.test_resume_onboarding_conversation import ConversationTests
+        from unittest.mock import patch
+        fixture = ConversationTests(); fixture.setUp()
+        self.app.config['RESUME_PRIVATE_ASSISTANCE_SERVICE'] = fixture.assistance
+        command = fixture.command('I restore fictional radios.')
+        with patch.object(self.routes, '_service', return_value=fixture.intake):
+            first = self.client.post('/api/resume-interview/me/turn', json=command,
+                headers={'X-PeerSlate-Request': 'same-origin'})
+            self.assertEqual(first.status_code, 200)
+            response = self.client.post('/api/resume-interview/me/turn', json={**command, 'statement': 'Other words.'},
+                headers={'X-PeerSlate-Request': 'same-origin'})
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.get_json()['code'], 'idempotency_conflict')
+        self.assertEqual(len(fixture.calls), 1)
+
     def test_untrusted_diagnostic_attributes_do_not_escape_other_assistance_errors(self):
         from services.resume_intake_runtime import SynthesisError
         error = SynthesisError('invalid_output')

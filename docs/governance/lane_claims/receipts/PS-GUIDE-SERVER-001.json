@@ -1,17 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-GUIDE-SERVER-001",
-  "candidate_sha": "33513fdae43dd704d8477c4a883aa781d5d6bb0a",
+  "candidate_sha": "8b654d677924197981525b7828b1c5a18c1d6958",
   "review_type": "independent",
   "reviewer_ref": "session:16023c0e-7189-420e-8a4d-11f8012a9713",
   "result": "pass",
-  "reviewed_at": "2026-10-15T00:30:45Z",
-  "findings": [
-    {
-      "id": "B2c-f1-g12-add-target",
-      "status": "informational",
-      "disposition": "Fixed B3 criterion: a new/add outcome carrying an existing match_reference where a null target is required is refused with a named reason and never applied; fake-provider case modelled on bake-off G12."
-    }
-  ],
+  "reviewed_at": "2026-10-15T02:24:36Z",
+  "findings": [],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-GUIDE-SERVER-001.md"
 }

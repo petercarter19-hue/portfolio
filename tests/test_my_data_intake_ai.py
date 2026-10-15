@@ -1295,6 +1295,23 @@ class MatchedTargetBindingTests(unittest.TestCase):
         receipt = service.submit(self.owner, add_request(text=text))
         return receipt, catalog, record_key
 
+    def test_new_outcome_carrying_an_existing_target_fails_closed_g12(self):
+        text = "Also based in Huntsville, Alabama"
+        loose = LooseExtractionAdapter([])
+        service, catalog = build_wired_service(extraction_adapter=loose, exclusions=lambda owner: set())
+        record_key = self.seed_role(service)
+        before = catalog.get_item(self.owner, record_key)
+        loose.candidates.append(ExtractionCandidate(
+            record_type="role", values={"location_text": "Huntsville, Alabama"}, outcome="new",
+            span_start=0, span_end=len(text), quote=text, match_reference=record_key,
+            provided_fields=("location_text",), confidence="certain"))
+        receipt = service.submit(self.owner, add_request(text=text))
+        proposal = receipt["proposals"][0]
+        self.assertEqual(proposal["kind"], "inferred_wording")
+        self.assertIsNone(proposal["target_key"])
+        self.assertEqual(self.role_count(catalog), 1)
+        self.assertEqual(catalog.get_item(self.owner, record_key), before)
+
     def test_missing_match_reference_fails_closed(self):
         receipt, catalog, _record_key = self._fail_closed_receipt(match_reference=None)
         proposal = receipt["proposals"][0]
@@ -1539,7 +1556,9 @@ class StrengthenedExtractionTests(unittest.TestCase):
         for outcome in ("equivalent", "additional_detail", "contradiction", "uncertain", "new"):
             with self.subTest(outcome=outcome), self.assertRaises(ExtractionError) as error:
                 self.validate([self.candidate(outcome=outcome, match_reference="role-a")], shortlist=shortlist)
-            self.assertEqual(error.exception.code, "matched_record_type_mismatch")
+            # A new outcome may not carry any reference (G12), which is refused before the type check.
+            self.assertEqual(error.exception.code,
+                             "new_needs_no_match" if outcome == "new" else "matched_record_type_mismatch")
 
     def test_exact_reference_and_five_outcomes_preserve_only_input_values(self):
         shortlist = [{"record_key": "skill-a", "record_type": "skill", "values":
