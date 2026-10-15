@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-RESUME-PAGE-OWNER-001",
-  "candidate_sha": "147cd1fada2c594e59792f21f4e08d148680a257",
+  "candidate_sha": "e21456f3c6d80bd9531079ce3ce2ffa55e96ecf5",
   "review_type": "independent",
-  "reviewer_ref": "session:01a132fe-1f81-77f3-8821-d53d157ca025",
+  "reviewer_ref": "agent:claude/2026-10-14/guide-build",
   "result": "pass",
-  "reviewed_at": "2026-10-14T02:45:42Z",
+  "reviewed_at": "2026-10-15T12:23:32Z",
   "findings": [],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-RESUME-PAGE-OWNER-001.md"
 }

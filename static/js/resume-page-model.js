@@ -132,9 +132,92 @@
             when: shortDate(date) || text(v.year), date: date};
     }
 
+    /* Projects (D2): B2's fields. Links are the member's own words: only https:// with a
+     * host is kept, at most three, shown by site name, and nothing here ever fetches one. */
+    var PROJECT_CATEGORIES = Object.freeze({
+        software: 'Software', research: 'Research', community_volunteer: 'Community & volunteer',
+        business_product: 'Business & product', creative_design: 'Creative & design', other: 'Other'
+    });
+    var MAX_PROJECT_LINKS = 3;
+
+    function projectLink(raw) {
+        if (typeof raw !== 'string') return null;
+        var value = raw.trim();
+        if (!value || value.length > 1000 || /[\s\u0000-\u001f\u007f\\]/.test(value)) return null;
+        var match = /^https:\/\/([a-z0-9.-]+)(:\d{1,5})?(?:[\/?#]|$)/i.exec(value);
+        if (!match) return null;
+        var host = match[1].toLowerCase();
+        if (host.indexOf('.') < 1 || /\.\.|^-|-$|\.$/.test(host)) return null;
+        var site = host.replace(/^www\./, '');
+        return {href: value, label: site === 'github.com' ? 'GitHub' : site};
+    }
+
     function readProject(item) {
+        var v = valuesOf(item), precision = v.date_precision;
+        var start = parseDate(v.start_date, precision), end = parseDate(v.end_date, precision);
+        var dates = start && end ? shortDate(start) + ' – ' + shortDate(end) : shortDate(start || end);
+        var links = [];
+        [v.project_url].concat(Array.isArray(v.additional_project_urls) ? v.additional_project_urls : [])
+            .forEach(function (raw) {
+                var entry = projectLink(raw);
+                if (entry && links.length < MAX_PROJECT_LINKS &&
+                    !links.some(function (l) { return l.href === entry.href; })) links.push(entry);
+            });
+        return {
+            key: item.record_key, name: text(v.project_name), summary: text(v.summary),
+            category: PROJECT_CATEGORIES[v.project_category] || '', organization: text(v.organization_name),
+            dates: dates, links: links, item: item
+        };
+    }
+
+    /* Looking Ahead (D2): the member's own one line, never an AI line. Identified as the server
+     * places it (resume_publication_projection resume_section_for): first by its placement
+     * (presentation_section "looking_ahead", or the label alias "Looking Ahead"), so a renamed
+     * entry still counts; otherwise by the approved title "Looking Ahead" on a work entry. A
+     * placement entry wins over a title-only one, and only one line is ever shown. The bound
+     * My Story entry never counts. At most 120 UTF-16 units, the server's limit and the
+     * browser's own maxlength. */
+    var LOOKING_AHEAD_TITLE = 'Looking Ahead';
+    var LOOKING_AHEAD_LIMIT = 120;
+    var PLACED_SECTIONS = {looking_ahead: 'looking_ahead', 'Looking Ahead': 'looking_ahead', awards: 'awards',
+        impact_statement: 'impact_statement', 'Impact Statement': 'impact_statement', 'Professional summary': 'impact_statement',
+        projects: 'projects', Projects: 'projects', 'Independent Project': 'projects', contact: 'contact',
+        'Contact details': 'contact', languages: 'languages', Languages: 'languages', Awards: 'awards',
+        story: 'story', 'My Story': 'story'};
+
+    // 2 = placed in Looking Ahead, 1 = titled "Looking Ahead" with no other placement, 0 = not Looking Ahead.
+    function lookingAheadRank(item, payload) {
+        if (item.record_type !== 'knowledge') return 0;
+        if (payload && payload.story_entry_key && payload.story_entry_key === item.record_key) return 0;
         var v = valuesOf(item);
-        return {key: item.record_key, name: text(v.name || v.title), summary: text(v.description || v.summary)};
+        var stated = v.presentation_section !== undefined ? v.presentation_section : item.presentation_section;
+        var placed = typeof stated === 'string' ? PLACED_SECTIONS[stated] : undefined;
+        if (placed) return placed === 'looking_ahead' ? 2 : 0;
+        return v.title === LOOKING_AHEAD_TITLE && (v.classification === 'work' || v.classification === 'both') ? 1 : 0;
+    }
+
+    /* Highlight tiles (D2): B2's highlight_refs, at most four saved accomplishment keys.
+     * Each tile is resolved now from that saved bullet's own metric_value and metric_label
+     * (its own wording when it has no label) and its role: a reference, never a copy. A
+     * missing, orphaned, role-less or number-less bullet gives no tile. The row shows only
+     * when two to four resolve (Q4: "2 to 4 tiles, never more"). */
+    var MAX_HIGHLIGHTS = 4, MIN_HIGHLIGHTS = 2;
+
+    function highlightTiles(payload, accomplishments, roleByKey) {
+        var refs = payload && Array.isArray(payload.highlight_refs) ? payload.highlight_refs : [];
+        var tiles = [], seen = {};
+        refs.forEach(function (ref) {
+            if (typeof ref !== 'string' || seen[ref] || tiles.length >= MAX_HIGHLIGHTS) return;
+            seen[ref] = true;
+            var item = accomplishments[ref];
+            if (!item) return;
+            var v = valuesOf(item), parent = item.parent_key || item.parent_ref || null;
+            var value = text(v.metric_value);
+            if (!value || !parent || !roleByKey[parent]) return;
+            tiles.push({key: ref, value: value, label: text(v.metric_label) || text(v.wording), role: parent,
+                state: 'saved'});
+        });
+        return tiles.length >= MIN_HIGHLIGHTS ? tiles : [];
     }
 
     function readSkill(item) {
@@ -359,17 +442,57 @@
         return stops.sort(function (a, b) { return a.x - b.x; });
     }
 
+    /* A privately moved item (B3b "Move to"): the owner's page shows it in its new place and
+     * type. The draft row keeps the canonical (base) type and values for the publisher; a
+     * confirmed move adds the exact `conversion` descriptor and `conversion_destination`
+     * {record_type, parent_key, values}. Only a well-formed confirmed descriptor that agrees
+     * with its destination is followed; any other `conversion` hides the row rather than
+     * showing it in a place it no longer belongs. Without `conversion` the row is unchanged. */
+    var CONVERSION_KEYS = ['base_access_revision', 'base_content_token', 'base_record_type', 'conversion_op_ref',
+        'destination_parent_ref', 'destination_record_type', 'state'];
+
+    function effectiveItem(item) {
+        if (!item || !Object.prototype.hasOwnProperty.call(item, 'conversion')) return item;
+        var c = item.conversion, d = item.conversion_destination;
+        var ok = c && typeof c === 'object' && !Array.isArray(c) &&
+            Object.keys(c).sort().join() === CONVERSION_KEYS.join() && c.state === 'confirmed_private' &&
+            c.base_record_type === item.record_type &&
+            d && typeof d === 'object' && typeof d.record_type === 'string' && d.record_type === c.destination_record_type &&
+            (d.parent_key || null) === (c.destination_parent_ref || null) &&
+            d.values && typeof d.values === 'object' && !Array.isArray(d.values);
+        if (!ok) return null;
+        var moved = Object.assign({}, item);
+        moved.record_type = d.record_type;
+        moved.parent_key = d.parent_key || null;
+        delete moved.parent_ref;
+        moved.values = d.values;
+        moved.proposed_values = null;
+        return moved;
+    }
+
     function fromWorkspace(payload, options) {
         options = options || {};
         var name = text(options.displayName);
         var sections = emptySections();
-        var bullets = [], story = null, statement = '';
+        var bullets = [], story = null, statement = '', lookingAhead = null, accomplishments = {};
         var items = (payload && payload.items) || [];
-        items.forEach(function (item) {
+        items.forEach(function (raw) {
+            var item = effectiveItem(raw);
             if (!item || item.orphaned) return;
             var type = item.record_type;
-            if (type === 'accomplishment') { bullets.push(readBullet(item)); return; }
+            if (type === 'accomplishment') {
+                bullets.push(readBullet(item));
+                accomplishments[item.record_key] = item;
+                return;
+            }
             if (type === 'knowledge') {
+                var rank = lookingAheadRank(item, payload);
+                if (rank) {
+                    if (!lookingAhead || rank > lookingAhead.rank) {
+                        lookingAhead = {key: item.record_key, text: text(valuesOf(item).wording), item: item, rank: rank};
+                    }
+                    return;
+                }
                 if (payload.story_entry_key && item.record_key === payload.story_entry_key) {
                     var sv = valuesOf(item);
                     if (sv.classification === 'personal' && text(sv.wording)) {
@@ -416,8 +539,10 @@
                 headline: currentRole ? currentRole.title : '', statement: statement,
                 photo: null, contact: []
             },
-            highlights: [], story: story, sections: sections, unlinked: unlinked,
-            lookingAhead: null, lookingAheadPicture: null, philosophy: null, talk: null
+            highlights: highlightTiles(payload, accomplishments, roleByKey), story: story, sections: sections,
+            unlinked: unlinked, lookingAhead: lookingAhead && lookingAhead.text ? lookingAhead.text : null,
+            lookingAheadEntry: lookingAhead, lookingAheadPicture: null, philosophy: null, talk: null,
+            draftVersion: payload && Number.isInteger(payload.draft_version) ? payload.draft_version : null
         };
         model.glance = glance(sections);
         model.constellation = constellation(sections);
@@ -430,6 +555,8 @@
 
     global.PeerSlateResumePageModel = Object.freeze({
         SECTION_ORDER: SECTION_ORDER, SECTION_LABELS: SECTION_LABELS, TYPE_SECTION: TYPE_SECTION,
-        MAX_SKILL_LINES: MAX_SKILL_LINES, fromWorkspace: fromWorkspace, skillLines: skillLines, glance: glance, constellation: constellation, bandStops: bandStops, curveY: curveY
+        MAX_SKILL_LINES: MAX_SKILL_LINES, PROJECT_CATEGORIES: PROJECT_CATEGORIES, MAX_PROJECT_LINKS: MAX_PROJECT_LINKS,
+        LOOKING_AHEAD_TITLE: LOOKING_AHEAD_TITLE, LOOKING_AHEAD_LIMIT: LOOKING_AHEAD_LIMIT,
+        MAX_HIGHLIGHTS: MAX_HIGHLIGHTS, MIN_HIGHLIGHTS: MIN_HIGHLIGHTS, projectLink: projectLink, fromWorkspace: fromWorkspace, skillLines: skillLines, glance: glance, constellation: constellation, bandStops: bandStops, curveY: curveY
     });
 })(window);

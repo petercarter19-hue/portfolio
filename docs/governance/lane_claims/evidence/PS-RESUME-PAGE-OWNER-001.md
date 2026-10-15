@@ -10,7 +10,7 @@
 
 - **D1 (merged, `996ea385`):** page shell, layout per concept 1, theme tokens, rail (section list, Credentials at a glance, compact Ask that grows on scroll), read-only sections from the owner's draft through one view-model adapter that follows the shared section order, phone layout, accessibility, the live left-column edge for the Guide. Behind a default-off page flag `PEERSLATE_RESUME_PAGE_ENABLED` (app config, read with `is True`) so today's editor, and every Guide/media/publication test that drives it, stays byte-for-byte the same when the flag is off. With the flag on, today's editor is unchanged and reachable with **Edit myself**.
 - **D1d (Pete's second screenshot review):** Ask tabs at every width, the rail Ask always expanded, up to three skill lines with employer and dates, the Looking Ahead picture.
-- **D2 (after B2):** Edit myself / Guide Me hooks in the new page, Looking Ahead editing, Projects, highlight tiles "waiting for your OK", Hidden (n) markers.
+- **D2 (after B2):** Continue with the Guide beside Edit myself, the member's own Looking Ahead line, Projects, highlight tiles by reference with the "waiting for your OK" state (see the D2 round below).
 
 ## Integration decisions (D1)
 
@@ -27,125 +27,163 @@ D1's plan was `a5d19a70`; its 11 criteria (flag_off_unchanged, owner_identity, l
 
 Spec: `PETE_DECISIONS_2026-10-11_evening.md`, "Resume D1 screenshot review, round 2", plus the manager's update that a skill with fewer than three lines has no filler and its lines are centred vertically in the panel. Changes: the main Ask card's three tabs at every width; the rail Ask always expanded (960 too); up to three skill lines with employer and dates, scrolling when they overflow; the member's Looking Ahead picture. Experience, the constellation and the cards stay as they are.
 
-## Acceptance plan (D1d, committed before code)
+## D1d acceptance record (merged, squash `be2e9126`, PR 1373)
+
+D1d's plan was `393a9de3`; its 6 criteria (ask_tabs, rail_ask_expanded, skill_lines, looking_ahead_picture, rest_unchanged, review_and_delivery) all passed at the independently reviewed candidate `147cd1fada2c594e59792f21f4e08d148680a257` (`package_acceptance.py check`: PASS 6/6; merge preflight PASS; PR CI 4602). That exact record is preserved in the branch history (`984ef6be`) and on main. Round D2 below must keep every D1 and D1d behaviour.
+
+## D2 round (after B2): Edit myself / Guide hook, Looking Ahead, Projects, highlight tiles
+
+Spec: the claim's D2 line; the manager's D2 brief (2026-10-14); approved-v2 and the build-D1 approved pictures; RP4 plan; design rationale 2e and 6 (items 11, 13); `PETE_DECISIONS_2026-10-11_evening.md`; B2 on main (`resume_section_for`, `highlight_refs`, the project normalizer, ruling `8eff4fc`). Six details the approved pictures don't draw are asked in coordination `Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_resume-D2-design-questions.md` with recommended defaults; this plan builds those defaults.
+
+## Acceptance plan (D2, committed before code)
 
 ```package-acceptance-json
 {
   "schema_version": 1,
   "package": "PS-RESUME-PAGE-OWNER-001",
-  "plan_sha": "393a9de3fc4d39e5b9be2633a2edfa39b4f13154",
+  "plan_sha": "8049f22075f743158ead4d0a77ecc63e9c75e728",
   "baseline": [
     {
       "command": "python -B -m unittest tests.test_resume_page_owner tests.test_resume_page_owner_browser -q",
       "exit_code": 0,
-      "observation": "Pre-change at 53b4fc9b (tree equals accepted main 7dff6365, which carries D1 996ea385): 39 page tests PASS in 18.4s (fictional members, recorded workspace at the draft-service boundary, process-local placeholder key, no AI call). The main Ask card has no tabs; the rail Ask starts compact and grows when the main card scrolls away; the Skills in Practice panel shows only the skill's own summary line with no employer or dates; Looking Ahead always shows a generic stock picture."
+      "observation": "Pre-change at 925b995b (tree equals accepted main bd07b1ee, which carries D1 996ea385 and D1d be2e9126): 52 page tests PASS in 22.8s (fictional members, recorded workspace or the real draft service over in-memory stores, process-local placeholder key, no AI call). Edit myself opens today's editor; there is no Guide entry on the page; the page never writes; Looking Ahead always shows the placeholder because the adapter ignores the member's Looking Ahead entry; Projects read retired field names (name/description), so a B2 project (project_name/summary) shows no name and no section; highlight tiles exist only when a harness injects them, because the adapter ignores highlight_refs."
     }
   ],
   "criteria": [
     {
-      "id": "ask_tabs",
-      "expected": "At 1440, 960 and 390 the main Ask card's mountain header holds a pill tab bar 'Ask a question' (selected by default) / 'Career highlights' / 'Compare a job' with a 'Soon' badge, matching rp6-d-first-owner. They are real tabs: tablist/tab/tabpanel, aria-selected and aria-controls, roving tabindex, Left/Right/Home/End move and select, visible focus, targets at least 24px. Ask a question shows today's chips; Compare a job shows only the v3 Coming soon line with no working control; Career highlights shows a Placeholder tag and one plain line saying the Guide will draft highlights from the published resume for the member's OK, with no invented story. The question box and lock line stay visible in every tab and a question asked from any tab still gets the truthful unavailable reply.",
-      "verification": "Browser tests at 1440, 960 and 390 (roles, keyboard, box reachable per tab, unavailable reply from each tab, target sizes); unit template test; screenshots of all three tabs beside rp6-d-first-owner."
+      "id": "guide_entry",
+      "expected": "Edit myself (top right of the frame) still opens today's manual editor for the owner, unchanged. A 'Continue with the Guide' button sits just left of it and opens the Guide panel only through its public open hook (window.PeerSlateGuidePanel.open); when that hook is absent the button is absent (hidden), never a dead control, and the page never drives the Guide's own controls or files. Below 960px Edit myself comes first and the Guide button follows in outline style. Both live only on the owner's private page.",
+      "verification": "Browser test with and without a stand-in hook at 1440 and 390 (hidden without it, one open call with it, never the editor, hidden again if the hook goes away, order and style on a phone, 24px targets); unit template/static tests (rendered hidden, before Edit myself, flag-off absent, no Guide-internal API); toolbar screenshots."
     },
     {
-      "id": "rail_ask_expanded",
-      "expected": "On desktop (960px and wider) the rail Ask is the full approved panel from the first screen: mountain header art, 'The person behind the experience.', 'Pick a question, or type your own', three question choices, the box and the lock line, with no compact state, no grow-on-scroll, no inert part and no size animation; it stays the same after scrolling and under reduced motion; a rail taller than the window still scrolls with the page; below 960px the rail and its Ask stay hidden.",
-      "verification": "Browser tests at 1440x900, 960x900, a short window and reduced motion; unit static test that the compact/grow code is gone; rail screenshots at 1440 and 960."
+      "id": "looking_ahead",
+      "expected": "The Looking Ahead section after Experience shows the member's own line from their private draft (B2's work knowledge entry titled 'Looking Ahead'), once on the page and never an AI line; a personal or My Story entry with that title is not used. With no line the owner sees the existing placeholder. The owner writes or edits the line in place (one field, the browser's 120-character limit, Save privately / Cancel) through the existing private draft commands (create_private_item, then save_item); an empty line is never saved or sent; a refused or failed save keeps the words; a retry of an uncertain save replays the same command and never saves twice; unsaved words are never wiped by a reload. Nothing is shared or published. Renaming waits on a stored-label field from the Guide server (dependency, not built).",
+      "verification": "Browser tests with a recorded workspace and the real draft service over in-memory stores: shown once, not in the hero, placeholder without a line, write/edit/cancel, 120 limit, empty refused with no request, 503 keeps words, lost reply retried once with the same request id and one entry saved, saved entry not displayed to visitors; unit static tests; screenshots."
     },
     {
-      "id": "skill_lines",
-      "expected": "For the selected skill the panel lists every resume line that shows it, at most three, each role line with its role's employer and dates ('Employer · dates') underneath. Lines are derived read-only in resume-page-model.js from the member's own draft (skill name and summary, role-linked accomplishments and roles) by a generic rule, never member-specific code; nothing is invented and a skill with no line stays a plain label. Lines that fit are centred vertically in the panel box; lines that overflow scroll in one named, keyboard-focusable region with an always-visible scroll bar, never nested. The first skill with lines is open on load. Member text stays text.",
-      "verification": "Browser tests: one/two/three-line skills, a fourth match never shown, employer and dates, centring at 1440 and 960, overflow scroll with a visible bar and no nested scroller, hostile text; adapter unit cases; close-ups with one and three lines."
+      "id": "projects",
+      "expected": "The Projects section appears only once the member has a project, after Experience, and in the section list. Each project shows B2's fields: name, optional category label, the one-line description, organization and dates, and up to three links shown by site name ('GitHub' for github.com) that open in a new tab with rel='noopener noreferrer'; only https:// links with a host are shown, and no link is ever fetched by the page. The owner adds a project from Edit myself ('Add a project') and edits each one in place, with the Guide's D91 fields and labels, through the existing private draft commands; missing name/description, a non-https link or mixed date detail are explained without sending; server refusals keep the words.",
+      "verification": "Browser tests: absent without projects, fields/links/order, javascript:/http: links dropped, at most three, no request to any link host, add with validation then save, edit in place via save_item, refusal keeps input, real draft values checked; unit static test that links are never fetched; screenshots at 1440 and 390."
     },
     {
-      "id": "looking_ahead_picture",
-      "expected": "When the view model carries a Looking Ahead picture with a local /static/ path, it fills the rp-ahead__pic slot beside the section (desktop) with its phone variant below 960px and its alt text; with no picture there is no picture box and the text spans the card; the Looking Ahead layout and placeholder are otherwise unchanged. Pete's Hawaii picture appears only through the screenshot fixture data.",
-      "verification": "Browser tests with and without a picture at 1440 and 390 (non-local src ignored); full-page screenshots against c1-desktop-full."
+      "id": "highlight_tiles",
+      "expected": "The hero shows two to four highlight tiles, each resolved at render from B2's highlight_refs (at most four saved accomplishment keys) to that saved bullet's own metric_value and metric_label (its own wording when it has no label) and its role, so a tile is a reference, never copied text: a changed number shows, a cleared number drops the tile, and duplicate, missing, number-less or role-less references give no tile; fewer than two resolved tiles means no row. A tile the Guide suggests is drawn dashed with 'Suggested by the Guide · waiting for your OK', is not a link and is never a saved or public tile; the page itself never invents a suggestion (the Guide's pending tile proposal is a later dependency).",
+      "verification": "Browser tests with references (order, cap, drops, role link, live follow on reload, one-tile no-row, column count) and a waiting tile rendered through the view model; adapter check that no suggestion is invented; tile screenshots beside approved-v2."
     },
     {
       "id": "rest_unchanged",
-      "expected": "Flag-off /app/resume HTML equals the base; every D1 behaviour other than the replaced grow-on-scroll still passes (identity, order, rail, truthful reads and dates, fenced Ask, constellation band, portrait cards, phone fold, left edge 284/288/416/0, keyboard, AA contrast, light only); Experience, the constellation and the cards look the same.",
-      "verification": "The full page suites, normalized flag-off HTML base vs candidate, affected suites and the whole no-Playwright discover base vs candidate with identical failure sets; screenshots at 1440, 1280, 960 and 390."
+      "expected": "Flag-off /app/resume HTML equals the base; every D1 and D1d behaviour still passes (identity, order, rail and always-expanded rail Ask, Ask tabs, skill lines, truthful reads and dates, fenced Ask, constellation band, portrait cards, phone fold, left edge, image guard, keyboard, AA contrast, light only); the page still makes no AI call and its only requests are the workspace read and the private draft commands.",
+      "verification": "Full page suites; normalized flag-off HTML base vs candidate; affected suites; strict 152 browser runner normal and twice concurrently; no-Playwright skip proof; whole no-Playwright discover base vs candidate with identical failure sets; screenshots at 1440, 1280, 960 and 390 in build-D2."
     },
     {
       "id": "review_and_delivery",
-      "expected": "Each new test fails at 996ea385; the affected browser suite passes twice concurrently and alongside the affected suites under load; the browser module skips cleanly without Playwright; Codex PC independently passes the exact candidate; Pete's screenshot OK is recorded before merge.",
-      "verification": "Writer verification log, independent review receipt, screenshot packet build-D1d, merge preflight and current-target Azure CI."
+      "expected": "Each new D2 test fails at the base code; the page browser suite passes twice concurrently; the browser module skips cleanly without Playwright; the Guide builder session independently passes the exact candidate; Pete's screenshot OK is recorded before merge; the six D2 design defaults are confirmed or corrected by the manager.",
+      "verification": "Writer verification log (build-D2/PROGRESS.md), independent review receipt, screenshot packet build-D2/screens/compare.html, merge preflight and current-target Azure CI."
     }
   ],
-  "candidate_sha": "147cd1fada2c594e59792f21f4e08d148680a257",
+  "candidate_sha": "e21456f3c6d80bd9531079ce3ce2ffa55e96ecf5",
   "checks": [
     {
-      "criterion_id": "ask_tabs",
+      "criterion_id": "guide_entry",
       "result": "pass",
       "kind": "browser",
-      "candidate_sha": "147cd1fada2c594e59792f21f4e08d148680a257",
-      "source_ref": "tests/test_resume_page_owner_browser.py:test_main_ask_has_three_real_tabs_at_every_width",
-      "observed": "Real browser at 1440, 960 and 390: the main Ask header holds tabs 'Ask a question' (selected, tabindex 0) / 'Career highlights' / 'Compare a job Soon', each a role=tab with its labelled tabpanel, at least 24px and fully inside the card; Career highlights shows the Placeholder tag and the one Guide line, Compare a job the Coming soon line, neither with any control; the box and lock line stay visible in every tab. The keyboard test proves Left/Right/Home/End select and focus with roving tabindex and a solid focus outline, and a question from each tab gets the truthful unavailable reply. Screenshots of all three tabs at 1440/960/390 beside rp6-d-first-owner in build-D1d/screens/compare.html.",
+      "candidate_sha": "e21456f3c6d80bd9531079ce3ce2ffa55e96ecf5",
+      "source_ref": "tests/test_resume_page_owner_browser.py:test_continue_with_the_guide_appears_only_with_the_public_hook_and_opens_it",
+      "observed": "Without window.PeerSlateGuidePanel.open the 'Continue with the Guide' button is hidden; with a stand-in hook it shows just left of Edit myself at the top right of the frame (at least 24px), one click makes exactly one open call and never opens the editor, and it hides again if the hook goes away. At 390 Edit myself comes first and the Guide button is outline style. Edit myself still opens today's editor (test_edit_myself_opens_todays_editor_and_saves_refresh_the_page). Unit tests: rendered hidden before Edit myself, absent with the flag off, no Guide-internal API used.",
       "provenance": {
         "observer_ref": "agent:claude/2026-10-13/resume-page-owner",
-        "captured_at": "2026-10-14T01:40:00Z",
-        "source_ref": "tests/test_resume_page_owner_browser.py:test_main_ask_has_three_real_tabs_at_every_width"
+        "captured_at": "2026-10-15T12:36:17Z",
+        "source_ref": "tests/test_resume_page_owner_browser.py:test_continue_with_the_guide_appears_only_with_the_public_hook_and_opens_it"
       }
     },
     {
-      "criterion_id": "rail_ask_expanded",
+      "criterion_id": "looking_ahead",
       "result": "pass",
       "kind": "browser",
-      "candidate_sha": "147cd1fada2c594e59792f21f4e08d148680a257",
-      "source_ref": "tests/test_resume_page_owner_browser.py:test_rail_ask_is_always_the_full_panel_at_1440_and_960",
-      "observed": "At 1440x900 and 960x900 the rail Ask shows the title, 'Pick a question, or type your own', three choices, the box, the lock line and the header art (opacity 1) from the first screen, with no inert part and no compact state, and is identical after scrolling away and back; under reduced motion it is the same with no transition; in a 560px window the rail scrolls with the page and the box is reachable; at 959 the rail stays hidden. Unit test proves the compact/grow code and CSS are gone.",
+      "candidate_sha": "e21456f3c6d80bd9531079ce3ce2ffa55e96ecf5",
+      "source_ref": "tests/test_resume_page_owner_browser.py:test_owner_writes_and_edits_looking_ahead_through_the_private_draft",
+      "observed": "The member's own line shows once (not in the hero), the placeholder only without one; it is written and edited in place through create_private_item then save_item with maxlength 120, an empty line is never sent, and the saved entry stays private (no display or visitor-AI permission). A refused (503) save keeps the words; a lost reply is retried with the same request id and saves once. After F1 a form saves after another page form, today's editor or an unheard save (one fresh retry on 409, distinct request ids); an item changed elsewhere stays an honest conflict; Looking Ahead is found by placement first, then title, one line only, a renamed title kept. Tests: test_looking_ahead_is_the_members_own_line_shown_once, test_a_refused_save_keeps_the_members_words, test_a_retry_after_an_uncertain_save_is_never_saved_twice, test_a_second_page_form_saves_after_another_page_form_saved, test_a_page_form_saves_after_todays_editor_saved_meanwhile, test_a_page_form_saves_after_a_save_it_never_heard_about, test_an_edit_of_the_same_item_elsewhere_stays_an_honest_conflict, test_looking_ahead_is_found_by_its_placement_first_then_by_its_title. Renaming is not built (dependency).",
       "provenance": {
         "observer_ref": "agent:claude/2026-10-13/resume-page-owner",
-        "captured_at": "2026-10-14T01:40:00Z",
-        "source_ref": "tests/test_resume_page_owner_browser.py:test_rail_ask_is_always_the_full_panel_at_1440_and_960"
+        "captured_at": "2026-10-15T12:36:17Z",
+        "source_ref": "tests/test_resume_page_owner_browser.py:test_owner_writes_and_edits_looking_ahead_through_the_private_draft"
       }
     },
     {
-      "criterion_id": "skill_lines",
+      "criterion_id": "projects",
       "result": "pass",
       "kind": "browser",
-      "candidate_sha": "147cd1fada2c594e59792f21f4e08d148680a257",
-      "source_ref": "tests/test_resume_page_owner_browser.py:test_skill_lines_are_centred_when_they_fit_and_scroll_when_they_overflow",
-      "observed": "Up to three lines per skill, derived read-only in resume-page-model.js skillLines() from the draft's skill name/summary and role-linked accomplishments (summary match, lead-in label, whole-phrase mention; no member-specific code); a fourth match is never shown. Each role line shows 'Employer · Role · dates' (the planned 'Employer · dates' plus the role, per approved picture c1 and the manager's parity correction) and a keyboard-reachable 'See it in the role →' link that opens and focuses that role's chapter. Lines that fit are centred vertically at 1440 and 960; overflowing lines start at the top and scroll in one focusable named region with an always-visible bar (the drawn bar pages on track click and scrolls on thumb drag), with no nested scroller. Hostile text stays text; the first skill with lines opens on load.",
+      "candidate_sha": "e21456f3c6d80bd9531079ce3ce2ffa55e96ecf5",
+      "source_ref": "tests/test_resume_page_owner_browser.py:test_owner_adds_and_edits_a_project_through_the_private_draft",
+      "observed": "No Projects section or nav entry without a project; with projects it follows Experience and shows name, category label, one line, organization and dates, and up to three https links by site name (GitHub for github.com) with target _blank and rel noopener noreferrer; javascript: and http: links are dropped and no request goes to any link host (test_projects_show_only_once_added_with_their_fields_and_safe_links). Add a project from Edit myself and edit in place use the D91 fields and labels through the private draft commands; missing essentials, a non-https link and mixed date detail are explained without sending; untouched dates are never rewritten (test_editing_a_project_never_rewrites_its_untouched_dates); a moved item saves as its destination type.",
       "provenance": {
         "observer_ref": "agent:claude/2026-10-13/resume-page-owner",
-        "captured_at": "2026-10-14T01:40:00Z",
-        "source_ref": "tests/test_resume_page_owner_browser.py:test_skill_lines_are_centred_when_they_fit_and_scroll_when_they_overflow"
+        "captured_at": "2026-10-15T12:36:17Z",
+        "source_ref": "tests/test_resume_page_owner_browser.py:test_owner_adds_and_edits_a_project_through_the_private_draft"
       }
     },
     {
-      "criterion_id": "looking_ahead_picture",
+      "criterion_id": "highlight_tiles",
       "result": "pass",
       "kind": "browser",
-      "candidate_sha": "147cd1fada2c594e59792f21f4e08d148680a257",
-      "source_ref": "tests/test_resume_page_owner_browser.py:test_looking_ahead_shows_the_members_picture_or_no_box",
-      "observed": "Without a picture there is no picture box and the text spans the card; a remote src is ignored; a local /static/ picture fills rp-ahead__pic beside the text at 1440 with its alt as text, and at 390 the phone variant is the current source. After Codex F1 every image source (Looking Ahead src and phoneSrc, hero photo) passes one guard, staticImagePath(): 16 traversal, encoded, backslash, scheme, host, query and fragment forms are rejected with the text or initials fallback and nothing outside /static/ is requested (test_every_image_source_rejects_traversal_and_foreign_paths). Pete's Hawaii picture appears only through the screenshot fixture data.",
+      "candidate_sha": "e21456f3c6d80bd9531079ce3ce2ffa55e96ecf5",
+      "source_ref": "tests/test_resume_page_owner_browser.py:test_highlight_tiles_are_saved_bullets_resolved_by_reference",
+      "observed": "Tiles resolve from highlight_refs to each saved bullet's own metric_value and metric_label (its wording without a label) and its role: duplicate, missing, number-less and role-less references give no tile, at most four show in order, a tile opens its role's chapter, a changed number follows on reload, a cleared number drops the tile, the column count follows the tile count, and fewer than two means no row. A Guide-suggested tile renders dashed and non-interactive with 'Suggested by the Guide · waiting for your OK', and the adapter never invents one (test_suggested_tiles_wait_for_the_members_ok). Known temporary gap: Pete's page shows 3 of the approved 4 tiles because B2 holds one number per bullet; the fourth waits for a per-tile metric selector.",
       "provenance": {
         "observer_ref": "agent:claude/2026-10-13/resume-page-owner",
-        "captured_at": "2026-10-14T01:40:00Z",
-        "source_ref": "tests/test_resume_page_owner_browser.py:test_looking_ahead_shows_the_members_picture_or_no_box"
+        "captured_at": "2026-10-15T12:36:17Z",
+        "source_ref": "tests/test_resume_page_owner_browser.py:test_highlight_tiles_are_saved_bullets_resolved_by_reference"
       }
     },
     {
       "criterion_id": "rest_unchanged",
       "result": "pass",
       "kind": "automated",
-      "candidate_sha": "147cd1fada2c594e59792f21f4e08d148680a257",
+      "candidate_sha": "e21456f3c6d80bd9531079ce3ce2ffa55e96ecf5",
       "source_ref": "tests/test_resume_page_owner.py:test_flag_off_renders_todays_editor_only",
-      "observed": "Flag-off /app/resume HTML equals the base for both flag sets; every remaining D1 test passes (page suites 52/52 at the candidate); whole no-Playwright discover from git exports, base 7dff6365 (7692 run, 16E/19F) vs D1d candidate 272d13c4 (7703 run, 16E/19F), identical failure sets, and the later 8258d321 and 147cd1fa deltas touch only the page's own files; 10 affected suites 317/317 under load; Experience, the constellation and the cards are visually unchanged in the 1440/1280/960/390 screenshots."
+      "observed": "Flag-off /app/resume HTML equals base bd07b1ee for both flag sets (build-D2 flag-off.txt); every D1/D1d test still passes (page suites 76/76); the page's only requests are the workspace read and the private draft commands (unit contract: two fetches to server-rendered URLs, no /api/ literal, no markup sinks). At e21456f3: 14 affected modules 504/504 (1 skipped); strict 152 runner 152/152 normal and twice concurrently; whole no-Playwright discover from git exports, base 7881 run vs candidate 7905, both 16E/19F with identical failure sets; screenshots at 1440, 1280, 960 and 390 in build-D2/screens."
     },
     {
       "criterion_id": "review_and_delivery",
       "result": "pass",
-      "kind": "automated",
-      "candidate_sha": "147cd1fada2c594e59792f21f4e08d148680a257",
-      "source_ref": "X:/PeerSlate/coordination/claude-pc/Shared/handoffs/2026-10-13_codex-pc_to-claude-pc_RECHECK_PS-RESUME-PAGE-OWNER-001_D1d-F1.md",
-      "observed": "Codex PC independently FAILED 8258d321 with one P2 finding (image guard accepted /static/%2e%2e/healthz) and then PASSED the narrow re-check at exact 147cd1fa with no remaining finding (52/52 page tests, 18 negative browser cases, zero outside-static image requests). Writer evidence at the candidate: page suites 52/52; browser suite twice concurrently 32/32 and 32/32; no-Playwright 52 run / 32 skipped / 0 errors; each new test failed at its predecessor (14 at 996ea385, 2 at 8258d321). Pete approved the D1 look in his round-2 screenshot review subject to exactly these changes; the D1d screenshots (build-D1d/screens/compare.html) await his glance, and the flag stays default-off, so nothing changes for anyone at merge. Current-target Azure CI follows in the PR. Review: X:/PeerSlate/coordination/claude-pc/Shared/handoffs/2026-10-13_codex-pc_to-claude-pc_REVIEW_PS-RESUME-PAGE-OWNER-001_D1d.md"
+      "kind": "manual",
+      "candidate_sha": "e21456f3c6d80bd9531079ce3ce2ffa55e96ecf5",
+      "source_ref": "https://claude.ai/artifact/CFU9JNoGWsVQujFt2G8dia",
+      "observed": "Pete, the owner, checked the D2 screenshots and said \"Resume looks good.\" (2026-10-15, relayed by the manager). Independent review: guide-build FAILED 824d7587 with F1 Medium (coordination 4e41321) and PASSED the narrow re-check at exact e21456f3 (coordination 64205e6). The manager confirmed all six design defaults. Writer evidence: each new test failed at its base code (15 at bd07b1ee's code, 3 moved-item tests at 4ca2fdc5, 5 F1 tests at 824d7587); the page browser module passed twice concurrently (50/50 each); it skips cleanly without Playwright (76 run, 50 skipped, 0 errors).",
+      "provenance": {
+        "observer_ref": "role:owner/pete-chat-2026-10-15/claude-manager-16023c0e/resume-d2-screenshot-ok",
+        "captured_at": "2026-10-15T12:36:17Z",
+        "source_ref": "https://claude.ai/artifact/CFU9JNoGWsVQujFt2G8dia"
+      }
     }
   ]
 }
 ```
+
+## D2 design answers and a known temporary gap (manager, after the candidate)
+
+The manager answered "Defaults OK" for all six D2 questions (`24f844a`), as built in `824d7587`: Continue with the Guide left of Edit myself (gold; Edit myself outlined; feature-detected on `window.PeerSlateGuidePanel.open`; Edit myself first on phones); Looking Ahead shown once, in its section; the name fixed until a server label field exists; the Looking Ahead editor in place with no counter and no blank save; Projects with D91's fields, links never fetched, Add a project in Edit myself; tiles only from `highlight_refs`, resolved live, a row only for 2 to 4, the suggested state only when the Guide supplies a proposal.
+
+**Known, temporary gap: Pete's page shows three hero tiles, the approved design shows four** (30+, $19.2M, 35%, 69%). B2 holds one `metric_value` per bullet, and Pete's "Team lead" bullet carries both 30+ and $19.2M, so only one of them can be a tile. The manager is asking PS-GUIDE-SERVER-001 for an optional per-tile metric selector on `highlight_refs`; D2 (or a D2b) uses it once it lands. No fourth tile is faked meanwhile. The build-D2 screenshots label the gap.
+
+## D2 addition from the manager (after the plan): moved items
+
+The manager added one item to D2 after the plan was committed, for the Guide server's B3b review: the owner page shows a privately moved item ("Move to", B3b) in its new place and type. The adapter follows a draft row's `conversion` descriptor only when it has exactly the seven keys (`state`, `base_record_type`, `destination_record_type`, `destination_parent_ref`, `base_content_token`, `base_access_revision`, `conversion_op_ref`), `state` is `confirmed_private`, and it agrees with `conversion_destination` {record_type, parent_key, values}; it then reads the item as that destination type, parent and values. Any other `conversion` hides the row rather than showing it in a place it no longer belongs; rows without one are unchanged. Edits of a moved item save as its destination type (B3b `_save_moved_item`). B3b isn't on main yet; the shape is taken from its candidate `48ca8780` (`ResumeDraftService._present_item`, `conversion_descriptor`) and proven against that exported tree (build-D2 `b3b-probe.txt`). The public copy is unchanged until Publish (D6a refuses meanwhile). Tests: `test_a_confirmed_move_shows_the_item_in_its_new_place_and_type`, `test_editing_a_moved_project_saves_as_its_destination_type`, `test_d2_flag_off_html_is_unchanged_by_a_confirmed_move` (all three fail at `4ca2fdc5`). It has no separate plan criterion (the plan text stays as committed); it is reviewed with this round.
+
+## D2 correction round (guide-build review of `824d7587`: FAIL, F1 Medium)
+
+**F1:** the draft version changed only inside `render()`, and a reload skipped `render()` while a page form had unsaved words, so after any other draft save an open form kept a stale `expected_draft_version`: every save got 409, the retry resent the same body, and the form that had just saved left its section blank. **Fix:**
+- The draft version and each item's fingerprint (tokens plus values, proposed values and any move destination) are state, kept from every complete read and every command reply, even while a form stays open.
+- A reload now always redraws the page but keeps, as they are, the sections that hold an open owner form (their words untouched); the section whose form just saved is redrawn, so it shows its new line, placeholder or Edit button.
+- An uncertain attempt (no reply or 503) is resent exactly (same request id). On 409 the page re-reads the draft and, if this item is unchanged since its form opened, retries once with a fresh request id and the new version; if the item itself changed elsewhere, or the retry still conflicts, the words stay and the page says so. A fresh save never overwrites an item that changed after its form opened.
+- **O1:** the "Saved privately" notice is cleared on any failed read.
+- **O2 / manager's addition:** Looking Ahead is identified first by its placement (`presentation_section` `looking_ahead` or the "Looking Ahead" label alias, as `resume_section_for` does), then by the title "Looking Ahead" on a work entry as the fallback; a placement entry wins and only one line is shown. A renamed entry keeps its own title when edited.
+
+RED at `824d7587`'s code (`build-D2/f1-red.log`): 5 of 6 new tests fail (two forms, today's editor meanwhile, an unheard save, the saved-notice carry-over, placement); the same-item honest-conflict test is a guard that passes at both. GREEN: page suites 76/76. The reviewer's probe now saves on the first click and the Looking Ahead section keeps its line and Edit button (`build-D2/reviewer-probe-after-fix.txt`; its 2nd scripted click times out only because the form had already closed after saving).
+
+## D2 independent review and delivery
+
+guide-build (`agent:claude/2026-10-14/guide-build`) failed `824d7587` with F1 Medium (coordination `4e41321`) and **passed the narrow re-check at exact `e21456f3c6d80bd9531079ce3ce2ffa55e96ecf5`** (coordination `64205e6`; note N1 accepted, N2 carried to the next round). **Owner's manual check:** Pete reviewed the D2 screenshots at https://claude.ai/artifact/CFU9JNoGWsVQujFt2G8dia and said "Resume looks good." (2026-10-15). The receipt is bound to `e21456f3`; this tail adds only the receipt and this evidence file. Merge is repository truth only: the page stays behind the default-off flag. No deployment, 8444 enablement, schema or paid call. The claim stays open for the next round (N2, and the fourth tile once the Guide server's per-tile metric selector lands).
 
 ## D1b revision (Pete's D1 screenshot review, 2026-10-13)
 

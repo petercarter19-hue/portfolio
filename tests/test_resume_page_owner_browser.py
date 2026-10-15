@@ -874,6 +874,551 @@ class OwnerResumePageBrowserTests(unittest.TestCase):
             .map(e => e.getBoundingClientRect()).filter(r => r.width < 24 || r.height < 24).length""")
         self.assertEqual(small, 0)
 
+    # ---------------- D2: Guide hook, Looking Ahead, Projects, highlight tiles ----------------
+    def writable_service(self, extra=()):
+        """The real draft service over in-memory stores, seeded with Riley's roles plus extra rows."""
+        catalog = InMemoryCanonicalCatalog()
+        for row in riley_workspace()["items"][:4] + list(extra):
+            catalog.put_item(OWNER, {k: v for k, v in row.items() if k not in ("has_draft", "orphaned", "proposed_values")})
+        service = ResumeDraftService(repository=InMemoryResumeDraftRepository(), catalog=catalog)
+        app.config["RESUME_DRAFT_SERVICE"] = service
+        return service
+
+    def watch_posts(self, page):
+        posts = []
+        page.on("request", lambda r: posts.append((r.url, r.post_data)) if r.method == "POST" else None)
+        return posts
+
+    # guide_entry
+    def test_continue_with_the_guide_appears_only_with_the_public_hook_and_opens_it(self):
+        page = self.open()
+        self.assertTrue(page.locator("#resume-page-guide").is_hidden())
+        self.assertTrue(page.is_visible("#resume-page-edit"))
+        context = self.browser.new_context(viewport={"width": 1440, "height": 900})
+        self.addCleanup(context.close)
+        context.add_init_script("window.PeerSlateGuidePanel = {calls: 0, open: function () { this.calls += 1; }};")
+        page = context.new_page()
+        page.goto(self.base + "/app/resume")
+        page.wait_for_selector('#resume-page[data-state="ready"]')
+        guide = page.locator("#resume-page-guide")
+        self.assertTrue(guide.is_visible())
+        self.assertEqual(guide.inner_text(), "Continue with the Guide")
+        boxes = page.evaluate("""() => ['resume-page-guide', 'resume-page-edit'].map(id => {
+            const r = document.getElementById(id).getBoundingClientRect(), f = document.querySelector('.rp-content').getBoundingClientRect();
+            return {left: r.left, right: r.right, top: r.top, h: r.height, frameRight: f.right}; })""")
+        self.assertLess(boxes[0]["right"], boxes[1]["left"])  # just left of Edit myself, top right of the frame
+        self.assertGreater(boxes[1]["right"], boxes[1]["frameRight"] - 40)
+        self.assertGreaterEqual(min(boxes[0]["h"], boxes[1]["h"]), 24)
+        guide.click()
+        self.assertEqual(page.evaluate("window.PeerSlateGuidePanel.calls"), 1)
+        self.assertEqual(page.get_attribute("#resume-page-edit", "aria-expanded"), "false")  # the Guide, not the editor
+        # The hook going away hides the button instead of leaving a dead control.
+        page.evaluate("delete window.PeerSlateGuidePanel")
+        guide.click()
+        self.assertTrue(guide.is_hidden())
+        # Phones (Q8): Edit myself comes first, the Guide button after it in outline style.
+        phone = self.browser.new_context(viewport={"width": 390, "height": 844})
+        self.addCleanup(phone.close)
+        phone.add_init_script("window.PeerSlateGuidePanel = {open: function () {}};")
+        page = phone.new_page()
+        page.goto(self.base + "/app/resume")
+        page.wait_for_selector('#resume-page[data-state="ready"]')
+        order = page.evaluate("""() => ['resume-page-edit', 'resume-page-guide'].map(id => document.getElementById(id).getBoundingClientRect().left)""")
+        self.assertLess(order[0], order[1])
+        self.assertEqual(page.eval_on_selector("#resume-page-guide", "e => getComputedStyle(e).backgroundImage"), "none")
+
+    # looking_ahead
+    def test_looking_ahead_is_the_members_own_line_shown_once(self):
+        line = "Lead a controls team that keeps every berth moving."
+        self.workspaces[OWNER]["items"] += [
+            item(70, "knowledge", {"title": "Looking Ahead", "wording": line, "classification": "work"}),
+            item(71, "knowledge", {"title": "Looking Ahead", "wording": "A personal note, not the section.", "classification": "personal"})]
+        page = self.open()
+        section = page.locator("#rp-looking-ahead")
+        self.assertEqual(section.locator(".rp-ahead__line").inner_text(), line)
+        self.assertEqual(page.evaluate("t => document.body.innerText.split(t).length - 1", line), 1)  # once, not also in the hero
+        self.assertNotIn(line, page.inner_text("#resume-page-hero"))
+        self.assertEqual(section.locator(".rp-placeholder").count(), 0)
+        self.assertNotIn("A personal note", page.inner_text("#resume-page"))
+        self.assertEqual(section.locator("button.rp-ahead__edit").inner_text(), "Edit")
+        # Without a line the owner keeps the existing placeholder, with a way to write it.
+        self.workspaces[OWNER]["items"] = [i for i in self.workspaces[OWNER]["items"] if i["record_key"] != key(70)]
+        page = self.open()
+        self.assertIn("Your Looking Ahead line goes here", page.inner_text("#rp-looking-ahead"))
+        self.assertEqual(page.inner_text("#rp-looking-ahead button.rp-ahead__edit"), "Write your line")
+
+    def test_owner_writes_and_edits_looking_ahead_through_the_private_draft(self):
+        service = self.writable_service()
+        page = self.open()
+        posts = self.watch_posts(page)
+        page.click("#rp-looking-ahead button.rp-ahead__edit")
+        field = page.locator("#resume-page-ahead-form input[name='wording']")
+        field.wait_for()
+        self.assertEqual(page.evaluate("document.activeElement.name"), "wording")
+        self.assertEqual(field.get_attribute("maxlength"), "120")
+        # An empty line is never saved, and nothing is sent.
+        page.click("#resume-page-ahead-form button[type='submit']")
+        self.assertIn("An empty line isn’t saved", page.inner_text("#resume-page-ahead-form .rp-form__status"))
+        self.assertEqual(posts, [])
+        field.fill("x" * 130)
+        self.assertEqual(len(field.input_value()), 120)  # the browser's own limit, the server's 120
+        field.fill("Grow into a controls lead for port automation.")
+        page.click("#resume-page-ahead-form button[type='submit']")
+        page.wait_for_selector("#rp-looking-ahead .rp-ahead__line")
+        self.assertEqual(page.inner_text("#rp-looking-ahead .rp-ahead__line"), "Grow into a controls lead for port automation.")
+        self.assertEqual([url.rsplit("/", 2)[-2:] for url, _ in posts], [["me", "commands"]])
+        self.assertIn('"create_private_item"', posts[0][1])
+        saved = [i for i in service.get_workspace(OWNER)["items"] if i["record_type"] == "knowledge"]
+        self.assertEqual([i["values"] for i in saved],
+                         [{"title": "Looking Ahead", "wording": "Grow into a controls lead for port automation.", "classification": "work"}])
+        self.assertFalse(saved[0]["resume_display"] or saved[0]["visitor_ai"])  # private: nothing is shared or published
+        self.assertIn("Nothing was published", page.inner_text("#resume-page-status"))
+        # Edit: a private draft save of the same entry.
+        page.click("#rp-looking-ahead button.rp-ahead__edit")
+        field = page.locator("#resume-page-ahead-form input[name='wording']")
+        self.assertEqual(field.input_value(), "Grow into a controls lead for port automation.")
+        field.fill("Lead port automation controls.")
+        page.click("#resume-page-ahead-form button[type='submit']")
+        page.wait_for_function("document.querySelector('#rp-looking-ahead .rp-ahead__line') && document.querySelector('#rp-looking-ahead .rp-ahead__line').textContent === 'Lead port automation controls.'")
+        self.assertIn('"save_item"', posts[-1][1])
+        saved = [i for i in service.get_workspace(OWNER)["items"] if i["record_type"] == "knowledge"]
+        self.assertEqual(len(saved), 1)
+        self.assertEqual(saved[0]["proposed_values"]["wording"], "Lead port automation controls.")
+        # Cancel restores the line and focus.
+        page.click("#rp-looking-ahead button.rp-ahead__edit")
+        page.click("#resume-page-ahead-form .rp-form__cancel")
+        self.assertTrue(page.is_visible("#rp-looking-ahead .rp-ahead__line"))
+        self.assertEqual(page.evaluate("document.activeElement.textContent"), "Edit")
+
+    def test_a_refused_save_keeps_the_members_words(self):
+        from services.resume_draft_service import ResumeDraftUnavailableError
+
+        class Refusing(RecordedWorkspaceService):
+            def commit(self, owner, payload):
+                raise ResumeDraftUnavailableError()
+
+        app.config["RESUME_DRAFT_SERVICE"] = Refusing(self.workspaces)
+        page = self.open()
+        page.click("#rp-looking-ahead button.rp-ahead__edit")
+        page.fill("#resume-page-ahead-form input[name='wording']", "Keep these words.")
+        page.click("#resume-page-ahead-form button[type='submit']")
+        page.wait_for_function("document.querySelector('#resume-page-ahead-form .rp-form__status').dataset.kind === 'error'")
+        self.assertIn("still here", page.inner_text("#resume-page-ahead-form .rp-form__status"))
+        self.assertEqual(page.input_value("#resume-page-ahead-form input[name='wording']"), "Keep these words.")
+        # Another save elsewhere never wipes unsaved words on the page.
+        page.evaluate("document.dispatchEvent(new Event('resume-private-draft-changed'))")
+        page.wait_for_function("document.getElementById('resume-page-status').textContent.indexOf('kept') >= 0")
+        self.assertEqual(page.input_value("#resume-page-ahead-form input[name='wording']"), "Keep these words.")
+
+    def test_a_retry_after_an_uncertain_save_is_never_saved_twice(self):
+        from services.resume_draft_service import ResumeDraftUnavailableError
+        real = self.writable_service()
+
+        class LostReply:
+            """The first save commits but its reply is lost (503); later calls are the real service."""
+            calls = []
+
+            def get_workspace(self, owner):
+                return real.get_workspace(owner)
+
+            def commit(self, owner, payload):
+                self.calls.append(copy.deepcopy(payload))
+                result = real.commit(owner, payload)
+                if len(self.calls) == 1:
+                    raise ResumeDraftUnavailableError()
+                return result
+
+        service = LostReply()
+        app.config["RESUME_DRAFT_SERVICE"] = service
+        page = self.open()
+        page.click("#rp-looking-ahead button.rp-ahead__edit")
+        page.fill("#resume-page-ahead-form input[name='wording']", "Lead port automation controls.")
+        page.click("#resume-page-ahead-form button[type='submit']")
+        page.wait_for_function("document.querySelector('#resume-page-ahead-form .rp-form__status').dataset.kind === 'error'")
+        page.click("#resume-page-ahead-form button[type='submit']")
+        page.wait_for_selector("#rp-looking-ahead .rp-ahead__line")
+        self.assertEqual(len(service.calls), 2)
+        self.assertEqual(service.calls[0]["request_id"], service.calls[1]["request_id"])
+        self.assertEqual(service.calls[0]["record_key"], service.calls[1]["record_key"])
+        saved = [i for i in real.get_workspace(OWNER)["items"] if i["record_type"] == "knowledge"]
+        self.assertEqual(len(saved), 1)
+
+    def test_looking_ahead_is_found_by_its_placement_first_then_by_its_title(self):
+        posts = []
+
+        class Recording(RecordedWorkspaceService):
+            def commit(self, owner, payload):
+                posts.append(copy.deepcopy(payload))
+                return {"outcome": "saved"}
+
+        ws = self.workspaces[OWNER]
+        ws["items"] += [
+            item(72, "knowledge", {"title": "Looking Ahead", "wording": "The title-only line.", "classification": "work"}),
+            item(73, "knowledge", {"title": "Where I'm Headed", "wording": "The placed line.", "classification": "work",
+                                   "presentation_section": "looking_ahead"}),
+            item(74, "knowledge", {"title": "Looking Ahead", "wording": "An award, not the section.", "classification": "work",
+                                   "presentation_section": "awards"})]
+        app.config["RESUME_DRAFT_SERVICE"] = Recording(self.workspaces)
+        page = self.open()
+        text = page.inner_text("#resume-page")
+        self.assertEqual(page.inner_text("#rp-looking-ahead .rp-ahead__line"), "The placed line.")
+        self.assertNotIn("The title-only line.", text)  # never two Looking Ahead lines
+        self.assertNotIn("An award, not the section.", page.inner_text("#rp-looking-ahead"))
+        # Editing a renamed entry keeps its own title.
+        page.click("#rp-looking-ahead button.rp-ahead__edit")
+        page.fill("#resume-page-ahead-form input[name='wording']", "The placed line, edited.")
+        page.click("#resume-page-ahead-form button[type='submit']")
+        page.wait_for_function("!document.getElementById('resume-page-ahead-form')")
+        self.assertEqual((posts[0]["record_key"], posts[0]["values"]["title"]), (key(73), "Where I'm Headed"))
+        # The label alias counts as placement too; without any placement the title is the fallback.
+        ws["items"][-2]["values"]["presentation_section"] = "Looking Ahead"
+        self.assertEqual(page.evaluate("ws => PeerSlateResumePageModel.fromWorkspace(ws, {}).lookingAhead", ws), "The placed line.")
+        ws["items"] = [i for i in ws["items"] if i["record_key"] != key(73)]
+        self.assertEqual(page.evaluate("ws => PeerSlateResumePageModel.fromWorkspace(ws, {}).lookingAhead", ws), "The title-only line.")
+
+    # D2 re-check F1 (reviewer guide-build): the draft version is state, not a render side effect
+    def open_project_edit_with_looking_ahead(self):
+        service = self.writable_service([self.project(81), item(83, "knowledge", {
+            "title": "Looking Ahead", "wording": "Grow into a controls lead.", "classification": "work"})])
+        page = self.open()
+        posts = self.watch_posts(page)
+        page.click("#rp-projects .rp-project__edit")
+        edit = page.locator("#rp-projects form")
+        edit.locator("input[name='summary']").fill("Live sensor feed for eight harbor cranes.")
+        return service, page, posts, edit
+
+    def save_project_and_check(self, service, page, posts, edit):
+        edit.locator("button[type='submit']").click()
+        page.wait_for_function("!document.querySelector('#rp-projects form')")
+        page.wait_for_function("document.querySelector('#rp-projects .rp-project__line').textContent.indexOf('eight') >= 0")
+        project = [i for i in service.get_workspace(OWNER)["items"] if i["record_type"] == "project"][0]
+        self.assertEqual(project["proposed_values"]["summary"], "Live sensor feed for eight harbor cranes.")
+        ids = [__import__("json").loads(body)["request_id"] for _, body in posts]
+        self.assertEqual(len(ids), len(set(ids)))  # never a reused request id across distinct commands
+        return project
+
+    def test_a_second_page_form_saves_after_another_page_form_saved(self):
+        service, page, posts, edit = self.open_project_edit_with_looking_ahead()
+        page.click("#rp-looking-ahead button.rp-ahead__edit")
+        page.fill("#resume-page-ahead-form input[name='wording']", "Lead port automation controls.")
+        page.click("#resume-page-ahead-form button[type='submit']")
+        page.wait_for_function("document.querySelector('#rp-looking-ahead .rp-ahead__line') && "
+                               "document.querySelector('#rp-looking-ahead .rp-ahead__line').textContent === 'Lead port automation controls.'")
+        # The section that saved shows its new line and its Edit button; the other form keeps its words.
+        self.assertTrue(page.is_visible("#rp-looking-ahead button.rp-ahead__edit"))
+        self.assertEqual(edit.locator("input[name='summary']").input_value(), "Live sensor feed for eight harbor cranes.")
+        self.save_project_and_check(service, page, posts, edit)
+        self.assertEqual(len(posts), 2)  # one save each, no 409 loop
+
+    def test_a_page_form_saves_after_todays_editor_saved_meanwhile(self):
+        service, page, posts, edit = self.open_project_edit_with_looking_ahead()
+        page.click("#resume-page-edit")
+        page.wait_for_selector("#resume-editor-lists .resume-editor__records")
+        # Today's editor saves a skill (its own send + event), while the project form stays open.
+        page.evaluate("""async () => { const r = await fetch('/api/resume-drafts/me/commands', {method: 'POST',
+            credentials: 'same-origin', headers: {'Content-Type': 'application/json', 'X-PeerSlate-Request': 'same-origin'},
+            body: JSON.stringify({type: 'create_private_item', request_id: crypto.randomUUID(), record_key: crypto.randomUUID(),
+                record_type: 'skill', values: {name: 'Crane telemetry', summary: null}})});
+            document.dispatchEvent(new Event('resume-private-draft-changed')); return r.status; }""")
+        page.wait_for_selector("#rp-skills :text('Crane telemetry')")
+        self.assertEqual(edit.locator("input[name='summary']").input_value(), "Live sensor feed for eight harbor cranes.")
+        posts.clear()
+        self.save_project_and_check(service, page, posts, edit)
+        self.assertEqual(len(posts), 1)
+
+    def test_a_page_form_saves_after_a_save_it_never_heard_about(self):
+        # A Guide (or another tab) save with no event: the first save gets 409, the page re-reads and
+        # retries once with a fresh request id and the new version, for the same words.
+        service, page, posts, edit = self.open_project_edit_with_looking_ahead()
+        service.commit(OWNER, {"type": "create_private_item", "request_id": key(990), "record_key": key(991),
+                               "record_type": "skill", "values": {"name": "Crane telemetry", "summary": None}})
+        la = next(i for i in service.get_workspace(OWNER)["items"] if i["record_key"] == key(83))
+        ws = service.get_workspace(OWNER)
+        service.commit(OWNER, {"type": "save_item", "request_id": key(992), "record_key": key(83), "record_type": "knowledge",
+                               "values": {"wording": "Lead port automation."}, "expected_draft_version": ws["draft_version"],
+                               "expected_content_token": la["content_token"], "expected_access_revision": la["access_revision"]})
+        self.save_project_and_check(service, page, posts, edit)
+        self.assertEqual(len(posts), 2)  # the refused save and exactly one retry
+        self.assertIn("Lead port automation.", page.inner_text("#rp-looking-ahead"))  # the re-read shows the other save
+
+    def test_an_edit_of_the_same_item_elsewhere_stays_an_honest_conflict(self):
+        service, page, posts, edit = self.open_project_edit_with_looking_ahead()
+        project = next(i for i in service.get_workspace(OWNER)["items"] if i["record_type"] == "project")
+        ws = service.get_workspace(OWNER)
+        service.commit(OWNER, {"type": "save_item", "request_id": key(993), "record_key": project["record_key"],
+                               "record_type": "project", "values": {"summary": "Changed in another tab."},
+                               "expected_draft_version": ws["draft_version"], "expected_content_token": project["content_token"],
+                               "expected_access_revision": project["access_revision"]})
+        for _ in range(2):
+            edit.locator("button[type='submit']").click()
+            page.wait_for_function("document.querySelector('#rp-projects form .rp-form__status').dataset.kind === 'error'")
+            self.assertIn("still here", edit.locator(".rp-form__status").inner_text())
+            self.assertEqual(edit.locator("input[name='summary']").input_value(), "Live sensor feed for eight harbor cranes.")
+            page.evaluate("document.querySelector('#rp-projects form .rp-form__status').dataset.kind = ''")
+        stored = next(i for i in service.get_workspace(OWNER)["items"] if i["record_type"] == "project")
+        self.assertEqual(stored["proposed_values"]["summary"], "Changed in another tab.")  # never overwritten
+        self.assertLessEqual(len(posts), 4)  # at most one retry per click, never a loop
+
+    def test_saved_notice_never_outlives_a_failed_reload(self):
+        from services.resume_draft_service import ResumeDraftUnavailableError
+        real = self.writable_service()
+
+        class ReadFailsOnceAfterSave:
+            failing = False
+
+            def get_workspace(self, owner):
+                if self.failing:
+                    self.failing = False
+                    raise ResumeDraftUnavailableError()
+                return real.get_workspace(owner)
+
+            def commit(self, owner, payload):
+                result = real.commit(owner, payload)
+                self.failing = True
+                return result
+
+        app.config["RESUME_DRAFT_SERVICE"] = ReadFailsOnceAfterSave()
+        page = self.open()
+        page.click("#rp-looking-ahead button.rp-ahead__edit")
+        page.fill("#resume-page-ahead-form input[name='wording']", "Lead port automation controls.")
+        page.click("#resume-page-ahead-form button[type='submit']")
+        page.wait_for_function("document.getElementById('resume-page').dataset.state === 'stale'")
+        page.evaluate("PeerSlateResumePage.reload()")
+        page.wait_for_function("document.getElementById('resume-page').dataset.state === 'ready'")
+        self.assertNotIn("Saved privately", page.inner_text("#resume-page-status"))
+
+    # projects
+    def project(self, n, **values):
+        base = {"project_name": "Crane telemetry retrofit", "summary": "Live sensor feed for six harbor cranes."}
+        base.update(values)
+        return item(n, "project", base)
+
+    def test_projects_show_only_once_added_with_their_fields_and_safe_links(self):
+        page = self.open()
+        self.assertEqual(page.locator("#rp-projects").count(), 0)
+        self.assertNotIn("Projects", page.eval_on_selector_all("#resume-page-secnav a", "els => els.map(e => e.textContent)"))
+        self.workspaces[OWNER]["items"] += [
+            self.project(80, project_category="software", organization_name="Harbor Light Robotics",
+                         start_date="2023-01-01", end_date="2024-01-01", date_precision="year",
+                         project_url="https://github.com/riley/crane-telemetry",
+                         additional_project_urls=["https://www.riley-builds.example/cranes", "https://docs.example.org/x",
+                                                  "https://fourth.example.org/never"]),
+            self.project(81, project_name="Signal cabinet audit", summary="Checklist every crew still uses.",
+                         project_url="javascript:alert(1)", additional_project_urls=["http://plain.example.com"])]
+        page, requests = self.open_watching_requests()
+        ids = page.eval_on_selector_all("#resume-page-sections > section", "els => els.map(e => e.id)")
+        self.assertEqual(ids.index("rp-projects"), ids.index("rp-experience") + 1)
+        self.assertIn("Projects", page.eval_on_selector_all("#resume-page-secnav a", "els => els.map(e => e.textContent)"))
+        first = page.locator("#rp-projects .rp-project").nth(0)
+        self.assertEqual(first.locator(".rp-project__name").inner_text(), "Crane telemetry retrofit")
+        self.assertEqual(first.locator(".rp-project__cat").inner_text(), "Software")
+        self.assertEqual(first.locator(".rp-project__line").inner_text(), "Live sensor feed for six harbor cranes.")
+        self.assertEqual(first.locator(".rp-project__meta").inner_text(), "Harbor Light Robotics · 2023 – 2024")
+        links = first.locator(".rp-project__links a")
+        self.assertEqual(links.evaluate_all("els => els.map(e => [e.textContent, e.getAttribute('href'), e.target, e.rel])"),
+                         [["GitHub", "https://github.com/riley/crane-telemetry", "_blank", "noopener noreferrer"],
+                          ["riley-builds.example", "https://www.riley-builds.example/cranes", "_blank", "noopener noreferrer"],
+                          ["docs.example.org", "https://docs.example.org/x", "_blank", "noopener noreferrer"]])
+        second = page.locator("#rp-projects .rp-project").nth(1)
+        self.assertEqual(second.locator(".rp-project__links a").count(), 0)  # only https:// links, never javascript: or http:
+        self.assertEqual(second.locator(".rp-project__cat").count(), 0)  # category is optional
+        page.wait_for_timeout(300)
+        self.assertEqual([u for u in requests if "example" in u or "github" in u], [])  # links are never fetched
+        self.assertTrue(self.no_sideways_scroll(page))
+
+    def test_owner_adds_and_edits_a_project_through_the_private_draft(self):
+        service = self.writable_service()
+        page = self.open()
+        posts = self.watch_posts(page)
+        self.assertTrue(page.locator("#resume-page-add-project").is_hidden())
+        page.click("#resume-page-edit")
+        page.click("#resume-page-add-project button:has-text('Add a project')")
+        form = page.locator("#resume-page-project-new")
+        form.wait_for()
+        labels = form.locator("label, legend").evaluate_all("els => els.map(e => e.textContent)")
+        self.assertEqual(labels, ["Project name", "CategoryOptional", "Description, in one line", "OrganizationOptional",
+                                  "DatesOptional", "Links: GitHub, a websiteOptional"])
+        self.assertEqual(form.locator("input[type='url']:visible").count(), 1)
+        form.locator("button[type='submit']").click()
+        self.assertIn("project name and a one-line description", form.locator(".rp-form__status").inner_text())
+        form.locator("input[name='project_name']").fill("Crane telemetry retrofit")
+        form.locator("input[name='summary']").fill("Live sensor feed for six harbor cranes.")
+        form.locator("select[name='project_category']").select_option("software")
+        form.locator("input[name='dates']").fill("2023 – 2024")
+        form.locator("input[name='link_0']").fill("http://insecure.example.com")
+        form.locator("button[type='submit']").click()
+        self.assertIn("https://", form.locator(".rp-form__status").inner_text())
+        self.assertEqual(posts, [])
+        form.locator("input[name='link_0']").fill("https://github.com/riley/crane-telemetry")
+        self.assertEqual(form.locator("input[type='url']:visible").count(), 2)  # the next box appears, up to three
+        form.locator("button[type='submit']").click()
+        page.wait_for_selector("#rp-projects .rp-project")
+        self.assertEqual(len(posts), 1)
+        saved = [i for i in service.get_workspace(OWNER)["items"] if i["record_type"] == "project"]
+        self.assertEqual(saved[0]["values"]["project_name"], "Crane telemetry retrofit")
+        self.assertEqual(saved[0]["values"]["project_category"], "software")
+        self.assertEqual((saved[0]["values"]["start_date"], saved[0]["values"]["end_date"], saved[0]["values"]["date_precision"]),
+                         ("2023-01-01", "2024-01-01", "year"))
+        self.assertEqual(saved[0]["values"]["project_url"], "https://github.com/riley/crane-telemetry")
+        self.assertFalse(saved[0]["resume_display"] or saved[0]["visitor_ai"])
+        # Edit in place through save_item; the server's one-line rule still applies.
+        page.click("#rp-projects .rp-project__edit")
+        edit = page.locator("#rp-projects form")
+        self.assertEqual(edit.locator("input[name='dates']").input_value(), "2023 – 2024")
+        edit.locator("input[name='summary']").fill("Live sensor feed for eight harbor cranes.")
+        edit.locator("button[type='submit']").click()
+        page.wait_for_function("document.querySelector('#rp-projects .rp-project__line') && document.querySelector('#rp-projects .rp-project__line').textContent.indexOf('eight') >= 0")
+        self.assertIn('"save_item"', posts[-1][1])
+        saved = [i for i in service.get_workspace(OWNER)["items"] if i["record_type"] == "project"]
+        self.assertEqual(len(saved), 1)
+        self.assertEqual(saved[0]["proposed_values"]["summary"], "Live sensor feed for eight harbor cranes.")
+        # A server refusal (mixed date detail is caught here; a bad summary by the server) keeps the words.
+        page.click("#rp-projects .rp-project__edit")
+        edit = page.locator("#rp-projects form")
+        edit.locator("input[name='dates']").fill("2023 – 2024-05")
+        edit.locator("button[type='submit']").click()
+        self.assertIn("same detail", edit.locator(".rp-form__status").inner_text())
+        self.assertEqual(edit.locator("input[name='dates']").input_value(), "2023 – 2024-05")
+
+    def test_editing_a_project_never_rewrites_its_untouched_dates(self):
+        stored = self.project(82, start_date="2022-03-14", end_date="2022-09-30", date_precision="day")
+        service = self.writable_service([stored])
+        page = self.open()
+        page.click("#rp-projects .rp-project__edit")
+        edit = page.locator("#rp-projects form")
+        edit.locator("input[name='summary']").fill("Live sensor feed for seven harbor cranes.")
+        edit.locator("button[type='submit']").click()
+        page.wait_for_function("document.querySelector('#rp-projects .rp-project__line').textContent.indexOf('seven') >= 0")
+        saved = [i for i in service.get_workspace(OWNER)["items"] if i["record_type"] == "project"][0]
+        merged = {**saved["values"], **(saved["proposed_values"] or {})}
+        self.assertEqual((merged["start_date"], merged["end_date"], merged["date_precision"]), ("2022-03-14", "2022-09-30", "day"))
+
+    # moved items (B3b "Move to", added to D2 by the manager)
+    @staticmethod
+    def moved(row, destination_type, values, parent=None, **descriptor):
+        """A draft row exactly as B3b's private workspace presents a confirmed move (candidate 48ca8780)."""
+        row = copy.deepcopy(row)
+        conversion = {"state": "confirmed_private", "base_record_type": row["record_type"],
+                      "destination_record_type": destination_type, "destination_parent_ref": parent,
+                      "base_content_token": row["content_token"], "base_access_revision": row["access_revision"],
+                      "conversion_op_ref": "op-" + row["record_key"][:8]}
+        conversion.update(descriptor)
+        row.update(has_draft=True, proposed_values={}, conversion=conversion,
+                   conversion_destination={"record_type": destination_type, "values": values, "parent_key": parent})
+        return row
+
+    def test_a_confirmed_move_shows_the_item_in_its_new_place_and_type(self):
+        ws = self.workspaces[OWNER]
+        rows = {row["record_key"]: row for row in ws["items"]}
+        # Skill "Reliability modelling" moved to a bullet of the Cedar Grid role; skill "PLC programming" moved to a Project.
+        ws["items"] = [r for r in ws["items"] if r["record_key"] not in (key(21), key(20))] + [
+            self.moved(rows[key(21)], "accomplishment",
+                       {"wording": "Built the substation outage-risk model.", "metric_value": None, "metric_label": None},
+                       parent=key(2)),
+            self.moved(rows[key(20)], "project", {"project_name": "Crane PLC validation",
+                                                  "summary": "Programs and validates the crane PLC logic."})]
+        page = self.open()
+        skills = page.eval_on_selector_all("#rp-skills .rp-skill", "els => els.map(e => e.textContent)")
+        self.assertNotIn("Reliability modelling", skills)
+        self.assertNotIn("PLC programming", skills)
+        self.assertIn("Field safety", skills)
+        cedar = page.locator(".rp-role", has_text="Cedar Grid Utilities")
+        cedar.locator("button.rp-link").click()
+        chapter = page.locator("#" + cedar.locator("button.rp-link").get_attribute("aria-controls"))
+        self.assertIn("Built the substation outage-risk model.", chapter.inner_text())
+        self.assertEqual(page.inner_text("#rp-projects .rp-project__name"), "Crane PLC validation")
+        self.assertIn("Projects", page.eval_on_selector_all("#resume-page-secnav a", "els => els.map(e => e.textContent)"))
+        # A malformed or unconfirmed descriptor never shows the row in its old (or any) place.
+        for bad in ({"state": "staged"}, {"destination_record_type": "skill"}, {"extra": True}):
+            ws["items"][-1] = self.moved(rows[key(20)], "project", {"project_name": "Crane PLC validation",
+                                                                     "summary": "Programs and validates the crane PLC logic."}, **bad)
+            page.evaluate("document.dispatchEvent(new Event('resume-private-draft-changed'))")
+            page.wait_for_function("!document.getElementById('rp-projects')")
+            self.assertNotIn("PLC programming", page.inner_text("#rp-skills"), bad)
+
+    def test_editing_a_moved_project_saves_as_its_destination_type(self):
+        posts = []
+
+        class Recording(RecordedWorkspaceService):
+            def commit(self, owner, payload):
+                posts.append(copy.deepcopy(payload))
+                return {"outcome": "saved"}
+
+        ws = self.workspaces[OWNER]
+        row = next(r for r in ws["items"] if r["record_key"] == key(20))
+        ws["items"].remove(row)
+        ws["items"].append(self.moved(row, "project", {"project_name": "Crane PLC validation", "summary": "One line."}))
+        app.config["RESUME_DRAFT_SERVICE"] = Recording(self.workspaces)
+        page = self.open()
+        page.click("#rp-projects .rp-project__edit")
+        page.fill("#rp-projects form input[name='summary']", "Validated crane PLC logic.")
+        page.click("#rp-projects form button[type='submit']")
+        page.wait_for_function("document.querySelectorAll('#rp-projects form').length === 0")
+        self.assertEqual(len(posts), 1)
+        self.assertEqual((posts[0]["type"], posts[0]["record_key"], posts[0]["record_type"]), ("save_item", key(20), "project"))
+        self.assertEqual(posts[0]["values"]["summary"], "Validated crane PLC logic.")
+        self.assertEqual(posts[0]["expected_content_token"], row["content_token"])
+
+    # highlight_tiles
+    def tiles(self, page):
+        return page.eval_on_selector_all("#resume-page-hero [data-rp-highlights] .rp-hl", """els => els.map(e => ({
+            tag: e.tagName, value: e.querySelector('strong').textContent, label: e.querySelector('.rp-hl__label').textContent,
+            waiting: e.classList.contains('rp-hl--waiting'), note: e.querySelector('.rp-hl__tag') ? e.querySelector('.rp-hl__tag').textContent : null}))""")
+
+    def bullet(self, n, wording, value, label, parent=1):
+        return item(n, "accomplishment", {"wording": wording, "metric_value": value, "metric_label": label},
+                    **({"parent_key": key(parent)} if parent else {}))
+
+    def test_highlight_tiles_are_saved_bullets_resolved_by_reference(self):
+        ws = self.workspaces[OWNER]
+        ws["items"] += [self.bullet(90, "Cut crane commissioning time by 18%.", "18%", "faster crane commissioning"),
+                        self.bullet(91, "Kept 6 berths online through the retrofit.", "6", "berths kept online", parent=2),
+                        self.bullet(92, "Wrote the cabinet checklist.", None, None),
+                        self.bullet(93, "Led 4 technicians.", "4", "technicians led", parent=None),
+                        self.bullet(94, "Saved $1.2M in downtime.", "$1.2M", None),
+                        self.bullet(95, "Trained 12 operators.", "12", "operators trained")]
+        # Duplicates, missing, number-less and role-less refs never make a tile; at most four show.
+        ws["highlight_refs"] = [key(90), key(90), key(99), key(92), key(93), key(91), key(94), key(95)]
+        ws["highlight_refs_manual"] = True
+        page = self.open()
+        tiles = self.tiles(page)
+        self.assertEqual([(t["value"], t["label"]) for t in tiles],
+                         [("18%", "faster crane commissioning"), ("6", "berths kept online"),
+                          ("$1.2M", "Saved $1.2M in downtime."), ("12", "operators trained")])
+        self.assertTrue(all(t["tag"] == "BUTTON" and not t["waiting"] for t in tiles))
+        page.locator("#resume-page-hero .rp-hl").nth(1).click()
+        page.wait_for_function("document.querySelectorAll('.rp-role.is-open').length === 1")
+        self.assertIn("Cedar Grid Utilities", page.inner_text(".rp-role.is-open"))
+        # A reference follows the saved bullet: a new number shows, a cleared number drops the tile.
+        bullets = {i["record_key"]: i for i in ws["items"]}
+        bullets[key(90)]["values"]["metric_value"] = "21%"
+        bullets[key(95)]["values"]["metric_value"] = None
+        page.evaluate("document.dispatchEvent(new Event('resume-private-draft-changed'))")
+        page.wait_for_function("document.querySelector('#resume-page-hero .rp-hl strong').textContent === '21%'")
+        self.assertEqual([t["value"] for t in self.tiles(page)], ["21%", "6", "$1.2M"])
+        self.assertEqual(page.eval_on_selector("[data-rp-highlights]", "e => getComputedStyle(e).gridTemplateColumns.split(' ').length"), 3)
+        # Fewer than two tiles: no row at all (2 to 4, never one alone).
+        ws["highlight_refs"] = [key(90)]
+        page.evaluate("document.dispatchEvent(new Event('resume-private-draft-changed'))")
+        page.wait_for_function("document.querySelector('[data-rp-highlights]').hidden")
+        self.assertEqual(self.tiles(page), [])
+
+    def test_suggested_tiles_wait_for_the_members_ok(self):
+        page = self.open()
+        page.evaluate("""() => { const m = PeerSlateResumePage.state(); const role = m.sections.experience[0].key;
+            m.highlights = [{value: '18%', label: 'faster crane commissioning', role: role, state: 'saved'},
+                            {value: '6', label: 'berths kept online', role: role, state: 'suggested'}];
+            PeerSlateResumePage.render(m); }""")
+        tiles = self.tiles(page)
+        self.assertEqual([(t["tag"], t["waiting"], t["note"]) for t in tiles],
+                         [("BUTTON", False, None), ("DIV", True, "Suggested by the Guide · waiting for your OK")])
+        waiting = page.locator(".rp-hl--waiting")
+        self.assertEqual(waiting.locator("em").count(), 0)  # no "See the role": it isn't saved
+        self.assertEqual(waiting.evaluate("e => getComputedStyle(e).borderTopStyle"), "dashed")
+        # The workspace adapter itself never invents a suggestion.
+        model = page.evaluate("""() => PeerSlateResumePageModel.fromWorkspace({items: [], highlight_refs: []}, {}).highlights""")
+        self.assertEqual(model, [])
+
     def test_empty_resume_shows_one_honest_empty_state(self):
         self.workspaces[OWNER] = {"draft_version": 0, "items": [], "capabilities": {"canonical_read": "ok"}}
         page = self.open()

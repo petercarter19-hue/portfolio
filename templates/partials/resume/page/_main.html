@@ -8,6 +8,8 @@
     <span class="rp-pill"><svg aria-hidden="true" focusable="false"><use href="#rp-i-draft"/></svg>Private draft</span>
     <span class="rp-toolbar__note">Saving does not publish.</span>
     <span class="rp-toolbar__acts">
+        {# D2: shown only when the Guide panel publishes its open hook (resume-page.js). #}
+        <button type="button" class="rp-btn rp-btn--gold rp-btn--sm rp-toolbar__guide" id="resume-page-guide" hidden>Continue with the Guide</button>
         <button type="button" class="rp-btn rp-btn--outline rp-btn--sm" id="resume-page-edit" aria-expanded="false" aria-controls="resume-page-editor">Edit myself</button>
     </span>
 </div>

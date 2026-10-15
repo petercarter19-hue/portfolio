@@ -157,7 +157,11 @@ class OwnerResumePageRenderTests(unittest.TestCase):
     # --- criterion truthful_ask / safe_rendering (static) -----------------
     def test_page_scripts_only_read_the_private_workspace_and_build_no_markup_from_data(self):
         joined = "\n".join(JS.values())
-        self.assertEqual(joined.count("fetch("), 1)
+        # D2: one read of the private workspace and one private draft command sender, both
+        # to the server-rendered URLs; no other endpoint is ever named in the scripts.
+        self.assertEqual(joined.count("fetch("), 2)
+        self.assertEqual(JS["resume-page.js"].count("global.fetch(workspaceUrl"), 1)
+        self.assertEqual(JS["resume-page.js"].count("global.fetch(commandsUrl"), 1)
         self.assertNotRegex(joined, r"/api/")
         for sink in ("innerHTML", "outerHTML", "insertAdjacentHTML", "document.write", "eval(", "new Function"):
             self.assertNotIn(sink, joined, sink)
@@ -302,6 +306,84 @@ class OwnerResumePageRenderTests(unittest.TestCase):
             self.assertRegex(page, r"var %s = [^;]*staticImagePath\(" % name)
         for js in JS.values():
             self.assertNotRegex(js, r"style\.(?:background|backgroundImage)\s*=|\.setAttribute\('(?:src|srcset|style)'")
+
+    # --- D2: Guide hook, Looking Ahead, Projects, highlight tiles ------------
+    def test_d2_flag_on_renders_the_guide_button_hidden_and_the_private_commands_url(self):
+        body = self.page(True)
+        self.assertIn('data-commands-url="/api/resume-drafts/me/commands"', body)
+        self.assertRegex(body, r'<button type="button" class="[^"]*" id="resume-page-guide" hidden>Continue with the Guide</button>')
+        acts = body[body.index('class="rp-toolbar__acts"'):body.index('id="resume-page-jump-bar"')]
+        self.assertLess(acts.index('id="resume-page-guide"'), acts.index('id="resume-page-edit"'))
+        editor = body[body.index('id="resume-page-editor"'):]
+        self.assertEqual(editor.count('id="resume-page-add-project"'), 1)
+        self.assertRegex(editor, r'id="resume-page-add-project"[^>]*hidden')
+        flag_off = self.page(None)
+        for marker in ('id="resume-page-guide"', 'id="resume-page-add-project"', "Continue with the Guide"):
+            self.assertNotIn(marker, flag_off)
+
+    def test_d2_flag_off_html_is_unchanged_by_a_confirmed_move(self):
+        moved_row = role(str(UUID(int=73, version=4)), "Moved Works")
+        moved_row.update(has_draft=True, proposed_values={}, conversion={
+            "state": "confirmed_private", "base_record_type": "role", "destination_record_type": "project",
+            "destination_parent_ref": None, "base_content_token": "1", "base_access_revision": 1,
+            "conversion_op_ref": "op-1"}, conversion_destination={"record_type": "project", "parent_key": None,
+                                                                  "values": {"project_name": "Moved", "summary": "One line."}})
+
+        class Moved:
+            def get_workspace(self, owner):
+                return {"draft_version": 2, "items": [moved_row], "capabilities": {"canonical_read": "ok"}}
+
+        plain = self.page(None)
+        app.config["RESUME_DRAFT_SERVICE"] = Moved()
+        self.assertEqual(self.page(None), plain)
+        self.assertEqual(self.page(False), plain)
+        self.assertIn("function effectiveItem(item)", JS["resume-page-model.js"])
+        self.assertIn("'conversion_op_ref'", JS["resume-page-model.js"])
+
+    def test_d2_guide_opens_only_through_its_public_hook(self):
+        page = JS["resume-page.js"]
+        self.assertIn("global.PeerSlateGuidePanel", page)
+        self.assertIn("typeof panel.open === 'function'", page)
+        self.assertNotIn("resume-intake-reopen", page)  # never drives the Guide's own controls
+        for js in JS.values():
+            self.assertNotRegex(js, r"PeerSlateGuide(?:Shell|State|View|Api|Conversation)\b")
+
+    def test_d2_looking_ahead_is_member_written_and_capped_at_120(self):
+        model = JS["resume-page-model.js"]
+        self.assertIn("LOOKING_AHEAD_TITLE = 'Looking Ahead'", model)
+        self.assertIn("LOOKING_AHEAD_LIMIT = 120", model)
+        self.assertIn("textInput('wording', entry ? entry.text : '', Model.LOOKING_AHEAD_LIMIT)", JS["resume-page.js"])
+        for js in JS.values():
+            code = re.sub(r"/\*.*?\*/|//[^\n]*", "", js, flags=re.S)  # code only, not the comments
+            self.assertNotRegex(code, r"(?i)looking ?ahead[^\n]*(suggest|propos|\bai\b)")
+
+    def test_d2_project_links_are_never_fetched(self):
+        page = JS["resume-page.js"]
+        self.assertIn("a.rel = 'noopener noreferrer'", page)
+        self.assertIn("a.target = '_blank'", page)
+        for js in JS.values():
+            self.assertNotRegex(js, r"fetch\((?!workspaceUrl|commandsUrl)")
+            self.assertNotRegex(js, r"new (?:Image|XMLHttpRequest)|sendBeacon|prefetch|preconnect")
+
+    def test_d2_new_colour_pairs_meet_wcag_aa(self):
+        def lum(hex_colour):
+            channels = [int(hex_colour[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+            lin = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+            return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+
+        def ratio(a, b):
+            la, lb = sorted((lum(a), lum(b)), reverse=True)
+            return (la + 0.05) / (lb + 0.05)
+
+        # waiting tag, project category pill, project name/line/meta, form text and labels, error line
+        for fg, bg in (("#6b4d13", "#f3dfba"), ("#2f5640", "#e8efe6"), ("#1d3527", "#fffdf8"),
+                       ("#495a51", "#fffdf8"), ("#596860", "#fffdf8"), ("#2d3932", "#ffffff"),
+                       ("#1d3527", "#faf8f2"), ("#8a2f1d", "#faf8f2"), ("#8a2f1d", "#fbf5e9"),
+                       ("#495a51", "#fbf5e9"), ("#495a51", "#faf8f2")):
+            self.assertGreaterEqual(ratio(fg, bg), 4.5, (fg, bg))
+        for bg in ("#ffffff", "#faf8f2", "#fffdf8"):
+            self.assertGreaterEqual(ratio("#968a6e", bg), 3.0, bg)  # form field edges (non-text, 1.4.11)
+        self.assertIn("border: 1px solid #968a6e", CSS)
 
     def test_ask_header_art_is_a_local_asset(self):
         asset = ROOT / "static" / "images" / "resume-page" / "ask-mountains.png"

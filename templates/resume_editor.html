@@ -227,7 +227,7 @@
 {% if resume_page_enabled %}
 {# PS-RESUME-PAGE-OWNER-001: the owner resume page (layout idea 1). Off by
    default; today's editor below stays complete and reachable with Edit myself. #}
-<div class="rp" id="resume-page" data-workspace-url="{{ workspace_url }}" data-member-name="{{ (member.display_name or '') | trim }}">
+<div class="rp" id="resume-page" data-workspace-url="{{ workspace_url }}" data-commands-url="{{ commands_url }}" data-member-name="{{ (member.display_name or '') | trim }}">
     {% include "partials/resume/page/_icons.html" %}
     <div class="rp-wrap">
         {% include "partials/resume/page/_rail.html" %}
@@ -235,6 +235,7 @@
             {% include "partials/resume/page/_main.html" %}
             <div class="rp-editor" id="resume-page-editor">
 {{ legacy_editor }}
+                {% include "partials/resume/page/_add_project.html" %}
             </div>
         </div>
     </div>

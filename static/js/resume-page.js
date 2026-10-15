@@ -103,21 +103,28 @@
         }
         side.hidden = !(person.contact && person.contact.length);
         hero.dataset.hasSide = String(!side.hidden);
+        // Highlight tiles (D2): two to four, each a saved bullet's own number and words. A tile the
+        // Guide suggests is drawn dashed "waiting for your OK" and is never a saved or public tile.
         var hl = hero.querySelector('[data-rp-highlights]');
         hl.replaceChildren();
-        (m.highlights || []).slice(0, 4).forEach(function (h) {
-            var button = el('button', 'rp-hl');
-            button.type = 'button';
-            button.appendChild(el('strong', '', h.value));
-            button.appendChild(el('span', 'rp-hl__label', h.label));
-            if (h.role) {
+        var tiles = (m.highlights || []).filter(function (h) { return h && h.value; }).slice(0, 4);
+        if (tiles.length < 2) tiles = [];
+        tiles.forEach(function (h) {
+            var waiting = h.state === 'suggested';
+            var tile = el(h.role && !waiting ? 'button' : 'div', 'rp-hl' + (waiting ? ' rp-hl--waiting' : ''));
+            if (tile.tagName === 'BUTTON') tile.type = 'button';
+            if (waiting) tile.appendChild(el('span', 'rp-hl__tag', 'Suggested by the Guide · waiting for your OK'));
+            tile.appendChild(el('strong', '', h.value));
+            tile.appendChild(el('span', 'rp-hl__label', h.label));
+            if (h.role && !waiting) {
                 var em = el('em', '', 'See the role');
                 em.appendChild(icon('next'));
-                button.appendChild(em);
-                button.addEventListener('click', function () { openChapter(h.role, true); });
+                tile.appendChild(em);
+                tile.addEventListener('click', function () { openChapter(h.role, true); });
             }
-            hl.appendChild(button);
+            hl.appendChild(tile);
         });
+        hl.style.setProperty('--rp-hl-count', String(tiles.length || 4));
         hl.hidden = !hl.children.length;
         hero.dataset.hasHighlights = String(!hl.hidden);
     }
@@ -383,20 +390,331 @@
         return c.section;
     }
 
+    /* ---------- owner editing on the page (D2): the existing private draft path ----------
+     * Saves go only to the server-rendered draft commands URL (create_private_item /
+     * save_item), the same private draft path today's editor uses. Nothing here publishes, and a refused
+     * save keeps the member's words in the form. */
+    var commandsUrl = root.getAttribute('data-commands-url');
+    var openForms = [], savedNotice = false;
+    function requestId() {
+        if (global.crypto && global.crypto.randomUUID) return global.crypto.randomUUID();
+        var bytes = new Uint8Array(16);
+        global.crypto.getRandomValues(bytes);
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        var hex = Array.prototype.map.call(bytes, function (b) { return (b + 256).toString(16).slice(1); }).join('');
+        return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
+    }
+    function sendCommand(body) {
+        return global.fetch(commandsUrl, {
+            method: 'POST', credentials: 'same-origin',
+            headers: {'Content-Type': 'application/json', 'X-PeerSlate-Request': 'same-origin', Accept: 'application/json'},
+            body: JSON.stringify(body)
+        }).then(function (response) {
+            return response.json().catch(function () { return {}; }).then(function (payload) {
+                return {ok: response.ok && payload && payload.success === true, status: response.status, payload: payload || {}};
+            });
+        }, function () { return {ok: false, status: 0, payload: {}}; });
+    }
+    function refusal(result) {
+        var message = result.payload && typeof result.payload.message === 'string' ? result.payload.message : '';
+        if (result.status === 409) return (message || 'This changed somewhere else.') + ' Your words are still here.';
+        if (result.status === 503 || result.status === 0) return 'Your words weren’t saved just now. They’re still here. Try again in a moment.';
+        return (message || 'That couldn’t be saved.') + (/kept|still here/i.test(message) ? '' : ' Your words are still here.');
+    }
+    /* The draft's version and each item's token are state, kept from every complete read
+     * (load) and every command reply, even while a form stays open; they are never a side
+     * effect of drawing the page. */
+    var current = {draftVersion: null, items: {}};
+    // An item's fingerprint: its tokens and every value the page could show or overwrite.
+    function fingerprint(row) {
+        return JSON.stringify([row.content_token, row.access_revision, row.values || null, row.proposed_values || null,
+            row.conversion_destination || null]);
+    }
+    function noteWorkspace(payload) {
+        current.draftVersion = Number.isInteger(payload.draft_version) ? payload.draft_version : null;
+        var items = {};
+        (payload.items || []).forEach(function (row) {
+            if (row && typeof row.record_key === 'string') items[row.record_key] = fingerprint(row);
+        });
+        current.items = items;
+    }
+    function noteReply(payload) {
+        if (payload && Number.isInteger(payload.draft_version)) current.draftVersion = payload.draft_version;
+        var row = payload && payload.item;
+        if (row && typeof row.record_key === 'string') {
+            current.items = Object.assign({}, current.items);
+            current.items[row.record_key] = fingerprint(row);
+        }
+    }
+    /* One save of the member's words.
+     * - An uncertain attempt (no reply, or 503) is resent exactly (same request id), so the
+     *   server replays it rather than saving twice.
+     * - A 409 means the draft moved on: the page re-reads it, and if this item itself is
+     *   unchanged it retries once with a fresh request id and the new expected version. If it
+     *   still conflicts, or the item itself changed elsewhere, the words stay and the page says so. */
+    function saveEntry(entry, recordType, values, attempt) {
+        var it = entry && entry.item, words = JSON.stringify(values);
+        var seen = it ? attempt.opened[it.record_key] : null;  // the item as it was when the form opened
+        function build() {
+            return it
+                ? {type: 'save_item', request_id: requestId(), record_key: it.record_key, record_type: recordType,
+                    values: values, expected_draft_version: current.draftVersion !== null ? current.draftVersion : 0,
+                    expected_content_token: it.content_token, expected_access_revision: it.access_revision}
+                : {type: 'create_private_item', request_id: requestId(),
+                    record_key: attempt.recordKey || (attempt.recordKey = requestId()), record_type: recordType, values: values};
+        }
+        function send(body) {
+            attempt.words = words;
+            attempt.body = body;
+            return sendCommand(body).then(function (result) {
+                attempt.uncertain = result.status === 0 || result.status === 503;
+                if (result.ok) noteReply(result.payload);
+                return result;
+            });
+        }
+        var CHANGED = {ok: false, status: 409, payload: {message: 'This item was changed somewhere else, so this edit wasn’t saved.'}};
+        var replay = attempt.body && attempt.uncertain && attempt.words === words;
+        // A fresh save never overwrites an item that changed elsewhere after this form opened.
+        if (!replay && it && seen !== current.items[it.record_key]) return global.Promise.resolve(CHANGED);
+        return send(replay ? attempt.body : build()).then(function (result) {
+            if (result.status !== 409 || !it) return result;
+            return load().then(function () {
+                if (!seen || seen !== current.items[it.record_key]) return CHANGED;  // changed elsewhere: honest conflict
+                return send(build());
+            });
+        });
+    }
+    function field(form, labelText, input, optional) {
+        var wrap = el('p', 'rp-form__field');
+        var id = form.id + '-' + input.name;
+        input.id = id;
+        var label = el('label', 'rp-form__label', labelText);
+        label.htmlFor = id;
+        if (optional) label.appendChild(el('span', 'rp-form__opt', 'Optional'));
+        wrap.appendChild(label);
+        wrap.appendChild(input);
+        return wrap;
+    }
+    function textInput(name, value, maxLength) {
+        var input = el('input', 'rp-form__input');
+        input.type = 'text';
+        input.name = name;
+        input.autocomplete = 'off';
+        if (maxLength) input.maxLength = maxLength;
+        input.value = value || '';
+        return input;
+    }
+    /* One small owner form: Save privately / Cancel, a status line, and the words kept on refusal. */
+    function ownerForm(id, title, build, collect, submit, onCancel) {
+        var form = el('form', 'rp-form');
+        form.id = id;
+        form.noValidate = true;
+        if (title) {
+            var h = el('h3', 'rp-form__title', title);
+            h.id = id + '-title';
+            form.setAttribute('aria-labelledby', h.id);
+            form.appendChild(h);
+        }
+        build(form);
+        var acts = el('p', 'rp-form__acts');
+        var save = el('button', 'rp-btn rp-btn--gold rp-btn--sm', 'Save privately');
+        save.type = 'submit';
+        var cancel = el('button', 'rp-link rp-form__cancel', 'Cancel');
+        cancel.type = 'button';
+        acts.appendChild(save);
+        acts.appendChild(cancel);
+        form.appendChild(acts);
+        var note = el('p', 'rp-form__status');
+        note.setAttribute('role', 'status');
+        note.setAttribute('aria-live', 'polite');
+        form.appendChild(note);
+        var attempt = {opened: current.items};  // the items as they were when this form opened
+        var entry = {form: form};  // while open, a reload keeps this form's section (and its words) as they are
+        openForms.push(entry);
+        cancel.addEventListener('click', function () { close(); if (onCancel) onCancel(); });
+        function close() {
+            openForms = openForms.filter(function (f) { return f !== entry; });
+            form.remove();
+        }
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            var values;
+            try { values = collect(form); } catch (error) { note.textContent = error.message; note.dataset.kind = 'error'; return; }
+            save.disabled = true;
+            note.textContent = 'Saving privately…';
+            note.dataset.kind = '';
+            submit(values, attempt).then(function (result) {
+                save.disabled = false;
+                if (!result.ok) { note.textContent = refusal(result); note.dataset.kind = 'error'; return; }
+                close();
+                savedNotice = true;
+                doc.dispatchEvent(new global.Event('resume-private-draft-changed'));
+            });
+        });
+        return form;
+    }
+
+    /* Projects form: Guide D91's fields and labels (ARCH 6j), B2's essentials (name and a
+     * one-line description), optional category, organization, dates and up to three https links. */
+    var DATES_RE = /^(\d{4}(?:-\d{2})?)(?:\s*(?:–|—|-|to)\s*(\d{4}(?:-\d{2})?))?$/;
+    function projectForm(id, project, onCancel) {
+        var v = project ? Object.assign({}, project.item.values || {}, project.item.proposed_values || {}) : {};
+        function datesText() {
+            var s = (v.start_date || '').slice(0, v.date_precision === 'year' ? 4 : 7);
+            var e = (v.end_date || '').slice(0, v.date_precision === 'year' ? 4 : 7);
+            if (!v.date_precision || v.date_precision === 'unknown') return '';
+            return s && e ? s + ' – ' + e : s || e;
+        }
+        var linkValues = [v.project_url].concat(Array.isArray(v.additional_project_urls) ? v.additional_project_urls : [])
+            .filter(function (x) { return typeof x === 'string' && x; });
+        return ownerForm(id, project ? null : 'Add a project', function (form) {
+            var grid = el('div', 'rp-form__grid');
+            grid.appendChild(field(form, 'Project name', textInput('project_name', v.project_name, 300)));
+            var cat = el('select', 'rp-form__input');
+            cat.name = 'project_category';
+            cat.appendChild(new global.Option('Choose a category', ''));
+            Object.keys(Model.PROJECT_CATEGORIES).forEach(function (k) { cat.appendChild(new global.Option(Model.PROJECT_CATEGORIES[k], k)); });
+            cat.value = v.project_category || '';
+            grid.appendChild(field(form, 'Category', cat, true));
+            var desc = field(form, 'Description, in one line', textInput('summary', v.summary, 8000));
+            desc.classList.add('rp-form__field--wide');
+            grid.appendChild(desc);
+            grid.appendChild(field(form, 'Organization', textInput('organization_name', v.organization_name, 300), true));
+            var dates = textInput('dates', datesText(), 40);
+            dates.placeholder = '2021 – 2023';
+            grid.appendChild(field(form, 'Dates', dates, true));
+            form.appendChild(grid);
+            var links = el('fieldset', 'rp-form__links');
+            var legend = el('legend', 'rp-form__label', 'Links: GitHub, a website');
+            legend.appendChild(el('span', 'rp-form__opt', 'Optional'));
+            links.appendChild(legend);
+            var inputs = [];
+            for (var i = 0; i < Model.MAX_PROJECT_LINKS; i += 1) {
+                var input = textInput('link_' + i, linkValues[i] || '', 1000);
+                input.type = 'url';
+                input.id = id + '-link-' + i;
+                input.placeholder = 'https://';
+                input.setAttribute('aria-label', 'Link ' + (i + 1) + ' of ' + Model.MAX_PROJECT_LINKS);
+                inputs.push(input);
+                links.appendChild(input);
+            }
+            // Only the next empty link box shows, up to three.
+            function reveal() {
+                var shown = true;
+                inputs.forEach(function (input) { input.hidden = !shown; if (!input.value.trim()) shown = false; });
+            }
+            inputs.forEach(function (input) { input.addEventListener('input', reveal); });
+            reveal();
+            form.appendChild(links);
+        }, function (form) {
+            var get = function (name) { return form.elements.namedItem(name).value.trim(); };
+            var values = {project_name: get('project_name'), summary: get('summary'),
+                project_category: get('project_category') || null, organization_name: get('organization_name') || null};
+            if (!values.project_name || !values.summary) throw new Error('Add the project name and a one-line description.');
+            var raw = get('dates').replace(/\s+/g, ' ');
+            var start = null, end = null, precision = 'unknown';
+            // Untouched dates are not sent, so a stored date and its detail are never rewritten.
+            var keepDates = raw === datesText().replace(/\s+/g, ' ');
+            if (raw && !keepDates) {
+                var match = DATES_RE.exec(raw);
+                if (!match) throw new Error('Write the dates as a year or year-month, like 2021 – 2023.');
+                var a = match[1], b = match[2] || null;
+                if (b && a.length !== b.length) throw new Error('Use the same detail for both dates, like 2021 – 2023.');
+                precision = a.length === 4 ? 'year' : 'month';
+                start = a + (precision === 'year' ? '-01-01' : '-01');
+                end = b ? b + (precision === 'year' ? '-01-01' : '-01') : null;
+            }
+            if (!keepDates) {
+                values.start_date = start;
+                values.end_date = end;
+                values.date_precision = precision;
+            }
+            var links = [];
+            for (var i = 0; i < Model.MAX_PROJECT_LINKS; i += 1) {
+                var link = form.elements.namedItem('link_' + i).value.trim();
+                if (!link) continue;
+                if (!Model.projectLink(link)) throw new Error('Links start with https:// and name a website.');
+                links.push(link);
+            }
+            values.project_url = links[0] || null;
+            values.additional_project_urls = links.slice(1);
+            return values;
+        }, function (values, attempt) { return saveEntry(project, 'project', values, attempt); }, onCancel);
+    }
+
     function renderProjects(m) {
         var projects = m.sections.projects.filter(function (p) { return p.name; });
         if (!projects.length) return null;
         var c = card('projects', 'Projects');
         c.section.appendChild(c.heading);
         var ul = el('ul', 'rp-projects');
-        projects.forEach(function (p) {
-            var li = el('li');
-            li.appendChild(el('b', '', p.name));
-            if (p.summary) li.appendChild(el('span', '', p.summary));
+        projects.forEach(function (p, index) {
+            var li = el('li', 'rp-project');
+            var head = el('div', 'rp-project__head');
+            head.appendChild(el('h3', 'rp-project__name', p.name));
+            if (p.category) head.appendChild(el('span', 'rp-project__cat', p.category));
+            li.appendChild(head);
+            if (p.summary) li.appendChild(el('p', 'rp-project__line', p.summary));
+            var meta = [p.organization, p.dates].filter(Boolean).join(' · ');
+            if (meta) li.appendChild(el('p', 'rp-project__meta', meta));
+            var foot = el('div', 'rp-project__foot');
+            if (p.links.length) {
+                var links = el('ul', 'rp-project__links');
+                links.setAttribute('aria-label', p.name + ' links');
+                p.links.forEach(function (l) {
+                    var item = el('li');
+                    var a = link(l.href, '', 'rp-link');
+                    a.appendChild(icon('link'));
+                    a.appendChild(doc.createTextNode(l.label));
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer';
+                    a.referrerPolicy = 'no-referrer';
+                    a.setAttribute('aria-label', l.label + ' (opens in a new tab)');
+                    item.appendChild(a);
+                    links.appendChild(item);
+                });
+                foot.appendChild(links);
+            }
+            var edit = el('button', 'rp-link rp-project__edit', 'Edit');
+            edit.type = 'button';
+            edit.setAttribute('aria-label', 'Edit ' + p.name);
+            edit.addEventListener('click', function () {
+                if (li.querySelector('form')) return;
+                li.classList.add('is-editing');
+                var form = projectForm('resume-page-project-form-' + index, p, function () {
+                    li.classList.remove('is-editing');
+                    edit.focus();
+                });
+                li.appendChild(form);
+                form.querySelector('input').focus();
+            });
+            foot.appendChild(edit);
+            li.appendChild(foot);
             ul.appendChild(li);
         });
         c.section.appendChild(ul);
         return c.section;
+    }
+
+    /* "Add a project" lives in the Edit myself editor: the Projects section itself
+     * appears only once a project exists (Pete, 10-13 decision 1c). */
+    function renderAddProject() {
+        var host = doc.getElementById('resume-page-add-project');
+        if (!host || !commandsUrl) return;
+        var slot = host.querySelector('[data-rp-add-project]');
+        if (slot.querySelector('form')) return;
+        var open = el('button', 'rp-btn rp-btn--outline rp-btn--sm', 'Add a project');
+        open.type = 'button';
+        open.addEventListener('click', function () {
+            slot.replaceChildren(projectForm('resume-page-project-new', null, function () {
+                slot.replaceChildren(open);
+                open.focus();
+            }));
+            slot.querySelector('input').focus();
+        });
+        slot.replaceChildren(open);
+        host.hidden = false;
     }
 
     function renderLookingAhead(m) {
@@ -428,15 +746,45 @@
         }
         var t = el('div', 'rp-ahead__text');
         t.appendChild(c.heading);
+        var shown;
         if (m.lookingAhead) {
-            t.appendChild(el('p', 'rp-ahead__line', m.lookingAhead));
+            shown = el('p', 'rp-ahead__line', m.lookingAhead);
         } else {
-            var ph = el('div', 'rp-placeholder');
-            ph.appendChild(el('span', 'rp-placeholder__tag', 'Placeholder'));
-            ph.appendChild(el('p', 'rp-placeholder__line', 'Your Looking Ahead line goes here, in your own words.'));
-            ph.appendChild(el('p', 'rp-placeholder__note',
+            shown = el('div', 'rp-placeholder');
+            shown.appendChild(el('span', 'rp-placeholder__tag', 'Placeholder'));
+            shown.appendChild(el('p', 'rp-placeholder__line', 'Your Looking Ahead line goes here, in your own words.'));
+            shown.appendChild(el('p', 'rp-placeholder__note',
                 'One line in your own words, up to 120 characters. It stays hidden until you write it.'));
-            t.appendChild(ph);
+        }
+        t.appendChild(shown);
+        // The owner writes or edits the one line in place (D2). Member-written only: no AI line.
+        if (commandsUrl) {
+            var write = el('button', 'rp-link rp-ahead__edit', m.lookingAhead ? 'Edit' : 'Write your line');
+            write.type = 'button';
+            write.setAttribute('aria-label', m.lookingAhead ? 'Edit your Looking Ahead line' : 'Write your Looking Ahead line');
+            write.addEventListener('click', function () {
+                var entry = m.lookingAheadEntry;
+                var form = ownerForm('resume-page-ahead-form', null, function (f) {
+                    var input = textInput('wording', entry ? entry.text : '', Model.LOOKING_AHEAD_LIMIT);
+                    f.appendChild(field(f, 'Your Looking Ahead line', input));
+                }, function (f) {
+                    var words = f.elements.namedItem('wording').value.trim();
+                    if (!words) throw new Error('Write your line first. An empty line isn’t saved.');
+                    var values = Object.assign({}, entry ? entry.item.values || {} : {}, entry ? entry.item.proposed_values || {} : {});
+                    // A renamed entry (placed in Looking Ahead) keeps its own title.
+                    return {title: (entry && typeof values.title === 'string' && values.title) || Model.LOOKING_AHEAD_TITLE, wording: words,
+                        classification: values.classification === 'both' ? 'both' : 'work'};
+                }, function (values, attempt) { return saveEntry(entry, 'knowledge', values, attempt); }, function () {
+                    shown.hidden = false;
+                    write.hidden = false;
+                    write.focus();
+                });
+                shown.hidden = true;
+                write.hidden = true;
+                t.appendChild(form);
+                form.querySelector('input').focus();
+            });
+            t.appendChild(write);
         }
         c.section.appendChild(t);
         return c.section;
@@ -910,6 +1258,15 @@
             ['credentials', renderCredentials, 'Credentials'],
             ['constellation-phone', renderConstellation, null]
         ];
+        // A section holding an open owner form is kept as it is (its words untouched); every other
+        // section is drawn afresh. Returns how many sections were kept.
+        var keep = {};
+        openForms = openForms.filter(function (f) { return f.form.isConnected; });
+        openForms.forEach(function (f) {
+            var section = f.form.closest('#resume-page-sections > section');
+            if (section) keep[section.id] = section;
+        });
+        var keptCount = 0;
         sectionsHost.replaceChildren();
         bandHost.replaceChildren();
         bandHost.hidden = true;
@@ -922,8 +1279,10 @@
             sectionsHost.appendChild(empty);
         } else {
             builders.forEach(function (b) {
-                var node = b[1](m);
+                var held = keep['rp-' + b[0]];
+                var node = held || b[1](m);
                 if (!node) return;
+                if (held) keptCount += 1;
                 sectionsHost.appendChild(node);
                 if (b[2]) navEntries.push({id: b[0], label: b[2]});
             });
@@ -933,6 +1292,7 @@
             if (renderAfter(m)) navEntries.push({id: 'talk', label: m.talk ? 'Let\u2019s talk' : 'My philosophy'});
         }
         renderHero(m);
+        renderAddProject();
         renderGlance(m);
         renderNav(navEntries);
         observeSections(navEntries);
@@ -940,6 +1300,7 @@
         fitRail();
         publishEdge();
         root.dataset.state = 'ready';
+        return keptCount;
     }
 
     /* ---------- reading the workspace: only a complete read is rendered ----------
@@ -948,6 +1309,7 @@
     var lastGood = null;
     var STALE = 'Your resume couldn\u2019t be refreshed just now. You\u2019re seeing what was last loaded. Nothing was changed.';
     function showUnreadable(message) {
+        savedNotice = false;  // a "Saved privately" notice never carries over to a later read
         if (lastGood) {
             root.dataset.state = 'stale';
             setStatus(STALE, 'error');
@@ -999,13 +1361,19 @@
                     showUnreadable('Some of your saved records can\u2019t be read right now, so nothing is shown rather than an incomplete resume. Nothing was changed.');
                     return;
                 }
+                noteWorkspace(payload);
                 var next = Model.fromWorkspace(payload, {displayName: displayName});
-                render(next);
+                // render() keeps any section that holds an open form, so the member's words stay put.
+                var kept = render(next);
                 lastGood = next;
-                setStatus('', '');
+                if (savedNotice) setStatus('Saved privately. Nothing was published.' + (kept ? ' Your unsaved words here are kept.' : ''), 'ok');
+                else if (kept) setStatus('Something was saved elsewhere. Your unsaved words here are kept.', 'ok');
+                else setStatus('', '');
+                savedNotice = false;
             })
             .catch(function () {
                 if (seq !== loadSeq) return;
+                savedNotice = false;
                 showUnreadable('Your saved resume could not be loaded. Check your connection and reload. Nothing was changed.');
             });
     }
@@ -1025,6 +1393,27 @@
                 if (heading) { heading.tabIndex = -1; heading.focus({preventScroll: true}); }
             }
         });
+    }
+
+    /* ---------- Continue with the Guide (D2) ----------
+     * Opens the Guide panel only through its public open hook. Until the Guide publishes
+     * that hook (PS-GUIDE-PANEL-001), the button stays absent: never a dead control. */
+    var guideButton = doc.getElementById('resume-page-guide');
+    function guideHook() {
+        var panel = global.PeerSlateGuidePanel;
+        return panel && typeof panel.open === 'function' ? panel : null;
+    }
+    function syncGuideButton() {
+        if (guideButton) guideButton.hidden = !guideHook();
+    }
+    if (guideButton) {
+        guideButton.addEventListener('click', function () {
+            var panel = guideHook();
+            if (!panel) { syncGuideButton(); return; }
+            panel.open();
+        });
+        syncGuideButton();
+        global.addEventListener('load', syncGuideButton);
     }
 
     doc.addEventListener('resume-private-draft-changed', function () { load(); });
