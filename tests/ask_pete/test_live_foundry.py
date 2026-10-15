@@ -9,7 +9,6 @@ import json
 import os
 from pathlib import Path
 from threading import BoundedSemaphore, Event, get_ident
-from time import monotonic
 from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import patch
@@ -36,6 +35,37 @@ def captured_operations():
 
 def operation_records(output):
     return [json.loads(line.split("Ask Pete execution ", 1)[1]) for line in output.getvalue().splitlines()]
+
+
+@contextmanager
+def deadline_expiring_once(reached):
+    """Expire the request deadline only once `reached` is set, never by wall clock.
+
+    A GC pause or a slow agent cannot spend a fixed window before the worker
+    reaches the point under test. Worker checks pass until `reached`; the
+    request's bounded wait in run_bounded starts only after it and really times
+    out while the worker is still blocked there; every later check has expired.
+    """
+    submitted, request_thread = Event(), []
+    class ReachedDeadline(RequestDeadline):
+        def remaining(self):
+            if submitted.is_set() and get_ident() == request_thread[0]:
+                reached.wait(2)
+                return .01
+            if not reached.is_set():
+                return 2.0
+            raise deadline_module.AskPeteDeadlineError("deadline_exceeded")
+    def start(*_seconds):
+        request_thread.append(get_ident())
+        return ReachedDeadline(float("inf"))
+    submit = deadline_module._POOL.submit
+    def submit_work(work):
+        future = submit(work)
+        submitted.set()
+        return future
+    with patch.object(RequestDeadline, "start", side_effect=start), \
+         patch.object(deadline_module._POOL, "submit", side_effect=submit_work):
+        yield
 
 
 RECRUITER_EXCERPTS = (
@@ -261,20 +291,25 @@ class LiveFoundryTests(TestCase):
             self.assertFalse(any(e.get("provider_calls") for e in events))
 
     def test_generation_timeout_cannot_retry(self):
-        from time import sleep
-        transport = Transport(lambda phase, answer: sleep(.07))
-        original_start = RequestDeadline.start
-        finished = Event()
+        posted, release, finished = Event(), Event(), Event()
+        def blocked_post(phase, answer):
+            posted.set()
+            release.wait(2)
+        transport = Transport(blocked_post)
         def sink(event):
             if event["phase"] == "generation":
                 finished.set()
-        with patch.object(RequestDeadline, "start", side_effect=lambda: original_start(.03)), \
-             patch("services.ask_pete.foundry_provider.UrllibTransport", return_value=transport), \
-             patch.object(runtime, "_foundry_token", return_value="test-token"), \
-             patch.object(app_module, "_record_ask_pete_execution", side_effect=sink):
-            response = self.client.post("/api/chat", json={"message": "A question"}, headers=HEADERS)
-            self.assertEqual(response.get_json()["state"], "unavailable")
-            self.assertTrue(finished.wait(1))
+        try:
+            with deadline_expiring_once(posted), \
+                 patch("services.ask_pete.foundry_provider.UrllibTransport", return_value=transport), \
+                 patch.object(runtime, "_foundry_token", return_value="test-token"), \
+                 patch.object(app_module, "_record_ask_pete_execution", side_effect=sink):
+                response = self.client.post("/api/chat", json={"message": "A question"}, headers=HEADERS)
+                self.assertEqual(response.get_json()["state"], "unavailable")
+                release.set()
+                self.assertTrue(finished.wait(1))
+        finally:
+            release.set()
         self.assertEqual(len(transport.calls), 1)
 
     def test_bad_context_and_cross_site_stop_before_provider(self):
@@ -316,26 +351,26 @@ class LiveFoundryTests(TestCase):
         self.assertTrue(generation["usage_available"])
 
     def test_slow_credential_returns_by_deadline_and_never_starts_late_post(self):
-        entered, release, finished = Event(), Event(), Event()
-        original_start = RequestDeadline.start
+        entered, release, returned, finished = Event(), Event(), Event(), Event()
         transport = Transport()
         def blocked_token():
             entered.set()
             release.wait(2)
+            returned.set()
             return "test-token"
         def sink(event):
             if event["phase"] == "generation":
                 finished.set()
         with patch.object(runtime, "_foundry_token", side_effect=blocked_token), \
              patch("services.ask_pete.foundry_provider.UrllibTransport", return_value=transport), \
-             patch.object(RequestDeadline, "start", side_effect=lambda: original_start(.05)), \
+             deadline_expiring_once(entered), \
              patch.object(app_module, "_record_ask_pete_execution", side_effect=sink):
-            started = monotonic()
             try:
                 response = self.client.post("/api/chat", json={"message": "What is documented?"}, headers=HEADERS)
                 self.assertTrue(entered.is_set())
                 self.assertEqual(response.get_json()["state"], "unavailable")
-                self.assertLess(monotonic() - started, .8)
+                # The response did not wait for the still-blocked credential call.
+                self.assertFalse(returned.is_set())
             finally:
                 release.set()
                 self.assertTrue(finished.wait(1))
@@ -461,28 +496,8 @@ class TelemetryTests(TestCase):
             slots.release()
 
     def test_deadline_terminal_remains_unknown_with_late_worker_events(self):
-        release, finished, credential, submitted = Event(), Event(), Event(), Event()
-        events, request_thread = [], []
-        class CredentialStageDeadline(RequestDeadline):
-            # Slow source loading or a GC pause on a busy agent cannot spend it
-            # early. The request's bounded wait starts only once the worker is
-            # blocked in the credential stub, so that wait really times out;
-            # every later worker check has expired.
-            def remaining(self):
-                if submitted.is_set() and get_ident() == request_thread[0]:
-                    credential.wait(2)
-                    return .01
-                if not credential.is_set():
-                    return 2.0
-                raise deadline_module.AskPeteDeadlineError("deadline_exceeded")
-        def start():
-            request_thread.append(get_ident())
-            return CredentialStageDeadline(monotonic() + 2)
-        submit = deadline_module._POOL.submit
-        def submit_work(work):
-            future = submit(work)
-            submitted.set()
-            return future
+        release, finished, credential = Event(), Event(), Event()
+        events = []
         def blocked_token():
             credential.set()
             release.wait(2)
@@ -492,8 +507,7 @@ class TelemetryTests(TestCase):
             if event.get("late"): finished.set()
         try:
             with patch.object(runtime, "_foundry_token", side_effect=blocked_token), \
-                 patch.object(RequestDeadline, "start", side_effect=start), \
-                 patch.object(deadline_module._POOL, "submit", side_effect=submit_work), \
+                 deadline_expiring_once(credential), \
                  patch.object(app_module, "_record_ask_pete_execution", side_effect=sink), \
                  patch("services.ask_pete.foundry_provider.UrllibTransport") as transport:
                 response = self.call()
@@ -520,7 +534,7 @@ class TelemetryTests(TestCase):
             if event.get("phase") == "sources" and event.get("late"):
                 finished.set()
         try:
-            with patch.object(RequestDeadline, "start", return_value=RequestDeadline(monotonic() + .05)), \
+            with deadline_expiring_once(entered), \
                  patch.object(app_module, "_record_ask_pete_execution", side_effect=sink), \
                  patch("services.ask_pete.foundry_provider.UrllibTransport") as transport:
                 response = self.call()
@@ -554,7 +568,7 @@ class TelemetryTests(TestCase):
         try:
             with captured_operations() as output, \
                  patch.object(diagnostics._LOGGER, "info", side_effect=stalled_info), \
-                 patch.object(RequestDeadline, "start", return_value=RequestDeadline(monotonic() + .05)), \
+                 deadline_expiring_once(entered), \
                  patch("services.ask_pete.foundry_provider.UrllibTransport") as transport:
                 response = self.call()
                 self.assertTrue(entered.is_set())
@@ -602,8 +616,8 @@ class DeadlineCapacityTests(TestCase):
             ended.set()
         with patch.object(deadline_module, "_SLOTS", slots):
             try:
-                with self.assertRaises(ProviderUnavailableError):
-                    run_bounded(work, RequestDeadline.start(.04))
+                with self.assertRaises(ProviderUnavailableError), deadline_expiring_once(entered):
+                    run_bounded(work, RequestDeadline.start())
                 self.assertTrue(entered.is_set())
                 with self.assertRaisesRegex(ProviderUnavailableError, "occupied"):
                     run_bounded(lambda: self.fail("queued behind abandoned work"), RequestDeadline.start())

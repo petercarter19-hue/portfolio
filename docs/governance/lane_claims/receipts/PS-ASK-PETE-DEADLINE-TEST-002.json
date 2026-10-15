@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "package": "PS-ASK-PETE-DEADLINE-TEST-002",
+  "candidate_sha": "c501e20116d8b7d1ee2a7723acb3a2e16302e21d",
+  "review_type": "self",
+  "reviewer_ref": "agent:claude/2026-10-15/ask-pete-deadline-test-002",
+  "result": "pass",
+  "reviewed_at": "2026-10-15T19:03:44Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "Whole-surface sweep: the source search found wall-clock request deadlines only in this module, in five tests beyond the two the manager named (test_generation_timeout_cannot_retry, test_slow_credential_returns_by_deadline_and_never_starts_late_post, test_abandoned_work_retains_slot_until_real_completion). All are covered by the shared helper; the control harness shows main's versions failing under load."
+    },
+    {
+      "status": "resolved",
+      "summary": "Two timing constructs could not take the helper unchanged: the generation test's 70 ms transport sleep and the slow-credential test's 0.8 s elapsed bound. Both were replaced by event-ordered checks of the same property, with no assertion dropped."
+    },
+    {
+      "status": "informational",
+      "summary": "The helper's internal waits are 2 s safety bounds, matching the tests' existing release.wait(2). They only cap a regression's failure time and never decide a passing outcome."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-ASK-PETE-DEADLINE-TEST-002.md"
+}
