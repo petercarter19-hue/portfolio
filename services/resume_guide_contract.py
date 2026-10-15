@@ -171,6 +171,17 @@ def project_working_set(owner, snapshot, canonical_items, draft_version, *, hist
             "parent_ref":item.get("parent_key"),"proposal_key":None,"revision":None,"proposals":[],"evidence":[],"children":[],
             **({"evidence_refs":deepcopy(item["evidence_refs"]),"evidence_refs_manual":item.get("evidence_refs_manual") is True}
                 if "evidence_refs" in item else {})}
+        moved = item.get("conversion_destination")
+        if isinstance(moved, dict) and isinstance(item.get("conversion"), dict):
+            # B3b: private views show the effective destination on the same row; the base
+            # canonical type stays in the descriptor (public copy is unchanged until Publish).
+            node = nodes[key]
+            node.update(record_type=moved["record_type"], parent_ref=moved.get("parent_key"),
+                values=deepcopy(moved.get("values") or {}),
+                section=_section(moved["record_type"], {}, moved.get("values") or {}),
+                conversion={"state":"confirmed_private","base_record_type":item["conversion"]["base_record_type"],
+                    "operation_ref":item["conversion"]["conversion_op_ref"]})
+            node.pop("evidence_refs", None); node.pop("evidence_refs_manual", None)
     rows = snapshot.get("proposals") or {}
     for row in sorted(rows.values(),key=lambda row:(row.get("created_at") or "",row.get("proposal_key") or "")):
         target = row.get("saved_record_key") or row.get("target_key")

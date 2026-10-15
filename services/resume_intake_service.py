@@ -1003,6 +1003,374 @@ class ResumeIntakeService:
                     raise ResumeIntakeUnavailableError() from error
                 return result
 
+    # -- B3b: same-key private conversion ("Move to") and revision-safe Undo -----------------
+
+    def guide_conversion(self, owner, payload, *, read_working_set=None):
+        """Stage, confirm or undo one private move. Nothing here is canonical or public."""
+        action = payload.get("action") if isinstance(payload, dict) else None
+        if action not in {"stage", "confirm", "undo"}:
+            raise ResumeIntakeValidationError("Invalid Guide move.")
+        if not getattr(self.repository, "supports_guide_first_arrival", False):
+            raise ResumeIntakeUnavailableError("This storage cannot move items yet. Your information is kept.",
+                proposed=copy.deepcopy(payload))
+        handler = {"stage": self._stage_guide_conversion, "confirm": self._confirm_guide_conversion,
+                   "undo": self._undo_guide_conversion}[action]
+        return handler(owner, payload, read_working_set or self.working_set)
+
+    @staticmethod
+    def _find_working_item(working, item_ref):
+        def find(items):
+            for item in items:
+                if item_ref == item["item_ref"] or item_ref in item["identity_aliases"]:
+                    return item
+                child = find(item["children"])
+                if child is not None:
+                    return child
+            return None
+        return find([*(row for section in working["sections"] for row in section["items"]),
+                     *working["unplaced"], *working["non_tab_items"]])
+
+    def _conversion_receipt(self, snapshot, request_id, digest):
+        existing = snapshot["receipts"].get(request_id)
+        if existing is None:
+            return None
+        if existing.get("request_digest") != digest:
+            raise ResumeIntakeConflictError("idempotency_conflict", [], "That request key was already used for another move.")
+        return {**copy.deepcopy(existing["result"]), "replayed": True}
+
+    def _conversion_affected(self, owner, item):
+        """Every reference container a move of this saved item touches, with what it makes invalid."""
+        from services.resume_guide_turns import reference_digest
+        if item["origin"] != "saved":
+            return [], {}
+        workspace = self.draft_service.get_workspace(owner)
+        affected, invalid = [], {}
+        key = item["item_ref"]
+        if item["record_type"] == "skill" and "evidence_refs" in item:
+            refs = list(item.get("evidence_refs") or [])
+            affected.append({"kind": "skill", "container_ref": key, "references": refs,
+                             "before_digest": reference_digest(refs)})
+            invalid[("skill", key)] = list(refs)
+        if item["record_type"] == "accomplishment":
+            for row in workspace.get("items") or []:
+                refs = row.get("evidence_refs")
+                if row.get("record_type") == "skill" and isinstance(refs, list) and key in refs:
+                    affected.append({"kind": "skill", "container_ref": row["record_key"], "references": list(refs),
+                                     "before_digest": reference_digest(refs)})
+                    invalid[("skill", row["record_key"])] = [key]
+            highlights = workspace.get("highlight_refs")
+            if isinstance(highlights, list) and key in highlights:
+                affected.append({"kind": "highlights", "container_ref": "resume", "references": list(highlights),
+                                 "before_digest": reference_digest(highlights)})
+                invalid[("highlights", "resume")] = [key]
+        return affected, invalid
+
+    def _stage_guide_conversion(self, owner, payload, read_working_set):
+        from services.resume_guide_turns import conversion_supported, conversion_token, destination_needs_parent
+        from services.living_resume_editor_service import guide_required_fields, LivingResumeEditorValidationError
+        required = {"request_id", "action", "item_ref", "expected_working_set_token", "expected_item_revision", "destination"}
+        destination = payload.get("destination") if isinstance(payload, dict) else None
+        if (set(payload) != required or not isinstance(destination, dict)
+                or set(destination) != {"record_type", "values", "parent_ref"}
+                or not isinstance(destination["record_type"], str) or not isinstance(destination["values"], dict)
+                or not (destination["parent_ref"] is None or isinstance(destination["parent_ref"], str))
+                or not isinstance(payload["expected_working_set_token"], str)
+                or len(payload["expected_working_set_token"]) != 64):
+            raise ResumeIntakeValidationError("Invalid Guide move.")
+        command = {**copy.deepcopy(payload), "request_id": _as_uuid(payload["request_id"], field="request id"),
+                   "item_ref": _as_uuid(payload["item_ref"], field="item reference")}
+        digest = _json_digest({"type": "guide_conversion", **{k: v for k, v in command.items() if k != "request_id"}})
+        with self.repository.owner_guard(owner):
+            snapshot = self._load(owner)
+            replay = self._conversion_receipt(snapshot, command["request_id"], digest)
+            if replay is not None:
+                return replay
+            working = read_working_set(owner)
+            item = self._find_working_item(working, command["item_ref"])
+            if item is None:
+                raise ResumeIntakeNotFoundError()
+            revision = item["revision"] if item["origin"] == "pending" else item["saved_revision"]
+            if (working["working_set_token"] != command["expected_working_set_token"]
+                    or type(revision) is not type(command["expected_item_revision"])
+                    or revision != command["expected_item_revision"]):
+                raise ResumeIntakeConflictError("changed", [], "That item changed. Refresh the Guide and try again.")
+            if item.get("conversion") or item["state"] not in {"saved", "waiting", "hidden"}:
+                raise ResumeIntakeConflictError("changed", [], "Undo the earlier move first, or refresh the Guide.")
+            if item["origin"] == "pending":
+                proposal = snapshot["proposals"].get(item["proposal_key"])
+                if (proposal is None or proposal["state"] != "pending" or proposal.get("superseded_by")
+                        or proposal.get("target_key")):
+                    raise ResumeIntakeValidationError("Only a new suggestion or a saved item can be moved.")
+            if not conversion_supported(item["record_type"], destination["record_type"]):
+                error = ResumeIntakeValidationError("That move is not available yet.")
+                error.code = "conversion_unsupported"
+                raise error
+            try:
+                missing = guide_required_fields(destination["record_type"], destination["values"])
+            except LivingResumeEditorValidationError as error:
+                raise _guide_intake_validation_error(error) from error
+            parent = destination["parent_ref"]
+            if destination_needs_parent(destination["record_type"]):
+                role = self._find_working_item(working, parent) if parent else None
+                if role is None or role["origin"] != "saved" or role["record_type"] != "role" or role["state"] != "saved":
+                    if parent is not None and role is None:
+                        raise ResumeIntakeNotFoundError()
+                    missing = [*missing, "parent_ref"]
+                else:
+                    parent = role["item_ref"]
+            elif parent is not None:
+                raise ResumeIntakeValidationError("This destination has no parent.")
+            affected, _ = self._conversion_affected(owner, item)
+            key = str(uuid4())
+            base = {"origin": item["origin"], "item_ref": item["item_ref"], "record_type": item["record_type"],
+                    "proposal_key": item.get("proposal_key"), "revision": revision,
+                    "saved_access_revision": item.get("saved_access_revision")}
+            target = {"record_type": destination["record_type"], "values": copy.deepcopy(destination["values"]),
+                      "parent_key": parent}
+            token = conversion_token(owner, key, item["item_ref"], base, target, affected)
+            snapshot["guide"].setdefault("conversions", {})[key] = {
+                "state": "staged", "item_ref": item["item_ref"], "base": base, "destination": target,
+                "missing_required_fields": list(missing), "affected_references": affected,
+                "conversion_token": token, "stage_request_id": command["request_id"],
+                "created_at": _utc(None).isoformat()}
+            result = {"success": True, "type": "guide_conversion", "action": "stage", "outcome": "staged",
+                "request_id": command["request_id"], "conversion_key": key, "conversion_token": token,
+                "item_ref": item["item_ref"], "destination": copy.deepcopy(target),
+                "missing_required_fields": list(missing), "affected_references": copy.deepcopy(affected),
+                "saved": False, "publishes": False, "confirmation_required": True, "replayed": False}
+            snapshot["receipts"][command["request_id"]] = {"request_digest": digest, "submission_key": None, "result": result}
+            try:
+                self.repository.save_owner(owner, snapshot)
+            except ResumeIntakeStoreUnavailable as error:
+                raise ResumeIntakeUnavailableError() from error
+            return result
+
+    def _confirm_guide_conversion(self, owner, payload, read_working_set):
+        from services.resume_guide_turns import (
+            conversion_descriptor, conversion_token, reconcile_references, undo_token)
+        from services.living_resume_editor_service import normalize_guide_values, LivingResumeEditorValidationError
+        required = {"request_id", "action", "conversion_key", "conversion_token", "expected_working_set_token",
+                    "reference_reconciliation"}
+        if (not isinstance(payload, dict) or set(payload) != required
+                or not isinstance(payload["conversion_token"], str)
+                or not isinstance(payload["expected_working_set_token"], str)
+                or not isinstance(payload["reference_reconciliation"], list)):
+            raise ResumeIntakeValidationError("Invalid Guide move.")
+        command = {**copy.deepcopy(payload), "request_id": _as_uuid(payload["request_id"], field="request id"),
+                   "conversion_key": _as_uuid(payload["conversion_key"], field="move reference")}
+        digest = _json_digest({"type": "guide_conversion", **{k: v for k, v in command.items() if k != "request_id"}})
+        with self.repository.owner_guard(owner):
+            snapshot = self._load(owner)
+            replay = self._conversion_receipt(snapshot, command["request_id"], digest)
+            if replay is not None:
+                return replay
+            record = (snapshot["guide"].get("conversions") or {}).get(command["conversion_key"])
+            if record is None:
+                raise ResumeIntakeNotFoundError()
+            # What the member reviewed; the working-set token moves with every write, so it is not part of it.
+            binding = _json_digest({"conversion_key": command["conversion_key"], "conversion_token": command["conversion_token"],
+                                    "reference_reconciliation": command["reference_reconciliation"]})
+            if record["state"] == "confirmed" and record.get("confirm_binding") == binding:
+                # An identical second confirm returns the recorded operation; nothing new is written.
+                prior = snapshot["receipts"].get(record["confirm_request_id"]) or {}
+                return {**copy.deepcopy(prior.get("result") or {}), "replayed": True}
+            if record["state"] != "staged" or record["conversion_token"] != command["conversion_token"]:
+                raise ResumeIntakeConflictError("changed", [], "That move changed. Review it again.")
+            if record["missing_required_fields"]:
+                error = ResumeIntakeValidationError("Add the missing details before moving this item.")
+                error.code = "missing_required_fields"
+                error.missing_required_fields = list(record["missing_required_fields"])
+                raise error
+            working = read_working_set(owner)
+            item = self._find_working_item(working, record["item_ref"])
+            base = record["base"]
+            current_revision = None if item is None else (item["revision"] if item["origin"] == "pending" else item["saved_revision"])
+            if (item is None or working["working_set_token"] != command["expected_working_set_token"]
+                    or item["origin"] != base["origin"] or current_revision != base["revision"] or item.get("conversion")):
+                raise ResumeIntakeConflictError("changed", [], "That item changed since you chose the move. Your choice is kept.")
+            affected, invalid = self._conversion_affected(owner, item)
+            expected_token = conversion_token(owner, command["conversion_key"], record["item_ref"], base,
+                                              record["destination"], affected)
+            if expected_token != record["conversion_token"]:
+                raise ResumeIntakeConflictError("changed", [], "The references changed since you chose the move.")
+            try:
+                final = reconcile_references(affected, command["reference_reconciliation"], invalid_refs=invalid)
+            except ValueError as error:
+                code = str(error)
+                if code == "invalid":
+                    raise ResumeIntakeValidationError("Invalid reference review.") from None
+                raise ResumeIntakeConflictError(code, [], "Review where this item is used before moving it.") from None
+            destination = record["destination"]
+            try:
+                values = normalize_guide_values(destination["record_type"], destination["values"])
+            except LivingResumeEditorValidationError as error:
+                raise _guide_intake_validation_error(error) from error
+            operation_ref = "op:" + command["request_id"] + ":0"
+            with self._unit_of_work(owner) as unit:
+                if not getattr(unit, "supports_atomic_composition", False):
+                    raise ResumeIntakeUnavailableError()
+                if base["origin"] == "pending":
+                    successor = self._conversion_successor(snapshot, base["proposal_key"], destination["record_type"],
+                                                           values, destination.get("parent_key"))
+                    inverse = {"origin": "pending", "proposal_key": successor["proposal_key"],
+                               "restore_from": base["proposal_key"]}
+                    resulting = {"proposal_key": successor["proposal_key"], "revision": successor["revision"]}
+                else:
+                    workspace = self.draft_service.get_workspace(owner)
+                    overlays = self._raw_draft_items(owner)
+                    key = item["item_ref"]
+                    changes, prior = {}, {}
+                    moved = {"record_key": key, "record_type": base["record_type"],
+                        "base_content_token": str(base["revision"]), "base_access_revision": int(base["saved_access_revision"]),
+                        "proposed_values": {}, "intended_permission_expansions": {"resume_display": False, "visitor_ai": False},
+                        "is_new": False,
+                        "conversion": conversion_descriptor(base_record_type=base["record_type"],
+                            destination_record_type=destination["record_type"],
+                            destination_parent_ref=destination.get("parent_key"), base_content_token=base["revision"],
+                            base_access_revision=base["saved_access_revision"], operation_ref=operation_ref),
+                        "conversion_destination": {"record_type": destination["record_type"], "values": values,
+                                                   "parent_key": destination.get("parent_key")}}
+                    prior[key] = copy.deepcopy(overlays.get(key))
+                    changes[key] = moved
+                    set_highlights, highlights = False, None
+                    for (kind, container), refs in final.items():
+                        if kind == "highlights":
+                            set_highlights, highlights = True, refs
+                        elif container != key:
+                            current = copy.deepcopy(overlays.get(container))
+                            if current is None:
+                                raise ResumeIntakeConflictError("changed", [], "The references changed.")
+                            prior[container] = copy.deepcopy(current)
+                            current["evidence_refs"] = list(refs)
+                            current["evidence_refs_manual"] = True
+                            changes[container] = current
+                    prior_highlights = copy.deepcopy(workspace.get("highlight_refs")) if "highlight_refs" in workspace else None
+                    expected_version = workspace["draft_version"]
+                    unit.apply_guide_changes(owner, request_id=command["request_id"],
+                        request_digest=digest, expected_version=expected_version, items=changes,
+                        highlight_refs=highlights, set_highlights=set_highlights, validate_current=lambda live: True)
+                    inverse = {"origin": "saved", "items": prior, "set_highlights": set_highlights,
+                               "highlight_refs": prior_highlights}
+                    resulting = {"items": copy.deepcopy(changes), "set_highlights": set_highlights,
+                                 "highlight_refs": copy.deepcopy(highlights), "draft_version": expected_version + 1,
+                                 "moved_key": key, "parent_key": destination.get("parent_key")}
+                token = undo_token(owner, operation_ref, resulting)
+                record.update(state="confirmed", confirm_request_id=command["request_id"], confirm_binding=binding,
+                              operation_ref=operation_ref)
+                result = {"success": True, "type": "guide_conversion", "action": "confirm", "outcome": "saved_privately",
+                    "conversion_state": "confirmed_private", "request_id": command["request_id"],
+                    "conversion_key": command["conversion_key"], "item_ref": record["item_ref"],
+                    "operation_ref": operation_ref, "undo_token": token, "saved": True, "canonical_changed": False,
+                    "publishes": False, "replayed": False}
+                snapshot["receipts"][command["request_id"]] = {"request_digest": digest, "submission_key": None,
+                    "result": result, "inverse": inverse, "resulting": resulting}
+                try:
+                    unit.commit(owner, snapshot)
+                except ResumeIntakeStoreUnavailable as error:
+                    raise ResumeIntakeUnavailableError() from error
+                return result
+
+    def _raw_draft_items(self, owner):
+        """The stored private overlays exactly as kept (the draft service's own snapshot)."""
+        snapshot = self.draft_service.repository.load_owner(owner)
+        return copy.deepcopy(snapshot.get("items") or {})
+
+    def _conversion_successor(self, snapshot, proposal_key, record_type, values, parent_key):
+        """A same-item successor suggestion of another type; the old one stays in the history."""
+        old = snapshot["proposals"].get(proposal_key)
+        if old is None or old["state"] != "pending" or old.get("superseded_by"):
+            raise ResumeIntakeConflictError("changed", [], "That suggestion changed. Your choice is kept.")
+        successor = copy.deepcopy(old)
+        successor.update(proposal_key=str(uuid4()), record_type=record_type, state="pending",
+                         superseded_by=None, created_at=_utc(None).isoformat(),
+                         revision=int(old.get("revision") or 1) + 1)
+        successor["proposed_values"] = {**copy.deepcopy(values),
+                                        **({"suggested_parent_key": parent_key} if parent_key else {})}
+        meta = copy.deepcopy(old.get("resume_conversation_v1") or {})
+        meta["revision_of"] = old["proposal_key"]
+        meta.pop("presentation_section", None)
+        successor["resume_conversation_v1"] = meta
+        successor.pop("identity_aliases", None)
+        old["state"] = "invalidated"
+        old["superseded_by"] = successor["proposal_key"]
+        snapshot["proposals"][successor["proposal_key"]] = successor
+        return successor
+
+    def _undo_guide_conversion(self, owner, payload, read_working_set):
+        from services.resume_guide_turns import undo_token
+        required = {"request_id", "action", "operation_ref", "undo_token"}
+        if (not isinstance(payload, dict) or set(payload) != required
+                or not isinstance(payload["operation_ref"], str) or not isinstance(payload["undo_token"], str)):
+            raise ResumeIntakeValidationError("Invalid Undo.")
+        command = {**copy.deepcopy(payload), "request_id": _as_uuid(payload["request_id"], field="request id")}
+        digest = _json_digest({"type": "guide_conversion_undo", **{k: v for k, v in command.items() if k != "request_id"}})
+        with self.repository.owner_guard(owner):
+            snapshot = self._load(owner)
+            replay = self._conversion_receipt(snapshot, command["request_id"], digest)
+            if replay is not None:
+                return replay
+            parts = command["operation_ref"].split(":")
+            confirm = snapshot["receipts"].get(parts[1]) if len(parts) == 3 and parts[0] == "op" and parts[2] == "0" else None
+            result = (confirm or {}).get("result") or {}
+            if result.get("type") != "guide_conversion" or result.get("action") != "confirm":
+                raise ResumeIntakeNotFoundError()
+            record = (snapshot["guide"].get("conversions") or {}).get(result["conversion_key"]) or {}
+            resulting, inverse = confirm["resulting"], confirm["inverse"]
+            if (record.get("state") != "confirmed"
+                    or undo_token(owner, command["operation_ref"], resulting) != command["undo_token"]):
+                raise ResumeIntakeConflictError("stale_undo", [], "This move can no longer be undone here. Nothing changed.")
+            with self._unit_of_work(owner) as unit:
+                if not getattr(unit, "supports_atomic_composition", False):
+                    raise ResumeIntakeUnavailableError()
+                if inverse["origin"] == "pending":
+                    current = snapshot["proposals"].get(resulting["proposal_key"])
+                    if (current is None or current["state"] != "pending" or current.get("superseded_by")
+                            or current.get("revision") != resulting["revision"]):
+                        raise ResumeIntakeConflictError("stale_undo", [], "This suggestion changed since the move. Nothing changed.")
+                    original = snapshot["proposals"][inverse["restore_from"]]
+                    self._conversion_successor(snapshot, resulting["proposal_key"], original["record_type"],
+                        {k: v for k, v in (original.get("proposed_values") or {}).items() if k != "suggested_parent_key"},
+                        (original.get("proposed_values") or {}).get("suggested_parent_key"))
+                else:
+                    workspace = self.draft_service.get_workspace(owner)
+                    overlays = self._raw_draft_items(owner)
+                    current_highlights = copy.deepcopy(workspace.get("highlight_refs")) if "highlight_refs" in workspace else None
+                    # Only what this move touched decides freshness: the moved item (its overlay and its
+                    # canonical base), every reference container it changed, and a bullet's parent role.
+                    # Unrelated edits, Hide or other links elsewhere never make Undo stale.
+                    moved_key = resulting["moved_key"]
+                    moved = next((row for row in workspace["items"] if row["record_key"] == moved_key), None)
+                    base = resulting["items"][moved_key]
+                    parent_ok = True
+                    if resulting.get("parent_key"):
+                        try:
+                            parent = self.working_item(owner, resulting["parent_key"])
+                            parent_ok = (parent["origin"] == "saved" and parent["state"] == "saved"
+                                         and parent["record_type"] == "role")
+                        except ResumeIntakeNotFoundError:
+                            parent_ok = False
+                    if (moved is None or not parent_ok
+                            or str(moved["content_token"]) != str(base["base_content_token"])
+                            or int(moved["access_revision"]) != int(base["base_access_revision"])
+                            or any(overlays.get(key) != overlay for key, overlay in resulting["items"].items())
+                            or (resulting["set_highlights"] and current_highlights != resulting["highlight_refs"])):
+                        raise ResumeIntakeConflictError("stale_undo", [], "Something changed after the move. Nothing changed.")
+                    unit.apply_guide_changes(owner, request_id=command["request_id"], request_digest=digest,
+                        expected_version=workspace["draft_version"], items=copy.deepcopy(inverse["items"]),
+                        highlight_refs=copy.deepcopy(inverse["highlight_refs"]), set_highlights=inverse["set_highlights"],
+                        validate_current=lambda live: True)
+                record["state"] = "undone"
+                undone = {"success": True, "type": "guide_conversion", "action": "undo", "outcome": "undone",
+                    "request_id": command["request_id"], "operation_ref": command["operation_ref"],
+                    "item_ref": record.get("item_ref"), "saved": True, "canonical_changed": False, "publishes": False,
+                    "replayed": False}
+                snapshot["receipts"][command["request_id"]] = {"request_digest": digest, "submission_key": None, "result": undone}
+                try:
+                    unit.commit(owner, snapshot)
+                except ResumeIntakeStoreUnavailable as error:
+                    raise ResumeIntakeUnavailableError() from error
+                return undone
+
     @staticmethod
     def _stamp_resume_choice(unit, owner, request_id, digest):
         stamp = getattr(unit, "stamp_resume_choice", None)

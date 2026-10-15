@@ -896,6 +896,13 @@ class InMemoryIntakeUnitOfWork:
         self._touch_owner(owner)
         self.draft_service.save_private_guide_references(owner,**command)
 
+    def apply_guide_changes(self, owner, **command):
+        """B3b move/Undo: whole private overlays and highlights, rolled back with this unit."""
+        if not self.supports_atomic_composition:
+            raise ResumeIntakeStoreUnavailable("Private Resume moves are unavailable.")
+        self._touch_owner(owner)
+        self.draft_service.apply_private_guide_changes(owner, **command)
+
     def apply_canonical_command(self, owner, payload, projected, *, boundary, request_id,
                                 callee_command):
         """The in-memory path really runs B's Python service orchestration."""

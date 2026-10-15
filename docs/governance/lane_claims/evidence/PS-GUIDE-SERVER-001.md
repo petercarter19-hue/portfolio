@@ -1081,7 +1081,7 @@ SQL keeps refusing turns before any effect.
 
 **Holds:** fake providers only and $0. No production, 8443 stop, model switch or credentials. Independent exact-SHA review by `session:16023c0e-7189-420e-8a4d-11f8012a9713`.
 
-```package-acceptance-json
+```json
 {
   "schema_version": 1,
   "package": "PS-GUIDE-SERVER-001",
@@ -1224,3 +1224,243 @@ Order: plan `8f86c36a`, adopted at `83296601` and repaired at `0ba06d82`. That c
 - Full no-Playwright discover, candidate vs base main `ee476daf`: candidate 7863 run / 304 skipped / 16 errors / 19 failures; base 7850 / 304 / 16 / 19. The failure and error sets are identical, and the +13 are the new B3a tests.
 
 **B3a review:** independent PASS at exact `8b654d67` (coordination `ce0a025`). No new findings. The B2b recording Minor is closed by the bounded guards. Replayed cards stay hydrated, per the ruling.
+
+## B3b pre-code round plan: F1 same-key private conversion and revision-safe Undo
+
+_The B3a acceptance JSON above is kept as historical JSON and is no longer the active record._
+
+**Scope, controlled by ruling 41e46cf (F1 private overlay), the D6a publisher contract on main and the B3-C3 acceptance mapping:**
+
+1. **Stage and confirm.** A new owner route, `POST /api/resume-intake/me/guide/conversion`, with `action: stage | confirm | undo`.
+   - Stage persists one staged proposal on the existing proposal foundation and returns:
+     - the same `item_ref` and a `proposal_key`/revision;
+     - a server `conversion_token`;
+     - typed `missing_required_fields`, using the shared B2 `guide_required_fields`/`normalize_guide_values`;
+     - the affected references to reconcile.
+
+     Nothing is saved, and no canonical or public change happens.
+   - Confirm runs as one owner- and revision-fenced unit of work. It checks the working-set token, the item revision, the draft version, the parent and the reference digests. It then writes the same-key confirmed private overlay (destination type, values and parent), the explicit reference reconciliation, one inverse-ledger entry and the receipt.
+   - A pending item never gets an intermediate canonical record.
+   - Canonical type, values and parent, public evidence and visitor-AI evidence stay unchanged until explicit Publish.
+2. **The D6a descriptor.** For a confirmed conversion of a saved item, `get_workspace` items carry `conversion` with exactly D6a's seven keys: `state: confirmed_private`, `base_record_type`, `destination_record_type`, `destination_parent_ref`, `base_content_token`, `base_access_revision`, `conversion_op_ref`.
+   - The publisher then refuses `publication_type_transition_unavailable` (already on main) and never codes destination values under the old type.
+   - The Guide working set projects the effective private type, parent and values on the same row, with the base kept distinct.
+3. **Undo.** It resolves the server inverse from `operation_ref` plus `undo_token`.
+   - Before Publish, it restores the exact prior overlay or its absence, the type, parent, evidence bindings and active reference lists, atomically.
+   - It refuses with a typed `stale_undo` after any later manual, source, parent, reference or highlight revision; nothing changes.
+   - After a Publish it is an ordinary new staged move back, never a silent public rollback. While D6b can't publish a transition, the named blocker keeps the overlay.
+4. **Idempotence and replay.**
+   - Stage, confirm and Undo replay their stored result for an identical request id.
+   - A changed payload under the same id returns `idempotency_conflict`.
+   - A second identical confirm returns the recorded operation, with no second inverse or version bump.
+5. **Refusals.**
+   - Foreign or unknown items, parents, sources and operations are a neutral `not_found`.
+   - Unqualified SQL refuses before any staged write.
+   - Injected failure at each unit-of-work boundary restores every participating owner store.
+
+**Excluded:**
+- C3's Move-to menu and keyboard (F2);
+- PQ1 spoken save, which becomes its own small round, B3d, on this inverse ledger;
+- the held queue, matching and purge (B3c);
+- publisher codec support for transitions (D6b, Lane D);
+- model changes, schema, deployment and production.
+
+**Mapping:** F1-1 to F1-8 and F1-10 to F1-14 are B3b criteria. F1-9 and F1-15 are proven only as far as the D6a blocker allows: the overlay is kept and the reason named. R1 is a regression criterion.
+
+**Holds:** fake providers only and $0. Independent exact-SHA review by `session:16023c0e-7189-420e-8a4d-11f8012a9713`.
+
+```package-acceptance-json
+{
+  "schema_version": 1,
+  "package": "PS-GUIDE-SERVER-001",
+  "plan_sha": "53a8305c08718996a6dae5bc5521842e45cda4c4",
+  "candidate_sha": "3188eb5872dc5e5f677fce5bd63ed1e921bede5b",
+  "baseline": [
+    {
+      "command": "X:/PeerSlate/runtimes/development/Scripts/python.exe -B -m unittest tests.test_resume_draft_service tests.test_resume_draft_routes tests.test_resume_guide_service tests.test_resume_intake_service tests.test_resume_intake_routes tests.test_resume_onboarding_conversation tests.test_resume_publication_type_transition tests.test_resume_intake_sql -q",
+      "exit_code": 0,
+      "observation": "451/451 PASS in 33.339s on an export of main bd07b1ee before B3b code. Fake/in-memory providers only. Raw log X:/PeerSlate/Claude/reviews/b3b-conversion/b3b-precode-baseline.log."
+    }
+  ],
+  "criteria": [
+    {
+      "id": "b3b_stage",
+      "expected": "A stage on a saved or pending item persists one staged move on the existing proposal foundation with the same item_ref, typed missing_required_fields from the shared B2 rules, the affected references to reconcile and a server conversion_token; nothing is saved, no intermediate canonical record exists, and canonical, public and visitor-AI state are unchanged; an identical stage replays and a reload sees one move.",
+      "verification": "Service and HTTP tests for a pending Skill, a saved Skill, incomplete destinations (Project summary, parent-dependent bullet) and stage replay/reload (F1-1, F1-3, F1-4), with canonical/public snapshots compared."
+    },
+    {
+      "id": "b3b_confirm_private_overlay",
+      "expected": "Confirm writes the same-key confirmed private overlay (destination type, values, parent) with the explicit reference reconciliation, one inverse-ledger entry and the receipt in one owner- and revision-fenced unit of work; canonical type/values/parent, published bytes and visitor-AI evidence stay identical; a lost-response retry or identical second confirm returns the recorded operation with one version change and one inverse; any change between stage and confirm is a conflict with input kept; injected failure at each boundary restores every participating owner store.",
+      "verification": "F1-2, F1-5, F1-12 and F1-13 cases against the shared fixture with before/after snapshots of intake, draft, primary catalog and publication provenance; RED on main."
+    },
+    {
+      "id": "b3b_descriptor",
+      "expected": "get_workspace presents a confirmed private conversion of a saved item with a conversion object holding exactly the D6a keys (state confirmed_private, base_record_type, destination_record_type, destination_parent_ref, base_content_token, base_access_revision, conversion_op_ref); the publisher then refuses publication_type_transition_unavailable and never codes destination values under the old type; the Guide working set projects the effective private type, parent and values on the same row with the base kept distinct.",
+      "verification": "Workspace and working-set tests plus a publication review through the real D6a guard (F1-15); RED on main."
+    },
+    {
+      "id": "b3b_reference_reconciliation",
+      "expected": "Every affected skill-evidence, incoming-evidence and highlight reference is listed at stage; confirm requires an explicit reviewed final list per affected container and refuses unreviewed, dangling, wrong-type or foreign choices; nothing is silently dropped or copied, and the inverse keeps the prior lists.",
+      "verification": "F1-10 cases for a converted evidence bullet and a converted skill with references."
+    },
+    {
+      "id": "b3b_undo",
+      "expected": "Undo by operation_ref and undo_token before Publish restores the exact prior overlay or its absence, type, parent, evidence bindings and active reference lists atomically; any later manual, source, parent, reference or highlight revision makes it a typed stale_undo with nothing changed; after a Publish it stages a new private move back, and while D6b cannot publish a transition the named blocker keeps the overlay.",
+      "verification": "F1-6, F1-7, F1-8 and F1-9 cases with exact before/after comparisons; RED on main."
+    },
+    {
+      "id": "b3b_refusals",
+      "expected": "Foreign or unknown items, parents, sources and operations are a neutral not_found with the other owner's stores untouched; unqualified SQL refuses stage, confirm and Undo before any effect with input kept; changed bytes under a reused request id are idempotency_conflict.",
+      "verification": "F1-11 and F1-14 cases with a second owner and a SQL simulator (zero procedure calls)."
+    },
+    {
+      "id": "b3b_regression_review",
+      "expected": "Existing commands, digests, reads and publication choices are unchanged without a conversion (R1); affected suites, strict browser runner normal and two-copy load and full no-Playwright discover show no new failure against base; the exact candidate receives independent PASS; current-target CI and merge remain separate gates.",
+      "verification": "Focused suites under the lock-order witness, strict runs, discover comparison, exact-SHA independent receipt, package_acceptance check and merge preflight."
+    }
+  ],
+  "checks": [
+    {
+      "criterion_id": "b3b_stage",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "3188eb5872dc5e5f677fce5bd63ed1e921bede5b",
+      "source_ref": "coordination:becf8de:Shared/handoffs/2026-10-15_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3b_round2.md + tests.test_resume_intake_service.GuideConversionTests.test_saved_skill_moves_to_a_project_privately_while_public_copy_stays_canonical + tests.test_resume_intake_service.GuideConversionTests.test_incomplete_destination_stays_waiting_and_cannot_be_confirmed + tests.test_resume_intake_service.GuideConversionTests.test_stage_replays_and_a_changed_reuse_is_a_conflict + tests.test_resume_intake_service.GuideConversionTests.test_a_staged_move_survives_a_reload_into_a_new_service + X:/PeerSlate/Claude/reviews/b3b-conversion/b3b-red-on-main.txt",
+      "observed": "Stage of a saved and a pending item changes nothing, names missing summary/parent, replays, conflicts on changed reuse and survives a reload; RED on main."
+    },
+    {
+      "criterion_id": "b3b_confirm_private_overlay",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "3188eb5872dc5e5f677fce5bd63ed1e921bede5b",
+      "source_ref": "coordination:becf8de:Shared/handoffs/2026-10-15_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3b_round2.md + tests.test_resume_intake_service.GuideConversionTests.test_confirm_applies_once_with_one_version_change + tests.test_resume_intake_service.GuideConversionTests.test_pending_suggestion_moves_with_the_same_item_ref_and_no_canonical_record + tests.test_resume_intake_service.GuideConversionTests.test_an_injected_failure_restores_every_store_and_a_retry_succeeds",
+      "observed": "Confirm writes one same-key private overlay with one version change; canonical, public preview and visitor-AI copy identical; replay returns the recorded operation; injected failure restores intake, draft and policy stores."
+    },
+    {
+      "criterion_id": "b3b_descriptor",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "3188eb5872dc5e5f677fce5bd63ed1e921bede5b",
+      "source_ref": "coordination:becf8de:Shared/handoffs/2026-10-15_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3b_round2.md + tests.test_resume_intake_service.GuideConversionTests.test_saved_skill_moves_to_a_project_privately_while_public_copy_stays_canonical + tests.test_resume_intake_service.GuideConversionTests.test_private_consumers_see_the_effective_move_and_public_copy_stays_canonical + X:/PeerSlate/Claude/reviews/b3b-round2/red-on-48ca8780-services.txt",
+      "observed": "Exact D6a keys; publication basis blocked by publication_type_transition_unavailable; Guide row and draft-workspace destination agree on type, values, parent and section; owner preview and guest read unchanged."
+    },
+    {
+      "criterion_id": "b3b_reference_reconciliation",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "3188eb5872dc5e5f677fce5bd63ed1e921bede5b",
+      "source_ref": "coordination:becf8de:Shared/handoffs/2026-10-15_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3b_round2.md + tests.test_resume_intake_service.GuideConversionTests.test_moving_a_bullet_needs_every_reference_reviewed_and_undo_restores_them",
+      "observed": "Skill-evidence and highlight containers must both be reviewed; empty or still-including reviews refuse; Undo restores both."
+    },
+    {
+      "criterion_id": "b3b_undo",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "3188eb5872dc5e5f677fce5bd63ed1e921bede5b",
+      "source_ref": "coordination:becf8de:Shared/handoffs/2026-10-15_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3b_round2.md + tests.test_resume_intake_service.GuideConversionTests.test_fresh_undo_restores_the_exact_prior_private_state + tests.test_resume_intake_service.GuideConversionTests.test_a_later_manual_edit_makes_undo_stale_and_discard_needs_undo + tests.test_resume_intake_service.GuideConversionTests.test_unrelated_changes_after_a_move_never_make_undo_stale + tests.test_resume_intake_service.GuideConversionTests.test_a_change_to_the_moved_item_its_links_or_its_parent_makes_undo_stale + X:/PeerSlate/Claude/reviews/b3b-round2/red-on-48ca8780-services.txt",
+      "observed": "Fresh Undo restores the exact raw draft; item-scoped freshness: unrelated edit, Hide and other links keep Undo, item edit, touched links/highlights and parent Hide make it stale with nothing changed (F-2)."
+    },
+    {
+      "criterion_id": "b3b_refusals",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "3188eb5872dc5e5f677fce5bd63ed1e921bede5b",
+      "source_ref": "coordination:becf8de:Shared/handoffs/2026-10-15_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3b_round2.md + tests.test_resume_intake_service.GuideConversionTests.test_foreign_unknown_and_unsupported_moves_refuse_before_effects + tests.test_resume_intake_service.GuideConversionTests.test_unqualified_sql_refuses_a_move_before_any_effect + tests.test_resume_intake_routes.test_real_conversion_route_stages_confirms_and_refuses_neutrally",
+      "observed": "Foreign/unknown items and operations give not_found; unsupported moves conversion_unsupported; SQL refuses with zero calls and input echoed; route 404 for another member and 403 without same-origin."
+    },
+    {
+      "criterion_id": "b3b_regression_review",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "3188eb5872dc5e5f677fce5bd63ed1e921bede5b",
+      "source_ref": "coordination:3a1c8bd:Shared/handoffs/2026-10-15_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3b_test-race-recheck.md + coordination:becf8de:Shared/handoffs/2026-10-15_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3b_round2.md + X:/PeerSlate/Claude/reviews/b3b-round2/affected.txt + X:/PeerSlate/Claude/reviews/b3b-round2/witness.txt + X:/PeerSlate/Claude/reviews/b3b-round2/strict-normal.txt + X:/PeerSlate/Claude/reviews/b3b-round2/strict-load1.txt + X:/PeerSlate/Claude/reviews/b3b-round2/strict-load2.txt + X:/PeerSlate/Claude/reviews/b3b-round2/discover-cand.txt + tests.test_resume_intake_routes.LegacyClientBusyRetryBrowserTests",
+      "observed": "Independent exact-SHA PASS at d2d19b66 (round 2); affected 950 OK; witness 950 run, 0 violations; strict 152 normal and two-copy load pass; discover failure set identical to base main bd07b1ee. Test-only re-check PASS at 3188eb58: the busy-retry browser journey waits for the guide to open itself (C1 CI build 4679 race), no product bytes changed."
+    }
+  ]
+}
+```
+
+### B3b implementation evidence (candidate for independent review)
+
+Fake providers only, $0. Evidence root: `X:/PeerSlate/Claude/reviews/b3b-conversion/`. Plan `53a8305c`, adopted at `df497d0b` (the plan diff is the one `plan_sha` line). The design rulings are in coordination `B3b-design-answers`: Q1 to Q4 all yes, with Q3's private-effective / public-canonical condition. Runtime source: `c156d17c`.
+
+**Route.** `POST /api/resume-intake/me/guide/conversion` takes `action: stage | confirm | undo`.
+- The owner comes from identity; same-origin is required; responses are private and no-store.
+- Errors: 400 `invalid` / `missing_required_fields` / `conversion_unsupported`; neutral 404 `not_found`; 409 `changed` / `idempotency_conflict` / `reconciliation_required` / `stale_undo` with input kept; 503 unavailable with input kept.
+
+**Pure rules (`services/resume_guide_turns.py`).**
+- The supported moves are exactly Skill↔role bullet and Skill↔Project.
+- The descriptor carries exactly the D6a keys.
+- Conversion and Undo tokens bind what was reviewed.
+- Reference reconciliation requires one reviewed entry per affected container. The final list keeps the current order, may only drop references, and must drop every reference the move makes invalid.
+
+**Storage (Q1).**
+- Moves live in the owner's open Guide state, `snapshot["guide"]["conversions"]`.
+- Receipts are typed `guide_conversion`.
+- The inverse is stored once, inside the confirm receipt (`op:<confirm request id>:0`).
+- A staged move survives a reload into a new service.
+
+**Saved items (Q3).**
+- Confirm writes one atomic private draft change through the intake unit of work: the same-key overlay with `proposed_values {}`, the D6a `conversion` descriptor and the `conversion_destination`, plus any reviewed reference lists.
+- `_present_item` keeps the canonical `record_type`/`parent_key`, so the publisher refuses `publication_type_transition_unavailable`.
+- The Guide working set shows the effective destination (type, section, values, parent) on the same row.
+- A manual save on a moved item validates against the destination type and keeps the move. A save under the old type, or a discard, gives `conversion_undo_required`.
+
+**Pending suggestions (Q2).** Confirm makes a successor suggestion with the same `item_ref`, still awaiting Accept; no canonical record is created. Undo makes another successor restoring the original type and values.
+
+**Undo.** It restores the exact prior overlays (or their absence) and the highlight list. Round 2 narrows freshness to what the move touched (see below).
+
+**Criteria → proof** (tests in `tests.test_resume_intake_service.GuideConversionTests`, `tests.test_resume_guide_turns`, and `tests.test_resume_intake_routes` `test_real_conversion_route_stages_confirms_and_refuses_neutrally`):
+
+| Criterion | Proof |
+|---|---|
+| `b3b_stage` | saved skill to project staged with nothing changed; pending suggestion; missing `summary` and `parent_ref`; stage replay and `idempotency_conflict` |
+| `b3b_confirm_private_overlay` | canonical, public preview and visitor-AI copy identical across confirm; a lost-response retry replays; an identical second confirm returns the recorded operation with one draft-version change; an injected intake save failure restores the intake, draft and policy stores, and a retry succeeds |
+| `b3b_descriptor` | exact D6a keys on the workspace item; the publication basis is blocked by `publication_type_transition_unavailable`; the working set shows the effective type |
+| `b3b_reference_reconciliation` | moving a bullet needs both the skill-evidence and the highlight containers reviewed; an empty or still-including review refuses; Undo restores both |
+| `b3b_undo` | fresh Undo restores the exact raw draft; a later manual save makes Undo stale; a second Undo refuses; discard needs Undo |
+| `b3b_refusals` | a foreign item, an unknown item and an unknown operation give `not_found`; role to skill gives `conversion_unsupported`; SQL refuses with 0 calls and the input echoed; the HTTP route gives 404 for another member and 403 without same-origin |
+| `b3b_regression_review` | Affected suites 628 OK (12 modules) plus the routes suite 69 OK; lock-order witness over 23 modules: 947 tests, 0 violations; strict 152 normal (304 s) and two concurrent copies (301 s), 152/152 each; discover: candidate 7899 run / 304 skipped / 16 errors / 19 failures, base `bd07b1ee` 7881 / 304 / 16 / 19, identical failure sets (+18 new tests). |
+
+**RED:** the new tests on main `bd07b1ee` give 16 errors (module, method and route absent) (`b3b-red-on-main.txt`).
+
+**Follow-ups (not B3b):**
+- The rest of the R6q move set is a named round before package 10 (ruling Q4).
+- Rendering `conversion_destination` on the owner page is the owner-page lane's job; the server supplies it.
+
+### B3b round 2: independent-review findings F-1 and F-2
+
+The independent review of `48ca8780` failed. Runtime fix: `0bcd55e1`. Evidence root: `X:/PeerSlate/Claude/reviews/b3b-round2/`.
+
+**F-2 (Medium): Undo freshness is item-scoped.**
+- The draft-version equality is gone.
+- Undo is stale only when one of these changed:
+  - the moved item: its overlay, or its canonical `content_token` or `access_revision` versus the move's base;
+  - a reference container the move changed (a skill's links, or the highlights);
+  - a bullet's parent role, which must still be a saved, shown role.
+- Confirm records `moved_key` and `parent_key` in the receipt's `resulting`, and the Undo token binds them.
+- Unrelated edits, a Hide of another item, and another skill's links never make Undo stale.
+
+**F-1 (B3b part): every private consumer sees the effective move.**
+- In the private draft workspace (owner-page and private-preview data), `conversion_destination` now carries `record_type`, `values`, `parent_key` and `section`.
+- A moved bullet takes its parent role's section, the same as in the Guide working set.
+- Public copy and visitor-AI choices stay canonical until a later Publish.
+
+**C3 entry condition (manager ruling).**
+- Rendering moved items on the owner page and the private preview belongs to Lane D (D2/D6c).
+- The C3 "Move to…" menu stays disabled or hidden until both of those surfaces handle moves.
+
+| Criterion | Round-2 proof (`GuideConversionTests`) |
+|---|---|
+| `b3b_undo` (F-2) | `test_unrelated_changes_after_a_move_never_make_undo_stale`: an unrelated edit, a Hide of another item, and another skill's links each still allow an exact Undo, and the unrelated change is kept. `test_a_change_to_the_moved_item_its_links_or_its_parent_makes_undo_stale`: an edit of the moved item, a link change in its touched skill, a change to its touched highlights, and a Hide of the parent role each give `stale_undo` with the raw draft unchanged. The existing manual-edit and second-Undo tests still pass. |
+| `b3b_descriptor` (F-1) | `test_private_consumers_see_the_effective_move_and_public_copy_stays_canonical`: skill→project, bullet→skill and skill→bullet-under-role give a workspace `conversion_destination` equal to the Guide row (type, values, parent, section), and the bullet sits in its role's section. The owner preview's current publication (resume and visitor-AI choices) and the guest read are byte-identical. |
+| `b3b_regression_review` | On clean exports of `0bcd55e1`: affected suites (23 modules) 950 OK; lock-order witness 950 run, 0 violations; strict 152/152 normal (308 s) and in two concurrent copies (303 s), 152/152 each; discover: candidate 7902 run / 304 skipped / 16 errors / 19 failures, base `bd07b1ee` (main unchanged since round 1) 7881 / 304 / 16 / 19, identical failure sets (+21 new tests). |
+
+**RED:** the three new tests on the round-1 service code (`48ca8780`) give 7 subtest errors: 3 × `stale_undo` on unrelated changes and 4 × `KeyError: 'section'` (`red-on-48ca8780-services.txt`). GREEN: 15/15 in `GuideConversionTests`. All 932 tests in the non-browser resume, intake, publication, visitor-AI and profile modules pass (1 skipped).
+
+### B3b test-race re-check (PASS at `3188eb58`, coordination `3a1c8bd`)
+
+- **What failed.** C1's PR 1396 CI build 4679 failed `test_busy_reply_then_retry_reuses_the_same_request_and_stores_once`. The test checked for the open guide right after loading the page. The legacy guide opens itself only after its workspace loads, so the test clicked the reopen button just as the guide hid it.
+- **Fix (test only).** The test now waits for `#resume-intake[open]`, as every other guide journey already does; a sweep found no other racy call site.
+- **Proof.** It passes on the B3b tree, and 5/5 against a C1 `4f046b6d` export.
+- **Receipt.** Independent PASS at `3188eb58`. The receipt and checks are rebound to it.

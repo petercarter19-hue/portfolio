@@ -257,6 +257,344 @@ class GuideReferenceCommandTests(unittest.TestCase):
         self.assertNotIn(command['request_id'],self.service.repository.load_owner(self.owner)['receipts'])
 
 
+class GuideConversionTests(unittest.TestCase):
+    """B3b: same-key private moves and revision-safe Undo (ruling 41e46cf, B3b design answers)."""
+    setup_shared = GuideReferenceCommandTests.setup_shared
+
+    def working(self):
+        return self.service.working_set(self.owner)
+
+    def item(self, ref):
+        return self.service.working_item(self.owner, ref)
+
+    def stage(self, ref, record_type, values, parent=None, request_id=None):
+        item, working = self.item(ref), self.working()
+        revision = item['revision'] if item['origin'] == 'pending' else item['saved_revision']
+        return self.service.guide_conversion(self.owner, {'request_id': request_id or str(uuid4()), 'action': 'stage',
+            'item_ref': ref, 'expected_working_set_token': working['working_set_token'], 'expected_item_revision': revision,
+            'destination': {'record_type': record_type, 'values': values, 'parent_ref': parent}})
+
+    def reviewed(self, staged):
+        return [{'kind': row['kind'], 'container_ref': row['container_ref'], 'before_digest': row['before_digest'],
+                 'references': [] if row['container_ref'] == staged['item_ref']
+                 else [ref for ref in row['references'] if ref != staged['item_ref']]} for row in staged['affected_references']]
+
+    def confirm(self, staged, reconciliation=None, request_id=None):
+        return self.service.guide_conversion(self.owner, {'request_id': request_id or str(uuid4()), 'action': 'confirm',
+            'conversion_key': staged['conversion_key'], 'conversion_token': staged['conversion_token'],
+            'expected_working_set_token': self.working()['working_set_token'],
+            'reference_reconciliation': self.reviewed(staged) if reconciliation is None else reconciliation})
+
+    def undo(self, confirmed, request_id=None):
+        return self.service.guide_conversion(self.owner, {'request_id': request_id or str(uuid4()), 'action': 'undo',
+            'operation_ref': confirmed['operation_ref'], 'undo_token': confirmed['undo_token']})
+
+    def raw_draft(self):
+        import copy
+        snapshot = self.shared.draft.repository.load_owner(self.owner)
+        return copy.deepcopy(snapshot.get('items') or {}), copy.deepcopy(snapshot.get('highlight_refs'))
+
+    def canonical(self):
+        import copy
+        return copy.deepcopy(sorted(self.shared.canonical.list_items(self.owner), key=lambda row: row['record_key']))
+
+    def presented(self, key):
+        return next((row for row in self.shared.draft.get_workspace(self.owner)['items'] if row['record_key'] == key), None)
+
+    def test_saved_skill_moves_to_a_project_privately_while_public_copy_stays_canonical(self):
+        import copy
+        from services.resume_guide_turns import CONVERSION_DESCRIPTOR_KEYS
+        self.setup_shared()
+        self.shared.seed_publication(self.owner, [(key, True, False) for key in (self.role, self.bullet, self.skill)])
+        public = copy.deepcopy(self.shared.publication.owner_preview(self.owner)['current'])
+        canonical = self.canonical()
+        staged = self.stage(self.skill, 'project', {'project_name': 'Fictional skill', 'summary': 'A fictional project.'})
+        self.assertEqual((staged['outcome'], staged['saved'], staged['missing_required_fields']), ('staged', False, []))
+        self.assertEqual(self.item(self.skill)['record_type'], 'skill', 'Staging changes nothing')
+        confirmed = self.confirm(staged)
+        self.assertEqual((confirmed['outcome'], confirmed['canonical_changed'], confirmed['publishes']),
+                         ('saved_privately', False, False))
+        self.assertEqual(self.canonical(), canonical)
+        self.assertEqual(self.shared.publication.owner_preview(self.owner)['current'], public)
+        presented = self.presented(self.skill)
+        self.assertEqual(presented['record_type'], 'skill', 'The publisher keeps the canonical type')
+        self.assertEqual(set(presented['conversion']), set(CONVERSION_DESCRIPTOR_KEYS))
+        self.assertEqual((presented['conversion']['state'], presented['conversion']['destination_record_type'],
+                          presented['conversion']['conversion_op_ref']), ('confirmed_private', 'project', confirmed['operation_ref']))
+        moved = self.item(self.skill)
+        self.assertEqual((moved['item_ref'], moved['record_type'], moved['values']['summary']),
+                         (self.skill, 'project', 'A fictional project.'))
+        basis = self.shared.publication.read_publication_basis_for_owner(self.owner)
+        self.assertEqual(basis['read_state'], 'blocked')
+        self.assertIn({'item_ref': self.skill, 'reason': 'publication_type_transition_unavailable'}, basis['blocked_items'])
+
+    def test_pending_suggestion_moves_with_the_same_item_ref_and_no_canonical_record(self):
+        from services.my_data_extraction_adapter import DeterministicFakeExtractionAdapter
+        self.setup_shared()
+        adapter = DeterministicFakeExtractionAdapter([{'record_type': 'skill', 'values': {'name': 'Radio restoration'},
+            'quote': 'I do Radio restoration.', 'outcome': 'new', 'confidence': 'certain'}])
+        self.service = ResumeIntakeService(repository=self.service.repository, draft_service=self.shared.draft,
+            policy=selected_policy_for_tests(), extraction_adapter=adapter)
+        self.service.submit(self.owner, {'request_id': str(uuid4()), 'text': 'I do Radio restoration.'})
+        pending = next(row for section in self.working()['sections'] for row in section['items'] if row['origin'] == 'pending')
+        canonical = self.canonical()
+        staged = self.stage(pending['item_ref'], 'project', {'project_name': 'Radio restoration', 'summary': 'Restored radios.'})
+        confirmed = self.confirm(staged)
+        moved = self.item(pending['item_ref'])
+        self.assertEqual((moved['origin'], moved['record_type'], moved['state']), ('pending', 'project', 'waiting'))
+        self.assertEqual(self.canonical(), canonical, 'A pending move never makes a canonical record')
+        self.undo(confirmed)
+        back = self.item(pending['item_ref'])
+        self.assertEqual((back['origin'], back['record_type'], back['values'].get('name')), ('pending', 'skill', 'Radio restoration'))
+
+    def test_incomplete_destination_stays_waiting_and_cannot_be_confirmed(self):
+        self.setup_shared()
+        staged = self.stage(self.skill, 'project', {'project_name': 'Fictional skill'})
+        self.assertEqual(staged['missing_required_fields'], ['summary'])
+        with self.assertRaises(ResumeIntakeValidationError) as missing:
+            self.confirm(staged)
+        self.assertEqual((missing.exception.code, missing.exception.missing_required_fields),
+                         ('missing_required_fields', ['summary']))
+        bullet = self.stage(self.skill, 'accomplishment', {'wording': 'Fictional skill in use.'})
+        self.assertEqual(bullet['missing_required_fields'], ['parent_ref'])
+        self.assertNotIn('conversion', self.presented(self.skill) or {})
+
+    def test_stage_replays_and_a_changed_reuse_is_a_conflict(self):
+        self.setup_shared()
+        request_id = str(uuid4())
+        first = self.stage(self.skill, 'project', {'project_name': 'Fictional skill', 'summary': 'A project.'}, request_id=request_id)
+        again = self.stage(self.skill, 'project', {'project_name': 'Fictional skill', 'summary': 'A project.'}, request_id=request_id)
+        self.assertTrue(again['replayed'])
+        self.assertEqual(again['conversion_key'], first['conversion_key'])
+        with self.assertRaises(ResumeIntakeConflictError) as conflict:
+            self.stage(self.skill, 'project', {'project_name': 'Other', 'summary': 'A project.'}, request_id=request_id)
+        self.assertEqual(conflict.exception.error_code, 'idempotency_conflict')
+
+    def test_confirm_applies_once_with_one_version_change(self):
+        self.setup_shared()
+        staged = self.stage(self.skill, 'project', {'project_name': 'Fictional skill', 'summary': 'A project.'})
+        before = self.shared.draft.get_workspace(self.owner)['draft_version']
+        payload = {'request_id': str(uuid4()), 'action': 'confirm', 'conversion_key': staged['conversion_key'],
+            'conversion_token': staged['conversion_token'], 'expected_working_set_token': self.working()['working_set_token'],
+            'reference_reconciliation': self.reviewed(staged)}
+        first = self.service.guide_conversion(self.owner, dict(payload))
+        self.assertTrue(self.service.guide_conversion(self.owner, dict(payload))['replayed'], 'A lost-response retry replays')
+        second = self.confirm(staged)
+        self.assertEqual((second['operation_ref'], second['replayed']), (first['operation_ref'], True))
+        self.assertEqual(self.shared.draft.get_workspace(self.owner)['draft_version'], before + 1)
+
+    def test_moving_a_bullet_needs_every_reference_reviewed_and_undo_restores_them(self):
+        self.setup_shared()
+        reference = GuideReferenceCommandTests.command
+        self.service.set_guide_references(self.owner, reference(self, 'skill', [self.bullet], self.skill))
+        self.service.set_guide_references(self.owner, reference(self, 'highlights', [self.bullet]))
+        before = self.raw_draft()
+        staged = self.stage(self.bullet, 'skill', {'name': 'Reviewed fictional records'})
+        self.assertEqual(sorted(row['kind'] for row in staged['affected_references']), ['highlights', 'skill'])
+        kept = [{**row, 'references': [self.bullet]} for row in self.reviewed(staged)]
+        for reconciliation in ([], kept):
+            with self.subTest(reconciliation=reconciliation), self.assertRaises(ResumeIntakeConflictError) as refused:
+                self.confirm(staged, reconciliation)
+            self.assertEqual(refused.exception.error_code, 'reconciliation_required')
+        confirmed = self.confirm(staged)
+        workspace = self.shared.draft.get_workspace(self.owner)
+        skill = next(row for row in workspace['items'] if row['record_key'] == self.skill)
+        self.assertEqual((skill['evidence_refs'], workspace['highlight_refs']), ([], []))
+        self.undo(confirmed)
+        self.assertEqual(self.raw_draft(), before)
+
+    def test_a_later_manual_edit_makes_undo_stale_and_discard_needs_undo(self):
+        from services.resume_draft_service import ResumeDraftConflictError
+        self.setup_shared()
+        confirmed = self.confirm(self.stage(self.skill, 'project', {'project_name': 'Fictional skill', 'summary': 'A project.'}))
+        presented = self.presented(self.skill)
+        version = self.shared.draft.get_workspace(self.owner)['draft_version']
+        with self.assertRaises(ResumeDraftConflictError) as discard:
+            self.shared.draft.commit(self.owner, {'type': 'discard_item', 'request_id': str(uuid4()),
+                'record_key': self.skill, 'expected_draft_version': version})
+        self.assertEqual(discard.exception.error_code, 'conversion_undo_required')
+        self.shared.draft.commit(self.owner, {'type': 'save_item', 'request_id': str(uuid4()), 'record_key': self.skill,
+            'record_type': 'project', 'expected_draft_version': version, 'expected_content_token': presented['content_token'],
+            'expected_access_revision': presented['access_revision'], 'values': {'summary': 'An edited fictional project.'}})
+        self.assertEqual(self.item(self.skill)['values']['summary'], 'An edited fictional project.')
+        edited = self.raw_draft()
+        with self.assertRaises(ResumeIntakeConflictError) as stale:
+            self.undo(confirmed)
+        self.assertEqual(stale.exception.error_code, 'stale_undo')
+        self.assertEqual(self.raw_draft(), edited)
+
+    def create(self, kind, values, parent=None):
+        return self.shared.canonical.create_private(self.owner, {'command_id': str(uuid4()), 'record_type': kind,
+            'parent_key': parent, 'values': values})['record_key']
+
+    def hide(self, ref):
+        current = self.item(ref)
+        self.service.set_guide_visibility(self.owner, {'request_id': str(uuid4()), 'item_ref': ref, 'hidden': True,
+            'expected_working_set_token': self.working()['working_set_token'],
+            'expected_item_revision': current['saved_revision']})
+
+    def edit_saved(self, key, values):
+        workspace = self.shared.draft.get_workspace(self.owner)
+        row = next(row for row in workspace['items'] if row['record_key'] == key)
+        self.shared.draft.commit(self.owner, {'type': 'save_item', 'request_id': str(uuid4()), 'record_key': key,
+            'record_type': (row.get('conversion_destination') or row)['record_type'],
+            'expected_draft_version': workspace['draft_version'],
+            'expected_content_token': row['content_token'], 'expected_access_revision': row['access_revision'],
+            'values': values})
+
+    def test_unrelated_changes_after_a_move_never_make_undo_stale(self):
+        reference = GuideReferenceCommandTests.command
+        changes = {
+            'unrelated edit': lambda other: self.edit_saved(other, {'summary': 'An unrelated fictional edit.'}),
+            'hide of another item': lambda other: self.hide(other),
+            "another skill's references": lambda other: self.service.set_guide_references(
+                self.owner, reference(self, 'skill', [self.bullet], other)),
+        }
+        for name, change in changes.items():
+            with self.subTest(change=name):
+                self.setup_shared()
+                other = self.create('skill', {'name': 'Unrelated fictional skill'})
+                before = self.raw_draft()[0].get(self.skill)
+                confirmed = self.confirm(self.stage(self.skill, 'project',
+                                                   {'project_name': 'Fictional skill', 'summary': 'A project.'}))
+                change(other)
+                kept = self.raw_draft()[0].get(other)
+                self.assertEqual(self.undo(confirmed)['outcome'], 'undone')
+                self.assertEqual(self.raw_draft()[0].get(self.skill), before, 'The moved item is exactly restored')
+                self.assertEqual(self.raw_draft()[0].get(other), kept, 'and the unrelated change is kept')
+                self.assertEqual(self.item(self.skill)['record_type'], 'skill')
+
+    def test_a_change_to_the_moved_item_its_links_or_its_parent_makes_undo_stale(self):
+        reference = GuideReferenceCommandTests.command
+        def move_bullet_with_links():
+            self.service.set_guide_references(self.owner, reference(self, 'skill', [self.bullet], self.skill))
+            self.service.set_guide_references(self.owner, reference(self, 'highlights', [self.bullet]))
+            self.second = self.create('accomplishment', {'wording': 'Checked 3 fictional records.',
+                'metric_value': '3', 'metric_label': 'fictional records'}, self.role)
+            return self.confirm(self.stage(self.bullet, 'skill', {'name': 'Reviewed fictional records'}))
+        def move_skill_under_role():
+            return self.confirm(self.stage(self.skill, 'accomplishment',
+                                           {'wording': 'Used the fictional skill on 4 fictional records.'}, self.role))
+        cases = {
+            'an edit of the moved item': (move_bullet_with_links,
+                lambda: self.edit_saved(self.bullet, {'name': 'Edited fictional records'})),
+            "a link change in the moved item's skill": (move_bullet_with_links,
+                lambda: self.service.set_guide_references(self.owner, reference(self, 'skill', [self.second], self.skill))),
+            "a link change in the moved item's highlights": (move_bullet_with_links,
+                lambda: self.service.set_guide_references(self.owner, reference(self, 'highlights', [self.second]))),
+            'a hide of the parent role': (move_skill_under_role, lambda: self.hide(self.role)),
+        }
+        for name, (move, change) in cases.items():
+            with self.subTest(change=name):
+                self.setup_shared()
+                confirmed = move()
+                change()
+                changed = self.raw_draft()
+                with self.assertRaises(ResumeIntakeConflictError) as stale:
+                    self.undo(confirmed)
+                self.assertEqual(stale.exception.error_code, 'stale_undo')
+                self.assertEqual(self.raw_draft(), changed, 'A stale Undo changes nothing')
+
+    def test_private_consumers_see_the_effective_move_and_public_copy_stays_canonical(self):
+        import copy
+        self.setup_shared()
+        self.shared.seed_publication(self.owner, [(key, True, True) for key in (self.role, self.bullet, self.skill)])
+        public = copy.deepcopy(self.shared.publication.owner_preview(self.owner)['current'])
+        guest = copy.deepcopy(self.shared.publication.guest_read(slug='g-alex'))
+        moves = ((self.skill, 'project', {'project_name': 'Fictional skill', 'summary': 'A fictional project.'}, None),
+                 (self.bullet, 'skill', {'name': 'Reviewed fictional records'}, None))
+        for key, record_type, values, parent in moves:
+            staged = self.stage(key, record_type, values, parent)
+            self.confirm(staged)
+        extra = self.create('skill', {'name': 'Another fictional skill'})
+        self.confirm(self.stage(extra, 'accomplishment', {'wording': 'Used it on 4 fictional records.'}, self.role))
+        for key, record_type in ((self.skill, 'project'), (self.bullet, 'skill'), (extra, 'accomplishment')):
+            with self.subTest(item=key):
+                guide = self.item(key)
+                destination = self.presented(key)['conversion_destination']
+                self.assertEqual(guide['record_type'], record_type)
+                # The owner page and private preview read this private workspace projection.
+                self.assertEqual((destination['record_type'], destination['values'], destination['parent_key'],
+                                  destination['section']),
+                                 (guide['record_type'], guide['values'], guide['parent_ref'], guide['section']))
+        self.assertEqual(self.presented(extra)['conversion_destination']['section'], self.item(self.role)['section'])
+        self.assertEqual(self.shared.publication.owner_preview(self.owner)['current'], public,
+                         'Published resume and visitor-AI choices stay canonical')
+        self.assertEqual(self.shared.publication.guest_read(slug='g-alex'), guest, 'Visitors see no change')
+
+    def test_fresh_undo_restores_the_exact_prior_private_state(self):
+        self.setup_shared()
+        before = self.raw_draft()
+        confirmed = self.confirm(self.stage(self.skill, 'project', {'project_name': 'Fictional skill', 'summary': 'A project.'}))
+        self.assertNotEqual(self.raw_draft(), before)
+        undone = self.undo(confirmed)
+        self.assertEqual(undone['outcome'], 'undone')
+        self.assertEqual(self.raw_draft(), before)
+        self.assertEqual(self.item(self.skill)['record_type'], 'skill')
+        with self.assertRaises(ResumeIntakeConflictError):
+            self.undo(confirmed)
+
+    def test_foreign_unknown_and_unsupported_moves_refuse_before_effects(self):
+        self.setup_shared()
+        other = self.shared.canonical.create_private('guide-conversion-other-fictional', {'command_id': str(uuid4()),
+            'record_type': 'skill', 'parent_key': None, 'values': {'name': 'Other fictional skill'}})['record_key']
+        before = self.raw_draft()
+        working = self.working()
+        for ref in (other, str(uuid4())):
+            with self.subTest(ref=ref), self.assertRaises(ResumeIntakeNotFoundError):
+                self.service.guide_conversion(self.owner, {'request_id': str(uuid4()), 'action': 'stage', 'item_ref': ref,
+                    'expected_working_set_token': working['working_set_token'], 'expected_item_revision': 'x',
+                    'destination': {'record_type': 'project', 'values': {}, 'parent_ref': None}})
+        with self.assertRaises(ResumeIntakeNotFoundError):
+            self.service.guide_conversion(self.owner, {'request_id': str(uuid4()), 'action': 'undo',
+                'operation_ref': 'op:' + str(uuid4()) + ':0', 'undo_token': '0' * 64})
+        with self.assertRaises(ResumeIntakeValidationError) as unsupported:
+            self.stage(self.role, 'skill', {'name': 'Fictional Engineer'})
+        self.assertEqual(unsupported.exception.code, 'conversion_unsupported')
+        self.assertEqual(self.raw_draft(), before)
+
+    def test_unqualified_sql_refuses_a_move_before_any_effect(self):
+        from unittest.mock import Mock
+        from services.resume_intake_repository import SqlResumeIntakeRepository
+        database = Mock()
+        service = ResumeIntakeService(repository=SqlResumeIntakeRepository(database), policy=selected_policy_for_tests())
+        payload = {'request_id': str(uuid4()), 'action': 'stage', 'item_ref': str(uuid4()),
+            'expected_working_set_token': 'a' * 64, 'expected_item_revision': 'x',
+            'destination': {'record_type': 'project', 'values': {'project_name': 'P'}, 'parent_ref': None}}
+        with self.assertRaises(ResumeIntakeUnavailableError) as refused:
+            service.guide_conversion('fictional-sql-owner', payload)
+        self.assertEqual(refused.exception.proposed, payload)
+        self.assertEqual(database.mock_calls, [])
+
+    def test_an_injected_failure_restores_every_store_and_a_retry_succeeds(self):
+        import copy
+        from unittest.mock import patch
+        from services.resume_intake_repository import ResumeIntakeStoreUnavailable
+        self.setup_shared()
+        reference = GuideReferenceCommandTests.command
+        self.service.set_guide_references(self.owner, reference(self, 'skill', [self.bullet], self.skill))
+        staged = self.stage(self.bullet, 'skill', {'name': 'Reviewed fictional records'})
+        def stores():
+            return (copy.deepcopy(self.service.repository._owners), copy.deepcopy(self.shared.draft.repository._owners),
+                    copy.deepcopy(self.shared.policy.repository._owners))
+        before = stores()
+        with patch.object(self.service.repository, 'save_owner', side_effect=ResumeIntakeStoreUnavailable('injected')):
+            with self.assertRaises(ResumeIntakeUnavailableError):
+                self.confirm(staged)
+        self.assertEqual(stores(), before)
+        self.assertEqual(self.confirm(staged)['outcome'], 'saved_privately')
+
+    def test_a_staged_move_survives_a_reload_into_a_new_service(self):
+        self.setup_shared()
+        staged = self.stage(self.skill, 'project', {'project_name': 'Fictional skill', 'summary': 'A project.'})
+        reloaded = ResumeIntakeService(repository=self.service.repository, draft_service=self.shared.draft,
+            policy=selected_policy_for_tests())
+        snapshot = reloaded.repository.load_owner(self.owner)
+        self.assertEqual(snapshot['guide']['conversions'][staged['conversion_key']]['state'], 'staged')
+        self.service = reloaded
+        self.assertEqual(self.confirm(staged)['outcome'], 'saved_privately')
+
+
 class GuideVisibilityTests(unittest.TestCase):
     def _command(self, service, owner, item, hidden):
         return {"request_id": str(uuid4()), "item_ref": item["item_ref"], "hidden": hidden,

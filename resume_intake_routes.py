@@ -559,6 +559,26 @@ def post_guide_visibility():
     return jsonify(result)
 
 
+@resume_intake.post("/api/resume-intake/me/guide/conversion")
+def post_guide_conversion():
+    """B3b "Move to": stage, confirm or undo a private same-key move. Never canonical or public."""
+    identity = _identity_or_not_found()
+    if identity is None:
+        return jsonify({"success":False,"message":"Not found."}),404
+    try:
+        result = _service().guide_conversion(identity.user_key, request.get_json(silent=True),
+            read_working_set=lambda owner: _complete_guide_working_set(owner, _service().working_set(owner)))
+    except ResumeIntakeValidationError as error:
+        return jsonify(_guide_validation_payload(error)),400
+    except ResumeIntakeNotFoundError:
+        return jsonify({"success":False,"code":"not_found","message":"Not found."}),404
+    except ResumeIntakeConflictError as error:
+        return jsonify({"success":False,"code":error.error_code,"message":str(error),"input_preserved":True}),409
+    except ResumeIntakeUnavailableError as error:
+        return jsonify(_unavailable(error,"The Guide is unavailable right now.")),503
+    return jsonify(result)
+
+
 @resume_intake.post("/api/resume-intake/me/guide/references")
 def post_guide_references():
     identity = _identity_or_not_found()

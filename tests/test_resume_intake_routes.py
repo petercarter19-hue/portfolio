@@ -133,6 +133,51 @@ class GuideProposalHttpTests(unittest.TestCase):
             self.assertEqual(current["visitor_ai"],{})
             self.assertEqual(read()["publication"]["change_count"],0)
 
+    def test_real_conversion_route_stages_confirms_and_refuses_neutrally(self):
+        from urllib.request import Request, urlopen
+        from urllib.error import HTTPError
+        from tests.mvp1_acceptance_support import Mvp1AcceptanceServer
+        with Mvp1AcceptanceServer() as server:
+            owner = "g-member-a"
+            skill = server.shared.canonical.create_private(owner, {"command_id": str(uuid4()), "record_type": "skill",
+                "parent_key": None, "values": {"name": "Fictional skill"}})["record_key"]
+            headers = {"Cookie": "mvp1-synthetic-owner=" + owner}
+            def working():
+                with urlopen(Request(server.url + "/api/resume-intake/me/guide/working-set", headers=headers), timeout=10) as response:
+                    return json.load(response)
+            def post(payload, identity=owner, same_origin=True):
+                post_headers = {"Cookie": "mvp1-synthetic-owner=" + identity, "Content-Type": "application/json"}
+                if same_origin:
+                    post_headers["X-PeerSlate-Request"] = "same-origin"
+                return urlopen(Request(server.url + "/api/resume-intake/me/guide/conversion", method="POST",
+                    data=json.dumps(payload).encode(), headers=post_headers), timeout=10)
+            current = working()
+            item = next(row for section in current["sections"] for row in section["items"] if row["item_ref"] == skill)
+            stage = {"request_id": str(uuid4()), "action": "stage", "item_ref": skill,
+                "expected_working_set_token": current["working_set_token"], "expected_item_revision": item["saved_revision"],
+                "destination": {"record_type": "project", "values": {"project_name": "Fictional skill",
+                                "summary": "A fictional project."}, "parent_ref": None}}
+            for identity, origin, status in (("g-member-b", True, 404), (owner, False, 403)):
+                with self.assertRaises(HTTPError) as refused:
+                    post(stage, identity, origin)
+                self.assertEqual(refused.exception.code, status)
+                refused.exception.close()
+            with self.assertRaises(HTTPError) as unsupported:
+                post({**stage, "request_id": str(uuid4()), "destination": {**stage["destination"], "record_type": "education"}})
+            self.assertEqual((unsupported.exception.code, json.load(unsupported.exception)["code"]), (400, "conversion_unsupported"))
+            with post(stage) as response:
+                self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+                staged = json.load(response)
+            self.assertEqual((staged["outcome"], staged["saved"]), ("staged", False))
+            confirm = {"request_id": str(uuid4()), "action": "confirm", "conversion_key": staged["conversion_key"],
+                "conversion_token": staged["conversion_token"], "expected_working_set_token": working()["working_set_token"],
+                "reference_reconciliation": []}
+            with post(confirm) as response:
+                confirmed = json.load(response)
+            self.assertEqual((confirmed["outcome"], confirmed["publishes"]), ("saved_privately", False))
+            moved = next(row for section in working()["sections"] for row in section["items"] if row["item_ref"] == skill)
+            self.assertEqual(moved["record_type"], "project")
+
     def test_real_visibility_uses_the_http_working_token_and_restores_waiting(self):
         from urllib.request import Request, urlopen
         from urllib.error import HTTPError
@@ -1894,8 +1939,9 @@ class LegacyClientBusyRetryBrowserTests(unittest.TestCase):
             page.set_default_timeout(7000)
             page.route('https://fonts.**', lambda route: route.abort())
             page.goto(self.base_url + '/app/resume')
-            if not page.locator('#resume-intake[open]').count():
-                page.locator('#resume-intake-reopen').click()
+            # A fresh member's guide opens itself once its workspace loads. Wait for that,
+            # as the other guide journeys do, instead of racing it with the reopen button.
+            page.locator('#resume-intake[open]').wait_for(timeout=20000)
             if page.locator('#resume-intake-welcome').is_visible():
                 page.locator('#resume-intake-start-type').click()
             page.locator('#resume-intake-file').set_input_files({'name': 'synthetic-resume.txt',

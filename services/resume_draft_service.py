@@ -19,7 +19,7 @@ import json
 from typing import Any
 from uuid import UUID
 
-from services.resume_publication_projection import resume_presentation_key
+from services.resume_publication_projection import resume_presentation_key, resume_section_for
 from services.resume_intake_repository import owner_composed
 
 from services.living_resume_editor_service import (
@@ -226,6 +226,44 @@ class ResumeDraftService:
             return True
 
         self.repository.commit_owner_command(owner, expected_version=snapshot["draft_version"], apply=apply)
+
+    @owner_composed
+    def apply_private_guide_changes(self, owner, *, request_id, request_digest, expected_version,
+                                    items, highlight_refs=None, set_highlights=False, validate_current):
+        """One atomic private write of whole overlays and the highlight list (B3b move and Undo).
+
+        ``items`` maps record keys to a complete overlay, or None to remove it. The caller
+        builds both the change and its exact inverse; this store only applies them together.
+        """
+        from services.resume_draft_repository import InMemoryResumeDraftRepository
+        if not isinstance(self.repository, InMemoryResumeDraftRepository):
+            raise ResumeDraftUnavailableError()
+        def apply(live):
+            existing = live.setdefault("receipts", {}).get(request_id)
+            if existing is not None:
+                if existing.get("request_digest") != request_digest:
+                    raise ResumeDraftIdempotencyConflict()
+                return False
+            if not validate_current(live):
+                raise ResumeDraftConflictError("changed", [], "The Resume changed. Refresh and try again.")
+            stored = live.setdefault("items", {})
+            for key, overlay in items.items():
+                if overlay is None:
+                    stored.pop(key, None)
+                else:
+                    stored[key] = copy.deepcopy(overlay)
+            if set_highlights:
+                if highlight_refs is None:
+                    live.pop("highlight_refs", None)
+                    live.pop("highlight_refs_manual", None)
+                else:
+                    live["highlight_refs"] = copy.deepcopy(highlight_refs)
+                    live["highlight_refs_manual"] = True
+            live["draft_version"] = int(live.get("draft_version") or 0) + 1
+            live["receipts"][request_id] = {"request_digest": request_digest,
+                "result": {"type": "guide_conversion", "draft_version": live["draft_version"]}}
+            return True
+        self.repository.commit_owner_command(owner, expected_version=expected_version, apply=apply)
 
     @owner_composed
     def save_private_guide_references(self, owner, *, request_id, request_digest, expected_version,
@@ -463,6 +501,7 @@ class ResumeDraftService:
             overlay = overlays.get(key)
             merged.append(self._present_item(item, overlay))
             seen.add(key)
+        self._place_moved_bullets(merged)
         for key, overlay in overlays.items():
             if key in seen:
                 continue
@@ -519,6 +558,28 @@ class ResumeDraftService:
 
         return self._normalize_command(payload)["digest"]
 
+    @staticmethod
+    def _place_moved_bullets(merged: list[dict]) -> None:
+        """A bullet moved under a role or project sits in its parent's section, as in the Guide."""
+        by_key = {row["record_key"]: row for row in merged}
+        for row in merged:
+            destination = row.get("conversion_destination")
+            if not destination or destination.get("record_type") != "accomplishment":
+                continue
+            parent = by_key.get(destination.get("parent_key"))
+            if parent is None:
+                continue
+            effective = parent.get("conversion_destination")
+            if effective:
+                parent_type, section = effective.get("record_type"), effective["section"]
+            else:
+                values = parent.get("values") or {}
+                parent_type = parent.get("record_type")
+                section = resume_section_for(parent_type, values,
+                                             presentation_section=values.get("presentation_section"))
+            if parent_type == "role" or section == "projects":
+                destination["section"] = section
+
     def _present_item(self, item: dict, overlay: dict | None) -> dict:
         presented = {
             "record_key": item["record_key"],
@@ -544,6 +605,15 @@ class ResumeDraftService:
             "draft_does_not_change_sharing": True,
         }
         if overlay:
+            if "conversion" in overlay:
+                # B3b: a confirmed private move. The canonical type and parent above stay the
+                # publisher's view; private consumers read the effective destination.
+                presented["conversion"] = copy.deepcopy(overlay["conversion"])
+                # The effective private item for every private consumer (owner page, preview, counts):
+                # type, values, parent and section. Public copy and visitor AI stay canonical.
+                destination = copy.deepcopy(overlay.get("conversion_destination") or {})
+                destination["section"] = resume_section_for(destination.get("record_type"), destination.get("values") or {})
+                presented["conversion_destination"] = destination
             if "evidence_refs" in overlay:
                 presented["evidence_refs"] = copy.deepcopy(overlay["evidence_refs"])
                 presented["evidence_refs_manual"] = overlay.get("evidence_refs_manual") is True
@@ -664,6 +734,9 @@ class ResumeDraftService:
 
     def _save_item(self, owner: str, snapshot: dict, command: dict) -> dict:
         canonical = self._catalog_get(owner, command["record_key"])
+        moved = (snapshot["items"].get(command["record_key"]) or {}).get("conversion_destination")
+        if canonical is not None and moved is not None:
+            return self._save_moved_item(owner, snapshot, command, canonical, moved)
         if canonical is None or canonical.get("record_type") != command["record_type"]:
             raise ResumeDraftNotFoundError()
         if canonical.get("record_type") == "knowledge" and not canonical.get("access_revision"):
@@ -728,7 +801,33 @@ class ResumeDraftService:
             ),
         }
 
+    def _save_moved_item(self, owner, snapshot, command, canonical, moved):
+        """A privately moved item saves as its destination type and keeps the move (B3b Q3)."""
+        if command["record_type"] != moved["record_type"]:
+            raise ResumeDraftConflictError("conversion_undo_required", [],
+                "This item was moved. Undo the move to edit it as before. Your wording is still here.",
+                proposed=command["values"])
+        overlay = snapshot["items"][command["record_key"]]
+        if (overlay.get("base_content_token") != str(canonical["content_token"])
+                or int(overlay.get("base_access_revision") or 0) != int(canonical["access_revision"])
+                or str(command["expected_content_token"]) != str(canonical["content_token"])
+                or int(command["expected_access_revision"]) != int(canonical["access_revision"])):
+            raise ResumeDraftConflictError("changed", [], "That record changed before this save. Your wording is still here.",
+                proposed=command["values"])
+        try:
+            values = normalize_guide_values(moved["record_type"], {**(moved.get("values") or {}), **command["values"]})
+        except LivingResumeEditorValidationError as error:
+            raise _guide_validation_error(error) from error
+        updated = copy.deepcopy(overlay)
+        updated["conversion_destination"] = {**moved, "values": values}
+        snapshot["items"][command["record_key"]] = updated
+        snapshot["draft_version"] = int(snapshot["draft_version"]) + 1
+        return {"outcome": "saved", "item": self._present_item(canonical, updated)}
+
     def _discard_item(self, owner: str, snapshot: dict, command: dict) -> dict:
+        if "conversion" in (snapshot["items"].get(command["record_key"]) or {}):
+            raise ResumeDraftConflictError("conversion_undo_required", [],
+                "This item was moved. Use Undo to move it back; nothing was discarded.")
         overlay = snapshot["items"].pop(command["record_key"], None)
         if overlay is not None:
             if "evidence_refs" in overlay:
