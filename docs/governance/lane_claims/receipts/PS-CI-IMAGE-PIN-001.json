@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "package": "PS-CI-IMAGE-PIN-001",
+  "candidate_sha": "e8232ece1beffc5e7969e6c285b15e5fb8cbdb2d",
+  "review_type": "independent",
+  "reviewer_ref": "session:16023c0e-7189-420e-8a4d-11f8012a9713",
+  "result": "pass",
+  "reviewed_at": "2026-10-16T12:56:07Z",
+  "findings": [
+    {
+      "status": "informational",
+      "summary": "Scope correct: 16520350..e8232ece changes only azure-pipelines.yml (vmImageName ubuntu-latest -> ubuntu-24.04 plus a three-line comment) and the package evidence file. All 15 pools use vmImage: $(vmImageName); pythonVersion stays 3.12. Image independently confirmed as ubuntu-24.04 20261012.334.1 in runs 4733 and 4744 (Python 3.12.15)."
+    },
+    {
+      "status": "informational",
+      "summary": "Outside this claim: pipelines/azure-startup-qualification.yml:38 still uses ubuntu-latest (daily startup qualification, in paused PS-AZURE-OPERATIONS-RELIABILITY-001 surfaces) and moves from 2026-10-19 unless pinned; routed by the manager. .github/workflows uses ubuntu-latest but Actions are off."
+    },
+    {
+      "status": "informational",
+      "summary": "The comment's move date comes from GitHub's 2026-09-17 Actions changelog; no Azure Pipelines date was found. The evidence file states this accurately. The PR's own CI Initialize-job log must show Image: ubuntu-24.04 before merge."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-CI-IMAGE-PIN-001.md"
+}

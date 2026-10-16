@@ -81,7 +81,10 @@ variables:
   azureServiceConnectionId: '3ee022e1-c929-4693-95bd-211db6076ff0'
   webAppName: 'peerslate-pete'
   candidateWebAppName: 'peerslate-candidate'
-  vmImageName: 'ubuntu-latest'
+  # Pinned (PS-CI-IMAGE-PIN-001): every job ran on ubuntu-24.04 in run 4733,
+  # and the hosted "latest" Ubuntu label moves to Ubuntu 26.04. Change this only
+  # in its own reviewed package.
+  vmImageName: 'ubuntu-24.04'
   environmentName: 'peerslate-pete'
   candidateEnvironmentName: 'peerslate-candidate'
   # Queue-time Candidate admission is fail-closed. Azure pipeline metadata
