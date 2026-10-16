@@ -517,6 +517,9 @@ class EntryPolicyService:
             affected, presented = self._apply(snapshot, command, now)
         except Exception:
             raise
+        # The one choke point for every command: check the values that would be stored, after the
+        # command is applied and before anything is written (B3t review R2-F1, same-class rule).
+        self._enforce_looking_ahead_placement(owner, snapshot, affected)
         receipt = {
             "request_id": command["request_id"],
             "request_digest": command["digest"],
@@ -663,6 +666,32 @@ class EntryPolicyService:
             "outcome": "created",
             "entries": [_present(entry, now=now)],
         }
+
+    def _enforce_looking_ahead_placement(self, owner, snapshot, affected):
+        """B3t invariant until D6c reads the private placement: a placed knowledge entry that this
+        command touched keeps the title "Looking Ahead" and a work (or both) classification. It runs
+        on the values the command would store, for every command type, before any write; a refusal
+        leaves storage untouched and calls no provider."""
+        draft = getattr(self.publication_service, "draft_service", None)
+        if draft is None:
+            return
+        try:
+            placements = (draft.repository.load_owner(owner) or {}).get("presentation_placements") or {}
+        except Exception as error:
+            raise EntryPolicyUnavailableError("Entry policy is unavailable.") from error
+        # Only the entries this command touched (review R3-F2): an unrelated change is never refused.
+        for key in sorted(set(affected or ()) & {k for k, v in placements.items() if v == "looking_ahead"}):
+            entry = snapshot.get("entries", {}).get(key)
+            if not entry or entry.get("canonical_type") != "knowledge" or entry.get("lifecycle") != LIFECYCLE_ACTIVE:
+                continue
+            values = entry.get("values") or {}
+            title = values.get("title")
+            if not isinstance(title, str) or title.strip() != "Looking Ahead":
+                from services.resume_draft_service import LOOKING_AHEAD_RENAME_MESSAGE
+                raise EntryPolicyConflictError("looking_ahead_rename_unavailable", [], LOOKING_AHEAD_RENAME_MESSAGE)
+            if values.get("classification") not in {"work", "both"}:
+                from services.resume_draft_service import LOOKING_AHEAD_PLACEMENT_MESSAGE
+                raise EntryPolicyConflictError("looking_ahead_placement_unavailable", [], LOOKING_AHEAD_PLACEMENT_MESSAGE)
 
     def _edit(self, snapshot: dict, command: dict, now: datetime) -> tuple[list[str], dict]:
         entry = _get_own(snapshot, command["entry_key"])

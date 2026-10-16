@@ -313,9 +313,14 @@ class ResumeDraftService:
             if retained != prior:
                 item["evidence_refs"] = retained
                 changed = True
+        placements = after.get("presentation_placements")
+        if isinstance(placements, dict) and set(placements) & set(removed):
+            after["presentation_placements"] = {key: value for key, value in placements.items() if key not in removed}
+            changed = True
         if "highlight_refs" in after:
             prior = after["highlight_refs"]
-            after["highlight_refs"] = [ref for ref in prior if ref not in removed]
+            after["highlight_refs"] = [ref for ref in prior
+                                       if (ref if type(ref) is str else (ref or {}).get("item_ref")) not in removed]
             changed = changed or prior != after["highlight_refs"]
         if changed:
             after["draft_version"] = int(after.get("draft_version") or 0)+1
@@ -434,6 +439,10 @@ class ResumeDraftService:
                 else:
                     live_items.pop(record_key, None)
             live["items"] = live_items
+            # B3t: the command's own private Looking Ahead placement, kept beside the highlight list.
+            placed_here = (snapshot.get("presentation_placements") or {}).get(record_key) if record_key else None
+            if placed_here:
+                live["presentation_placements"] = {**(live.get("presentation_placements") or {}), record_key: placed_here}
             if (command or {}).get("type") in {"bind_story", "clear_story"}:
                 live["story_entry_key"] = snapshot.get("story_entry_key")
             for key in receipt_keys:
@@ -502,6 +511,12 @@ class ResumeDraftService:
             merged.append(self._present_item(item, overlay))
             seen.add(key)
         self._place_moved_bullets(merged)
+        # B3t: the private Looking Ahead placement lives beside the highlight list, which publish keeps.
+        placements = snapshot.get("presentation_placements") or {}
+        for row in merged:
+            if placements.get(row["record_key"]) == "looking_ahead":
+                row["presentation_section"] = "looking_ahead"
+        highlight_tiles = self._highlight_tiles(snapshot.get("highlight_refs"), merged)
         for key, overlay in overlays.items():
             if key in seen:
                 continue
@@ -530,6 +545,7 @@ class ResumeDraftService:
             "draft_version": snapshot["draft_version"],
             "base_publication_version": snapshot.get("base_publication_version"),
             "story_entry_key": snapshot.get("story_entry_key"),
+            "highlight_tiles": highlight_tiles,
             **({"highlight_refs":copy.deepcopy(snapshot["highlight_refs"]),
                 "highlight_refs_manual":snapshot.get("highlight_refs_manual") is True} if "highlight_refs" in snapshot else {}),
             "items": sorted(merged, key=lambda item: resume_presentation_key(
@@ -557,6 +573,45 @@ class ResumeDraftService:
         """
 
         return self._normalize_command(payload)["digest"]
+
+    @staticmethod
+    def _highlight_tiles(refs, merged: list[dict]) -> list[dict]:
+        """B3t: the frozen read-only tiles for private readers, from each saved bullet's effective words.
+
+        Guide Hide lives in the intake history, so the Guide working set stays the authority for
+        hidden bullets; this private view covers the same saved, role-backed bullets the page shows.
+        """
+        from services.resume_guide_turns import resolve_tile, tile_key
+        if not isinstance(refs, list):
+            return []
+        def effective(row):
+            moved = row.get("conversion_destination")
+            if moved:
+                return moved.get("record_type"), moved.get("parent_key"), moved.get("values") or {}
+            return (row.get("record_type"), row.get("parent_key"),
+                    {**(row.get("values") or {}), **(row.get("proposed_values") or {})})
+        rows = {row["record_key"]: row for row in merged if not row.get("orphaned")}
+        tiles, seen = [], set()
+        for chosen in refs:
+            if not isinstance(chosen, (str, dict)):
+                continue
+            key = tile_key(chosen)
+            if key in seen or type(key[1]) is not int:
+                continue
+            seen.add(key)
+            row = rows.get(key[0])
+            if row is None:
+                continue
+            record_type, parent, values = effective(row)
+            parent_row = rows.get(parent)
+            if record_type != "accomplishment" or parent_row is None or effective(parent_row)[0] != "role":
+                continue
+            tile = resolve_tile(chosen, values=values, role_ref=parent)
+            if tile is not None:
+                tiles.append(tile)
+            if len(tiles) == 4:
+                break
+        return tiles
 
     @staticmethod
     def _place_moved_bullets(merged: list[dict]) -> None:
@@ -641,7 +696,8 @@ class ResumeDraftService:
             untitled_education = command.get("record_type") == "education" and (
                 command["type"] == "create_private_item" and title_missing
                 or "title" in values and title_missing)
-            if command.get("guide_review") or command.get("record_type") == "project" or "qualification_kind" in values or untitled_education:
+            if (command.get("guide_review") or command.get("record_type") == "project" or "qualification_kind" in values
+                    or untitled_education or command.get("presentation_section")):
                 raise ResumeDraftValidationError("This storage does not support these local Resume fields yet. Your input is kept.")
         if (command.get('record_type') == 'credential' and isinstance(self.repository, SqlResumeDraftRepository)
                 and {'issue_date_precision', 'expiration_date_precision'} & set(command.get('values') or {})):
@@ -773,14 +829,20 @@ class ResumeDraftService:
                 and previous.get('base_access_revision') == int(canonical['access_revision'])) else {}
             merged = {**(canonical.get("values") or {}), **previous_values, **command["values"]}
             section = command.get("guide_section")
+            placed = ((snapshot.get("presentation_placements") or {}).get(command["record_key"])
+                      or command.get("presentation_section"))
             if command["record_type"] == "knowledge":
                 from services.resume_publication_projection import resume_section_for
                 existing_section = resume_section_for("knowledge", canonical.get("values") or {},
                     story_bound=snapshot.get("story_entry_key") == command["record_key"])
                 if existing_section in {"impact_statement", "looking_ahead", "story", "contact"}:
                     section = existing_section
+                if placed:
+                    section = "looking_ahead"
             proposed = _normalize_draft_values(command["record_type"], merged,
                 guide_review=command.get("guide_review", False), section=section)
+            if placed:
+                _check_looking_ahead_placement(proposed, command["values"])
         except LivingResumeEditorValidationError as error:
             raise _guide_validation_error(error) from error
         snapshot["items"][command["record_key"]] = {
@@ -793,13 +855,13 @@ class ResumeDraftService:
             "is_new": False,
             **{name:copy.deepcopy(previous[name]) for name in ("evidence_refs","evidence_refs_manual") if name in previous},
         }
+        if placed:
+            snapshot.setdefault("presentation_placements", {})[command["record_key"]] = "looking_ahead"
         snapshot["draft_version"] = int(snapshot["draft_version"]) + 1
-        return {
-            "outcome": "saved",
-            "item": self._present_item(
-                canonical, snapshot["items"][command["record_key"]]
-            ),
-        }
+        item = self._present_item(canonical, snapshot["items"][command["record_key"]])
+        if placed:
+            item["presentation_section"] = "looking_ahead"
+        return {"outcome": "saved", "item": item}
 
     def _save_moved_item(self, owner, snapshot, command, canonical, moved):
         """A privately moved item saves as its destination type and keeps the move (B3b Q3)."""
@@ -844,9 +906,13 @@ class ResumeDraftService:
         if command.get("parent_key") is not None:
             if self._catalog_get(owner, command["parent_key"]) is None:
                 raise ResumeDraftNotFoundError()
+        placed = command.get("presentation_section")
         try:
             values = _normalize_draft_values(command["record_type"], command["values"],
-                guide_review=command.get("guide_review", False), section=command.get("guide_section"))
+                guide_review=command.get("guide_review", False),
+                section="looking_ahead" if placed else command.get("guide_section"))
+            if placed:
+                _check_looking_ahead_placement(values, command["values"])
         except LivingResumeEditorValidationError as error:
             raise _guide_validation_error(error) from error
         if command["record_type"] == "knowledge" and getattr(self.repository, "command_port", False):
@@ -880,7 +946,13 @@ class ResumeDraftService:
             raise ResumeDraftUnavailableError(proposed=command["values"]) from error
         created["resume_display"] = False
         created["visitor_ai"] = False
-        return {"outcome": "created", "item": self._present_item(created, None)}
+        item = self._present_item(created, None)
+        if placed:
+            # B3t: private placement metadata at the draft's top level; canonical values never carry it.
+            snapshot.setdefault("presentation_placements", {})[created["record_key"]] = "looking_ahead"
+            snapshot["draft_version"] = int(snapshot["draft_version"]) + 1
+            item["presentation_section"] = "looking_ahead"
+        return {"outcome": "created", "item": item}
 
     def _review_candidate(self, owner: str, snapshot: dict, command: dict) -> dict:
         conflicts = []
@@ -990,6 +1062,12 @@ class ResumeDraftService:
             "expected_content_token": expected_content_token,
             "expected_access_revision": expected_access_revision,
         }
+        if "presentation_section" in payload:
+            # B3t: the only accepted private placement; knowledge only, on create or save.
+            if (payload["presentation_section"] != "looking_ahead" or record_type != "knowledge"
+                    or command_type not in {"create_private_item", "save_item"}):
+                raise ResumeDraftValidationError("Invalid Resume placement.")
+            command["presentation_section"] = "looking_ahead"
         guide_review = payload.get("guide_review", False)
         if type(guide_review) is not bool:
             raise ResumeDraftValidationError("Invalid Guide review mode.")
@@ -1005,6 +1083,27 @@ class ResumeDraftService:
             {key: command[key] for key in command if key != "digest"}
         )
         return command
+
+
+LOOKING_AHEAD_RENAME_MESSAGE = "The Looking Ahead name can't be changed yet. Your words are kept."
+LOOKING_AHEAD_PLACEMENT_MESSAGE = "Looking Ahead is for a work entry. Your words are kept."
+
+
+def _check_looking_ahead_placement(values, proposed):
+    """B3t guard until D6c reads the placement: a placed entry keeps the title "Looking Ahead"
+    and has its own words within the 120-unit limit. Nothing is saved when this refuses."""
+    from services.living_resume_editor_service import validate_guide_text_limits
+    if values.get("title") != "Looking Ahead":
+        raise ResumeDraftConflictError("looking_ahead_rename_unavailable", [], LOOKING_AHEAD_RENAME_MESSAGE,
+                                       proposed=proposed)
+    if values.get("classification") not in {"work", "both"}:
+        # Publish places Looking Ahead only for work (or both) entries; never show one it won't publish.
+        raise ResumeDraftConflictError("looking_ahead_placement_unavailable", [], LOOKING_AHEAD_PLACEMENT_MESSAGE,
+                                       proposed=proposed)
+    wording = values.get("wording")
+    if not isinstance(wording, str) or not wording.strip():
+        raise LivingResumeEditorValidationError("Write your Looking Ahead line first. Your input is kept.")
+    validate_guide_text_limits(values, section="looking_ahead")
 
 
 def _guide_validation_error(error):

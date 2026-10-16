@@ -360,20 +360,25 @@ def resolve_guide_references(working_set, *, evidence_refs=None, highlight_refs=
                 if len(resolved) == 3:
                     break
         skill_evidence[key] = resolved
+    from services.resume_guide_turns import resolve_tile, tile_key
     highlights, seen = [],set()
-    for ref in highlight_refs:
-        if type(ref) is not str or ref in seen:
+    for chosen in highlight_refs:
+        if not isinstance(chosen,(str,dict)):
             continue
-        seen.add(ref)
+        ref, metric_index = tile_key(chosen)
+        if type(ref) is not str or type(metric_index) is not int or (ref,metric_index) in seen:
+            continue
+        seen.add((ref,metric_index))
         entry = resolve(ref)
         if entry is None:
             continue
         row = index[ref][0]
         values = row.get("values") or {}
-        metric = values.get("metric_value")
-        if not isinstance(metric,str) or not metric.strip():
+        tile = resolve_tile(chosen,values=values,role_ref=entry["role_ref"])
+        if tile is None:
             continue
-        highlights.append({**entry,"metric_value":metric,"metric_label":values.get("metric_label")})
+        # B3t: the frozen tile fields, alongside the earlier evidence fields this list always carried.
+        highlights.append({**entry,**tile,"metric_value":tile["value"],"metric_label":values.get("metric_label")})
         if len(highlights) == 4:
             break
     return {"skill_evidence":skill_evidence,"highlight_tiles":highlights,"needs_recheck":needs_recheck}

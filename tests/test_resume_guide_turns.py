@@ -56,5 +56,46 @@ class ReferenceReconciliationTests(unittest.TestCase):
             reconcile_references(affected, [self.entry(["b1", "b2"], ["b1"], digest="0" * 64)], invalid_refs={})
 
 
+class TileNumberTests(unittest.TestCase):
+    """B3t: numbers are read from a bullet's own current wording, deterministically and without AI."""
+
+    def test_tokens_cover_currency_grouping_decimals_scale_and_suffixes(self):
+        from services.resume_guide_turns import metric_numbers
+        self.assertEqual(metric_numbers("Led 30+ engineers on 9 redesigns worth $19.2M, 35% faster and 2.5x cheaper."),
+                         ["30+", "9", "$19.2M", "35%", "2.5x"])
+        self.assertEqual(metric_numbers("Moved 1,200 records and EUR-free €4.5bn, £300k, 12 sites in 2019."),
+                         ["1,200", "€4.5bn", "£300k", "12", "2019"])
+        self.assertEqual(metric_numbers("No numbers here."), [])
+        self.assertEqual(metric_numbers(None), [])
+
+    def test_index_zero_is_the_stored_metric_and_later_indexes_skip_it_once(self):
+        from services.resume_guide_turns import nth_metric
+        wording = "Led 30+ engineers on 9 redesigns worth $19.2M."
+        self.assertEqual(nth_metric(wording, "30+", 0), "30+")
+        self.assertEqual(nth_metric(wording, "30+", 1), "9")
+        self.assertEqual(nth_metric(wording, "30+", 2), "$19.2M")
+        self.assertIsNone(nth_metric(wording, "30+", 3))
+        self.assertEqual(nth_metric(wording, "a stored figure not in the words", 1), "30+")
+        self.assertIsNone(nth_metric(wording, None, 0))
+        self.assertEqual(nth_metric("12 of 12 checks passed.", "12", 1), "12", "Only the first equal token is skipped")
+
+    def test_entries_normalize_to_the_frozen_shape(self):
+        from services.resume_guide_turns import highlight_entry, tile_key
+        ref = "8b6a5c9e-0d4f-4e63-9a1c-7e2b5d3f1a90"
+        self.assertEqual(highlight_entry(ref), ref)
+        self.assertEqual(highlight_entry({"item_ref": ref, "metric_index": 0}), ref, "Index 0 without a caption stays a plain key")
+        self.assertEqual(highlight_entry({"item_ref": ref, "metric_index": 0, "caption": "  Engineers led  "}),
+                         {"item_ref": ref, "metric_index": 0, "caption": "Engineers led"})
+        self.assertEqual(highlight_entry({"item_ref": ref, "metric_index": 2}), {"item_ref": ref, "metric_index": 2})
+        for bad in ({"item_ref": ref, "metric_index": -1}, {"item_ref": ref, "metric_index": True},
+                    {"item_ref": ref, "metric_index": 1, "metric_text": "$19.2M"}, {"item_ref": ref, "caption": "x"},
+                    {"item_ref": ref, "metric_index": 1, "caption": "   "},
+                    {"item_ref": ref, "metric_index": 1, "caption": "x" * 81}, {"item_ref": ref, "metric_index": 1, "other": 1}, 7):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                highlight_entry(bad)
+        self.assertEqual(tile_key(ref), (ref, 0))
+        self.assertEqual(tile_key({"item_ref": ref, "metric_index": 2, "metric_text": "$19.2M"}), (ref, 2))
+
+
 if __name__ == "__main__":
     unittest.main()

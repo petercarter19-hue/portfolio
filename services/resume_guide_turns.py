@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
+import unicodedata
 
 # B3b scope (ruling B3b-design-answers Q4). The rest of the approved R6q set lands in a named
 # follow-up round before package 10; until then these are the only destinations offered.
@@ -104,3 +106,91 @@ def reconcile_references(affected, reconciliation, *, invalid_refs):
             raise ValueError("reconciliation_required")
         final[key] = chosen
     return final
+
+
+# ---------------------------------------------------------------- B3t: highlight tiles
+# Frozen contract (plan edff4959, coordination B3t frozen contract): a highlight_refs entry is a
+# plain bullet key (metric index 0, no caption) or {item_ref, metric_index, metric_text?, caption?}.
+# metric_text is the server-set fingerprint of the chosen number; it is never displayed copy.
+TILE_CAPTION_LIMIT = 80
+_NUMBER = re.compile(r"(?<![\w.,])[$\u20ac\u00a3\u00a5]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?"
+                     r"(?:[bB][nN]|[KkMmBb])?[%+x]?(?![\w])")
+
+
+def metric_numbers(wording) -> list:
+    """Every number token in a bullet's own words, in order. Pure and deterministic; no AI."""
+    if not isinstance(wording, str):
+        return []
+    return [match.group(0) for match in _NUMBER.finditer(wording)]
+
+
+def nth_metric(wording, stored_metric, index):
+    """Index 0 is the stored metric; n >= 1 counts the other tokens after skipping the first stored one."""
+    if index == 0:
+        return stored_metric if isinstance(stored_metric, str) and stored_metric.strip() else None
+    tokens = metric_numbers(wording)
+    if isinstance(stored_metric, str) and stored_metric in tokens:
+        tokens.remove(stored_metric)
+    return tokens[index - 1] if 0 < index <= len(tokens) else None
+
+
+def _utf16_units(text):
+    return len(text.encode("utf-16-le")) // 2
+
+
+def highlight_entry(raw):
+    """Normalize one client-chosen tile. Raises ValueError; never accepts a client fingerprint."""
+    if isinstance(raw, str):
+        return raw
+    if not isinstance(raw, dict) or not {"item_ref", "metric_index"} <= set(raw) <= {"item_ref", "metric_index", "caption"}:
+        raise ValueError("invalid")
+    index = raw["metric_index"]
+    if type(index) is not int or index < 0 or not isinstance(raw["item_ref"], str):
+        raise ValueError("invalid")
+    entry = {"item_ref": raw["item_ref"], "metric_index": index}
+    if "caption" in raw:
+        caption = raw["caption"]
+        if not isinstance(caption, str):
+            raise ValueError("invalid")
+        caption = caption.strip()
+        visible = [c for c in caption if not c.isspace() and unicodedata.category(c) not in {"Cc", "Cf"}]
+        if (not visible or any(unicodedata.category(c) in {"Cc", "Cf"} for c in caption)
+                or _utf16_units(caption) > TILE_CAPTION_LIMIT):
+            raise ValueError("invalid")  # plain visible text only: no newline, no zero-width-only caption
+        entry["caption"] = caption
+    if index == 0 and "caption" not in entry:
+        return entry["item_ref"]
+    return entry
+
+
+def tile_key(entry):
+    """(item_ref, metric_index) for a stored or chosen entry."""
+    if isinstance(entry, str):
+        return entry, 0
+    return entry.get("item_ref"), entry.get("metric_index")
+
+
+def resolve_tile(entry, *, values, role_ref):
+    """The frozen read-only tile for one eligible saved bullet, or None when index 0 has no metric."""
+    item_ref, index = tile_key(entry)
+    caption = entry.get("caption") if isinstance(entry, dict) else None
+    stored = values.get("metric_value")
+    tile = {"item_ref": item_ref, "metric_index": index, "value": None, "label": None, "role_ref": role_ref,
+            "state": "shown", "publish": "as_today" if isinstance(entry, str) else "after_update"}
+    if index == 0:
+        value = nth_metric(values.get("wording"), stored, 0)
+        if value is None:
+            return None
+        tile.update(value=value, label=caption or values.get("metric_label"))
+        return tile
+    value = nth_metric(values.get("wording"), stored, index)
+    fingerprint = entry.get("metric_text") if isinstance(entry, dict) else None
+    if value is None or (fingerprint is not None and value != fingerprint):
+        tile["state"] = "needs_review"  # never show a different number
+        return tile
+    tile["value"] = value
+    if not caption:
+        tile["state"] = "needs_caption"
+        return tile
+    tile["label"] = caption
+    return tile

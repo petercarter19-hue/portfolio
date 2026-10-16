@@ -257,6 +257,456 @@ class GuideReferenceCommandTests(unittest.TestCase):
         self.assertNotIn(command['request_id'],self.service.repository.load_owner(self.owner)['receipts'])
 
 
+class GuideTileTests(unittest.TestCase):
+    """B3t: per-tile metric selection, resolution states and the Looking Ahead placement (plan edff4959)."""
+    setup_shared = GuideReferenceCommandTests.setup_shared
+    command = GuideReferenceCommandTests.command
+    WORDING = 'Led 30+ fictional engineers on 9 redesigns worth $19.2M.'
+
+    def setup_tiles(self):
+        self.setup_shared()
+        self.lead = self.shared.canonical.create_private(self.owner, {'command_id': str(uuid4()), 'record_type': 'accomplishment',
+            'parent_key': self.role, 'values': {'wording': self.WORDING, 'metric_value': '30+',
+                                                'metric_label': 'fictional engineers led'}})['record_key']
+
+    def choose(self, refs):
+        return self.service.set_guide_references(self.owner, self.command('highlights', refs))
+
+    def stored(self):
+        return self.shared.draft.get_workspace(self.owner).get('highlight_refs')
+
+    def tiles(self):
+        return self.service.guide_reference_view(self.owner, self.service.working_set(self.owner))['highlight_tiles']
+
+    def edit_lead(self, wording):
+        workspace = self.shared.draft.get_workspace(self.owner)
+        row = next(r for r in workspace['items'] if r['record_key'] == self.lead)
+        self.shared.draft.commit(self.owner, {'type': 'save_item', 'request_id': str(uuid4()), 'record_key': self.lead,
+            'record_type': 'accomplishment', 'expected_draft_version': workspace['draft_version'],
+            'expected_content_token': row['content_token'], 'expected_access_revision': row['access_revision'],
+            'values': {'wording': wording}})
+
+    # GuideConversionTests helpers, reused for the B3b interplay case.
+    def working(self):
+        return self.service.working_set(self.owner)
+
+    def item(self, ref):
+        return self.service.working_item(self.owner, ref)
+
+    def reviewed(self, staged):
+        from services.resume_guide_turns import tile_key
+        moved = staged['item_ref']
+        return [{'kind': row['kind'], 'container_ref': row['container_ref'], 'before_digest': row['before_digest'],
+                 'references': [] if row['container_ref'] == moved
+                 else [ref for ref in row['references'] if tile_key(ref)[0] != moved]} for row in staged['affected_references']]
+
+    def test_one_bullet_backs_two_tiles_with_a_server_set_fingerprint(self):
+        self.setup_tiles()
+        self.choose([self.lead, {'item_ref': self.lead, 'metric_index': 2, 'caption': 'in redesigns overseen'}])
+        self.assertEqual(self.stored(), [self.lead, {'item_ref': self.lead, 'metric_index': 2, 'metric_text': '$19.2M',
+                                                     'caption': 'in redesigns overseen'}])
+        tiles = self.tiles()
+        self.assertEqual([(t['metric_index'], t['value'], t['label'], t['state'], t['publish']) for t in tiles],
+                         [(0, '30+', 'fictional engineers led', 'shown', 'as_today'),
+                          (2, '$19.2M', 'in redesigns overseen', 'shown', 'after_update')])
+        self.assertEqual({t['role_ref'] for t in tiles}, {self.role})
+        draft_tiles = self.shared.draft.get_workspace(self.owner)['highlight_tiles']
+        self.assertEqual([(t['item_ref'], t['metric_index'], t['value'], t['state'], t['publish']) for t in draft_tiles],
+                         [(t['item_ref'], t['metric_index'], t['value'], t['state'], t['publish']) for t in tiles])
+
+    def test_shapes_refuse_before_any_effect(self):
+        self.setup_tiles()
+        before = self.stored()
+        refusals = [
+            [{'item_ref': self.lead, 'metric_index': 2, 'metric_text': '$19.2M'}],
+            [{'item_ref': self.lead, 'metric_index': 2, 'caption': 'x' * 81}],
+            [{'item_ref': self.lead, 'metric_index': 2, 'caption': '   '}],
+            [self.lead, {'item_ref': self.lead, 'metric_index': 0, 'caption': 'again'}],
+            [self.lead, self.bullet, {'item_ref': self.lead, 'metric_index': 1}, {'item_ref': self.lead, 'metric_index': 2},
+             {'item_ref': self.bullet, 'metric_index': 1}],
+            [{'item_ref': self.lead, 'metric_index': -1}],
+        ]
+        for refs in refusals:
+            with self.subTest(refs=refs), self.assertRaises(ResumeIntakeValidationError):
+                self.choose(refs)
+        with self.assertRaises(ResumeIntakeConflictError) as absent:
+            self.choose([{'item_ref': self.lead, 'metric_index': 9}])
+        self.assertEqual(absent.exception.error_code, 'changed')
+        self.assertEqual(self.stored(), before)
+        self.choose([{'item_ref': self.lead, 'metric_index': 0}])
+        self.assertEqual(self.stored(), [self.lead], 'Index 0 without a caption is stored as the plain key')
+
+    def test_a_changed_number_needs_review_and_a_missing_caption_is_asked_for(self):
+        self.setup_tiles()
+        self.choose([self.lead, {'item_ref': self.lead, 'metric_index': 2, 'caption': 'in redesigns overseen'},
+                     {'item_ref': self.lead, 'metric_index': 1}])
+        self.assertEqual([t['state'] for t in self.tiles()], ['shown', 'shown', 'needs_caption'])
+        self.edit_lead('Led 30+ fictional engineers on 9 redesigns worth $21M.')
+        states = [(t['metric_index'], t['state'], t['value']) for t in self.tiles()]
+        self.assertEqual(states, [(0, 'shown', '30+'), (2, 'needs_review', None), (1, 'needs_caption', '9')],
+                         'A drifted number never shows a different value')
+        self.assertEqual(self.stored()[1]['metric_text'], '$19.2M', 'The fingerprint is never rewritten by a read')
+
+    def test_publish_keeps_plain_tiles_and_drops_object_tiles_honestly(self):
+        self.setup_tiles()
+        self.shared.seed_publication(self.owner, [(key, True, True) for key in (self.role, self.bullet, self.lead, self.skill)])
+        self.choose([self.lead, self.bullet])
+        plain = self.shared.publication.read_publication_basis_for_owner(self.owner)
+        self.choose([self.lead, self.bullet, {'item_ref': self.lead, 'metric_index': 2, 'caption': 'in redesigns overseen'}])
+        mixed = self.shared.publication.read_publication_basis_for_owner(self.owner)
+        self.assertEqual([r for r in mixed.get('dropped_references', []) if r['reason'] != 'reference_invalid'],
+                         plain.get('dropped_references', []))
+        self.assertIn('reference_invalid', [r['reason'] for r in mixed.get('dropped_references', [])])
+        self.assertEqual([t['publish'] for t in self.tiles()], ['as_today', 'as_today', 'after_update'])
+
+    def test_deleting_a_bullet_prunes_every_tile_it_backs_without_error(self):
+        from services.resume_draft_service import ResumeDraftService
+        snapshot = {'draft_version': 4, 'items': {}, 'highlight_refs': [
+            'a', {'item_ref': 'a', 'metric_index': 2, 'metric_text': '$1M'}, 'b',
+            {'item_ref': 'b', 'metric_index': 1, 'metric_text': '9', 'caption': 'kept'}]}
+        after = ResumeDraftService.prune_deleted_private_references(snapshot, {'a'})
+        self.assertEqual(after['highlight_refs'], ['b', {'item_ref': 'b', 'metric_index': 1, 'metric_text': '9', 'caption': 'kept'}])
+        self.assertEqual(after['draft_version'], 5)
+
+    def test_moving_a_tiled_bullet_drops_all_its_tiles_and_undo_restores_them(self):
+        self.setup_tiles()
+        self.choose([self.lead, {'item_ref': self.lead, 'metric_index': 2, 'caption': 'in redesigns overseen'}, self.bullet])
+        before = self.stored()
+        staged = GuideConversionTests.stage(self, self.lead, 'skill', {'name': 'Fictional leadership'})
+        highlights = next(row for row in staged['affected_references'] if row['kind'] == 'highlights')
+        self.assertEqual(highlights['references'], before)
+        confirmed = GuideConversionTests.confirm(self, staged)
+        self.assertEqual(self.stored(), [self.bullet])
+        GuideConversionTests.undo(self, confirmed)
+        self.assertEqual(self.stored(), before)
+
+    # ---- B3t round 2 (review a60cb95)
+
+    def test_f4_a_bullet_backed_only_by_an_object_tile_is_affected_by_a_move(self):
+        from services.resume_guide_turns import tile_key
+        self.setup_tiles()
+        self.choose([{'item_ref': self.lead, 'metric_index': 2, 'caption': 'in redesigns overseen'}, self.bullet])
+        before = self.stored()
+        staged = GuideConversionTests.stage(self, self.lead, 'skill', {'name': 'Fictional leadership'})
+        highlights = next(row for row in staged['affected_references'] if row['kind'] == 'highlights')
+        self.assertEqual(highlights['references'], before)
+        keep_object = [{**row, 'references': list(row['references'])} for row in self.reviewed(staged)]
+        for row in keep_object:
+            if row['kind'] == 'highlights':
+                row['references'] = list(before)
+        with self.assertRaises(ResumeIntakeConflictError) as kept:
+            GuideConversionTests.confirm(self, staged, keep_object)
+        self.assertEqual(kept.exception.error_code, 'reconciliation_required')
+        confirmed = GuideConversionTests.confirm(self, staged)
+        self.assertEqual([tile_key(ref)[0] for ref in self.stored()], [self.bullet])
+        GuideConversionTests.undo(self, confirmed)
+        self.assertEqual(self.stored(), before)
+
+    def test_f4_an_alias_and_its_key_cannot_make_a_repeated_pair(self):
+        self.setup_tiles()
+        submitted = self.service.submit(self.owner, {'request_id': str(uuid4()), 'text': 'A separate fictional result.'})
+        proposal = submitted['proposals'][0]
+        alias = self.service.working_set(self.owner)['unplaced'][0]['item_ref']
+        saved = self.service.decide(self.owner, {'request_id': str(uuid4()), 'proposal_key': proposal['proposal_key'],
+            'decision': 'accept', 'confirmed_values': {'record_type': 'accomplishment', 'parent_key': self.role,
+            'wording': 'Ran 5 fictional pilots and 7 reviews.', 'metric_value': '5', 'metric_label': 'pilots'}})
+        key = saved['item']['record_key']
+        self.assertIn(alias, self.item(key)['identity_aliases'])
+        before = self.stored()
+        with self.assertRaises(ResumeIntakeValidationError):
+            self.choose([{'item_ref': alias, 'metric_index': 1, 'caption': 'reviews'},
+                         {'item_ref': key, 'metric_index': 1, 'caption': 'again'}])
+        self.assertEqual(self.stored(), before)
+
+    def test_f5_captions_are_visible_plain_text(self):
+        self.setup_tiles()
+        for caption in ('a\nb', '​', ' ​ ', 'tab\there', 'zero​width'):
+            with self.subTest(caption=repr(caption)), self.assertRaises(ResumeIntakeValidationError):
+                self.choose([{'item_ref': self.lead, 'metric_index': 2, 'caption': caption}])
+        self.choose([{'item_ref': self.lead, 'metric_index': 2, 'caption': '  in redesigns  '}])
+        self.assertEqual(self.stored()[0]['caption'], 'in redesigns')
+
+
+class LookingAheadPlacementTests(unittest.TestCase):
+    """B3t: the private Looking Ahead placement and its rename guard (manager condition 1)."""
+    setup_shared = GuideReferenceCommandTests.setup_shared
+
+    def create(self, values, placement='looking_ahead', owner_fixture=None):
+        target = owner_fixture or self
+        payload = {'type': 'create_private_item', 'request_id': str(uuid4()), 'record_key': str(uuid4()),
+                   'record_type': 'knowledge', 'values': values}
+        if placement is not None:
+            payload['presentation_section'] = placement
+        target.shared.draft.commit(target.owner, payload)
+        return payload['record_key']
+
+    def row(self, key):
+        return next(r for r in self.shared.draft.get_workspace(self.owner)['items'] if r['record_key'] == key)
+
+    def save(self, key, values):
+        workspace = self.shared.draft.get_workspace(self.owner)
+        row = next(r for r in workspace['items'] if r['record_key'] == key)
+        return self.shared.draft.commit(self.owner, {'type': 'save_item', 'request_id': str(uuid4()), 'record_key': key,
+            'record_type': 'knowledge', 'expected_draft_version': workspace['draft_version'],
+            'expected_content_token': row['content_token'], 'expected_access_revision': row['access_revision'],
+            'values': values})
+
+    def test_placement_is_private_metadata_honoured_by_the_guide(self):
+        self.setup_shared()
+        key = self.create({'title': 'Looking Ahead', 'wording': 'Lead port automation controls.', 'classification': 'work'})
+        self.assertEqual(self.row(key)['presentation_section'], 'looking_ahead')
+        self.assertNotIn('presentation_section', self.shared.canonical.get_item(self.owner, key).get('values') or {},
+                         'The placement is never stored in canonical values')
+        self.assertEqual(self.service.working_item(self.owner, key)['section'], 'looking_ahead')
+
+    def test_placement_refuses_other_values_types_empty_and_long_words(self):
+        from services.resume_draft_service import ResumeDraftValidationError
+        self.setup_shared()
+        cases = [({'title': 'Looking Ahead', 'wording': 'Fine.', 'classification': 'work'}, 'impact_statement'),
+                 ({'title': 'Looking Ahead', 'wording': '', 'classification': 'work'}, 'looking_ahead'),
+                 ({'title': 'Looking Ahead', 'wording': 'x' * 121, 'classification': 'work'}, 'looking_ahead'),
+                 ({'title': 'Where I am headed', 'wording': 'Fine.', 'classification': 'work'}, 'looking_ahead')]
+        for values, placement in cases:
+            with self.subTest(placement=placement, title=values['title'], words=len(values['wording'])):
+                with self.assertRaises(Exception) as refused:
+                    self.create(values, placement)
+                self.assertIn(type(refused.exception).__name__, {'ResumeDraftValidationError', 'ResumeDraftConflictError'})
+        with self.assertRaises(ResumeDraftValidationError):
+            self.shared.draft.commit(self.owner, {'type': 'create_private_item', 'request_id': str(uuid4()),
+                'record_key': str(uuid4()), 'record_type': 'skill', 'values': {'name': 'Placed skill'},
+                'presentation_section': 'looking_ahead'})
+
+    def test_renaming_a_placed_entry_is_refused_and_changes_nothing(self):
+        from services.resume_draft_service import ResumeDraftConflictError
+        self.setup_shared()
+        key = self.create({'title': 'Looking Ahead', 'wording': 'Lead port automation controls.', 'classification': 'work'})
+        before = self.shared.draft.repository.load_owner(self.owner)
+        with self.assertRaises(ResumeDraftConflictError) as refused:
+            self.save(key, {'title': 'Where I am headed'})
+        self.assertEqual(refused.exception.error_code, 'looking_ahead_rename_unavailable')
+        self.assertEqual(str(refused.exception), "The Looking Ahead name can't be changed yet. Your words are kept.")
+        self.assertEqual(self.shared.draft.repository.load_owner(self.owner), before)
+        self.save(key, {'wording': 'Lead harbor automation controls.'})
+        self.assertEqual(self.row(key)['proposed_values']['wording'], 'Lead harbor automation controls.')
+        self.assertEqual(self.row(key)['presentation_section'], 'looking_ahead', 'The placement survives an ordinary edit')
+
+    def test_a_placed_looking_ahead_publishes_exactly_as_an_unplaced_one(self):
+        values = {'title': 'Looking Ahead', 'wording': 'Lead port automation controls.', 'classification': 'work'}
+        self.setup_shared()
+        self.create(values)
+        placed = self.shared.publication.read_publication_basis_for_owner(self.owner)
+        self.setup_shared()
+        self.create(values, placement=None)
+        unplaced = self.shared.publication.read_publication_basis_for_owner(self.owner)
+        for name in ('read_state', 'blocked_items', 'ineligible_items', 'dropped_references', 'change_count',
+                     'publication_state', 'sharing_enabled'):
+            self.assertEqual(placed.get(name), unplaced.get(name), name)
+
+    # ---- B3t round 2 (review a60cb95)
+
+    def test_f1_placement_needs_a_work_entry(self):
+        from services.resume_draft_service import ResumeDraftConflictError
+        self.setup_shared()
+        for values in ({'title': 'Looking Ahead', 'wording': 'A personal plan.', 'classification': 'personal'},
+                       {'title': 'Looking Ahead', 'wording': 'No classification given.'}):
+            with self.subTest(values=values), self.assertRaises(ResumeDraftConflictError) as refused:
+                self.create(values)
+            self.assertEqual(refused.exception.error_code, 'looking_ahead_placement_unavailable')
+            self.assertEqual(str(refused.exception), 'Looking Ahead is for a work entry. Your words are kept.')
+        both = self.create({'title': 'Looking Ahead', 'wording': 'A shared plan.', 'classification': 'both'})
+        self.assertEqual(self.row(both)['presentation_section'], 'looking_ahead')
+        before = self.shared.draft.repository.load_owner(self.owner)
+        with self.assertRaises(ResumeDraftConflictError) as personal:
+            self.save(both, {'classification': 'personal'})
+        self.assertEqual(personal.exception.error_code, 'looking_ahead_placement_unavailable')
+        self.assertEqual(self.shared.draft.repository.load_owner(self.owner), before)
+
+    def test_f2_the_my_data_edit_route_cannot_rename_or_make_personal_a_placed_entry(self):
+        from app import app
+        self.setup_shared()
+        key = self.create({'title': 'Looking Ahead', 'wording': 'Lead port automation controls.', 'classification': 'work'})
+        names = ('TESTING', 'PEERSLATE_ALLOW_DEV_IDENTITY', 'PEERSLATE_DEV_USER_KEY', 'PEERSLATE_TRUST_EASYAUTH_HEADERS',
+                 'PEERSLATE_ENTRY_POLICY_ENABLED', 'ENTRY_POLICY_SERVICE')
+        original = {name: app.config.get(name) for name in names}
+        self.addCleanup(app.config.update, original)
+        app.config.update(TESTING=True, PEERSLATE_ALLOW_DEV_IDENTITY=True, PEERSLATE_DEV_USER_KEY=self.owner,
+                          PEERSLATE_TRUST_EASYAUTH_HEADERS=False, PEERSLATE_ENTRY_POLICY_ENABLED=True,
+                          ENTRY_POLICY_SERVICE=self.shared.policy)
+        client = app.test_client()
+        def edit(values):
+            version = client.get('/api/entry-policy/me/entries/' + key).get_json()['entry']['content_version']
+            return client.post('/api/entry-policy/me/commands', headers={'X-PeerSlate-Request': 'same-origin'},
+                json={'request_id': str(uuid4()), 'type': 'edit', 'entry_key': key, 'expected_content_version': version,
+                      'values': values})
+        before = self.shared.policy.repository.load_owner(self.owner)
+        renamed = edit({'title': 'Where I am headed', 'wording': 'Lead port automation controls.', 'classification': 'work'})
+        self.assertEqual(renamed.status_code, 409)
+        self.assertEqual(renamed.get_json()['error_code'], 'looking_ahead_rename_unavailable')
+        self.assertEqual(renamed.get_json()['message'], "The Looking Ahead name can't be changed yet. Your words are kept.")
+        personal = edit({'title': 'Looking Ahead', 'wording': 'Lead port automation controls.', 'classification': 'personal'})
+        self.assertEqual(personal.status_code, 409)
+        self.assertEqual(personal.get_json()['error_code'], 'looking_ahead_placement_unavailable')
+        self.assertEqual(self.shared.policy.repository.load_owner(self.owner), before, 'Nothing is saved')
+        worded = edit({'title': 'Looking Ahead', 'wording': 'Lead harbor automation controls.', 'classification': 'work'})
+        self.assertEqual(worded.status_code, 200, worded.get_json())
+
+    def test_f3_the_guide_accept_path_keeps_the_rename_wording(self):
+        from services.my_data_extraction_adapter import DeterministicFakeExtractionAdapter
+        from tests.test_my_data_intake_sources import extracted_pipeline
+        words = 'Looking Ahead' + chr(10) + 'Where I am headed' + chr(10)
+        self.setup_shared()
+        key = self.create({'title': 'Looking Ahead', 'wording': 'Lead port automation controls.', 'classification': 'work'})
+        adapter = DeterministicFakeExtractionAdapter([{'record_type': 'knowledge', 'values': {'title': 'Where I am headed'},
+            'outcome': 'additional_detail', 'match_reference': key, 'quote': 'Where I am headed', 'confidence': 'certain'}])
+        service = ResumeIntakeService(repository=InMemoryResumeIntakeRepository(), draft_service=self.shared.draft,
+            policy=selected_policy_for_tests(), document_pipeline=extracted_pipeline(words), extraction_adapter=adapter,
+            matching_exclusions=lambda member: set())
+        submitted = service.submit(self.owner, {'request_id': str(uuid4()), 'attachments': [{'client_key': 'document',
+            'kind': 'document', 'declared_content_type': 'text/plain', 'filename': 'fictional.txt'}]},
+            files={'document': FakeUpload('text/plain', words.encode(), 'fictional.txt')})
+        proposal = next(p for p in submitted['proposals'] if p.get('target_key') == key)
+        before = self.shared.draft.repository.load_owner(self.owner)
+        with self.assertRaises(ResumeIntakeConflictError) as refused:
+            service.decide(self.owner, {'request_id': str(uuid4()), 'proposal_key': proposal['proposal_key'],
+                                        'decision': 'accept', 'confirmed_values': {'title': 'Where I am headed'}})
+        self.assertEqual(refused.exception.error_code, 'looking_ahead_rename_unavailable')
+        self.assertEqual(str(refused.exception), "The Looking Ahead name can't be changed yet. Your words are kept.")
+        self.assertEqual(self.shared.draft.repository.load_owner(self.owner), before)
+
+    # ---- B3t round 3 (review 584b425, R2-F1): one choke point for every My Data command
+
+    def policy_client(self):
+        from app import app
+        names = ('TESTING', 'PEERSLATE_ALLOW_DEV_IDENTITY', 'PEERSLATE_DEV_USER_KEY', 'PEERSLATE_TRUST_EASYAUTH_HEADERS',
+                 'PEERSLATE_ENTRY_POLICY_ENABLED', 'ENTRY_POLICY_SERVICE')
+        original = {name: app.config.get(name) for name in names}
+        self.addCleanup(app.config.update, original)
+        app.config.update(TESTING=True, PEERSLATE_ALLOW_DEV_IDENTITY=True, PEERSLATE_DEV_USER_KEY=self.owner,
+                          PEERSLATE_TRUST_EASYAUTH_HEADERS=False, PEERSLATE_ENTRY_POLICY_ENABLED=True,
+                          ENTRY_POLICY_SERVICE=self.shared.policy)
+        return app.test_client()
+
+    def policy_command(self, client, key, payload):
+        version = client.get('/api/entry-policy/me/entries/' + key).get_json()['entry']['content_version']
+        return client.post('/api/entry-policy/me/commands', headers={'X-PeerSlate-Request': 'same-origin'},
+            json={'request_id': str(uuid4()), 'entry_key': key, 'expected_content_version': version, **payload})
+
+    def test_r3_an_edit_that_omits_the_classification_is_refused(self):
+        self.setup_shared()
+        key = self.create({'title': 'Looking Ahead', 'wording': 'Lead port automation controls.', 'classification': 'work'})
+        client = self.policy_client()
+        before = self.shared.policy.repository.load_owner(self.owner)
+        omitted = self.policy_command(client, key, {'type': 'edit',
+            'values': {'title': 'Looking Ahead', 'wording': 'Lead harbor automation controls.'}})
+        self.assertEqual(omitted.status_code, 409, omitted.get_json())
+        self.assertEqual(omitted.get_json()['error_code'], 'looking_ahead_placement_unavailable')
+        self.assertEqual(omitted.get_json()['message'], 'Looking Ahead is for a work entry. Your words are kept.')
+        self.assertEqual(self.shared.policy.repository.load_owner(self.owner), before, 'Nothing is written')
+
+    def test_r3_resolving_a_match_cannot_rename_or_make_personal_a_placed_entry(self):
+        self.setup_shared()
+        key = self.create({'title': 'Looking Ahead', 'wording': 'Lead port automation controls.', 'classification': 'work'})
+        renaming = self.shared.canonical.create_private(self.owner, {'command_id': str(uuid4()), 'record_type': 'knowledge',
+            'values': {'title': 'Where I am headed', 'wording': 'Lead port automation.', 'classification': 'work'}})['record_key']
+        personal = self.shared.canonical.create_private(self.owner, {'command_id': str(uuid4()), 'record_type': 'knowledge',
+            'values': {'title': 'Looking Ahead', 'wording': 'A personal plan.', 'classification': 'personal'}})['record_key']
+        client = self.policy_client()
+        before = self.shared.policy.repository.load_owner(self.owner)
+        cases = [(renaming, 'equivalent', 'looking_ahead_rename_unavailable'),
+                 (renaming, 'additional_detail', 'looking_ahead_rename_unavailable'),
+                 (personal, 'equivalent', 'looking_ahead_placement_unavailable'),
+                 (personal, 'additional_detail', 'looking_ahead_placement_unavailable')]
+        for candidate, decision, code in cases:
+            with self.subTest(decision=decision, code=code):
+                refused = self.policy_command(client, key, {'type': 'resolve_match', 'candidate_key': candidate,
+                                                            'match_decision': decision})
+                self.assertEqual(refused.status_code, 409, refused.get_json())
+                self.assertEqual(refused.get_json()['error_code'], code)
+                self.assertEqual(self.shared.policy.repository.load_owner(self.owner), before)
+
+    def test_r3_any_command_that_reaches_the_persist_point_is_checked(self):
+        from unittest.mock import patch
+        from services.entry_policy_service import EntryPolicyConflictError
+        self.setup_shared()
+        key = self.create({'title': 'Looking Ahead', 'wording': 'Lead port automation controls.', 'classification': 'work'})
+        policy = self.shared.policy
+        version = policy.get_entry(self.owner, key)['entry']['content_version']
+        original_apply = policy._apply
+
+        def future_command(snapshot, command, now):
+            # Stands in for any command added later: it changes the stored values its own way.
+            affected, presented = original_apply(snapshot, command, now)
+            snapshot['entries'][key]['values'] = {**snapshot['entries'][key]['values'], 'title': 'A new name'}
+            return affected, presented
+
+        before = policy.repository.load_owner(self.owner)
+        with patch.object(policy, '_apply', side_effect=future_command):
+            with self.assertRaises(EntryPolicyConflictError) as refused:
+                policy.commit(self.owner, {'type': 'edit', 'request_id': str(uuid4()), 'entry_key': key,
+                    'expected_content_version': version,
+                    'values': {'title': 'Looking Ahead', 'wording': 'Words.', 'classification': 'work'}})
+        self.assertEqual(refused.exception.error_code, 'looking_ahead_rename_unavailable')
+        self.assertEqual(policy.repository.load_owner(self.owner), before)
+
+    # ---- B3t round 4 (review 44d80ad)
+
+    def publish_now(self):
+        reviewed = self.shared.publication.review_for_owner(self.owner, {}).reviewed
+        return self.shared.publication.commit(self.owner, {'type': 'publish', 'request_id': str(uuid4()),
+            'profile_identity': None, 'reviewed_digest': reviewed.digest,
+            'candidate': self.shared.publication.publish_candidate(reviewed)})
+
+    def test_r4_publish_keeps_the_placement_and_the_rename_guard(self):
+        from services.resume_draft_service import ResumeDraftConflictError
+        self.setup_shared()
+        key = self.create({'title': 'Looking Ahead', 'wording': 'Lead port automation controls.', 'classification': 'work'})
+        self.shared.seed_publication(self.owner, [(key, True, False)], slug='r4-placement')
+        self.save(key, {'wording': 'Lead harbor automation controls.'})
+        self.publish_now()
+        draft = self.shared.draft.repository.load_owner(self.owner)
+        self.assertNotIn(key, draft['items'], 'Publish consumed the item draft')
+        self.assertEqual(draft.get('presentation_placements'), {key: 'looking_ahead'})
+        self.assertEqual(self.row(key)['presentation_section'], 'looking_ahead', 'The placement survives publish')
+        self.assertEqual(self.shared.canonical.get_item(self.owner, key)['values']['wording'], 'Lead harbor automation controls.')
+        with self.assertRaises(ResumeDraftConflictError) as renamed:
+            self.save(key, {'title': 'Where I am headed'})
+        self.assertEqual(renamed.exception.error_code, 'looking_ahead_rename_unavailable')
+        client = self.policy_client()
+        refused = self.policy_command(client, key, {'type': 'edit',
+            'values': {'title': 'Where I am headed', 'wording': 'Lead harbor automation controls.', 'classification': 'work'}})
+        self.assertEqual(refused.status_code, 409)
+        self.assertEqual(refused.get_json()['error_code'], 'looking_ahead_rename_unavailable')
+        # A second edit and publish still work, and the placement stays.
+        self.save(key, {'wording': 'Lead harbor and rail automation controls.'})
+        self.publish_now()
+        self.assertEqual(self.shared.canonical.get_item(self.owner, key)['values']['wording'],
+                         'Lead harbor and rail automation controls.')
+        self.assertEqual(self.row(key)['presentation_section'], 'looking_ahead')
+
+    def test_r4_an_unrelated_change_is_never_blocked_by_another_placed_entry(self):
+        self.setup_shared()
+        placed = self.create({'title': 'Looking Ahead', 'wording': 'Lead port automation controls.', 'classification': 'work'})
+        # A placed entry that is already out of shape (written past every guard) must not block unrelated edits.
+        policy = self.shared.policy.repository.load_owner(self.owner)
+        policy['entries'][placed]['values'] = {**policy['entries'][placed]['values'], 'title': 'Broken elsewhere'}
+        self.shared.policy.repository.save_owner(self.owner, policy)
+        client = self.policy_client()
+        unrelated = self.policy_command(client, self.skill, {'type': 'edit',
+            'values': {'skill_name': 'Renamed fictional skill', 'skill_summary': None}})
+        self.assertEqual(unrelated.status_code, 200, unrelated.get_json())
+
+    def test_f4_discard_keeps_the_placement(self):
+        self.setup_shared()
+        key = self.create({'title': 'Looking Ahead', 'wording': 'Lead port automation controls.', 'classification': 'work'})
+        self.save(key, {'wording': 'Unsaved words to discard.'})
+        version = self.shared.draft.get_workspace(self.owner)['draft_version']
+        self.shared.draft.commit(self.owner, {'type': 'discard_item', 'request_id': str(uuid4()), 'record_key': key,
+                                              'expected_draft_version': version})
+        row = self.row(key)
+        self.assertEqual(row['presentation_section'], 'looking_ahead')
+        self.assertFalse((row.get('proposed_values') or {}).get('wording'), 'The unsaved words are discarded')
+
+
 class GuideConversionTests(unittest.TestCase):
     """B3b: same-key private moves and revision-safe Undo (ruling 41e46cf, B3b design answers)."""
     setup_shared = GuideReferenceCommandTests.setup_shared

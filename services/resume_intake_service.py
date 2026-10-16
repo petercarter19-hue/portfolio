@@ -833,9 +833,20 @@ class ResumeIntakeService:
             command["item_ref"] = _as_uuid(command["item_ref"],field="skill reference")
         elif command["item_ref"] is not None or len(command["references"]) > 4:
             raise ResumeIntakeValidationError("Choose at most four saved highlight bullets.")
-        refs, seen = [],set()
+        refs, seen, tile_keys = [],set(),set()
         for ref in command["references"]:
-            if type(ref) is str:
+            if command["kind"] == "highlights" and type(ref) is dict:
+                # B3t: {item_ref, metric_index, caption?}; the fingerprint is server-set below.
+                from services.resume_guide_turns import highlight_entry, tile_key
+                try:
+                    normalized = highlight_entry(ref)
+                except ValueError as error:
+                    raise ResumeIntakeValidationError("Choose a saved bullet and one of its numbers.") from error
+                if type(normalized) is dict:
+                    normalized["item_ref"] = _as_uuid(normalized["item_ref"],field="evidence reference")
+                else:
+                    normalized = _as_uuid(normalized,field="evidence reference")
+            elif type(ref) is str:
                 normalized = _as_uuid(ref,field="evidence reference")
             elif command["kind"] == "skill" and type(ref) is dict and set(ref) == {"role_record_key","line_digest"}:
                 digest = ref["line_digest"]
@@ -845,6 +856,12 @@ class ResumeIntakeService:
             else:
                 raise ResumeIntakeValidationError("Choose a saved bullet or current summary line.")
             identity = _json_digest({"reference":normalized})
+            if command["kind"] == "highlights":
+                from services.resume_guide_turns import tile_key
+                key = tile_key(normalized)
+                if key in tile_keys:
+                    raise ResumeIntakeValidationError("Choose each highlight number once.")
+                tile_keys.add(key)
             if identity in seen:
                 raise ResumeIntakeValidationError("Choose each reference once.")
             seen.add(identity); refs.append(normalized)
@@ -891,9 +908,23 @@ class ResumeIntakeService:
                     shown = resolved["skill_evidence"].get(skill["item_ref"],[]) if skill else resolved["highlight_tiles"]
                     if not shown:
                         raise ResumeIntakeNotFoundError()
-                    bound = shown[0]["record_ref"] if type(ref) is str else {
-                        "role_record_key":shown[0]["role_ref"],"line_digest":ref["line_digest"]}
+                    if command["kind"] == "highlights" and type(ref) is dict:
+                        tile = shown[0]
+                        if tile["metric_index"] and tile["value"] is None:
+                            raise ResumeIntakeConflictError("changed",[],"That number isn't in the bullet now. Choose it again.")
+                        bound = {"item_ref":tile["record_ref"],"metric_index":tile["metric_index"]}
+                        if tile["metric_index"]:
+                            bound["metric_text"] = tile["value"]  # the server-set fingerprint
+                        if "caption" in ref:
+                            bound["caption"] = ref["caption"]
+                    else:
+                        bound = shown[0]["record_ref"] if type(ref) is str else {
+                            "role_record_key":shown[0]["role_ref"],"line_digest":ref["line_digest"]}
                     identity = _json_digest({"reference":bound})
+                    if command["kind"] == "highlights":
+                        # B3t: one tile per (bullet, number), even when an alias named the bullet.
+                        from services.resume_guide_turns import tile_key
+                        identity = _json_digest({"tile":list(tile_key(bound))})
                     if identity in bound_seen:
                         raise ResumeIntakeValidationError("Choose each saved reference once.")
                     bound_seen.add(identity); bound_refs.append(bound)
@@ -1059,10 +1090,13 @@ class ResumeIntakeService:
                                      "before_digest": reference_digest(refs)})
                     invalid[("skill", row["record_key"])] = [key]
             highlights = workspace.get("highlight_refs")
-            if isinstance(highlights, list) and key in highlights:
+            from services.resume_guide_turns import tile_key
+            backed = [ref for ref in highlights if tile_key(ref)[0] == key] if isinstance(highlights, list) else []
+            if backed:
+                # B3t: every tile the bullet backs (plain key or object entry) becomes invalid.
                 affected.append({"kind": "highlights", "container_ref": "resume", "references": list(highlights),
                                  "before_digest": reference_digest(highlights)})
-                invalid[("highlights", "resume")] = [key]
+                invalid[("highlights", "resume")] = backed
         return affected, invalid
 
     def _stage_guide_conversion(self, owner, payload, read_working_set):
@@ -6045,9 +6079,12 @@ class ResumeIntakeService:
                 callee_command=callee_command,
             )
         except ResumeDraftConflictError as error:
+            # B3t: the Looking Ahead guards keep their own ruled wording; other conflicts stay neutral.
+            message = (str(error) if error.error_code in {"looking_ahead_rename_unavailable",
+                                                          "looking_ahead_placement_unavailable"}
+                       else "That record changed. Your wording is still here.")
             raise ResumeIntakeConflictError(
-                error.error_code, error.conflicts,
-                "That record changed. Your wording is still here.",
+                error.error_code, error.conflicts, message,
                 proposed=partial,
             ) from error
         except ResumeDraftValidationError as error:

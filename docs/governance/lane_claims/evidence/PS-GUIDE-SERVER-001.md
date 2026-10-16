@@ -1269,7 +1269,7 @@ _The B3a acceptance JSON above is kept as historical JSON and is no longer the a
 
 **Holds:** fake providers only and $0. Independent exact-SHA review by `session:16023c0e-7189-420e-8a4d-11f8012a9713`.
 
-```package-acceptance-json
+```json
 {
   "schema_version": 1,
   "package": "PS-GUIDE-SERVER-001",
@@ -1464,3 +1464,307 @@ The independent review of `48ca8780` failed. Runtime fix: `0bcd55e1`. Evidence r
 - **Fix (test only).** The test now waits for `#resume-intake[open]`, as every other guide journey already does; a sweep found no other racy call site.
 - **Proof.** It passes on the B3b tree, and 5/5 against a C1 `4f046b6d` export.
 - **Receipt.** Independent PASS at `3188eb58`. The receipt and checks are rebound to it.
+
+## B3t pre-code round plan: per-tile metric and the Looking Ahead placement
+
+_The B3b acceptance JSON above is kept as historical JSON and is no longer the active record._
+
+**Rulings.** The design questions are in coordination `9881d40`. The manager's answers are in `…2026-10-15_…_tile-metric-and-looking-ahead-label_answers.md`, followed by the surface ruling "Proposal OK", which carries three conditions. That ruling sets the split:
+- **B3t (this round)** covers the Guide server and the private draft.
+- **Lane D's D6c** owns the publisher: per-tile extras and their reader, `highlight_tile_unpublishable`, and the placement extra. Those files are claimed by PS-RESUME-PAGE-PUBLIC-001, so this round changes no publication file.
+- PQ1 stays B3d.
+
+**Frozen contract.** Lane D's D6c builds against these exact names, posted to Shared when frozen.
+
+- **Tile entry, one item in `highlight_refs`:**
+  - a plain string `<bullet item_ref>`, which means metric index 0 with no caption (today's shape, unchanged);
+  - or `{"item_ref": str, "metric_index": int ≥ 0, "metric_text": str | absent, "caption": str | absent}`.
+    - `metric_text` is required when `metric_index ≥ 1` and absent at 0. Only the server sets it, at selection, from the bullet's current wording. It is a fingerprint, never displayed.
+    - `caption` is optional and member-written: plain text, at most 80 UTF-16 units, trimmed, never empty.
+  - An index-0 entry without a caption is always stored as the plain string, so it publishes exactly as today.
+  - There are at most 4 entries, and no (`item_ref`, `metric_index`) pair repeats.
+- **Resolved tile, read-only, as `highlight_tiles` in the Guide working set and the private draft workspace:** `{item_ref, metric_index, value, label, role_ref, state, publish}`.
+  - `state` is one of:
+    - `shown`: index 0 is the stored `metric_value`; index n ≥ 1 is the nth number token in the current wording, still equal to `metric_text`. The label is the caption, or else the stored `metric_label` for index 0.
+    - `needs_review`: the nth token is gone or differs from `metric_text`. It is left out of the hero and never shows a different number.
+    - `needs_caption`: index ≥ 1 with no caption.
+  - `publish` is one of:
+    - `as_today` for a plain-string entry;
+    - `after_update` for any dict entry (index ≥ 1 or captioned). Publishing drops these as `reference_invalid` until D6c lands. The private view must say so ("shown on your page after the next update") and never present it as published.
+- **Number tokens** come from the pure `metric_numbers(wording)`: an optional currency sign; digits with `,`/`.` grouping and decimals; an optional scale (`K`/`M`/`B`/`bn`, any case); and an optional `%`, `+` or `x`.
+  - Index n ≥ 1 counts the tokens in order after excluding the first token equal to the stored `metric_value`, so index 0 always means the stored metric.
+  - It is deterministic, with no AI.
+- **Looking Ahead placement:** per-item private draft metadata `presentation_section: "looking_ahead"`. That is the only accepted value, and it is never stored in canonical values (no schema change). It is exposed per item in the draft workspace and honoured by the working set, `guide_required_fields` and `validate_guide_text_limits`, including the 120-unit limit.
+  - **Rename guard** (manager condition 1): a title change on a placed Looking Ahead entry is refused with `looking_ahead_rename_unavailable`, "The Looking Ahead name can't be changed yet. Your words are kept." The draft is unchanged and no paid call is made.
+  - An entry titled "Looking Ahead" publishes exactly as today, with or without placement.
+
+**Scope:**
+1. **Choosing tiles** uses the existing references command (`kind: highlights`) with its working-set token, fences and receipts. It accepts the entry shape above.
+   - For n ≥ 1 the server finds the token and stores `metric_text`.
+   - An absent token gives a neutral 409 `changed` with the input kept.
+   - Plain strings behave as today.
+2. **Resolution** follows the states above in both private readers. Only `shown` tiles count toward the hero's 2-to-4 rule.
+3. **B3b and deletion interplay:**
+   - Reference reconciliation, Undo freshness, `prune_deleted_private_references` and the affected-container digests treat a dict entry by its `item_ref`.
+   - Moving or deleting the bullet drops every tile it backs.
+   - A dict entry is never used as a set or dict key.
+4. **Looking Ahead placement and the rename guard**, as above.
+
+**Excluded:**
+- publication files and the publisher's own refusal reasons (D6c);
+- Guide-proposed captions (a named follow-up);
+- picking tiles in the panel UI (a C round);
+- a canonical second metric;
+- model changes, schema, deployment and production.
+
+**Holds:** fake providers only and $0. Independent exact-SHA review by `session:16023c0e-7189-420e-8a4d-11f8012a9713`.
+
+```package-acceptance-json
+{
+  "schema_version": 1,
+  "package": "PS-GUIDE-SERVER-001",
+  "plan_sha": "edff495976dc694e63c43ee71338a80aa075c9fe",
+  "candidate_sha": "be0ee7a70e1f575f4a4702c21c95e31a31d8880c",
+  "baseline": [
+    {
+      "command": "X:/PeerSlate/runtimes/development/Scripts/python.exe -B -m unittest tests.test_resume_draft_service tests.test_resume_draft_routes tests.test_resume_guide_service tests.test_resume_intake_service tests.test_resume_intake_routes tests.test_resume_guide_turns tests.test_living_resume_editor_service tests.test_resume_onboarding_conversation tests.test_resume_publication_routes tests.test_resume_publication_service tests.test_resume_intake_sql -q",
+      "exit_code": 0,
+      "observation": "590/590 PASS in 40.675s on an export of main 31372da4 before B3t code. Fake/in-memory providers only. Raw log X:/PeerSlate/Claude/reviews/b3t-tiles/b3t-precode-baseline.log."
+    }
+  ],
+  "criteria": [
+    {
+      "id": "b3t_shape",
+      "expected": "highlight_refs accepts a plain bullet key or {item_ref, metric_index, metric_text?, caption?} with the frozen rules (metric_text server-set and required only for index >= 1, caption plain <= 80 units, at most 4 entries, no repeated (item_ref, metric_index)); an index-0 entry without caption is stored as the plain string; malformed, foreign, client-supplied metric_text and over-limit inputs refuse before any effect with input kept.",
+      "verification": "Service and HTTP tests over the references command for each valid and invalid shape, with raw draft before/after comparisons; RED on main."
+    },
+    {
+      "id": "b3t_numbers",
+      "expected": "metric_numbers is pure and deterministic over currency, grouping, decimals, scale, percent, plus and multiplier tokens; index n >= 1 counts tokens after excluding the first one equal to the stored metric_value.",
+      "verification": "Table tests in tests.test_resume_guide_turns including the fictional '30+ ... $19.2M' case."
+    },
+    {
+      "id": "b3t_resolve_states",
+      "expected": "Both private readers return highlight_tiles with state shown/needs_review/needs_caption and publish as_today/after_update exactly as frozen; a changed nth number is needs_review and never shows a different value; only shown tiles count toward 2 to 4; hidden, pending, orphaned or role-less bullets give no tile.",
+      "verification": "Working-set and draft-workspace tests with wording edits, missing captions and hidden or moved bullets; RED on main."
+    },
+    {
+      "id": "b3t_publish_unchanged",
+      "expected": "Without any publication-file change, a plain-string tile publishes exactly as today, a dict tile is dropped at publish as reference_invalid while the private readers say publish after_update, and visitor-AI and public bytes are unchanged.",
+      "verification": "Publication basis and owner-preview comparisons through the real publisher before and after a dict tile is added."
+    },
+    {
+      "id": "b3t_b3b_interplay",
+      "expected": "Conversion reconciliation, Undo freshness, deletion pruning and affected-container digests treat dict entries by item_ref; moving or deleting a bullet removes every tile it backs; Undo restores them exactly.",
+      "verification": "B3b conversion and purge tests extended with dict tile entries."
+    },
+    {
+      "id": "b3t_looking_ahead_placement",
+      "expected": "Private draft-item presentation_section looking_ahead is accepted only with that value, never stored in canonical values, exposed per item in the draft workspace and honoured by the working set, required fields and the 120-unit limit; an entry titled Looking Ahead publishes exactly as today with or without placement; a title change on a placed entry refuses looking_ahead_rename_unavailable with the draft unchanged and no paid call.",
+      "verification": "Draft and Guide tests for placement, rename refusal, limits and an unchanged publication basis; RED on main."
+    },
+    {
+      "id": "b3t_regression_review",
+      "expected": "Existing commands, digests, reads and publication choices are unchanged for plain-string tiles and unplaced knowledge; affected suites, lock-order witness, strict runner normal and two-copy load and full no-Playwright discover show no new failure against base; the exact candidate receives independent PASS; current-target CI and merge remain separate gates.",
+      "verification": "Focused suites under the lock-order witness, strict runs, discover comparison, exact-SHA independent receipt, package_acceptance check and merge preflight."
+    }
+  ],
+  "checks": [
+    {
+      "criterion_id": "b3t_shape",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "be0ee7a70e1f575f4a4702c21c95e31a31d8880c",
+      "source_ref": "coordination:6241e9d:Shared/handoffs/2026-10-15_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3t_round4.md + tests.test_resume_intake_service.GuideTileTests.test_shapes_refuse_before_any_effect + tests.test_resume_intake_service.GuideTileTests.test_one_bullet_backs_two_tiles_with_a_server_set_fingerprint + tests.test_resume_intake_service.GuideTileTests.test_f4_an_alias_and_its_key_cannot_make_a_repeated_pair + tests.test_resume_intake_service.GuideTileTests.test_f5_captions_are_visible_plain_text",
+      "observed": "Plain keys and frozen tile objects accepted; server-set metric_text; invalid shapes, client fingerprints, repeated pairs (alias included) and invisible or over-long captions refused before any effect; RED on main."
+    },
+    {
+      "criterion_id": "b3t_numbers",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "be0ee7a70e1f575f4a4702c21c95e31a31d8880c",
+      "source_ref": "coordination:6241e9d:Shared/handoffs/2026-10-15_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3t_round4.md + tests.test_resume_guide_turns.TileNumberTests.test_tokens_cover_currency_grouping_decimals_scale_and_suffixes + tests.test_resume_guide_turns.TileNumberTests.test_index_zero_is_the_stored_metric_and_later_indexes_skip_it_once + tests.test_resume_guide_turns.TileNumberTests.test_entries_normalize_to_the_frozen_shape",
+      "observed": "metric_numbers is pure and deterministic over the frozen token classes; index n >= 1 skips the first token equal to the stored metric_value once."
+    },
+    {
+      "criterion_id": "b3t_resolve_states",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "be0ee7a70e1f575f4a4702c21c95e31a31d8880c",
+      "source_ref": "coordination:6241e9d:Shared/handoffs/2026-10-15_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3t_round4.md + tests.test_resume_intake_service.GuideTileTests.test_a_changed_number_needs_review_and_a_missing_caption_is_asked_for",
+      "observed": "Both private readers return highlight_tiles with shown/needs_review/needs_caption and as_today/after_update; a changed nth number is needs_review and never shows a different value."
+    },
+    {
+      "criterion_id": "b3t_publish_unchanged",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "be0ee7a70e1f575f4a4702c21c95e31a31d8880c",
+      "source_ref": "coordination:6241e9d:Shared/handoffs/2026-10-15_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3t_round4.md + tests.test_resume_intake_service.GuideTileTests.test_publish_keeps_plain_tiles_and_drops_object_tiles_honestly + tests.test_resume_intake_service.LookingAheadPlacementTests.test_a_placed_looking_ahead_publishes_exactly_as_an_unplaced_one",
+      "observed": "No publication file changed; plain tiles publish as today, object tiles drop as reference_invalid with after_update; the reviewer's guest_read/owner_preview diff found no placement leak."
+    },
+    {
+      "criterion_id": "b3t_b3b_interplay",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "be0ee7a70e1f575f4a4702c21c95e31a31d8880c",
+      "source_ref": "coordination:6241e9d:Shared/handoffs/2026-10-15_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3t_round4.md + tests.test_resume_intake_service.GuideTileTests.test_deleting_a_bullet_prunes_every_tile_it_backs_without_error + tests.test_resume_intake_service.GuideTileTests.test_moving_a_tiled_bullet_drops_all_its_tiles_and_undo_restores_them + tests.test_resume_intake_service.GuideTileTests.test_f4_a_bullet_backed_only_by_an_object_tile_is_affected_by_a_move",
+      "observed": "Conversion, Undo freshness, deletion pruning and affected-container digests treat object entries by item_ref; a move or delete removes every tile the bullet backs and Undo restores them exactly."
+    },
+    {
+      "criterion_id": "b3t_looking_ahead_placement",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "be0ee7a70e1f575f4a4702c21c95e31a31d8880c",
+      "source_ref": "coordination:6241e9d:Shared/handoffs/2026-10-15_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3t_round4.md + tests.test_resume_intake_service.LookingAheadPlacementTests.test_placement_is_private_metadata_honoured_by_the_guide + tests.test_resume_intake_service.LookingAheadPlacementTests.test_placement_refuses_other_values_types_empty_and_long_words + tests.test_resume_intake_service.LookingAheadPlacementTests.test_renaming_a_placed_entry_is_refused_and_changes_nothing + tests.test_resume_intake_service.LookingAheadPlacementTests.test_f1_placement_needs_a_work_entry + tests.test_resume_intake_service.LookingAheadPlacementTests.test_f2_the_my_data_edit_route_cannot_rename_or_make_personal_a_placed_entry + tests.test_resume_intake_service.LookingAheadPlacementTests.test_f3_the_guide_accept_path_keeps_the_rename_wording + tests.test_resume_intake_service.LookingAheadPlacementTests.test_r3_any_command_that_reaches_the_persist_point_is_checked + tests.test_resume_intake_service.LookingAheadPlacementTests.test_r4_publish_keeps_the_placement_and_the_rename_guard + tests.test_resume_intake_service.LookingAheadPlacementTests.test_r4_an_unrelated_change_is_never_blocked_by_another_placed_entry",
+      "observed": "Top-level presentation_placements is private, never canonical, presented per item and honoured by the working set; one persist-point guard refuses renames and personal reclassification on every path; publish and republish keep it; only touched entries are checked. Minors m1/m2 deferred to B3c by the manager."
+    },
+    {
+      "criterion_id": "b3t_regression_review",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "be0ee7a70e1f575f4a4702c21c95e31a31d8880c",
+      "source_ref": "coordination:6241e9d:Shared/handoffs/2026-10-15_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3t_round4.md + X:/PeerSlate/Claude/reviews/b3t-tiles/r4/affected.txt + X:/PeerSlate/Claude/reviews/b3t-tiles/r4/witness.txt + X:/PeerSlate/Claude/reviews/b3t-tiles/r4/strict-normal.txt + X:/PeerSlate/Claude/reviews/b3t-tiles/r4/strict-load1-rerun.txt + X:/PeerSlate/Claude/reviews/b3t-tiles/r4/strict-load2-rerun.txt + X:/PeerSlate/Claude/reviews/b3t-tiles/r4/discover-cand.txt",
+      "observed": "Affected 1027 OK; witness 0 violations; strict 210/210 normal and 210/210 in both concurrent copies on the unchanged re-run; discover failure set identical to base 31372da4; independent exact-SHA PASS."
+    }
+  ]
+}
+```
+
+### B3t implementation evidence (candidate for independent review)
+
+- **Basis.**
+  - Fake providers only; $0.
+  - Evidence root: `X:/PeerSlate/Claude/reviews/b3t-tiles/`.
+  - Plan `edff4959` (adopted at `5ce413db`); runtime `dc5ee750`.
+  - The frozen contract for D6c is coordination `2c340b7`.
+  - No publication file changed (D6c owns those).
+- **Tiles (`services/resume_guide_turns.py`).**
+  - `metric_numbers`, `nth_metric`, `highlight_entry`, `tile_key`, `resolve_tile`. These are pure; regex number tokens; no AI.
+  - The server sets `metric_text` at selection (`set_guide_references`), and a client fingerprint is refused.
+  - A post-binding check means one tile per (bullet, number), even when an alias names the bullet.
+- **Readers.**
+  - `resolve_guide_references.highlight_tiles` and the draft workspace's `highlight_tiles` return the frozen `{item_ref, metric_index, value, label, role_ref, state, publish}`. The Guide list keeps its earlier evidence fields.
+  - The draft view resolves from each bullet's effective words, including a B3b move.
+  - Guide Hide stays the working set's authority, because the draft view has no intake history.
+  - **Correction (review F6):** only the Guide reader drops a Guide-hidden bullet's tiles. The draft workspace still lists them as `shown`. Publication drops them: the basis proposes `resume_display: false`, so the plain tile goes as `reference_not_published` and an object tile as `reference_invalid`. No page reads the draft tiles yet. A draft `state: shown` is not a visibility verdict.
+- **Interplay.**
+  - `_conversion_affected` invalidates every tile the bullet backs.
+  - Reconciliation, Undo and `prune_deleted_private_references` treat object entries by `item_ref`. The prune previously did `ref not in removed`, which would raise `TypeError` on a dict.
+- **Placement.**
+  - Draft `create_private_item` / `save_item` accept `presentation_section: "looking_ahead"` (knowledge only). It is stored as overlay metadata and never in canonical values.
+  - It is presented per item, honoured by the working set's section, and kept by an ordinary edit and by discard.
+  - While placed, the title must stay "Looking Ahead": `looking_ahead_rename_unavailable`, "The Looking Ahead name can't be changed yet. Your words are kept."
+  - Wording is required, with the 120-unit limit.
+  - SQL storage refuses the local-only field.
+  - A placed entry publishes exactly as an unplaced one: read state, blocked, ineligible, dropped, change count, publication state and sharing are all equal.
+
+| Criterion | Proof |
+|---|---|
+| `b3t_shape` | `GuideTileTests.test_shapes_refuse_before_any_effect` (client `metric_text`, an 81-unit or blank caption, a repeated pair, 5 entries, a negative index, and an absent number → 409 `changed`; raw draft unchanged; index-0 object stored as the plain key); `TileNumberTests.test_entries_normalize_to_the_frozen_shape` |
+| `b3t_numbers` | `TileNumberTests.test_tokens_cover_currency_grouping_decimals_scale_and_suffixes`, `test_index_zero_is_the_stored_metric_and_later_indexes_skip_it_once` (incl. "30+ … $19.2M" and "12 of 12") |
+| `b3t_resolve_states` | `test_one_bullet_backs_two_tiles_with_a_server_set_fingerprint` (Guide and draft readers agree); `test_a_changed_number_needs_review_and_a_missing_caption_is_asked_for` |
+| `b3t_publish_unchanged` | `test_publish_keeps_plain_tiles_and_drops_object_tiles_honestly` (only `reference_invalid` is added; plain tiles unchanged; `publish` `as_today`/`after_update`); `LookingAheadPlacementTests.test_a_placed_looking_ahead_publishes_exactly_as_an_unplaced_one` |
+| `b3t_b3b_interplay` | `test_moving_a_tiled_bullet_drops_all_its_tiles_and_undo_restores_them`; `test_deleting_a_bullet_prunes_every_tile_it_backs_without_error` |
+| `b3t_looking_ahead_placement` | `LookingAheadPlacementTests` (placement private and honoured; other values, types, empty and 121-unit refused; rename refused with the draft byte-identical; ordinary edits keep the placement) |
+| `b3t_regression_review` | On clean exports of `dc5ee750`: affected suites (25 modules) 1015 OK; lock-order witness 1015 run, 0 violations; strict 210/210 normal (388 s) and in two concurrent copies (399 s), 210/210 each; discover: candidate 7996 / 379 skipped / 16 errors / 19 failures vs base `31372da4` 7983 / 379 / 16 / 19, identical failure sets (+13 new tests). |
+
+**RED:** the 18 new tests on the pre-code tree gave 14 failures/errors (`b3t-red.txt`; the publish-equality test passes trivially before placement exists, as a guard). GREEN: 18/18.
+
+### B3t round 2: review findings (FAIL at `f5658b82`, coordination `a60cb95`)
+
+Runtime: `e245f85f`. Evidence: `X:/PeerSlate/Claude/reviews/b3t-tiles/r2/`.
+
+- **F1 (Medium): placement needs a work entry.** `_check_looking_ahead_placement` also requires `classification` to be `work` or `both`, the rule today's publisher uses. A personal or unclassified entry is refused with `looking_ahead_placement_unavailable`, "Looking Ahead is for a work entry. Your words are kept." This wording is **provisional, for Pete**. Create and save are both covered, and the draft is unchanged on refusal.
+- **F2 (Medium): the My Data edit route is guarded.** `EntryPolicyService._refuse_unplaceable_edit` runs before `_apply` on an `edit` when the private draft holds the placement for that key.
+  - A title change is refused with `looking_ahead_rename_unavailable`.
+  - A change to personal is refused with `looking_ahead_placement_unavailable`.
+  - Both use the same wording, and nothing is saved.
+  - A wording-only edit still saves.
+  - Driven through `POST /api/entry-policy/me/commands`.
+- **F3: the Guide accept path keeps the wording.** `_apply_record_decision` passes the guard's own message through for both codes; other conflicts keep the neutral line. Proven through a real upload: an organizer `additional_detail` proposal that renames the placed entry.
+- **F4: the three surviving mutants now fail.**
+  - `conversion_backed_reverted` (error): a move backed only by an object tile; keeping that tile is `reconciliation_required`; Undo is exact.
+  - `placement_discard_drops` (error).
+  - `alias_pair_identity_reverted` (failure): an alias plus its key at the same index is refused.
+  - All twelve reviewer mutations against `e245f85f` are recorded in `mutations-r2.txt`. Every reachable mutant is caught. `client_metric_text_bound` is unreachable, because `highlight_entry` refuses any client `metric_text` first (proven by `client_metric_text_accepted`, 3 failures).
+- **F5: captions are visible plain text.** Captions with control or format characters (`Cc`/`Cf`, e.g. newline, tab, zero-width) or no visible character are refused. Surrounding spaces are trimmed.
+- **F6:** the evidence wording above is corrected. The D6c contract addendum (coordination) adds two notes:
+  - draft `state: shown` is not a visibility verdict;
+  - D6c must import `metric_numbers`, which uses Python's `\d` and so also matches non-English digits.
+- **Runs** were on clean exports of `e245f85f`:
+  - affected (25 modules): 1022 OK;
+  - lock-order witness: 1022 run, 0 violations;
+  - strict: 210/210 normal (390 s) and in two concurrent copies (390 s), 210/210 each;
+  - discover: candidate 8003 / 379 / 16E / 19F vs base `31372da4` 7983 / 379 / 16E / 19F, with identical failure sets (+20 new tests).
+
+### B3t round 3: one choke point for the placement invariant (FAIL at `581639f7`, coordination `584b425`)
+
+Runtime: `62e11698`. Evidence: `X:/PeerSlate/Claude/reviews/b3t-tiles/r3/`.
+
+**The fix (R2-F1, third finding on the same guard).** The edit-only pre-check is replaced by `EntryPolicyService._enforce_looking_ahead_placement(owner, snapshot)`.
+- It runs once in `_commit_guarded`, after `_apply` has changed the in-memory snapshot and before the receipt, `commit_linked_write` or `_save` writes anything.
+- It checks the values every active placed knowledge entry would store: title `Looking Ahead` → otherwise `looking_ahead_rename_unavailable`; classification `work`/`both` → otherwise `looking_ahead_placement_unavailable`.
+- A refusal raises before any write, with no provider involved.
+
+**Every path that can change a knowledge entry's title or classification:**
+
+| Path | How it is covered |
+|---|---|
+| My Data `create` / `edit` / `recategorize` / `change_permissions` / `delete` / `restore` / `permanently_delete` / `resolve_match` (in-memory store) | All go through `_commit_guarded` → `_apply` → **the choke point** → write. `resolve_match` `equivalent` and `additional_detail` are now refused (tests below). |
+| My Data on SQL storage (`_commit_sql`) | No placement can exist there: the draft refuses `presentation_section` on SQL-bound storage. |
+| Draft `save_item` / `create_private_item` | `_check_looking_ahead_placement` on the normalized values, before the canonical create and before the overlay write. |
+| Draft `_save_moved_item` / `apply_guide_changes` | B3b conversions cover only skill, accomplishment and project; they never write knowledge. |
+| Draft `discard_item` / `review_candidate` / `bind_story` / `clear_story` | Change no title or classification. Discard keeps the placement. |
+| Guide accept (`_apply_record_decision`) | Saves through draft `save_item`, which is guarded, and keeps the guard wording (F3). |
+| Publish (`resume_publication_service`, Lane D's file) | Writes canonical values from the reviewed draft overlay, whose values already passed the draft guard. D6c owns any publisher-side check. |
+| Expiry sweeps (`list_entries`, `get_entry`, `sweep_expired`) | Lifecycle only; no title or classification. |
+
+**Tests (through the real `POST /api/entry-policy/me/commands` route):**
+- `test_r3_an_edit_that_omits_the_classification_is_refused`;
+- `test_r3_resolving_a_match_cannot_rename_or_make_personal_a_placed_entry` (equivalent and additional detail, rename and personal);
+- `test_r3_any_command_that_reaches_the_persist_point_is_checked`: a stand-in "future" command changes the stored title its own way, is refused, and nothing is written.
+- **RED** on the `e245f85f` service code: 3 tests, 6 failures (`red-on-e245f85f.txt`). GREEN: all 11 placement tests and the entry-policy suites (64) pass.
+- **Runs** were on clean exports of `62e11698`:
+  - affected (25 modules): 1025 OK;
+  - lock-order witness: 1025 run, 0 violations;
+  - strict: 210/210 normal (397 s) and in two concurrent copies (390 s), 210/210 each;
+  - discover: candidate 8006 / 379 / 16E / 19F vs base `31372da4` 7983 / 379 / 16E / 19F, with identical failure sets.
+
+### B3t round 4: the placement survives publish (FAIL at `fb3e4c17`, coordination `44d80ad`)
+
+Runtime: `146477f1`. Evidence: `X:/PeerSlate/Claude/reviews/b3t-tiles/r4/`.
+
+**R3-F1 (Medium), fixed in my files only.**
+- **Where it lived:** publish pops each consumed entry's item draft, which held the placement.
+- **Where it lives now:** at the draft's **top level**, as `presentation_placements: {record_key: "looking_ahead"}`, beside `highlight_refs`. Publish deep-copies the draft and keeps that map. No publication file changed.
+- **Who writes and reads it:**
+  - `create_private_item` and `save_item` set it;
+  - `_save_shared_draft` carries the command's own entry across;
+  - `prune_deleted_private_references` drops a deleted entry's placement;
+  - the workspace presents `presentation_section` per item from the map.
+- **Discard** no longer has any placement handling, because discard never touches the map.
+- **D6c reads the new location.** The contract revision is coordination `670ec41` (supersedes the item-level field in `2c340b7` / `c1eaea7`).
+
+**R3-F2 (Minor), fixed.** `_enforce_looking_ahead_placement(owner, snapshot, affected)` checks only the placed entries the command touched, so an unrelated My Data change is never refused.
+
+**Tests:**
+- `test_r4_publish_keeps_the_placement_and_the_rename_guard`:
+  - create, edit and publish → the item draft is consumed, but the map and the presented placement remain;
+  - a draft rename and a My Data rename are both refused;
+  - a second edit and publish succeed, and the placement stays.
+- `test_r4_an_unrelated_change_is_never_blocked_by_another_placed_entry`.
+- **RED** on the `62e11698` services: 2 of 2 fail (`red-on-62e11698.txt`). GREEN: all 13 placement tests, plus the entry-policy suites (66 total).
+
+**Proof at `146477f1`:**
+- affected suites: 1027 run, OK;
+- lock-order witness: 1027 run, 0 violations;
+- strict: 210/210 normal (364 s).
+- **First two-copy load run: 209/210 in each copy.** Each copy hit a different existing Guide-panel opt-in test, with a 30-second wait for a Guide button (`strict-load1.txt`, `strict-load2.txt`). Neither test touches tiles or placement.
+- **Unchanged re-run:** 210/210 in both copies (356 s / 357 s; `strict-load*-rerun.txt`).
+- discover: candidate 8008 / 379 / 16E / 19F vs base `31372da4` 7983 / 379 / 16E / 19F, with identical failure sets.
+
+### B3t independent PASS and receipt
+
+The reviewer's round-4 narrow re-check at `be0ee7a7` is a **PASS** (6241e9d).
+- The receipt and the acceptance checks are bound to that SHA.
+- Minors m1 (tests for placement removal on delete and for placing through a save) and m2 (re-place on restore, plus a D6c contract note) are deferred to B3c by the manager.
