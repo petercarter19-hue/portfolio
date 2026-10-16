@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-CI-IMAGE-PIN-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Pin the Azure Pipelines hosted agent image in azure-pipelines.yml from ubuntu-latest to ubuntu-24.04, the image every job ran on in run 4733 (runner image ubuntu24/20261012.334), so CI does not change when the hosted ubuntu-latest label moves to Ubuntu 26.04 (GitHub announced a gradual move from 2026-10-19). Keep Python 3.12. CI configuration only; no Azure setting, schema, deployment or production change.",
   "assignment": "implementation",
   "writer_ref": "agent:claude/2026-10-16/ci-image-pin",
@@ -26,6 +26,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "89267b1a56cb4ec8d84edf6d1df9fc50889278db",
+  "closed_at": "2026-10-16T13:09:30Z"
 }
