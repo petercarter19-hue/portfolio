@@ -79,7 +79,11 @@
     "services/ask_pete/response.py",
     "tests/ask_pete/test_service.py",
     "tests/test_resume_sage_mist_browser.py",
-    "tests/ask_pete/run_recruiter_evidence_browser.py"
+    "tests/ask_pete/run_recruiter_evidence_browser.py",
+    "overview_projection_service.py",
+    "templates/my_story.html",
+    "tests/test_member_overview_projection.py",
+    "tests/test_my_story.py"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-PUBLIC-TRUST-PAGES-001.md"
