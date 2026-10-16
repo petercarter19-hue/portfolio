@@ -101,7 +101,7 @@ class LeanStartupTests(unittest.TestCase):
         self.assertIn("Documentation-only closeout", body)
         self.assertIn("[skip ci]", body)
         self.assertIn("Do not restart App Service merely to publish bookkeeping", body)
-        self.assertLess(len(body.split()), 1100)
+        self.assertLess(len(body.split()), 1200)
 
 
 class ControlPlaneTests(unittest.TestCase):

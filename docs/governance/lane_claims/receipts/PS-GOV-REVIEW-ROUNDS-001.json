@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "package": "PS-GOV-REVIEW-ROUNDS-001",
+  "candidate_sha": "93b48bb2169a0bf744234f7c8e0a1fc64296faa8",
+  "review_type": "self",
+  "reviewer_ref": "agent:claude/2026-10-15/review-rounds",
+  "result": "pass",
+  "reviewed_at": "2026-10-16T02:31:34Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "The manager's compressed section measured 118 words by the test's whitespace split, so docs/AI_WORKFLOW.md would be 1212 words against the 1200 cap. It was trimmed to 105 words keeping all five points: 'that can create, change, publish, undo or delete' became 'that creates, changes, publishes, undoes or deletes'; 'where it is stored, and the one place each rule is enforced' became 'its storage, and each rule's one enforcement point'; 'confirms the map first' became 'confirms it first'; 'remove each new guard to prove a test fails, and follow the data' became 'prove a test fails without each new guard; trace data'; 'at the second same-kind finding, enforce the rule at one choke point' became 'a second such finding needs one choke point'; 'cover every route, with a route-loop test' became 'cover every route via a route-loop test'. The document is 1199 words."
+    },
+    {
+      "status": "resolved",
+      "summary": "Whole-diff review against activation main fa89a917: AI_WORKFLOW.md changes only by inserting the section after 'Delivery paths'; tests/test_governance_pointers.py changes only the cap from 1100 to 1200; no other test or script pins that cap. No other rule changes."
+    },
+    {
+      "status": "informational",
+      "summary": "tests/test_governance_pointers.py is also a surface of paused PS-AGENT-RULES-CLEANUP-001. Paused claims do not collide; if it resumes after this merge it reconciles main normally."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-GOV-REVIEW-ROUNDS-001.md"
+}

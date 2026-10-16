@@ -66,6 +66,20 @@ task. The local registry guards workspace custody, not repository authority;
 
 Protected release and production-operation work also uses `PS-OPS-001`.
 
+## Fewer review rounds
+
+Bounded and Protected work (Routine may skip step 1):
+
+1. **Map before code.** List every path that creates, changes, publishes,
+   undoes or deletes the data, its storage, and each rule's one enforcement
+   point. The manager or reviewer confirms it first.
+2. **Check like a reviewer.** Before review, prove a test fails without each
+   new guard; trace data through create, edit, publish, undo and delete.
+3. **Fix the pattern.** Cover every same-kind path; a second such finding
+   needs one choke point.
+4. **First review is end to end;** rechecks may be narrow.
+5. **Visual changes cover every route** via a route-loop test.
+
 ## Integrity rules
 
 - Azure `origin/main` is authoritative; never push directly to main.
