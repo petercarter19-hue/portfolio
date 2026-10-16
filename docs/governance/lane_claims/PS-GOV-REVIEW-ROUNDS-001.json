@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-GOV-REVIEW-ROUNDS-001",
+  "state": "active",
+  "outcome": "Make the fewer-review-rounds practice a permanent part of the PeerSlate delivery workflow: add one short 'Fewer review rounds' section to docs/AI_WORKFLOW.md with its five points (map before code, check like a reviewer before review, fix the pattern not the instance, first review is end to end, visual work covers every page), applying to Bounded and Protected work with Routine work able to skip the map. Raise only the AI_WORKFLOW.md word cap in tests/test_governance_pointers.py, to 1200. No other rule changes; documentation and its pinned test only; no deployment.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude/2026-10-15/review-rounds",
+  "branch": "work/2026-10-15-gov-review-rounds-001",
+  "delivery_path": "Routine",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "a20543e0afaf628c19da86f61660ed817aff70dc",
+  "owner_outcome_ref": "role:owner/pete-chat-2026-10-15/claude-manager-16023c0e/review-rounds-workflow",
+  "surfaces": [
+    "docs/AI_WORKFLOW.md",
+    "tests/test_governance_pointers.py",
+    "docs/governance/lane_claims/PS-GOV-REVIEW-ROUNDS-001.json",
+    "docs/governance/lane_claims/receipts/PS-GOV-REVIEW-ROUNDS-001.json",
+    "docs/governance/lane_claims/evidence/PS-GOV-REVIEW-ROUNDS-001.md"
+  ],
+  "domains": [
+    "governance:agent-workflow:review-rounds"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-GOV-REVIEW-ROUNDS-001.md"
+  ],
+  "review_requirement": "self",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
