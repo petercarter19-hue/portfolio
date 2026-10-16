@@ -4,15 +4,16 @@
  * signed-in member's private draft workspace (server-derived identity; the
  * page never names an owner) and returns plain data. No markup is built here.
  *
- * SECTION_ORDER mirrors the Guide's single shared order
- * (services/resume_guide_contract.py GUIDE_SECTION_ORDER, B1 API v1). When B2's
+ * SECTION_ORDER is the one shared section order, Experience before Skills (the owner's G6
+ * ruling, 2026-10-15): services/resume_publication_projection.py RESUME_BASE_SECTION_ORDER
+ * and the Guide's tab order (services/resume_guide_contract.py). When B2's
  * item types land, only TYPE_SECTION and the readers below change.
  */
 (function (global) {
     'use strict';
 
     var SECTION_ORDER = Object.freeze([
-        'impact_statement', 'skills', 'experience', 'projects', 'education', 'certifications', 'awards'
+        'impact_statement', 'experience', 'skills', 'projects', 'education', 'certifications', 'awards'
     ]);
     var SECTION_LABELS = Object.freeze({
         impact_statement: 'Impact Statement', skills: 'Skills', experience: 'Experience',

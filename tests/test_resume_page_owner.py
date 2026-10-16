@@ -22,7 +22,10 @@ ROOT = Path(__file__).resolve().parents[1]
 JS = {name: (ROOT / "static" / "js" / name).read_text(encoding="utf-8")
       for name in ("resume-page.js", "resume-page-model.js", "resume-page-ask.js")}
 CSS = (ROOT / "static" / "css" / "resume-page.css").read_text(encoding="utf-8")
-SHARED_ORDER = ["impact_statement", "skills", "experience", "projects", "education", "certifications", "awards"]
+# Pete's G6 ruling (2026-10-15, manager-confirmed): one section order everywhere, Experience before Skills.
+SHARED_ORDER = ["impact_statement", "experience", "skills", "projects", "education", "certifications", "awards"]
+# The shared base order on main until Lane D package 6 round D6c merges (lockstep: B3m, then D6c).
+PRE_G6_BASE_ORDER = ["impact_statement", "skills", "experience", "projects", "education", "certifications", "awards"]
 
 # Every id today's editor, the Guide, media and publication scripts rely on.
 LEGACY_IDS = (
@@ -172,11 +175,24 @@ class OwnerResumePageRenderTests(unittest.TestCase):
         self.assertIsNotNone(match)
         order = re.findall(r"'([a-z_]+)'", match.group(1))
         self.assertEqual(order, SHARED_ORDER)
-        try:
-            from services.resume_guide_contract import GUIDE_SECTION_ORDER
-        except ImportError:  # B1 contract not on this base yet; the literal above is the pin.
-            return
-        self.assertEqual(list(GUIDE_SECTION_ORDER), order)
+        # The shared base constant is this order once D6c merges; until then main still holds the old
+        # Skills-first order. Either state passes, so main stays green whichever merges first.
+        from services.resume_publication_projection import RESUME_BASE_SECTION_ORDER
+        self.assertIn(list(RESUME_BASE_SECTION_ORDER), (SHARED_ORDER, PRE_G6_BASE_ORDER))
+        from services import resume_guide_contract
+        self.assertEqual(list(resume_guide_contract.GUIDE_SECTION_ORDER), list(RESUME_BASE_SECTION_ORDER))
+        tabs = getattr(resume_guide_contract, "GUIDE_TAB_ORDER", None)  # B3m: the Guide's own tab order.
+        if tabs is not None:
+            self.assertEqual(list(tabs), order)
+
+    def test_the_page_draws_its_sections_in_the_view_model_order(self):
+        # The visible sections come from the page's builder list; its core sections keep SECTION_ORDER.
+        builders = re.search(r"var builders = \[(.*?)\];", JS["resume-page.js"], re.S)
+        self.assertIsNotNone(builders)
+        drawn = re.findall(r"\['([a-z-]+)', render", builders.group(1))
+        core = [key for key in drawn if key in SHARED_ORDER]
+        self.assertEqual(core, [key for key in SHARED_ORDER if key in core])
+        self.assertLess(drawn.index("experience"), drawn.index("skills"))
 
     # --- criterion theme_tokens / phone / reduced_motion (static) ---------
     def test_locked_theme_tokens_and_layout_geometry(self):

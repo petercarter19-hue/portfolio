@@ -35,130 +35,100 @@ D1d's plan was `393a9de3`; its 6 criteria (ask_tabs, rail_ask_expanded, skill_li
 
 Spec: the claim's D2 line; the manager's D2 brief (2026-10-14); approved-v2 and the build-D1 approved pictures; RP4 plan; design rationale 2e and 6 (items 11, 13); `PETE_DECISIONS_2026-10-11_evening.md`; B2 on main (`resume_section_for`, `highlight_refs`, the project normalizer, ruling `8eff4fc`). Six details the approved pictures don't draw are asked in coordination `Shared/handoffs/2026-10-14_claude-pc_to-claude-pc_resume-D2-design-questions.md` with recommended defaults; this plan builds those defaults.
 
-## Acceptance plan (D2, committed before code)
+## D2 acceptance record (merged, squash `9360f192`)
+
+D2's plan was `8049f220`; its 6 criteria (guide_entry, looking_ahead, projects, highlight_tiles, rest_unchanged, review_and_delivery) all passed at the independently reviewed candidate `e21456f3c6d80bd9531079ce3ce2ffa55e96ecf5` (`package_acceptance.py check`: PASS 6/6; guide-build exact re-check PASS, coordination `64205e6`; Pete's screenshot OK). That exact record is preserved in the branch history (`dc82b877`) and on main at `9360f192`. Round D2o below must keep every D1, D1d and D2 behaviour.
+
+## D2o round: one section order, Experience before Skills
+
+**Owner decision:** Pete's G6 ruling, one section order everywhere with Experience before Skills (2026-10-15, manager-confirmed), ref `role:owner/pete-chat-2026-10-15/claude-manager-16023c0e/section-order-experience-first`. It outranks the older claim outcome text that lists "Impact Statement, Skills, Experience"; the claim is not edited.
+
+**Change:** the page's one view-model order `SECTION_ORDER` (`static/js/resume-page-model.js`) becomes Impact Statement, Experience, Skills, Projects, Education, Certifications, Awards, exactly the `RESUME_BASE_SECTION_ORDER` that Lane D package 6 round D6c sets (`work/2026-10-14-resume-page-public-001` at `755f8d5c`). The page's sections, rail list and phone Jump to all follow it.
+
+**Lockstep with D6c:** main's shared constant still says Skills first until D6c merges (merge order B3m, then D6c: coordination `42f1c46`, `0f9aeb9`). The pinned order test therefore pins the page to the ruled order and accepts the shared constant in either state: equal to the page (after D6c) or the old Skills-first order (before D6c). It also pins the Guide's own tab order (`GUIDE_TAB_ORDER`, B3m) when present. Main stays green whichever merges first; after D6c merges, the old-order branch can be narrowed away.
+
+## Acceptance plan (D2o, committed before code)
 
 ```package-acceptance-json
 {
   "schema_version": 1,
   "package": "PS-RESUME-PAGE-OWNER-001",
-  "plan_sha": "8049f22075f743158ead4d0a77ecc63e9c75e728",
+  "plan_sha": "f057f26039928bd244d2dd4e5079d9f1f6be9201",
   "baseline": [
     {
-      "command": "python -B -m unittest tests.test_resume_page_owner tests.test_resume_page_owner_browser -q",
+      "command": "python -B -m unittest tests.test_resume_page_owner tests.test_resume_page_owner_browser",
       "exit_code": 0,
-      "observation": "Pre-change at 925b995b (tree equals accepted main bd07b1ee, which carries D1 996ea385 and D1d be2e9126): 52 page tests PASS in 22.8s (fictional members, recorded workspace or the real draft service over in-memory stores, process-local placeholder key, no AI call). Edit myself opens today's editor; there is no Guide entry on the page; the page never writes; Looking Ahead always shows the placeholder because the adapter ignores the member's Looking Ahead entry; Projects read retired field names (name/description), so a B2 project (project_name/summary) shows no name and no section; highlight tiles exist only when a harness injects them, because the adapter ignores highlight_refs."
+      "observation": "Pre-change at a6910db9 (branch dc82b877 reconciled with main 6c14d8e2; owned paths equal main's D2 squash 9360f192), PEERSLATE_CHROME = Playwright Chromium 1234, ANTHROPIC_BASE_URL=http://127.0.0.1:9: 76 page tests PASS, 0 skipped. The page's SECTION_ORDER is Impact Statement, Skills, Experience, ...; the rendered sections run story, skills, experience, Looking Ahead, credentials and the nav reads Overview, Skills, Experience; the unit test pins the JS order equal to the Skills-first shared constant, so D6c's Experience-first base order fails it (D6c request 0f9aeb9, cross-claim pin)."
     }
   ],
   "criteria": [
     {
-      "id": "guide_entry",
-      "expected": "Edit myself (top right of the frame) still opens today's manual editor for the owner, unchanged. A 'Continue with the Guide' button sits just left of it and opens the Guide panel only through its public open hook (window.PeerSlateGuidePanel.open); when that hook is absent the button is absent (hidden), never a dead control, and the page never drives the Guide's own controls or files. Below 960px Edit myself comes first and the Guide button follows in outline style. Both live only on the owner's private page.",
-      "verification": "Browser test with and without a stand-in hook at 1440 and 390 (hidden without it, one open call with it, never the editor, hidden again if the hook goes away, order and style on a phone, 24px targets); unit template/static tests (rendered hidden, before Edit myself, flag-off absent, no Guide-internal API); toolbar screenshots."
-    },
-    {
-      "id": "looking_ahead",
-      "expected": "The Looking Ahead section after Experience shows the member's own line from their private draft (B2's work knowledge entry titled 'Looking Ahead'), once on the page and never an AI line; a personal or My Story entry with that title is not used. With no line the owner sees the existing placeholder. The owner writes or edits the line in place (one field, the browser's 120-character limit, Save privately / Cancel) through the existing private draft commands (create_private_item, then save_item); an empty line is never saved or sent; a refused or failed save keeps the words; a retry of an uncertain save replays the same command and never saves twice; unsaved words are never wiped by a reload. Nothing is shared or published. Renaming waits on a stored-label field from the Guide server (dependency, not built).",
-      "verification": "Browser tests with a recorded workspace and the real draft service over in-memory stores: shown once, not in the hero, placeholder without a line, write/edit/cancel, 120 limit, empty refused with no request, 503 keeps words, lost reply retried once with the same request id and one entry saved, saved entry not displayed to visitors; unit static tests; screenshots."
-    },
-    {
-      "id": "projects",
-      "expected": "The Projects section appears only once the member has a project, after Experience, and in the section list. Each project shows B2's fields: name, optional category label, the one-line description, organization and dates, and up to three links shown by site name ('GitHub' for github.com) that open in a new tab with rel='noopener noreferrer'; only https:// links with a host are shown, and no link is ever fetched by the page. The owner adds a project from Edit myself ('Add a project') and edits each one in place, with the Guide's D91 fields and labels, through the existing private draft commands; missing name/description, a non-https link or mixed date detail are explained without sending; server refusals keep the words.",
-      "verification": "Browser tests: absent without projects, fields/links/order, javascript:/http: links dropped, at most three, no request to any link host, add with validation then save, edit in place via save_item, refusal keeps input, real draft values checked; unit static test that links are never fetched; screenshots at 1440 and 390."
-    },
-    {
-      "id": "highlight_tiles",
-      "expected": "The hero shows two to four highlight tiles, each resolved at render from B2's highlight_refs (at most four saved accomplishment keys) to that saved bullet's own metric_value and metric_label (its own wording when it has no label) and its role, so a tile is a reference, never copied text: a changed number shows, a cleared number drops the tile, and duplicate, missing, number-less or role-less references give no tile; fewer than two resolved tiles means no row. A tile the Guide suggests is drawn dashed with 'Suggested by the Guide · waiting for your OK', is not a link and is never a saved or public tile; the page itself never invents a suggestion (the Guide's pending tile proposal is a later dependency).",
-      "verification": "Browser tests with references (order, cap, drops, role link, live follow on reload, one-tile no-row, column count) and a waiting tile rendered through the view model; adapter check that no suggestion is invented; tile screenshots beside approved-v2."
+      "id": "section_order",
+      "expected": "The owner page's one view-model order is Impact Statement, Experience, Skills, Projects, Education, Certifications, Awards (Pete's G6 ruling), equal to D6c's RESUME_BASE_SECTION_ORDER at 755f8d5c. The rendered sections and the rail/Jump to list put Experience before Skills; nothing else about any section changes.",
+      "verification": "Unit test pins the JS literal to the ruled order and accepts the shared base constant only as equal to it or as the old Skills-first order, plus the Guide tab order when present; browser test pins section ids and nav labels Experience before Skills; both fail at the base code. The unit test also passes on a D6c tree (755f8d5c with this round's owned files overlaid)."
     },
     {
       "id": "rest_unchanged",
-      "expected": "Flag-off /app/resume HTML equals the base; every D1 and D1d behaviour still passes (identity, order, rail and always-expanded rail Ask, Ask tabs, skill lines, truthful reads and dates, fenced Ask, constellation band, portrait cards, phone fold, left edge, image guard, keyboard, AA contrast, light only); the page still makes no AI call and its only requests are the workspace read and the private draft commands.",
-      "verification": "Full page suites; normalized flag-off HTML base vs candidate; affected suites; strict 152 browser runner normal and twice concurrently; no-Playwright skip proof; whole no-Playwright discover base vs candidate with identical failure sets; screenshots at 1440, 1280, 960 and 390 in build-D2."
+      "expected": "Every D1, D1d and D2 behaviour still passes; the flag-off /app/resume is unchanged (no template, route or server change); the page still makes no AI call and its only requests are the workspace read and the private draft commands.",
+      "verification": "Full page suites (unit + browser with PEERSLATE_CHROME, skipped count reported), the browser module twice concurrently, no-Playwright skip proof, diff limited to the JS order, its comment and the two tests."
     },
     {
       "id": "review_and_delivery",
-      "expected": "Each new D2 test fails at the base code; the page browser suite passes twice concurrently; the browser module skips cleanly without Playwright; the Guide builder session independently passes the exact candidate; Pete's screenshot OK is recorded before merge; the six D2 design defaults are confirmed or corrected by the manager.",
-      "verification": "Writer verification log (build-D2/PROGRESS.md), independent review receipt, screenshot packet build-D2/screens/compare.html, merge preflight and current-target Azure CI."
+      "expected": "Each changed test fails at the base code; an independent reviewer the manager assigns passes the exact candidate (Protected); the merge is sequenced by the manager with B3m and D6c.",
+      "verification": "Writer verification log (build-D2o), independent review receipt, merge preflight and current-target Azure CI."
     }
   ],
-  "candidate_sha": "e21456f3c6d80bd9531079ce3ce2ffa55e96ecf5",
+  "candidate_sha": "903c9136eaf53fd5b078dc70a409170456a6334a",
   "checks": [
     {
-      "criterion_id": "guide_entry",
+      "criterion_id": "section_order",
       "result": "pass",
       "kind": "browser",
-      "candidate_sha": "e21456f3c6d80bd9531079ce3ce2ffa55e96ecf5",
-      "source_ref": "tests/test_resume_page_owner_browser.py:test_continue_with_the_guide_appears_only_with_the_public_hook_and_opens_it",
-      "observed": "Without window.PeerSlateGuidePanel.open the 'Continue with the Guide' button is hidden; with a stand-in hook it shows just left of Edit myself at the top right of the frame (at least 24px), one click makes exactly one open call and never opens the editor, and it hides again if the hook goes away. At 390 Edit myself comes first and the Guide button is outline style. Edit myself still opens today's editor (test_edit_myself_opens_todays_editor_and_saves_refresh_the_page). Unit tests: rendered hidden before Edit myself, absent with the flag off, no Guide-internal API used.",
+      "candidate_sha": "903c9136eaf53fd5b078dc70a409170456a6334a",
+      "source_ref": "tests/test_resume_page_owner_browser.py:test_sections_render_in_the_approved_order_from_the_members_own_workspace",
+      "observed": "The model's SECTION_ORDER is Impact Statement, Experience, Skills, Projects, Education, Certifications, Awards, equal to D6c's RESUME_BASE_SECTION_ORDER at 755f8d5c. The rendered sections run story, experience, skills, (projects,) looking-ahead, credentials, and the rail and Jump to read Overview, Experience, Skills, ...; Projects directly follows Skills, after Experience. The unit pin accepts the shared base constant only as the ruled order or the old Skills-first order and requires B3m's GUIDE_TAB_ORDER to equal the page's order; it passes on main, on D6c 755f8d5c and on B3m 00cd41b3 with this round's files overlaid. The reviewer's 7-case lockstep probe and two mutants (model order, builder order) behaved as expected; its own render at 1440 and 390 shows Experience before Skills.",
       "provenance": {
         "observer_ref": "agent:claude/2026-10-13/resume-page-owner",
-        "captured_at": "2026-10-15T12:36:17Z",
-        "source_ref": "tests/test_resume_page_owner_browser.py:test_continue_with_the_guide_appears_only_with_the_public_hook_and_opens_it"
-      }
-    },
-    {
-      "criterion_id": "looking_ahead",
-      "result": "pass",
-      "kind": "browser",
-      "candidate_sha": "e21456f3c6d80bd9531079ce3ce2ffa55e96ecf5",
-      "source_ref": "tests/test_resume_page_owner_browser.py:test_owner_writes_and_edits_looking_ahead_through_the_private_draft",
-      "observed": "The member's own line shows once (not in the hero), the placeholder only without one; it is written and edited in place through create_private_item then save_item with maxlength 120, an empty line is never sent, and the saved entry stays private (no display or visitor-AI permission). A refused (503) save keeps the words; a lost reply is retried with the same request id and saves once. After F1 a form saves after another page form, today's editor or an unheard save (one fresh retry on 409, distinct request ids); an item changed elsewhere stays an honest conflict; Looking Ahead is found by placement first, then title, one line only, a renamed title kept. Tests: test_looking_ahead_is_the_members_own_line_shown_once, test_a_refused_save_keeps_the_members_words, test_a_retry_after_an_uncertain_save_is_never_saved_twice, test_a_second_page_form_saves_after_another_page_form_saved, test_a_page_form_saves_after_todays_editor_saved_meanwhile, test_a_page_form_saves_after_a_save_it_never_heard_about, test_an_edit_of_the_same_item_elsewhere_stays_an_honest_conflict, test_looking_ahead_is_found_by_its_placement_first_then_by_its_title. Renaming is not built (dependency).",
-      "provenance": {
-        "observer_ref": "agent:claude/2026-10-13/resume-page-owner",
-        "captured_at": "2026-10-15T12:36:17Z",
-        "source_ref": "tests/test_resume_page_owner_browser.py:test_owner_writes_and_edits_looking_ahead_through_the_private_draft"
-      }
-    },
-    {
-      "criterion_id": "projects",
-      "result": "pass",
-      "kind": "browser",
-      "candidate_sha": "e21456f3c6d80bd9531079ce3ce2ffa55e96ecf5",
-      "source_ref": "tests/test_resume_page_owner_browser.py:test_owner_adds_and_edits_a_project_through_the_private_draft",
-      "observed": "No Projects section or nav entry without a project; with projects it follows Experience and shows name, category label, one line, organization and dates, and up to three https links by site name (GitHub for github.com) with target _blank and rel noopener noreferrer; javascript: and http: links are dropped and no request goes to any link host (test_projects_show_only_once_added_with_their_fields_and_safe_links). Add a project from Edit myself and edit in place use the D91 fields and labels through the private draft commands; missing essentials, a non-https link and mixed date detail are explained without sending; untouched dates are never rewritten (test_editing_a_project_never_rewrites_its_untouched_dates); a moved item saves as its destination type.",
-      "provenance": {
-        "observer_ref": "agent:claude/2026-10-13/resume-page-owner",
-        "captured_at": "2026-10-15T12:36:17Z",
-        "source_ref": "tests/test_resume_page_owner_browser.py:test_owner_adds_and_edits_a_project_through_the_private_draft"
-      }
-    },
-    {
-      "criterion_id": "highlight_tiles",
-      "result": "pass",
-      "kind": "browser",
-      "candidate_sha": "e21456f3c6d80bd9531079ce3ce2ffa55e96ecf5",
-      "source_ref": "tests/test_resume_page_owner_browser.py:test_highlight_tiles_are_saved_bullets_resolved_by_reference",
-      "observed": "Tiles resolve from highlight_refs to each saved bullet's own metric_value and metric_label (its wording without a label) and its role: duplicate, missing, number-less and role-less references give no tile, at most four show in order, a tile opens its role's chapter, a changed number follows on reload, a cleared number drops the tile, the column count follows the tile count, and fewer than two means no row. A Guide-suggested tile renders dashed and non-interactive with 'Suggested by the Guide · waiting for your OK', and the adapter never invents one (test_suggested_tiles_wait_for_the_members_ok). Known temporary gap: Pete's page shows 3 of the approved 4 tiles because B2 holds one number per bullet; the fourth waits for a per-tile metric selector.",
-      "provenance": {
-        "observer_ref": "agent:claude/2026-10-13/resume-page-owner",
-        "captured_at": "2026-10-15T12:36:17Z",
-        "source_ref": "tests/test_resume_page_owner_browser.py:test_highlight_tiles_are_saved_bullets_resolved_by_reference"
+        "captured_at": "2026-10-16T16:52:00Z",
+        "source_ref": "tests/test_resume_page_owner_browser.py:test_sections_render_in_the_approved_order_from_the_members_own_workspace"
       }
     },
     {
       "criterion_id": "rest_unchanged",
       "result": "pass",
       "kind": "automated",
-      "candidate_sha": "e21456f3c6d80bd9531079ce3ce2ffa55e96ecf5",
+      "candidate_sha": "903c9136eaf53fd5b078dc70a409170456a6334a",
       "source_ref": "tests/test_resume_page_owner.py:test_flag_off_renders_todays_editor_only",
-      "observed": "Flag-off /app/resume HTML equals base bd07b1ee for both flag sets (build-D2 flag-off.txt); every D1/D1d test still passes (page suites 76/76); the page's only requests are the workspace read and the private draft commands (unit contract: two fetches to server-rendered URLs, no /api/ literal, no markup sinks). At e21456f3: 14 affected modules 504/504 (1 skipped); strict 152 runner 152/152 normal and twice concurrently; whole no-Playwright discover from git exports, base 7881 run vs candidate 7905, both 16E/19F with identical failure sets; screenshots at 1440, 1280, 960 and 390 in build-D2/screens."
+      "observed": "The diff from main is only the two page scripts' order (and one comment each), the two owner test files and the evidence file; no template, CSS, route, server, schema or Guide file, so the flag-off page is unchanged. Page suites plus the Guide panel contract and the projection order test: 111 run, OK, 0 skipped; browser module twice concurrently 50/50 each, 0 skipped; without Playwright 77 run, 50 skipped, 0 errors. The reviewer's 5 affected modules ran 158 OK, 0 skipped, and its whole no-Playwright discover gave identical failure sets for candidate and main (8009 vs 8008 run, 16E/19F each, +1 the new builder test)."
     },
     {
       "criterion_id": "review_and_delivery",
       "result": "pass",
       "kind": "manual",
-      "candidate_sha": "e21456f3c6d80bd9531079ce3ce2ffa55e96ecf5",
-      "source_ref": "https://claude.ai/artifact/CFU9JNoGWsVQujFt2G8dia",
-      "observed": "Pete, the owner, checked the D2 screenshots and said \"Resume looks good.\" (2026-10-15, relayed by the manager). Independent review: guide-build FAILED 824d7587 with F1 Medium (coordination 4e41321) and PASSED the narrow re-check at exact e21456f3 (coordination 64205e6). The manager confirmed all six design defaults. Writer evidence: each new test failed at its base code (15 at bd07b1ee's code, 3 moved-item tests at 4ca2fdc5, 5 F1 tests at 824d7587); the page browser module passed twice concurrently (50/50 each); it skips cleanly without Playwright (76 run, 50 skipped, 0 errors).",
+      "candidate_sha": "903c9136eaf53fd5b078dc70a409170456a6334a",
+      "source_ref": "X:/PeerSlate/coordination/claude-pc/Shared/handoffs/2026-10-16_claude-pc_to-claude-pc_REVIEW_PS-RESUME-PAGE-OWNER-001_D2o.md:Verdict",
+      "observed": "Each changed test failed with the base page scripts (77 run, exactly the 4 changed tests failed). The independent Claude PC reviewer session:16023c0e-7189-420e-8a4d-11f8012a9713 passed the exact candidate with no Critical, Major or Minor findings (coordination ca3a1eb). The manager sequenced the merge: B3m merged first (17eaaaa4) and the test tolerates both base orders until D6c merges.",
       "provenance": {
-        "observer_ref": "role:owner/pete-chat-2026-10-15/claude-manager-16023c0e/resume-d2-screenshot-ok",
-        "captured_at": "2026-10-15T12:36:17Z",
-        "source_ref": "https://claude.ai/artifact/CFU9JNoGWsVQujFt2G8dia"
+        "observer_ref": "session:16023c0e-7189-420e-8a4d-11f8012a9713",
+        "captured_at": "2026-10-16T17:57:18Z",
+        "source_ref": "X:/PeerSlate/coordination/claude-pc/Shared/handoffs/2026-10-16_claude-pc_to-claude-pc_REVIEW_PS-RESUME-PAGE-OWNER-001_D2o.md:Verdict"
       }
     }
   ]
 }
 ```
+
+## D2o writer verification (before independent review)
+
+Plan `f057f260` (single parent, main `6c14d8e2`, evidence file only), adopted by merge. Logs in `X:/PeerSlate/Claude/plans/resume-page/build-D2o/`; Playwright Chromium 1234 via `PEERSLATE_CHROME`, `ANTHROPIC_BASE_URL=http://127.0.0.1:9`.
+- RED: the four changed tests (unit order pin, unit builder order, browser section/nav order, browser Projects position) fail with the base page scripts (`red.txt`, `red2.txt`: 77 run, 4 failures).
+- GREEN: page suites plus the Guide panel contract and the projection order test, 111 run, OK, 0 skipped (`green2.txt`); the browser module twice concurrently, 50/50 each, 0 skipped (`load-1.txt`, `load-2.txt`); without Playwright 77 run, 50 skipped, 0 errors (`no-playwright.txt`).
+- Lockstep: the order unit module passes on D6c `755f8d5c` and on B3m `00cd41b3`, each with this round's four files overlaid (`unit-on-d6c.txt`, `unit-on-b3m.txt`); an overlay run caught the owner's name in the model comment (shared-logic rule), fixed in `02414083`.
+- Screenshots at 1440 and 390 show Experience before Skills in the page and the rail/Jump to list (`screens/`).
+
+## D2o independent review and delivery
+
+The independent Claude PC reviewer (`session:16023c0e-7189-420e-8a4d-11f8012a9713`, read-only exports) **passed exact `903c9136eaf53fd5b078dc70a409170456a6334a`** with no findings (coordination `ca3a1eb`): scope and history checked, its own render at 1440 and 390, a 7-case lockstep probe, two mutants, the affected modules (158 OK, 0 skipped), the browser pair, the no-Playwright proof and a whole discover with identical failure sets. The receipt is bound to `903c9136`; this tail adds only the receipt and this evidence file. Merge order (manager): B3m first (`17eaaaa4`), then this round; D6c later narrows the old-order arm of the test. Merge is repository truth only: the page stays behind the default-off flag. No deployment, 8444 enablement, schema or paid call. The claim stays open for Lane D.
 
 ## D2 design answers and a known temporary gap (manager, after the candidate)
 

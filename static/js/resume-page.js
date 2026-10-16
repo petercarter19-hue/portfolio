@@ -1249,10 +1249,11 @@
     function render(m) {
         model = m;
         navEntries = [{id: 'overview', label: 'Overview'}];
+        // Core sections follow the model's SECTION_ORDER: Experience before Skills (the owner's G6 ruling).
         var builders = [
             ['story', renderStory, null],
-            ['skills', renderSkills, 'Skills'],
             ['experience', renderExperience, 'Experience'],
+            ['skills', renderSkills, 'Skills'],
             ['projects', renderProjects, 'Projects'],
             ['looking-ahead', renderLookingAhead, 'Looking Ahead'],
             ['credentials', renderCredentials, 'Credentials'],

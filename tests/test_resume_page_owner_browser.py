@@ -191,10 +191,11 @@ class OwnerResumePageBrowserTests(unittest.TestCase):
     def test_sections_render_in_the_approved_order_from_the_members_own_workspace(self):
         page = self.open()
         ids = page.eval_on_selector_all("#resume-page-sections > section", "els => els.map(e => e.id)")
-        self.assertEqual(ids, ["rp-story", "rp-skills", "rp-experience", "rp-looking-ahead", "rp-credentials",
+        # Experience before Skills (Pete's G6 ruling, 2026-10-15).
+        self.assertEqual(ids, ["rp-story", "rp-experience", "rp-skills", "rp-looking-ahead", "rp-credentials",
                                "rp-constellation-phone"])
         nav = page.eval_on_selector_all("#resume-page-secnav a", "els => els.map(e => e.textContent.trim())")
-        self.assertEqual(nav, ["Overview", "Skills", "Experience", "Looking Ahead", "Credentials",
+        self.assertEqual(nav, ["Overview", "Experience", "Skills", "Looking Ahead", "Credentials",
                                "Career constellation"])
         self.assertEqual(page.text_content("#resume-page-name"), "Local PeerSlate Test User")
         self.assertEqual(page.text_content("#resume-page-ask-main-title"), "Ask Local AI")
@@ -1207,7 +1208,9 @@ class OwnerResumePageBrowserTests(unittest.TestCase):
                          project_url="javascript:alert(1)", additional_project_urls=["http://plain.example.com"])]
         page, requests = self.open_watching_requests()
         ids = page.eval_on_selector_all("#resume-page-sections > section", "els => els.map(e => e.id)")
-        self.assertEqual(ids.index("rp-projects"), ids.index("rp-experience") + 1)
+        # The shared order (the owner's G6 ruling): Experience, Skills, then Projects.
+        self.assertEqual(ids.index("rp-projects"), ids.index("rp-skills") + 1)
+        self.assertLess(ids.index("rp-experience"), ids.index("rp-projects"))
         self.assertIn("Projects", page.eval_on_selector_all("#resume-page-secnav a", "els => els.map(e => e.textContent)"))
         first = page.locator("#rp-projects .rp-project").nth(0)
         self.assertEqual(first.locator(".rp-project__name").inner_text(), "Crane telemetry retrofit")
