@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-GOV-REVIEW-ROUNDS-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Make the fewer-review-rounds practice a permanent part of the PeerSlate delivery workflow: add one short 'Fewer review rounds' section to docs/AI_WORKFLOW.md with its five points (map before code, check like a reviewer before review, fix the pattern not the instance, first review is end to end, visual work covers every page), applying to Bounded and Protected work with Routine work able to skip the map. Raise only the AI_WORKFLOW.md word cap in tests/test_governance_pointers.py, to 1200. No other rule changes; documentation and its pinned test only; no deployment.",
   "assignment": "implementation",
   "writer_ref": "agent:claude/2026-10-15/review-rounds",
@@ -27,6 +27,6 @@
   "review_requirement": "self",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "98ffaf0b03cb4fae899219da4616c9dd03693364",
+  "closed_at": "2026-10-16T02:45:16Z"
 }
