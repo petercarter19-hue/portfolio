@@ -4,7 +4,7 @@
   "state": "active",
   "outcome": "Deliver the owner-selected public trust pages outcome from historical Legal L0 Boundary A: truthful public Privacy Policy and Terms of Use, versioned and dated, shared footer links, correct PeerSlate LLC and support/contact addresses, 18+ wording, operational 12-month Ask Pete direct-question retention before promising it, bounded spend-guard IP retention and self-hosted existing fonts only with visual parity. Verify live settings and mail delivery; preserve existing data and unrelated owners. Codex writes; Claude PC independently reviews the exact candidate. No account deletion build, redesign, provider change, or production release before Pete reviews the final wording preview and says yes. No production schema or deletion action is granted by this claim.",
   "assignment": "implementation",
-  "writer_ref": "session:01a11384-f656-73b3-b57a-ad2952f1ffad",
+  "writer_ref": "agent:claude/2026-10-15/trust-pages",
   "branch": "codex/2026-10-11-public-trust-pages-001",
   "delivery_path": "Protected",
   "repository_authority": "through_merge",
@@ -94,7 +94,12 @@
     "privacy:workshop:ip-counters"
   ],
   "review_requirement": "independent",
-  "handoff": null,
+  "handoff": {
+    "from_ref": "session:01a11384-f656-73b3-b57a-ad2952f1ffad",
+    "to_ref": "agent:claude/2026-10-15/trust-pages",
+    "checkpoint_sha": "08b51a47d519e07251eb1c7484f73e9e14703dbf",
+    "relinquished": true
+  },
   "checkpoint_sha": null,
   "merged_sha": null,
   "closed_at": null,
