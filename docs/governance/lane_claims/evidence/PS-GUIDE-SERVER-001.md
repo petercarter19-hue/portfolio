@@ -1519,7 +1519,7 @@ _The B3b acceptance JSON above is kept as historical JSON and is no longer the a
 
 **Holds:** fake providers only and $0. Independent exact-SHA review by `session:16023c0e-7189-420e-8a4d-11f8012a9713`.
 
-```package-acceptance-json
+```json
 {
   "schema_version": 1,
   "package": "PS-GUIDE-SERVER-001",
@@ -1768,3 +1768,339 @@ Runtime: `146477f1`. Evidence: `X:/PeerSlate/Claude/reviews/b3t-tiles/r4/`.
 The reviewer's round-4 narrow re-check at `be0ee7a7` is a **PASS** (6241e9d).
 - The receipt and the acceptance checks are bound to that SHA.
 - Minors m1 (tests for placement removal on delete and for placing through a save) and m2 (re-place on restore, plus a D6c contract note) are deferred to B3c by the manager.
+
+## B3m pre-code round plan: missing essentials, hidden tabs, order and D23 place
+
+_The B3t acceptance JSON above is kept as historical JSON and is no longer the active record._
+
+**Rulings.**
+- The data-path map is coordination `1d2b73b` (`Shared/handoffs/2026-10-16_claude-pc_guide-build_to-manager_B3m-data-path-map.md`). The manager OK'd it on 2026-10-16 with these answers:
+  - **Q1:** "role title optional" is deferred out of B3m, and today's rule stays.
+  - **Q2:** no project word rule or advisory.
+  - **Q3:** Experience before Skills everywhere. The Guide sorts its own list. Lane D changes `RESUME_BASE_SECTION_ORDER` and its pinned tests in their next round.
+  - **Q4:** D23 destinations are roles (as bullets), Skills and the knowledge sections only.
+- C2's server dependency (panel evidence, C2 plan) and the D23 ruling (a), bundled here.
+
+**Scope:**
+
+1. **`missing_required` per working-set item** (I1: what the working set says is missing equals what an accept refuses).
+   - It is computed from the one Guide essentials table, `guide_required_fields`, plus the gates `normalize_guide_values` applies.
+   - `unspecified`/unplaced items get `null`.
+   - It is derived, never stored.
+   - **The required rules themselves don't change:** the spec table (AR:854-866) already matches for credentials, publications, memberships, education and projects, and the role-title change is deferred (Q1).
+2. **`tab_hidden` per section:** no item saved or waiting, and at least one item or child hidden. It is mutually exclusive with `tab_visible`.
+3. **Order:**
+   - Sections follow the page order with Experience before Skills (Pete G6): Impact Statement, Experience, Skills, Projects, Education, Certifications, Awards, then any others in today's order. This is sorted in the Guide's own list; Lane D's constant is untouched.
+   - Items within a section are sorted by Lane D's read-only `resume_presentation_key` (current first, then the latest date). Ties keep today's order, and source lines come last.
+4. **D23 `best_guess` and place:**
+   - Each unplaced item gets `best_guess`: the heading-derived section of its source unit, mapped to a placeable destination, or `null`. No provider call and no write.
+   - `POST /api/resume-intake/me/guide/place` takes `{request_id, item_ref, destination, expected_working_set_token, expected_item_revision}`, where `destination` is `{section}` or `{role_ref}`. It runs under the owner guard, the unit of work and the receipt digest.
+   - It turns one unplaced line into a pending suggestion, keeping the exact text:
+     - a role: an accomplishment bullet;
+     - Skills: a skill;
+     - Impact Statement, Projects, Awards or My Story: knowledge.
+   - The predecessor is invalidated with `superseded_by`.
+   - Replay and conflict follow the receipt pattern, and there is no double placing.
+   - Undo returns a fresh unplaced successor with the same units. It is refused as stale once the placed suggestion was decided, edited, hidden or moved.
+
+**Excluded:**
+- the role-title change (Q1);
+- any project word rule (Q2);
+- Lane D's base order and publication files;
+- Education and Certifications as D23 destinations (Q4);
+- panel UI (C2);
+- schema, models, deployment and production.
+
+**Holds:**
+- Fake providers only; $0.
+- Independent exact-SHA review by `session:16023c0e-7189-420e-8a4d-11f8012a9713`.
+- Mutants and the lifecycle probe are run by the writer before the request (the new process).
+
+```package-acceptance-json
+{
+  "schema_version": 1,
+  "package": "PS-GUIDE-SERVER-001",
+  "plan_sha": "e7bb8d4e8cebe90fd4cfa404515354d81f563e8b",
+  "candidate_sha": "00cd41b39ff2c2f3155d15ac308f095dee70837f",
+  "baseline": [
+    {
+      "command": "X:/PeerSlate/runtimes/development/Scripts/python.exe -B -m unittest tests.test_resume_draft_service tests.test_resume_draft_routes tests.test_resume_guide_service tests.test_resume_intake_service tests.test_resume_intake_routes tests.test_resume_guide_turns tests.test_living_resume_editor_service tests.test_resume_onboarding_conversation tests.test_resume_publication_routes tests.test_resume_publication_service tests.test_resume_intake_sql tests.test_entry_policy_service tests.test_resume_publication_projection -q",
+      "exit_code": 0,
+      "observation": "656/656 PASS in 33.9s on an export of main c9a8aba9 before B3m code. Fake/in-memory providers only. Raw log X:/PeerSlate/Claude/reviews/b3m/b3m-precode-baseline.log."
+    }
+  ],
+  "criteria": [
+    {
+      "id": "b3m_missing_required",
+      "expected": "Every working-set item carries missing_required computed from the one Guide essentials table: [] exactly when decide(accept) with the proposal's values saves, otherwise the same list decide returns as missing_required_fields; null for unspecified/unplaced; derived, never stored.",
+      "verification": "A property test over every Guide record type with each essential removed, comparing the working set with decide; saved, hidden and child items covered; RED on main."
+    },
+    {
+      "id": "b3m_tab_hidden",
+      "expected": "A section with no saved or waiting item but at least one hidden item or child has tab_hidden true and tab_visible false; otherwise tab_hidden is false; every hide and show path changes it through the same derived state.",
+      "verification": "Working-set tests through Guide visibility, exclusion and restore, and a hidden child bullet; RED on main."
+    },
+    {
+      "id": "b3m_order",
+      "expected": "Guide sections run Impact Statement, Experience, Skills, Projects, Education, Certifications, Awards, then others in today's order; items in a section follow resume_presentation_key (current first, then latest date), saved and pending interleaved, source lines last; Lane D's RESUME_BASE_SECTION_ORDER is unchanged.",
+      "verification": "Working-set tests with saved and pending roles in mixed date order and a skills section; Lane D's pinned order tests still pass; RED on main."
+    },
+    {
+      "id": "b3m_best_guess",
+      "expected": "Each unplaced item carries best_guess {section} from its source unit's heading when that maps to a placeable destination, else null; computing it makes no provider call and no write.",
+      "verification": "Tests with headed and unheaded unplaced lines and an extraction adapter that fails if called."
+    },
+    {
+      "id": "b3m_place",
+      "expected": "The place command turns one unplaced line into one pending suggestion in a role (accomplishment bullet), Skills (skill) or a knowledge section (knowledge with that presentation section) with the exact text, invalidating the predecessor; replay returns the receipt; a changed reuse is idempotency_conflict; a stale token or revision, a second place, an unplaced-ineligible item, Education/Certifications or an unknown role is refused before any effect.",
+      "verification": "Service and HTTP tests for each destination and each refusal with raw snapshot before/after comparisons; RED on main."
+    },
+    {
+      "id": "b3m_place_undo",
+      "expected": "Undo of a fresh place returns a pending unplaced successor bound to the same units and invalidates the placed suggestion; Undo is refused as stale once the placed suggestion was decided, edited, hidden or moved; replay is idempotent.",
+      "verification": "Undo tests for the fresh case and each stale case, plus place-undo-place."
+    },
+    {
+      "id": "b3m_nothing_public",
+      "expected": "Place, Undo and the new derived fields change no canonical record, draft or publication; owner preview and guest read are byte-identical before and after.",
+      "verification": "Publication and preview comparisons around place and Undo, and the writer's lifecycle probe."
+    },
+    {
+      "id": "b3m_regression_review",
+      "expected": "Existing commands, digests and reads are unchanged apart from the new fields and order; affected suites, lock-order witness, strict runner normal and two-copy load, full no-Playwright discover, writer-run mutants and lifecycle probe show no new failure.",
+      "verification": "Focused suites under the lock-order witness, strict runs, discover comparison against c9a8aba9, mutate_b3m results, exact-SHA independent receipt, package_acceptance check and merge preflight."
+    }
+  ],
+  "checks": [
+    {
+      "criterion_id": "b3m_missing_required",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "00cd41b39ff2c2f3155d15ac308f095dee70837f",
+      "source_ref": "coordination:da3ce42:Shared/handoffs/2026-10-16_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3m_round2.md + tests.test_resume_intake_service.GuideB3mTests.test_i1_holds_through_the_real_accept_for_organized_suggestions + tests.test_resume_intake_service.GuideB3mTests.test_i1_holds_through_the_real_accept_for_every_placed_destination + tests.test_resume_intake_service.GuideB3mTests.test_missing_required_is_exactly_what_a_guide_accept_refuses + tests.test_resume_intake_service.GuideB3mTests.test_saved_items_carry_their_missing_list_too",
+      "observed": "missing_required comes from the one Guide essentials table; with needs_member_wording and waits_for_parent the card says exactly what the real decide does for organized and placed items, with and without edits; null for unplaced."
+    },
+    {
+      "criterion_id": "b3m_tab_hidden",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "00cd41b39ff2c2f3155d15ac308f095dee70837f",
+      "source_ref": "coordination:da3ce42:Shared/handoffs/2026-10-16_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3m_round2.md + tests.test_resume_intake_service.GuideB3mTests.test_a_section_with_only_hidden_content_keeps_a_hidden_tab + tests.test_resume_intake_service.GuideB3mTests.test_a_section_with_visible_and_hidden_items_is_not_a_hidden_tab",
+      "observed": "tab_hidden is true only with no saved or waiting item and at least one hidden; mutually exclusive with tab_visible; follows every Hide and Show."
+    },
+    {
+      "criterion_id": "b3m_order",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "00cd41b39ff2c2f3155d15ac308f095dee70837f",
+      "source_ref": "coordination:da3ce42:Shared/handoffs/2026-10-16_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3m_round2.md + tests.test_resume_intake_service.GuideB3mTests.test_sections_run_experience_before_skills_and_items_most_recent_first + tests.test_resume_guide_service",
+      "observed": "Guide sections run Experience before Skills (Pete G6) whatever Lane D's base order is; items follow resume_presentation_key; source lines last; RESUME_BASE_SECTION_ORDER untouched."
+    },
+    {
+      "criterion_id": "b3m_best_guess",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "00cd41b39ff2c2f3155d15ac308f095dee70837f",
+      "source_ref": "coordination:da3ce42:Shared/handoffs/2026-10-16_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3m_round2.md + tests.test_resume_intake_service.GuideB3mTests.test_unplaced_lines_carry_a_deterministic_best_guess_without_any_provider_call + tests.test_resume_intake_service.GuideB3mTests.test_the_role_guess_is_the_nearest_role_above_the_line",
+      "observed": "best_guess comes from the line's heading or the nearest role above under Experience, else null; no provider call or write."
+    },
+    {
+      "criterion_id": "b3m_place",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "00cd41b39ff2c2f3155d15ac308f095dee70837f",
+      "source_ref": "coordination:da3ce42:Shared/handoffs/2026-10-16_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3m_round2.md + tests.test_resume_intake_service.GuideB3mTests.test_place_into_each_destination_keeps_the_exact_text_and_changes_nothing_public + tests.test_resume_intake_service.GuideB3mTests.test_place_replays_conflicts_and_refuses_before_any_effect + tests.test_resume_intake_service.GuideB3mTests.test_a_reused_request_id_for_another_line_is_a_conflict + tests.test_resume_intake_service.GuideB3mTests.test_a_hidden_line_and_a_non_role_destination_are_refused_before_any_effect + tests.test_resume_intake_service.GuideB3mTests.test_a_bullet_left_by_a_rejected_role_can_be_rescued_into_another_role + tests.test_resume_intake_service.GuideB3mTests.test_a_bullet_placed_under_a_waiting_role_waits_for_it_then_saves_as_placed + tests.test_resume_intake_routes.GuideProposalHttpTests.test_real_place_route_places_undoes_and_refuses_neutrally",
+      "observed": "Place makes one member-chosen pending suggestion (role bullet, Skills or a knowledge section) with the text less one list marker; replay, conflict and refusals before any effect; orphan bullets can be rescued; bullets under a waiting role stay under it once saved."
+    },
+    {
+      "criterion_id": "b3m_place_undo",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "00cd41b39ff2c2f3155d15ac308f095dee70837f",
+      "source_ref": "coordination:da3ce42:Shared/handoffs/2026-10-16_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3m_round2.md + tests.test_resume_intake_service.GuideB3mTests.test_undo_returns_the_line_and_is_stale_once_the_suggestion_changed + tests.test_resume_intake_service.GuideB3mTests.test_undo_needs_its_own_token_and_is_stale_after_hide_then_show + tests.test_resume_intake_service.GuideB3mTests.test_moving_a_placed_suggestion_makes_its_undo_stale + tests.test_resume_intake_service.GuideB3mTests.test_placing_ends_organize_retry_and_undo_offers_it_again + tests.test_resume_intake_service.GuideB3mTests.test_undo_details_labels_units_and_operation_type + tests.test_resume_intake_service.GuideB3mTests.test_a_source_line_undo_releases_its_unit",
+      "observed": "Undo restores the exact line, label, units and wording check; stale after decide, edit, hide, show or move; organize retry is offered again after Undo."
+    },
+    {
+      "criterion_id": "b3m_nothing_public",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "00cd41b39ff2c2f3155d15ac308f095dee70837f",
+      "source_ref": "coordination:da3ce42:Shared/handoffs/2026-10-16_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3m_round2.md + tests.test_resume_intake_service.GuideB3mTests.test_place_into_each_destination_keeps_the_exact_text_and_changes_nothing_public + X:/PeerSlate/Claude/reviews/b3m/probe_lifecycle-fb2a2cd8.txt",
+      "observed": "Place and Undo change no canonical record, draft or publication; public changes only on publish (reviewer: owner preview and guest read byte-identical)."
+    },
+    {
+      "criterion_id": "b3m_regression_review",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "00cd41b39ff2c2f3155d15ac308f095dee70837f",
+      "source_ref": "coordination:da3ce42:Shared/handoffs/2026-10-16_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3m_round2.md + X:/PeerSlate/Claude/reviews/b3m/mutations-fb2a2cd8.txt + X:/PeerSlate/Claude/reviews/b3m/strict-normal.txt + X:/PeerSlate/Claude/reviews/b3m/discover-cand.txt",
+      "observed": "Writer mutants 38/38 killed; affected 1057 OK, witness 0 violations, strict 210/210, discover failure set identical to c9a8aba9 (all heavy runs under check.py --heavy); independent exact-SHA PASS at 00cd41b3 with Minors m1/m2 carried into B3c."
+    }
+  ]
+}
+```
+
+### B3m implementation evidence (candidate for independent review)
+
+**Basis.**
+- Plan `e7bb8d4e` (adopted at `54f19486`).
+- Map coordination `1d2b73b`, with the manager's OK and Q1-Q4 rulings.
+- Runtime `ca23d099`.
+- Fake providers only; $0.
+- Evidence root: `X:/PeerSlate/Claude/reviews/b3m/`.
+- **No file outside this claim changed:**
+  - no publication file;
+  - Lane D's `RESUME_BASE_SECTION_ORDER` and its pinned tests are untouched;
+  - no schema change.
+
+**What changed:**
+
+- **`missing_required` (I1)** (`services/resume_guide_contract.py`): `guide_missing_required(node)` reads the one Guide essentials table, `guide_required_fields`, which `normalize_guide_values` also reads first.
+  - Unspecified and unplaced items get `null`.
+  - It is derived on every read and never stored.
+  - The rules themselves are unchanged: Q1 deferred the role title, and the rest already matched the spec (map §3).
+- **`tab_hidden`:** no item saved or waiting, and at least one item hidden. It is mutually exclusive with `tab_visible`.
+  - The map's "or child" clause was dropped as unreachable: a hidden bullet's role is itself saved, waiting or hidden. The mutant proved it equivalent.
+- **Order:**
+  - `guide_section_order` puts Impact Statement, Experience, Skills, Projects, Education, Certifications and Awards first. Any others follow in today's order.
+  - Items sort by Lane D's read-only `resume_presentation_key` (current first, then the latest date). Ties are stable, and source lines come last.
+- **`best_guess`:** taken from the source unit's heading (Skills, Professional summary, Independent Project, Awards, My Story). Under Experience it is the nearest role above the line in the same source. Otherwise `null`. No provider call and no write.
+- **Place** (`services/resume_intake_service.py` `guide_place`, route `POST /api/resume-intake/me/guide/place`):
+  - It runs under the owner guard, the unit of work and the receipt digest, with the working-set token and item revision checks.
+  - **Destinations:** a role (accomplishment bullet), Skills, or Impact Statement / Projects / Awards / My Story as knowledge (Q4).
+  - **What it creates:**
+    - for an organized line (U1), a same-item successor whose units are re-pointed;
+    - for a line no suggestion covers (U2), a new unit-bound proposal that keeps the line's Guide `item_ref`.
+  - The exact text is kept, list marker included: "- Fictional Pruning" stays as written. The member edits it when accepting.
+- **Undo:**
+  - **What it restores:**
+    - for U1, a successor back to the original unplaced values and section;
+    - for U2, the placed suggestion is invalidated and marked `guide_place_undone`.
+  - **Organize eligibility now ignores an undone place,** so "Try organizing again" is offered again (`_organize_eligibility`).
+  - **When it's refused:** stale once the placed suggestion was decided, edited, hidden (Hide and Show each bump the revision) or moved.
+
+**Writer-run proofs (the new process):**
+
+- **Tests.** RED on main `c9a8aba9` with the candidate's tests: 18 of 18 new or changed tests fail (`red-on-main.txt`). GREEN: 15 `GuideB3mTests`, the real-HTTP place route test, and the updated Guide order tests.
+- **Mutants:** `mutate_b3m.py`, 23 mutants, **all killed** (`mutations-final.txt`). The first run (`mutations.txt`) had 8 survivors:
+  - **5 were untested refusals, now with tests:**
+    - a hidden line;
+    - a non-role destination;
+    - a forged Undo token;
+    - Hide then Show before Undo;
+    - a visible-plus-hidden section, and an unplaced knowledge line.
+  - **3 were duplicate guards, now removed:**
+    - Undo's hidden check;
+    - place's hidden-proposal check;
+    - the hidden-child tab clause.
+  - **1 mutant was too weak** and was strengthened, so the bullet's text change is now a list-marker strip.
+  - The retry fix added 2 mutants, both killed.
+- **Lifecycle probe:** `probe_b3m_lifecycle.py` → `probe_lifecycle.txt`.
+  - **A.** Place, then accept with an edit, publish, My Data edit, republish and delete. Undo is stale after the accept, after the republish (nothing changed) and after the delete. Public changes only on publish.
+  - **B.** Place, Undo, then place into a role as a bullet. One identity throughout; the first Undo is stale; public and canonical unchanged.
+  - **C.** A no-suggestion line: place, Undo, place, Undo, then one retry dispatch and "organized".
+- **Same-class check: every path from map §2, §4 and §6, with its test:**
+  - decide accept (`test_undo_returns_the_line…`, `test_a_waiting_role_without_its_title…`);
+  - Hide and Show (`test_undo_needs_its_own_token_and_is_stale_after_hide_then_show`, `test_a_section_with_only_hidden_content…`);
+  - B3b move (`test_moving_a_placed_suggestion_makes_its_undo_stale`);
+  - organize retry (`test_placing_ends_organize_retry_and_undo_offers_it_again`);
+  - purge and redact by source binding: placed proposals keep their source binding, so the existing purge tests cover them; **no B3m-specific purge test**;
+  - `_refresh_source_accounting` (units re-pointed by `_bind_place_units`);
+  - My Data edit and delete (probe A5, A8).
+
+**Runs** on clean exports of `ca23d099`:
+- affected: 1043 OK;
+- lock-order witness: 1043 run, 0 violations;
+- strict: 210/210 normal (375 s).
+- **Two-copy load, first run:** 209/210 in each copy. Each failure was an existing retained-intake test timing out while **opening the page** (`page()` → `goto` / the panel-open wait). The writer's panel theme tests were running on the same machine at the time.
+- **Two-copy load, unchanged quiet re-run:** 210/210 in both copies (344 s; `strict-load*-rerun.txt`).
+- **discover:** candidate 8024 / 379 / 16E / 19F vs base `c9a8aba9` 8008 / 379 / 16E / 19F, with identical failure sets.
+- **Mutants and probe repeated at `ca23d099`:** 23 of 23 killed (`mutations-ca23d099.txt`); probe `probe_lifecycle-ca23d099.txt`.
+
+**Lockstep (manager item 3, coordination `181c5c4`):**
+- The tile publish test accepts `reference_invalid` or `highlight_tile_unpublishable`.
+- The B3m order test accepts either Lane D base order.
+- Proposed merge order: B3m, then D6c.
+
+### B3m round 2: review findings (FAIL at `fc21e77e`, coordination `f3b44a7`)
+
+Runtime: `fb2a2cd8`. Manager rulings: F1 (a), the list-marker normalisation, F2 allowed, F3 tests. Evidence root: `X:/PeerSlate/Claude/reviews/b3m/`.
+
+**F1 (Medium): fixed. Placing is the member's choice.**
+- Placed suggestions need no member wording, in U1 (`_place_successor(member_wording=False)`) and in U2 (`_place_source_unit`).
+- **The flag is now always stated, never copied.** `_conversion_successor` and `_place_successor` take a required `member_wording` argument:
+  - a move or a place passes `False`;
+  - each Undo restores the original suggestion's own flag.
+- **List marker:** exactly one leading marker is dropped (`placed_text`: `•`, `-`, `*`, `1.`, `1)` and the whitespace around it). Everything else is kept byte for byte. "-5% cost cut" and "1.5 million users" stay as they are. Undo restores the original line exactly.
+- **Knowledge without a title** now refuses with `missing_required_fields: ['title']`, the card's own list.
+- **I1 is now complete and truthful.** Working-set items carry `needs_member_wording` (AI suggestions keep it, so the AI's words are checked first) and `waits_for_parent`. Accepting as shown saves exactly when:
+  - `missing_required == []`;
+  - `needs_member_wording` is false;
+  - `waits_for_parent` is false.
+  Otherwise accept refuses with the matching reason.
+
+**Same class, every path that creates a pending suggestion and its member-wording flag:**
+
+| Path | Flag | Status |
+|---|---|---|
+| Organize, upload or conversation AI proposals (`_make_proposal` → `create_proposal`) | from kind and confidence; AI words are checked first | correct; now visible as `needs_member_wording` |
+| Conversation correction (`:3007`), change-existing (`:2437`), recovery (`:2283`) | `False` (the member's own words) | unchanged |
+| D23 place, U1 and U2 | `False` | **fixed** |
+| B3b pending Move-to | `False` (the member's destination) | **fixed, same class** |
+| D23 Undo; B3b Undo | the original's own flag | **fixed** (previously copied from the current suggestion) |
+
+**Bullets (found while proving I1 through the real accept).**
+- **The bug:** a bullet placed under a **waiting** role fell back into Unplaced once that role was saved. The role's first reference had become an alias, and child attachment didn't follow aliases. Accept also refused `suggested_parent_key` as an "unknown value".
+- **Fixes:**
+  - children attach through identity aliases;
+  - accept treats `suggested_parent_key` as the parent link and resolves an alias to the saved role (`_saved_key_for_ref`);
+  - `waits_for_parent` is true until the role is saved.
+- Organize's own bullets were never affected: `parent_reference` only names saved roles.
+- **For the panel (C rounds):** a bullet's Guide accept must leave `guide_section` to the server. Sending the parent's section ("experience") is refused by the existing type-section check, the same as for any bullet before B3m.
+
+**F2: fixed.** A waiting bullet orphaned in Unplaced by a rejected role can be placed. Its text is its `wording`, and Undo returns it exactly. Any other typed item refuses with "Only a line or a bullet can be placed."
+
+**F3: every surviving reviewer mutant now has a test, or is explained:**
+- **Tested:**
+  - a reused request id for another line, with the same token and revision → `idempotency_conflict`;
+  - the nearest-role guess with two roles;
+  - an anonymous route returns 404 and **never reaches the service** (a stand-in service shows it isn't called);
+  - saved items' missing list;
+  - an Undo naming another operation's receipt → 404;
+  - the restored label and placement;
+  - unit dispositions after place and Undo (U1 and U2);
+  - a superseded source;
+  - storage without Guide support.
+- **Explained:**
+  - The reviewer's `route_identity_unchecked` is unreachable: it edits a line after the route's own 404 return. A stronger writer mutant that removes that return is killed.
+  - `successor_keeps_hidden_flag`, `u1_predecessor_unchecked` and `item_order_source_not_last` were already ruled equivalent by the reviewer.
+  - `successor_parent_dropped` and `undo_label_not_restored` were ported to the new code and killed.
+
+**Writer-run proofs:**
+- **Mutants:** writer 38 of 38 killed (`mutations-fb2a2cd8.txt`). Reviewer 12 of 18 killed (`mutations-reviewer-fb2a2cd8.txt`); the other 6 are as explained above.
+- **Mutation tooling fix:** my mutation script used to restore files in Windows text mode, which turned an export's line endings into CRLF. That made later byte-matching tools see no match. It now reads and writes bytes.
+- **Lifecycle probe:** `probe_lifecycle-fb2a2cd8.txt`. A to C are unchanged, and the new D covers:
+  - accept as placed;
+  - a bullet that waits for its role, then stays under it and saves as placed.
+
+**Runs** on clean exports of `fb2a2cd8`. Every heavy stage ran under `check.py --heavy` (manager rule 2026-10-16).
+- affected: 1057 OK;
+- lock-order witness: 1057 run, 0 violations;
+- strict normal: 210/210.
+- **Two-copy load (one heavy command):** copy 1 passed **210/210** on both runs. Copy 2 had 1–2 timeouts each time, **in different tests each run**:
+  - first run: `test_saved_copy_abandons…`, `test_unsupported_document_storage…`;
+  - re-run: `test_pending_impact_respects…`, `test_opt_in_actual_header…`.
+- **All four timeouts are page-setup waits** (`page()` / `unfinished_impact` / `_correction_page` → `wait_for`). They are in tests B3m doesn't touch, and the c1 and c2 exports are byte-identical.
+- During the first run, two other sessions' strict runs that predate the heavy-lock rule were still running.
+- **Nothing on the client side changed:** round 2's delta from the reviewed `fc21e77e` is server-only, and the reviewer's two-copy run at `fc21e77e` was 210/210 twice.
+- **discover:** candidate 8038 / 379 / 16E / 19F vs base `c9a8aba9` 8008 / 379 / 16E / 19F, with identical failure sets.
+- An earlier overnight run died at the strict stage on a Git Bash process-start failure (machine overload), not on a test.
+
+### B3m independent PASS and receipt
+
+- **Verdict:** the reviewer's round-2 narrow re-check at `00cd41b3` is a **PASS** (coordination `da3ce42`).
+- **Candidate:** `00cd41b3` is `619c19b1` plus one lockstep test. The move publish basis accepts D6c's `current` (coordination `42f1c46`).
+- **Bound:** the receipt and the 8 acceptance checks are bound to that SHA.
+- **Minors carried into B3c (manager):**
+  - m1: widen the list-marker set to common resume bullets followed by whitespace, with pinned negatives;
+  - m2: a test for "Only a line or a bullet can be placed".

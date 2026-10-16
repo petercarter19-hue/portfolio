@@ -33,7 +33,7 @@ class GuideStoredTypeTests(unittest.TestCase):
                   patch.object(server.shared.draft.repository, "save_owner", wraps=server.shared.draft.repository.save_owner) as draft_save,
                   patch.object(server.intake.repository, "save_owner", wraps=server.intake.repository.save_owner) as intake_save):
                 data = read()
-                self.assertEqual(data["section_order"][:7], ["impact_statement", "skills", "experience", "projects", "education", "certifications", "awards"])
+                self.assertEqual(data["section_order"][:7], ["impact_statement", "experience", "skills", "projects", "education", "certifications", "awards"])
                 self.assertEqual(set(data["section_order"][7:]), {"memberships", "publications"})
                 for key in ("memberships", "publications"):
                     self.assertEqual(next(row for row in data["sections"] if row["key"] == key)["counts"]["saved"], 1)
@@ -267,7 +267,7 @@ class GuideWorkingSetTests(unittest.TestCase):
         result = self.working()
         self.assertEqual(result["schema_version"],1)
         self.assertEqual(result["load_state"],"loaded")
-        self.assertEqual(result["section_order"],["impact_statement","skills","experience","projects","education","certifications","awards"])
+        self.assertEqual(result["section_order"],["impact_statement","experience","skills","projects","education","certifications","awards"])
         self.assertEqual({row["values"]["name"] for row in self.skills(result)},{"Writing","Python","SQL"})
         self.assertEqual(result["counts"]["saved"],1)
         self.assertEqual(result["counts"]["waiting"],2)

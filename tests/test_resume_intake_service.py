@@ -354,9 +354,12 @@ class GuideTileTests(unittest.TestCase):
         plain = self.shared.publication.read_publication_basis_for_owner(self.owner)
         self.choose([self.lead, self.bullet, {'item_ref': self.lead, 'metric_index': 2, 'caption': 'in redesigns overseen'}])
         mixed = self.shared.publication.read_publication_basis_for_owner(self.owner)
-        self.assertEqual([r for r in mixed.get('dropped_references', []) if r['reason'] != 'reference_invalid'],
+        # Lockstep with Lane D's D6c (coordination 61e201f): until D6c, an object tile drops as reference_invalid;
+        # D6c names it highlight_tile_unpublishable. Either is honest; this narrows to D6c's reason once it lands.
+        tile_reasons = {'reference_invalid', 'highlight_tile_unpublishable'}
+        self.assertEqual([r for r in mixed.get('dropped_references', []) if r['reason'] not in tile_reasons],
                          plain.get('dropped_references', []))
-        self.assertIn('reference_invalid', [r['reason'] for r in mixed.get('dropped_references', [])])
+        self.assertTrue(tile_reasons & {r['reason'] for r in mixed.get('dropped_references', [])})
         self.assertEqual([t['publish'] for t in self.tiles()], ['as_today', 'as_today', 'after_update'])
 
     def test_deleting_a_bullet_prunes_every_tile_it_backs_without_error(self):
@@ -775,8 +778,15 @@ class GuideConversionTests(unittest.TestCase):
         self.assertEqual((moved['item_ref'], moved['record_type'], moved['values']['summary']),
                          (self.skill, 'project', 'A fictional project.'))
         basis = self.shared.publication.read_publication_basis_for_owner(self.owner)
-        self.assertEqual(basis['read_state'], 'blocked')
-        self.assertIn({'item_ref': self.skill, 'reason': 'publication_type_transition_unavailable'}, basis['blocked_items'])
+        # Lockstep with Lane D's D6c (coordination 181c5c4): before D6c a moved type can't publish yet, so the basis is
+        # blocked by name; with D6c the move publishes and the basis is current. Either is honest; this narrows to
+        # D6c's state once it lands.
+        blocked = {'item_ref': self.skill, 'reason': 'publication_type_transition_unavailable'}
+        self.assertIn(basis['read_state'], {'blocked', 'current'})
+        if basis['read_state'] == 'blocked':
+            self.assertIn(blocked, basis['blocked_items'])
+        else:
+            self.assertNotIn(blocked, basis.get('blocked_items') or [])
 
     def test_pending_suggestion_moves_with_the_same_item_ref_and_no_canonical_record(self):
         from services.my_data_extraction_adapter import DeterministicFakeExtractionAdapter
@@ -3882,6 +3892,610 @@ class BoundedRecordingGuardTests(unittest.TestCase):
         replay = service.transcribe_recording('member-a', recording_payload('audio/wav', wav_bytes(), 12.0)[0], dict(payload))
         self.assertEqual(replay['source_key'], results['first']['source_key'])
         self.assertEqual(len(stub.calls), 1)
+
+
+class GuideB3mTests(unittest.TestCase):
+    """B3m: missing essentials, hidden tabs, order and D23 place (map coordination 1d2b73b, plan e7bb8d4e)."""
+    NL = chr(10)
+    TEXT = NL.join(['EXPERIENCE', 'Fictional Orchard, Engineer, 2019 - 2021', '- Ran the fictional harvest audit',
+                    'SKILLS', '- Fictional Pruning', 'AWARDS', '- Fictional Orchard Prize 2020', ''])
+    ROLE = {'record_type': 'role', 'values': {'role_title': 'Engineer', 'employer_name': 'Fictional Orchard'},
+            'quote': 'Fictional Orchard, Engineer, 2019 - 2021', 'outcome': 'new', 'confidence': 'certain'}
+
+    def setUp(self):
+        from tests.mvp1_acceptance_support import SharedMvp1Fixture
+        self.shared, self.owner = SharedMvp1Fixture(), 'guide-b3m-fictional'
+
+    def organized(self, scripted=None, fail=None, text=None):
+        from services.my_data_extraction_adapter import DeterministicFakeExtractionAdapter
+        from services.resume_intake_policy import selected_policy_for_tests
+        from tests.test_my_data_intake_sources import extracted_pipeline
+        text = text or self.TEXT
+        self.adapter = DeterministicFakeExtractionAdapter([self.ROLE] if scripted is None else scripted)
+        if fail:
+            self.adapter.fail_with = fail
+        self.service = ResumeIntakeService(repository=InMemoryResumeIntakeRepository(), draft_service=self.shared.draft,
+            policy=selected_policy_for_tests(), document_pipeline=extracted_pipeline(text),
+            extraction_adapter=self.adapter, matching_exclusions=lambda member: set())
+        self.service.submit(self.owner, {'request_id': str(uuid4()), 'attachments': [{'client_key': 'document',
+            'kind': 'document', 'declared_content_type': 'text/plain', 'filename': 'fictional.txt'}]},
+            files={'document': FakeUpload('text/plain', text.encode(), 'fictional.txt')})
+        return self.service.working_set(self.owner)
+
+    def line(self, text, working=None):
+        working = working or self.service.working_set(self.owner)
+        return next(row for row in working['unplaced'] if (row['values'] or {}).get('text') == text)
+
+    def section(self, key, working=None):
+        working = working or self.service.working_set(self.owner)
+        return next(row for row in working['sections'] if row['key'] == key)
+
+    def place(self, item, destination, request_id=None, working=None):
+        working = working or self.service.working_set(self.owner)
+        return self.service.guide_place(self.owner, {'request_id': request_id or str(uuid4()), 'action': 'place',
+            'item_ref': item['item_ref'], 'destination': destination,
+            'expected_working_set_token': working['working_set_token'], 'expected_item_revision': item['revision']})
+
+    def undo(self, placed, request_id=None):
+        return self.service.guide_place(self.owner, {'request_id': request_id or str(uuid4()), 'action': 'undo',
+            'operation_ref': placed['operation_ref'], 'undo_token': placed['undo_token']})
+
+    def stored(self):
+        import copy
+        return copy.deepcopy(self.service.repository.load(self.owner)) if hasattr(self.service.repository, 'load') \
+            else copy.deepcopy(self.service._load(self.owner))
+
+    def public(self):
+        import copy
+        return (copy.deepcopy(sorted(self.shared.canonical.list_items(self.owner), key=lambda row: row['record_key'])),
+                copy.deepcopy(self.shared.draft.repository.load_owner(self.owner)),
+                copy.deepcopy(self.shared.publication.owner_preview(self.owner)))
+
+    def role_ref(self, working=None):
+        return self.section('experience', working)['items'][0]['item_ref']
+
+    # ---- missing_required (I1)
+
+    def test_missing_required_is_exactly_what_a_guide_accept_refuses(self):
+        from services.living_resume_editor_service import GuideRequiredFieldsError, guide_required_fields, normalize_guide_values
+        from services.resume_guide_contract import guide_missing_required
+        complete = {
+            'role': ({'role_title': 'Engineer', 'employer_name': 'Fictional Orchard'}, 'experience'),
+            'education': ({'institution_name': 'Fictional College', 'end_date': '2015'}, 'education'),
+            'skill': ({'name': 'Fictional Pruning'}, 'skills'),
+            'project': ({'project_name': 'Fictional Mill', 'summary': 'A fictional mill.'}, 'projects'),
+            'accomplishment': ({'wording': 'Ran a fictional audit.'}, 'experience'),
+            'credential': ({'name': 'Fictional Licence', 'issuer': 'Fictional Board', 'issue_date': '2020'}, 'certifications'),
+            'knowledge': ({'title': 'Professional summary', 'wording': 'Fictional words.', 'classification': 'work'},
+                          'impact_statement'),
+        }
+        for record_type, (values, section) in complete.items():
+            node = {'record_type': record_type, 'section': section, 'values': values}
+            self.assertEqual(guide_missing_required(node), [], record_type)
+            for field in guide_required_fields(record_type, values, section=section) or list(values):
+                if field not in values or field == 'classification':
+                    continue
+                partial = {**values, field: ''}
+                with self.subTest(record_type=record_type, removed=field):
+                    expected = guide_missing_required({**node, 'values': partial})
+                    try:
+                        normalize_guide_values(record_type, partial, section=section)
+                        refused = []
+                    except GuideRequiredFieldsError as error:
+                        refused = error.missing_required_fields
+                    except Exception:  # another validation (a date), not a missing essential
+                        continue
+                    self.assertEqual(expected, refused)
+        self.assertIsNone(guide_missing_required({'record_type': 'unspecified', 'section': 'unplaced', 'values': {'text': 'x'}}))
+
+    def test_a_waiting_role_without_its_title_says_so_and_accept_refuses_with_the_same_list(self):
+        role = {**self.ROLE, 'values': {'employer_name': 'Fictional Orchard'}}
+        working = self.organized([role])
+        item = self.section('experience', working)['items'][0]
+        self.assertEqual(item['missing_required'], ['role_title'])
+        self.assertIsNone(self.line('- Fictional Pruning', working)['missing_required'])
+        with self.assertRaises(ResumeIntakeValidationError) as refused:
+            self.service.decide(self.owner, {'request_id': str(uuid4()), 'proposal_key': item['proposal_key'],
+                                             'decision': 'accept', 'guide_review': True, 'guide_section': 'experience'})
+        self.assertEqual(refused.exception.missing_required_fields, ['role_title'])
+        complete = self.organized()
+        self.assertEqual(self.section('experience', complete)['items'][0]['missing_required'], [])
+
+    # ---- tab_hidden
+
+    def test_a_section_with_only_hidden_content_keeps_a_hidden_tab(self):
+        working = self.organized()
+        role = self.section('experience', working)['items'][0]
+        self.assertEqual((self.section('experience', working)['tab_visible'], self.section('experience', working)['tab_hidden']),
+                         (True, False))
+        self.service.set_guide_visibility(self.owner, {'request_id': str(uuid4()), 'item_ref': role['item_ref'], 'hidden': True,
+            'expected_working_set_token': working['working_set_token'], 'expected_item_revision': role['revision']})
+        hidden = self.service.working_set(self.owner)
+        experience = self.section('experience', hidden)
+        self.assertEqual((experience['tab_visible'], experience['tab_hidden']), (False, True))
+        self.assertFalse(any(row['tab_visible'] and row['tab_hidden'] for row in hidden['sections']))
+        role = experience['items'][0]
+        self.service.set_guide_visibility(self.owner, {'request_id': str(uuid4()), 'item_ref': role['item_ref'], 'hidden': False,
+            'expected_working_set_token': hidden['working_set_token'], 'expected_item_revision': role['revision']})
+        shown = self.section('experience')
+        self.assertEqual((shown['tab_visible'], shown['tab_hidden']), (True, False))
+        self.assertEqual(self.section('awards', hidden)['tab_hidden'], False, 'An empty section has no tab at all')
+
+    # ---- order
+
+    def test_sections_run_experience_before_skills_and_items_most_recent_first(self):
+        from services.resume_publication_projection import RESUME_BASE_SECTION_ORDER
+        def create(values):
+            return self.shared.canonical.create_private(self.owner, {'command_id': str(uuid4()), 'record_type': 'role',
+                'parent_key': None, 'values': values})['record_key']
+        older = create({'role_title': 'Clerk', 'employer_name': 'Fictional Mill', 'start_date': '2010-01-01',
+                        'end_date': '2012-01-01', 'date_precision': 'year'})
+        current = create({'role_title': 'Lead', 'employer_name': 'Fictional Grove', 'start_date': '2021-01-01',
+                          'current_role': True, 'date_precision': 'year'})
+        pending = {**self.ROLE, 'values': {'role_title': 'Engineer', 'employer_name': 'Fictional Orchard',
+                                           'start_date': '2019', 'end_date': '2021', 'date_precision': 'year'}}
+        working = self.organized([pending])
+        self.assertEqual(working['section_order'][:7], ['impact_statement', 'experience', 'skills', 'projects', 'education',
+                                                        'certifications', 'awards'])
+        # The Guide's order holds whichever order Lane D's shared constant has (D6c map line 172): it is sorted here.
+        self.assertIn(tuple(RESUME_BASE_SECTION_ORDER[:3]), {('impact_statement', 'skills', 'experience'),
+                                                             ('impact_statement', 'experience', 'skills')})
+        refs = [row['item_ref'] for row in self.section('experience', working)['items']]
+        self.assertEqual(refs[0], current)
+        self.assertEqual(refs[-1], older)
+        self.assertEqual(len(refs), 3, 'Saved and waiting roles interleave by date')
+
+    # ---- best guess and place
+
+    def test_unplaced_lines_carry_a_deterministic_best_guess_without_any_provider_call(self):
+        working = self.organized()
+        calls = len(self.adapter.calls)
+        self.assertEqual(self.line('- Ran the fictional harvest audit', working)['best_guess'], {'role_ref': self.role_ref(working)})
+        self.assertEqual(self.line('- Fictional Pruning', working)['best_guess'], {'section': 'skills'})
+        self.assertEqual(self.line('- Fictional Orchard Prize 2020', working)['best_guess'], {'section': 'awards'})
+        self.service.working_set(self.owner)
+        self.assertEqual(len(self.adapter.calls), calls, 'Reading the best guess calls no provider')
+        unheaded = self.organized([], text='A fictional line with no heading' + self.NL)
+        self.assertIsNone(unheaded['unplaced'][0]['best_guess'])
+
+    def test_place_into_each_destination_keeps_the_exact_text_and_changes_nothing_public(self):
+        working = self.organized()
+        before = self.public()
+        role = self.role_ref(working)
+        bullet = self.line('- Ran the fictional harvest audit', working)
+        placed = self.place(bullet, {'role_ref': role})
+        self.assertEqual((placed['outcome'], placed['saved'], placed['canonical_changed'], placed['publishes']),
+                         ('waiting', False, False, False))
+        working = self.service.working_set(self.owner)
+        parent = next(row for row in self.section('experience', working)['items'] if row['item_ref'] == role)
+        child = next(row for row in parent['children'] if row['item_ref'] == bullet['item_ref'])
+        self.assertEqual((child['record_type'], child['values']['wording'], child['state']),
+                         ('accomplishment', 'Ran the fictional harvest audit', 'waiting'), 'One list marker is dropped')
+        skill = self.line('- Fictional Pruning', working)
+        self.place(skill, {'section': 'skills'})
+        award = self.line('- Fictional Orchard Prize 2020')
+        self.place(award, {'section': 'awards'})
+        working = self.service.working_set(self.owner)
+        placed_skill = next(row for row in self.section('skills', working)['items'] if row['item_ref'] == skill['item_ref'])
+        self.assertEqual((placed_skill['record_type'], placed_skill['values'], placed_skill['missing_required']),
+                         ('skill', {'name': 'Fictional Pruning'}, []))
+        placed_award = next(row for row in self.section('awards', working)['items'] if row['item_ref'] == award['item_ref'])
+        self.assertEqual((placed_award['record_type'], placed_award['values']), ('knowledge', {'wording': 'Fictional Orchard Prize 2020'}))
+        self.assertEqual(placed_award['missing_required'], ['title'], 'The title is asked for, never guessed')
+        self.assertEqual(working['unplaced'], [])
+        self.assertEqual(self.public(), before, 'No canonical record, draft or publication change')
+
+    def test_place_replays_conflicts_and_refuses_before_any_effect(self):
+        working = self.organized()
+        skill = self.line('- Fictional Pruning', working)
+        request_id = str(uuid4())
+        placed = self.place(skill, {'section': 'skills'}, request_id=request_id, working=working)
+        after = self.stored()
+        self.assertTrue(self.place(skill, {'section': 'skills'}, request_id=request_id, working=working)['replayed'])
+        with self.assertRaises(ResumeIntakeConflictError) as reused:
+            self.place(skill, {'section': 'awards'}, request_id=request_id, working=working)
+        self.assertEqual(reused.exception.error_code, 'idempotency_conflict')
+        with self.assertRaises(ResumeIntakeNotFoundError):
+            self.place(skill, {'section': 'awards'})  # already placed: it is no longer an unplaced line
+        self.assertEqual(self.stored(), after, 'Replay, reuse and a second place change nothing')
+        award = self.line('- Fictional Orchard Prize 2020')
+        fresh = self.service.working_set(self.owner)
+        for destination in ({'section': 'education'}, {'section': 'certifications'}, {'section': 'looking_ahead'},
+                            {'section': 'skills', 'role_ref': str(uuid4())}, {}):
+            with self.subTest(destination=destination), self.assertRaises(ResumeIntakeValidationError):
+                self.place(award, destination, working=fresh)
+        with self.assertRaises(ResumeIntakeConflictError):
+            self.place(award, {'role_ref': str(uuid4())}, working=fresh)
+        with self.assertRaises(ResumeIntakeConflictError):
+            self.place(award, {'section': 'awards'}, working=working)  # a stale working-set token
+        with self.assertRaises(ResumeIntakeConflictError):
+            self.place({**award, 'revision': award['revision'] + 1}, {'section': 'awards'}, working=fresh)
+        self.assertEqual(self.stored(), after, 'Every refusal comes before any effect')
+        self.assertTrue(placed['undo_token'])
+
+    def test_undo_returns_the_line_and_is_stale_once_the_suggestion_changed(self):
+        working = self.organized()
+        skill = self.line('- Fictional Pruning', working)
+        before = self.public()
+        placed = self.place(skill, {'section': 'skills'})
+        undone = self.undo(placed)
+        self.assertEqual((undone['outcome'], undone['publishes']), ('unplaced', False))
+        back = self.line('- Fictional Pruning')
+        self.assertEqual((back['item_ref'], back['state'], back['best_guess']), (skill['item_ref'], 'waiting', {'section': 'skills'}))
+        self.assertTrue(self.undo(placed, request_id=undone['request_id'])['replayed'])
+        with self.assertRaises(ResumeIntakeConflictError) as again:
+            self.undo(placed)
+        self.assertEqual(again.exception.error_code, 'stale_undo')
+        replaced = self.place(back, {'section': 'skills'})  # place, Undo, place again
+        working = self.service.working_set(self.owner)
+        item = next(row for row in self.section('skills', working)['items'] if row['item_ref'] == skill['item_ref'])
+        self.service.set_guide_visibility(self.owner, {'request_id': str(uuid4()), 'item_ref': item['item_ref'], 'hidden': True,
+            'expected_working_set_token': working['working_set_token'], 'expected_item_revision': item['revision']})
+        with self.assertRaises(ResumeIntakeConflictError) as hidden:
+            self.undo(replaced)
+        self.assertEqual(hidden.exception.error_code, 'stale_undo')
+        award = self.line('- Fictional Orchard Prize 2020')
+        accepted_place = self.place(award, {'section': 'skills'})
+        item = next(row for row in self.section('skills')['items'] if row['item_ref'] == award['item_ref'])
+        self.service.decide(self.owner, {'request_id': str(uuid4()), 'proposal_key': item['proposal_key'], 'decision': 'accept',
+            'confirmed_values': {'name': 'Fictional Orchard Prize'}, 'guide_review': True, 'guide_section': 'skills'})
+        with self.assertRaises(ResumeIntakeConflictError) as decided:
+            self.undo(accepted_place)
+        self.assertEqual(decided.exception.error_code, 'stale_undo')
+        self.assertEqual(self.public()[2], before[2], 'The public view never moved')
+
+    # ---- writer mutation pass: each test below kills one mutant that survived the first run
+
+    def visibility(self, item, hidden, working=None):
+        working = working or self.service.working_set(self.owner)
+        return self.service.set_guide_visibility(self.owner, {'request_id': str(uuid4()), 'item_ref': item['item_ref'],
+            'hidden': hidden, 'expected_working_set_token': working['working_set_token'],
+            'expected_item_revision': item['revision']})
+
+    def test_an_unplaced_knowledge_line_has_no_missing_essentials(self):
+        note = {'record_type': 'knowledge', 'values': {'title': 'Fictional note', 'wording': '- Fictional Pruning'},
+                'quote': '- Fictional Pruning', 'outcome': 'new', 'confidence': 'certain', 'presentation_section': 'Unsorted'}
+        working = self.organized([self.ROLE, note])
+        line = next(row for row in working['unplaced'] if row['record_type'] == 'knowledge')
+        self.assertIsNone(line['missing_required'], 'Unplaced items are not judged until they have a place')
+
+    def test_a_section_with_visible_and_hidden_items_is_not_a_hidden_tab(self):
+        self.shared.canonical.create_private(self.owner, {'command_id': str(uuid4()), 'record_type': 'role',
+            'parent_key': None, 'values': {'role_title': 'Clerk', 'employer_name': 'Fictional Mill'}})
+        working = self.organized()
+        pending = next(row for row in self.section('experience', working)['items'] if row['origin'] == 'pending')
+        self.visibility(pending, True, working)
+        experience = self.section('experience')
+        self.assertEqual(experience['counts']['hidden'], 1)
+        self.assertEqual((experience['tab_visible'], experience['tab_hidden']), (True, False))
+
+    def test_a_hidden_line_and_a_non_role_destination_are_refused_before_any_effect(self):
+        working = self.organized()
+        skill = self.line('- Fictional Pruning', working)
+        award = self.line('- Fictional Orchard Prize 2020', working)
+        self.visibility(skill, True, working)
+        hidden = next(row for row in self.service.working_set(self.owner)['unplaced'] if row['item_ref'] == skill['item_ref'])
+        before = self.stored()
+        with self.assertRaises(ResumeIntakeConflictError):
+            self.place(hidden, {'section': 'skills'})
+        with self.assertRaises(ResumeIntakeConflictError):
+            self.place(self.line('- Fictional Orchard Prize 2020'), {'role_ref': award['item_ref']})
+        with self.assertRaises(ResumeIntakeConflictError):
+            self.place(self.line('- Fictional Orchard Prize 2020'), {'role_ref': hidden['item_ref']})
+        self.assertEqual(self.stored(), before)
+
+    def test_undo_needs_its_own_token_and_is_stale_after_hide_then_show(self):
+        working = self.organized()
+        placed = self.place(self.line('- Fictional Pruning', working), {'section': 'skills'})
+        with self.assertRaises(ResumeIntakeConflictError) as forged:
+            self.undo({**placed, 'undo_token': '0' * 64})
+        self.assertEqual(forged.exception.error_code, 'stale_undo')
+        item = next(row for row in self.section('skills')['items'] if row['origin'] == 'pending')
+        self.visibility(item, True)
+        item = next(row for row in self.section('skills')['items'] if row['origin'] == 'pending')
+        self.visibility(item, False)
+        with self.assertRaises(ResumeIntakeConflictError) as shown:
+            self.undo(placed)
+        self.assertEqual(shown.exception.error_code, 'stale_undo', 'Hide then Show is still a change since the place')
+
+    def test_placing_ends_organize_retry_and_undo_offers_it_again(self):
+        working = self.organized(fail='provider_unavailable')
+        source_key = working['active_sources'][0]['source_key']
+        retry = lambda: self.service.organize_source(self.owner, {'request_id': str(uuid4()), 'source_key': source_key,
+                                                                  'mode': 'retry'})
+        placed = self.place(self.line('- Fictional Pruning', working), {'section': 'skills'})
+        calls = len(self.adapter.calls)
+        self.assertEqual(retry()['outcome'], 'already_organized', 'The member decided a line: no paid retry')
+        self.assertEqual(len(self.adapter.calls), calls)
+        self.undo(placed)
+        self.adapter.fail_with = None
+        retry()
+        self.assertEqual(len(self.adapter.calls), calls + 1, 'After Undo the retry is offered again')
+
+    def test_moving_a_placed_suggestion_makes_its_undo_stale(self):
+        working = self.organized()
+        placed = self.place(self.line('- Fictional Pruning', working), {'section': 'skills'})
+        item = next(row for row in self.section('skills')['items'] if row['origin'] == 'pending')
+        current = self.service.working_set(self.owner)
+        staged = self.service.guide_conversion(self.owner, {'request_id': str(uuid4()), 'action': 'stage',
+            'item_ref': item['item_ref'], 'expected_working_set_token': current['working_set_token'],
+            'expected_item_revision': item['revision'], 'destination': {'record_type': 'project',
+            'values': {'project_name': '- Fictional Pruning', 'summary': 'A fictional project.'}, 'parent_ref': None}})
+        self.service.guide_conversion(self.owner, {'request_id': str(uuid4()), 'action': 'confirm',
+            'conversion_key': staged['conversion_key'], 'conversion_token': staged['conversion_token'],
+            'expected_working_set_token': self.service.working_set(self.owner)['working_set_token'],
+            'reference_reconciliation': []})
+        before = self.stored()
+        with self.assertRaises(ResumeIntakeConflictError) as moved:
+            self.undo(placed)
+        self.assertEqual(moved.exception.error_code, 'stale_undo')
+        self.assertEqual(self.stored(), before)
+
+    # ---- round 2 (review f3b44a7): I1 through the real accept, F2 and the F3 mutants
+
+    def accept(self, item, confirmed=None):
+        # A bullet's own type has no section; its accept leaves the section to the server (the panel does the same).
+        body = {'request_id': str(uuid4()), 'proposal_key': item['proposal_key'], 'decision': 'accept',
+                'guide_review': True, 'guide_section': None if item['record_type'] == 'accomplishment' else item['section']}
+        if confirmed is not None:
+            body['confirmed_values'] = confirmed
+        return self.service.decide(self.owner, body)
+
+    def find(self, ref, working=None):
+        working = working or self.service.working_set(self.owner)
+        return self.service._find_working_item(working, ref)
+
+    def assert_i1(self, item, confirmed=None):
+        """I1 through the real accept: the card's missing list and wording flag say exactly what accept does."""
+        import copy
+        before = copy.deepcopy(self.service._load(self.owner))
+        if item['waits_for_parent']:
+            # A bullet saves only under a saved role; the card says it waits for its role.
+            with self.assertRaises(ResumeIntakeConflictError) as refused:
+                self.accept(item, confirmed)
+            self.assertEqual(refused.exception.error_code, 'reconciliation_required')
+            return
+        if item['needs_member_wording'] and confirmed is None:
+            # Accept as shown first asks the member to check the words; the card says so with the flag.
+            with self.assertRaises(ResumeIntakeConflictError) as refused:
+                self.accept(item)
+            self.assertEqual(refused.exception.error_code, 'reconciliation_required')
+            confirmed = {k: v for k, v in item['values'].items() if k != 'suggested_parent_key'}
+        if item['missing_required'] and confirmed in (None, {k: v for k, v in item['values'].items() if k != 'suggested_parent_key'}):
+            # Accepting the words the card shows refuses with exactly the card's missing list.
+            with self.assertRaises(ResumeIntakeValidationError) as refused:
+                self.accept(item, confirmed)
+            self.assertEqual(refused.exception.missing_required_fields, item['missing_required'])
+            self.assertEqual(self.service._load(self.owner)['proposals'], before['proposals'], 'A refusal changes nothing')
+        else:
+            saved = self.accept(item, confirmed)
+            self.assertEqual(saved['outcome'], 'saved', item['record_type'])
+
+    def test_i1_holds_through_the_real_accept_for_organized_suggestions(self):
+        nl = self.NL
+        cases = [  # each line holds exactly the values organize keeps
+            ('EXPERIENCE', 'Fictional Orchard', {'record_type': 'role', 'values': {'employer_name': 'Fictional Orchard'}}, ['role_title']),
+            ('EDUCATION', 'Fictional College', {'record_type': 'education', 'values': {'institution_name': 'Fictional College'}}, ['end_date']),
+            ('SKILLS', 'Fictional Pruning', {'record_type': 'skill', 'values': {'name': 'Fictional Pruning'}}, []),
+            ('SKILLS', 'Fictional Grafting', {'record_type': 'skill', 'values': {'name': 'Fictional Grafting'}, 'confidence': 'uncertain'}, []),
+        ]
+        for heading, line, script, missing in cases:
+            with self.subTest(script=script):
+                self.setUp()
+                working = self.organized([{'quote': line, 'outcome': 'new', 'confidence': 'certain', **script}],
+                                         text=heading + nl + line + nl)
+                item = next(row for section in working['sections'] for row in section['items'])
+                self.assertEqual(item['missing_required'], missing)
+                self.assertIsInstance(item['needs_member_wording'], bool)
+                self.assert_i1(item)
+
+    def test_i1_holds_through_the_real_accept_for_every_placed_destination(self):
+        destinations = ['skills', 'impact_statement', 'projects', 'awards', 'story', 'role']
+        for destination in destinations:
+            for edited in (False, True):
+                with self.subTest(destination=destination, edited=edited):
+                    self.setUp()
+                    working = self.organized()
+                    line = self.line('- Fictional Orchard Prize 2020', working)
+                    self.place(line, {'role_ref': self.role_ref(working)} if destination == 'role' else {'section': destination})
+                    item = self.find(line['item_ref'])
+                    self.assertFalse(item['needs_member_wording'], 'Placing is the member choosing what it becomes')
+                    if destination in {'skills', 'role'}:
+                        self.assertEqual(item['missing_required'], [])
+                    else:
+                        self.assertEqual(item['missing_required'], ['title'], 'A knowledge title is asked for, never guessed')
+                    confirmed = None
+                    if edited:
+                        confirmed = ({'name': 'Fictional Orchard Prize'} if destination == 'skills' else
+                                     {'wording': 'Fictional Orchard Prize 2020'} if destination == 'role' else
+                                     {'title': {'impact_statement': 'Professional summary', 'projects': 'Independent Project',
+                                                'awards': 'Awards', 'story': 'My Story'}[destination],
+                                      'wording': 'Fictional Orchard Prize 2020',
+                                      'classification': 'personal' if destination == 'story' else 'work'})
+                    self.assert_i1(item, confirmed)
+
+    def test_a_bullet_placed_under_a_waiting_role_waits_for_it_then_saves_as_placed(self):
+        working = self.organized()
+        role = self.section('experience', working)['items'][0]
+        bullet = self.line('- Ran the fictional harvest audit', working)
+        self.place(bullet, {'role_ref': role['item_ref']})
+        waiting = self.find(bullet['item_ref'])
+        self.assertEqual((waiting['missing_required'], waiting['needs_member_wording'], waiting['waits_for_parent']), ([], False, True))
+        self.assert_i1(waiting)
+        saved = self.accept(role, {'role_title': 'Engineer', 'employer_name': 'Fictional Orchard'})
+        parent = self.find(saved['item']['record_key'])
+        child = next(row for row in parent['children'] if row['item_ref'] == bullet['item_ref'])
+        self.assertFalse(child['waits_for_parent'], 'Once its role is saved the bullet stays under it and can be saved')
+        self.assertEqual(self.accept(child)['outcome'], 'saved')
+        bullet_saved = next(row for row in self.find(saved['item']['record_key'])['children'] if row['origin'] == 'saved')
+        self.assertEqual(bullet_saved['values']['wording'], 'Ran the fictional harvest audit')
+
+    def test_a_bullet_placed_under_a_saved_role_saves_as_placed(self):
+        key = self.shared.canonical.create_private(self.owner, {'command_id': str(uuid4()), 'record_type': 'role',
+            'parent_key': None, 'values': {'role_title': 'Clerk', 'employer_name': 'Fictional Mill'}})['record_key']
+        working = self.organized()
+        bullet = self.line('- Ran the fictional harvest audit', working)
+        self.place(bullet, {'role_ref': key})
+        item = self.find(bullet['item_ref'])
+        self.assertEqual((item['waits_for_parent'], item['needs_member_wording'], item['missing_required']), (False, False, []))
+        self.assert_i1(item)
+
+    def test_a_pending_move_is_the_members_choice_and_its_undo_restores_the_wording_check(self):
+        line = 'Fictional Pruning'
+        working = self.organized([{'record_type': 'skill', 'values': {'name': 'Fictional Pruning'}, 'quote': line,
+                                   'outcome': 'new', 'confidence': 'uncertain'}], text='SKILLS' + self.NL + line + self.NL)
+        item = self.section('skills', working)['items'][0]
+        self.assertTrue(item['needs_member_wording'])
+        staged = self.service.guide_conversion(self.owner, {'request_id': str(uuid4()), 'action': 'stage',
+            'item_ref': item['item_ref'], 'expected_working_set_token': working['working_set_token'],
+            'expected_item_revision': item['revision'], 'destination': {'record_type': 'project',
+            'values': {'project_name': 'Fictional Pruning', 'summary': 'A fictional project.'}, 'parent_ref': None}})
+        confirmed = self.service.guide_conversion(self.owner, {'request_id': str(uuid4()), 'action': 'confirm',
+            'conversion_key': staged['conversion_key'], 'conversion_token': staged['conversion_token'],
+            'expected_working_set_token': self.service.working_set(self.owner)['working_set_token'],
+            'reference_reconciliation': []})
+        moved = self.find(item['item_ref'])
+        self.assertEqual((moved['record_type'], moved['needs_member_wording'], moved['missing_required']), ('project', False, []))
+        self.service.guide_conversion(self.owner, {'request_id': str(uuid4()), 'action': 'undo',
+            'operation_ref': confirmed['operation_ref'], 'undo_token': confirmed['undo_token']})
+        self.assertTrue(self.find(item['item_ref'])['needs_member_wording'], 'Undo restores the original wording check')
+        self.assert_i1(self.find(item['item_ref']))
+
+    def test_a_bullet_left_by_a_rejected_role_can_be_rescued_into_another_role(self):
+        saved_role = self.shared.canonical.create_private(self.owner, {'command_id': str(uuid4()), 'record_type': 'role',
+            'parent_key': None, 'values': {'role_title': 'Clerk', 'employer_name': 'Fictional Mill'}})['record_key']
+        working = self.organized()
+        pending_role = next(row for row in self.section('experience', working)['items'] if row['origin'] == 'pending')
+        bullet = self.line('- Ran the fictional harvest audit', working)
+        self.place(bullet, {'role_ref': pending_role['item_ref']})
+        self.service.decide(self.owner, {'request_id': str(uuid4()), 'proposal_key': pending_role['proposal_key'],
+                                         'decision': 'reject'})
+        orphan = next(row for row in self.service.working_set(self.owner)['unplaced'] if row['item_ref'] == bullet['item_ref'])
+        self.assertEqual((orphan['record_type'], orphan['state']), ('accomplishment', 'waiting'))
+        placed = self.place(orphan, {'role_ref': saved_role})
+        role = self.find(saved_role)
+        child = next(row for row in role['children'] if row['item_ref'] == bullet['item_ref'])
+        self.assertEqual((child['values']['wording'], child['needs_member_wording']), ('Ran the fictional harvest audit', False))
+        self.undo(placed)
+        back = next(row for row in self.service.working_set(self.owner)['unplaced'] if row['item_ref'] == bullet['item_ref'])
+        self.assertEqual(back['record_type'], 'accomplishment', 'Undo returns the orphan exactly')
+
+    def test_a_reused_request_id_for_another_line_is_a_conflict(self):
+        working = self.organized()
+        request_id = str(uuid4())
+        self.place(self.line('- Fictional Pruning', working), {'section': 'skills'}, request_id=request_id, working=working)
+        before = self.stored()
+        other = self.line('- Fictional Orchard Prize 2020', working)
+        self.assertEqual(other['revision'], self.line('- Fictional Pruning', working)['revision'])
+        with self.assertRaises(ResumeIntakeConflictError) as reused:  # only the line differs: same token and revision
+            self.place(other, {'section': 'skills'}, request_id=request_id, working=working)
+        self.assertEqual(reused.exception.error_code, 'idempotency_conflict')
+        self.assertEqual(self.stored(), before)
+
+    def test_the_role_guess_is_the_nearest_role_above_the_line(self):
+        nl = self.NL
+        first, second = 'Fictional Orchard, Engineer, 2019 - 2021', 'Fictional Grove, Analyst, 2016 - 2019'
+        text = nl.join(['EXPERIENCE', first, '', second, '- Ran the fictional grove audit', ''])
+        working = self.organized([{**self.ROLE, 'quote': first},
+            {'record_type': 'role', 'values': {'role_title': 'Analyst', 'employer_name': 'Fictional Grove'},
+             'quote': second, 'outcome': 'new', 'confidence': 'certain'}], text=text)
+        grove = next(row for row in self.section('experience', working)['items'] if row['values']['employer_name'] == 'Fictional Grove')
+        self.assertEqual(self.line('- Ran the fictional grove audit', working)['best_guess'], {'role_ref': grove['item_ref']})
+
+    def test_saved_items_carry_their_missing_list_too(self):
+        key = self.shared.canonical.create_private(self.owner, {'command_id': str(uuid4()), 'record_type': 'skill',
+            'parent_key': None, 'values': {'name': 'Fictional Pruning'}})['record_key']
+        working = self.organized()
+        saved = self.find(key, working)
+        self.assertEqual((saved['missing_required'], saved['needs_member_wording']), ([], False))
+
+    def test_undo_details_labels_units_and_operation_type(self):
+        working = self.organized()
+        line = self.line('- Fictional Pruning', working)
+        snapshot = self.service._load(self.owner)
+        original = snapshot['proposals'][line['proposal_key']]
+        source = snapshot['sources'][original['binding']['source_key']]
+        unit_id = original['resume_conversation_v1']['unit_ids'][0]
+        def unit():
+            live = self.service._load(self.owner)['sources'][source['source_key']]
+            return next(row for row in live['structured_values']['resume_conversation_v1']['source_units'] if row['unit_id'] == unit_id)
+        placed = self.place(line, {'section': 'skills'})
+        live = self.find(line['item_ref'])
+        self.assertEqual((unit()['proposal_key'], unit()['disposition']), (live['proposal_key'], 'pending'))
+        visibility = self.service.set_guide_visibility(self.owner, {'request_id': str(uuid4()), 'item_ref': live['item_ref'],
+            'hidden': True, 'expected_working_set_token': self.service.working_set(self.owner)['working_set_token'],
+            'expected_item_revision': live['revision']})
+        with self.assertRaises(ResumeIntakeNotFoundError):
+            self.undo({'operation_ref': 'place:' + visibility['request_id'], 'undo_token': placed['undo_token']})
+        self.setUp()
+        working = self.organized()
+        line = self.line('- Fictional Pruning', working)
+        original_meta = dict(self.service._load(self.owner)['proposals'][line['proposal_key']]['resume_conversation_v1'])
+        self.undo(self.place(line, {'section': 'skills'}))
+        back = self.line('- Fictional Pruning')
+        restored = self.service._load(self.owner)['proposals'][back['proposal_key']]
+        meta = restored['resume_conversation_v1']
+        self.assertEqual((meta.get('presentation_section'), meta.get('placement')),
+                         (original_meta.get('presentation_section'), original_meta.get('placement')))
+        self.assertEqual(restored['proposed_values'], {'text': '- Fictional Pruning'}, 'Undo restores the line exactly')
+        original_flag = self.service._load(self.owner)['proposals'][line['proposal_key']].get('requires_member_wording', True)
+        self.assertEqual(restored['requires_member_wording'], original_flag, "Undo restores the original's wording check")
+        self.assertEqual(self.line('- Fictional Pruning')['needs_member_wording'], original_flag)
+        live_unit = next(row for row in self.service._load(self.owner)['sources'][restored['binding']['source_key']]
+                         ['structured_values']['resume_conversation_v1']['source_units'] if row['unit_id'] == meta['unit_ids'][0])
+        self.assertEqual((live_unit['proposal_key'], live_unit['disposition']), (restored['proposal_key'], 'unresolved'))
+
+    def test_a_source_line_undo_releases_its_unit(self):
+        working = self.organized(fail='provider_unavailable')
+        line = self.line('- Fictional Pruning', working)
+        source_key = line['evidence'][0]['source_key']
+        def unit():
+            live = self.service._load(self.owner)['sources'][source_key]
+            return next(row for row in live['structured_values']['resume_conversation_v1']['source_units']
+                        if row['unit_id'] == line['source_unit_ref'])
+        placed = self.place(line, {'section': 'skills'})
+        self.assertEqual(unit()['disposition'], 'pending')
+        self.undo(placed)
+        self.assertEqual((unit()['disposition'], unit().get('proposal_key')), ('unresolved', None))
+
+    def test_a_placed_no_suggestion_line_saves_as_placed(self):
+        working = self.organized(fail='provider_unavailable')
+        line = self.line('- Fictional Pruning', working)
+        self.place(line, {'section': 'skills'})
+        self.assert_i1(self.find(line['item_ref']))
+        self.assertEqual([row['values']['name'] for row in self.section('skills')['items'] if row['origin'] == 'saved'],
+                         ['Fictional Pruning'])
+
+    def test_a_superseded_source_or_storage_without_guide_support_refuses_before_any_effect(self):
+        from unittest.mock import patch
+        working = self.organized(fail='provider_unavailable')
+        line = self.line('- Fictional Pruning', working)
+        snapshot = self.service._load(self.owner)
+        stale = self.service.working_set(self.owner)
+        snapshot['sources'][line['evidence'][0]['source_key']]['state'] = 'superseded'
+        self.service.repository.save_owner(self.owner, snapshot)
+        before = self.stored()
+        with self.assertRaises(ResumeIntakeConflictError):
+            self.service.guide_place(self.owner, {'request_id': str(uuid4()), 'action': 'place', 'item_ref': line['item_ref'],
+                'destination': {'section': 'skills'}, 'expected_working_set_token': stale['working_set_token'],
+                'expected_item_revision': line['revision']}, read_working_set=lambda owner: stale)
+        self.assertEqual(self.stored(), before)
+        with patch.object(self.service.repository, 'supports_guide_first_arrival', False), \
+                self.assertRaises(ResumeIntakeUnavailableError):
+            self.place(line, {'section': 'skills'}, working=stale)
+
+    def test_a_line_no_suggestion_accounts_for_can_be_placed_and_undone(self):
+        working = self.organized(fail='provider_unavailable')
+        line = self.line('- Fictional Pruning', working)
+        self.assertEqual(line['origin'], 'source')
+        self.assertEqual(line['best_guess'], {'section': 'skills'})
+        placed = self.place(line, {'section': 'skills'})
+        item = next(row for row in self.section('skills')['items'] if row['item_ref'] == line['item_ref'])
+        self.assertEqual((item['origin'], item['record_type'], item['values']['name']), ('pending', 'skill', 'Fictional Pruning'))
+        self.assertFalse(item['needs_member_wording'], 'Placing a no-suggestion line is the member choosing too')
+        self.undo(placed)
+        back = self.line('- Fictional Pruning')
+        self.assertEqual((back['origin'], back['item_ref']), ('source', line['item_ref']))
 
 
 if __name__ == "__main__":

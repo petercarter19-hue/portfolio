@@ -1245,7 +1245,7 @@ class ResumeIntakeService:
                     raise ResumeIntakeUnavailableError()
                 if base["origin"] == "pending":
                     successor = self._conversion_successor(snapshot, base["proposal_key"], destination["record_type"],
-                                                           values, destination.get("parent_key"))
+                                                           values, destination.get("parent_key"), member_wording=False)
                     inverse = {"origin": "pending", "proposal_key": successor["proposal_key"],
                                "restore_from": base["proposal_key"]}
                     resulting = {"proposal_key": successor["proposal_key"], "revision": successor["revision"]}
@@ -1304,13 +1304,26 @@ class ResumeIntakeService:
                     raise ResumeIntakeUnavailableError() from error
                 return result
 
+    @staticmethod
+    def _saved_key_for_ref(snapshot, ref):
+        """The saved record a Guide reference now names (an accepted suggestion's own reference or alias), else ref."""
+        if not isinstance(ref, str):
+            return ref
+        for row in (snapshot.get("proposals") or {}).values():
+            if row.get("state") == "accepted" and (row.get("item_ref") == ref or ref in (row.get("identity_aliases") or [])):
+                return row.get("saved_record_key") or row.get("target_key") or ref
+        return ref
+
     def _raw_draft_items(self, owner):
         """The stored private overlays exactly as kept (the draft service's own snapshot)."""
         snapshot = self.draft_service.repository.load_owner(owner)
         return copy.deepcopy(snapshot.get("items") or {})
 
-    def _conversion_successor(self, snapshot, proposal_key, record_type, values, parent_key):
-        """A same-item successor suggestion of another type; the old one stays in the history."""
+    def _conversion_successor(self, snapshot, proposal_key, record_type, values, parent_key, *, member_wording):
+        """A same-item successor suggestion of another type; the old one stays in the history.
+
+        The caller states whether the member still has to word it (B3m F1): a move is the member's own choice;
+        an Undo restores the original's own requirement. It is never silently copied."""
         old = snapshot["proposals"].get(proposal_key)
         if old is None or old["state"] != "pending" or old.get("superseded_by"):
             raise ResumeIntakeConflictError("changed", [], "That suggestion changed. Your choice is kept.")
@@ -1320,6 +1333,7 @@ class ResumeIntakeService:
                          revision=int(old.get("revision") or 1) + 1)
         successor["proposed_values"] = {**copy.deepcopy(values),
                                         **({"suggested_parent_key": parent_key} if parent_key else {})}
+        successor["requires_member_wording"] = bool(member_wording)
         meta = copy.deepcopy(old.get("resume_conversation_v1") or {})
         meta["revision_of"] = old["proposal_key"]
         meta.pop("presentation_section", None)
@@ -1364,7 +1378,8 @@ class ResumeIntakeService:
                     original = snapshot["proposals"][inverse["restore_from"]]
                     self._conversion_successor(snapshot, resulting["proposal_key"], original["record_type"],
                         {k: v for k, v in (original.get("proposed_values") or {}).items() if k != "suggested_parent_key"},
-                        (original.get("proposed_values") or {}).get("suggested_parent_key"))
+                        (original.get("proposed_values") or {}).get("suggested_parent_key"),
+                        member_wording=original.get("requires_member_wording", True))
                 else:
                     workspace = self.draft_service.get_workspace(owner)
                     overlays = self._raw_draft_items(owner)
@@ -1397,6 +1412,205 @@ class ResumeIntakeService:
                 undone = {"success": True, "type": "guide_conversion", "action": "undo", "outcome": "undone",
                     "request_id": command["request_id"], "operation_ref": command["operation_ref"],
                     "item_ref": record.get("item_ref"), "saved": True, "canonical_changed": False, "publishes": False,
+                    "replayed": False}
+                snapshot["receipts"][command["request_id"]] = {"request_digest": digest, "submission_key": None, "result": undone}
+                try:
+                    unit.commit(owner, snapshot)
+                except ResumeIntakeStoreUnavailable as error:
+                    raise ResumeIntakeUnavailableError() from error
+                return undone
+
+    # -- B3m: D23 place one unplaced line as a pending suggestion, and Undo it --------------------
+
+    def guide_place(self, owner, payload, *, read_working_set=None):
+        """Place one unplaced line, or undo that. A suggestion only: never canonical, draft or public."""
+        action = payload.get("action") if isinstance(payload, dict) else None
+        if not getattr(self.repository, "supports_guide_first_arrival", False):
+            raise ResumeIntakeUnavailableError("This storage cannot place lines yet. Your information is kept.")
+        if action == "undo":
+            return self._undo_guide_place(owner, payload)
+        if action != "place":
+            raise ResumeIntakeValidationError("Invalid Guide place.")
+        from services.resume_guide_contract import PLACE_SECTIONS, bind_item_identities, placed_text
+        from services.resume_guide_turns import undo_token
+        required = {"request_id", "action", "item_ref", "destination", "expected_working_set_token", "expected_item_revision"}
+        destination = payload.get("destination")
+        if (set(payload) != required or not isinstance(destination, dict)
+                or not (set(destination) == {"section"} and destination["section"] in PLACE_SECTIONS
+                        or set(destination) == {"role_ref"} and isinstance(destination["role_ref"], str))
+                or not isinstance(payload["expected_working_set_token"], str)
+                or len(payload["expected_working_set_token"]) != 64):
+            raise ResumeIntakeValidationError("Invalid Guide place.")
+        command = {**copy.deepcopy(payload), "request_id": _as_uuid(payload["request_id"], field="request id"),
+                   "item_ref": _as_uuid(payload["item_ref"], field="item reference")}
+        if "role_ref" in destination:
+            command["destination"] = {"role_ref": _as_uuid(destination["role_ref"], field="role reference")}
+        digest = _json_digest({"type": "guide_place", **{k: v for k, v in command.items() if k != "request_id"}})
+        with self.repository.owner_guard(owner):
+            snapshot = self._load(owner)
+            replay = self._conversion_receipt(snapshot, command["request_id"], digest)
+            if replay is not None:
+                return replay
+            with self._unit_of_work(owner) as unit:
+                if not getattr(unit, "supports_atomic_composition", False):
+                    raise ResumeIntakeUnavailableError()
+                working = (read_working_set or self.working_set)(owner)
+                item = next((row for row in working["unplaced"]
+                             if command["item_ref"] == row["item_ref"] or command["item_ref"] in row["identity_aliases"]), None)
+                if item is None:
+                    raise ResumeIntakeNotFoundError()
+                if (working["working_set_token"] != command["expected_working_set_token"]
+                        or type(item["revision"]) is not type(command["expected_item_revision"])
+                        or item["revision"] != command["expected_item_revision"]):
+                    raise ResumeIntakeConflictError("changed", [], "That line changed. Refresh the Guide and try again.")
+                text = (item.get("values") or {}).get("text" if item["record_type"] in {None, "unspecified"} else "wording")
+                if item["record_type"] not in {None, "unspecified", "accomplishment"}:
+                    raise ResumeIntakeConflictError("changed", [], "Only a line or a bullet can be placed. Nothing changed.")
+                if item["state"] != "waiting" or not isinstance(text, str) or not text.strip():
+                    raise ResumeIntakeConflictError("changed", [], "That line isn't waiting to be placed. Nothing changed.")
+                text = placed_text(text)
+                if "role_ref" in command["destination"]:
+                    role = self._find_working_item(working, command["destination"]["role_ref"])
+                    if role is None or role["record_type"] != "role" or role["state"] not in {"saved", "waiting"}:
+                        raise ResumeIntakeConflictError("changed", [], "That role isn't available to place into. Nothing changed.")
+                    record_type, values, label, parent = "accomplishment", {"wording": text}, None, role["item_ref"]
+                else:
+                    record_type, field, label = PLACE_SECTIONS[command["destination"]["section"]]
+                    values, parent = {field: text}, None
+                bind_item_identities(owner, snapshot)
+                if item["origin"] == "pending":
+                    old = snapshot["proposals"].get(item["proposal_key"])
+                    if (old is None or old["state"] != "pending" or old.get("superseded_by")
+                            or old.get("record_type") not in {"unspecified", "accomplishment"}):
+                        raise ResumeIntakeConflictError("changed", [], "That line changed. Refresh the Guide and try again.")
+                    placed = self._place_successor(snapshot, old, record_type, values, parent, label, member_wording=False)
+                    inverse = {"origin": "pending", "restore_from": old["proposal_key"]}
+                else:
+                    placed = self._place_source_unit(snapshot, item, record_type, values, parent, label, digest)
+                    inverse = {"origin": "source"}
+                resulting = {"proposal_key": placed["proposal_key"], "revision": placed["revision"]}
+                operation_ref = "place:" + command["request_id"]
+                result = {"success": True, "type": "guide_place", "action": "place", "outcome": "waiting",
+                    "request_id": command["request_id"], "item_ref": item["item_ref"],
+                    "destination": copy.deepcopy(command["destination"]), "operation_ref": operation_ref,
+                    "undo_token": undo_token(owner, operation_ref, resulting),
+                    "saved": False, "canonical_changed": False, "publishes": False, "replayed": False}
+                snapshot["receipts"][command["request_id"]] = {"request_digest": digest, "submission_key": None,
+                    "result": result, "inverse": inverse, "resulting": resulting}
+                try:
+                    unit.commit(owner, snapshot)
+                except ResumeIntakeStoreUnavailable as error:
+                    raise ResumeIntakeUnavailableError() from error
+                return result
+
+    @staticmethod
+    def _bind_place_units(snapshot, proposal):
+        """Point the line's source units at the live suggestion, as organize does."""
+        binding = proposal.get("binding") or {}
+        source = (snapshot.get("sources") or {}).get(binding.get("source_key")) or {}
+        units = ((source.get("structured_values") or {}).get("resume_conversation_v1") or {}).get("source_units") or []
+        bound = set((proposal.get("resume_conversation_v1") or {}).get("unit_ids") or [])
+        for source_unit in units:
+            if source_unit.get("unit_id") in bound:
+                source_unit["disposition"] = "pending" if proposal["record_type"] != "unspecified" else "unresolved"
+                source_unit["proposal_key"] = proposal["proposal_key"]
+
+    def _place_successor(self, snapshot, old, record_type, values, parent_key, label, *, member_wording, placement=None):
+        """A same-item successor carrying the line text; the old suggestion stays in the history.
+
+        Placing is the member's choice of what the line becomes, so a placed suggestion needs no member wording;
+        an Undo restores the original's own requirement (B3m F1)."""
+        successor = copy.deepcopy(old)
+        successor.update(proposal_key=str(uuid4()), record_type=record_type, state="pending",
+                         superseded_by=None, created_at=_utc(None).isoformat(),
+                         revision=int(old.get("revision") or 1) + 1,
+                         provided_fields=sorted(values), explicit_clears=[], requires_member_wording=bool(member_wording))
+        successor["proposed_values"] = {**copy.deepcopy(values),
+                                        **({"suggested_parent_key": parent_key} if parent_key else {})}
+        successor.pop("guide_hidden", None)
+        successor.pop("identity_aliases", None)
+        meta = copy.deepcopy(old.get("resume_conversation_v1") or {})
+        meta["revision_of"] = old["proposal_key"]
+        meta.pop("presentation_section", None)
+        meta.pop("placement", None)
+        if label is not None:
+            meta["presentation_section"] = label
+        if placement is not None:
+            meta["placement"] = placement
+        successor["resume_conversation_v1"] = meta
+        old["state"] = "invalidated"
+        old["superseded_by"] = successor["proposal_key"]
+        snapshot["proposals"][successor["proposal_key"]] = successor
+        self._bind_place_units(snapshot, successor)
+        return successor
+
+    def _place_source_unit(self, snapshot, item, record_type, values, parent_key, label, digest):
+        """A line no suggestion accounts for (organize was unavailable) becomes one, keeping its Guide identity."""
+        from services.resume_guide_contract import _unit_position
+        source_key = (item.get("evidence") or [{}])[0].get("source_key")
+        source = (snapshot.get("sources") or {}).get(source_key)
+        _position, source_unit = _unit_position(snapshot, source_key, item.get("source_unit_ref"))
+        if source is None or source.get("state") != "active" or source_unit is None:
+            raise ResumeIntakeConflictError("changed", [], "That line changed. Refresh the Guide and try again.")
+        submission = snapshot["submissions"].get(source.get("submission_key")) or {}
+        proposal = create_proposal(snapshot, ProposalSpec(
+            source_key=source_key, source_version=int(source["version"]), submission_key=source["submission_key"],
+            submission_version=int(submission.get("version") or 1), kind="new_fact", record_type=record_type,
+            quote=source_unit["text"], span_start=source_unit["span_start"], span_end=source_unit["span_end"],
+            proposed_values={**copy.deepcopy(values), **({"suggested_parent_key": parent_key} if parent_key else {})},
+            provided_fields=tuple(sorted(values)), confidence="uncertain", command_digest=digest,
+            lifecycle_epoch=snapshot["lifecycle_epoch"], policy_version=self._policy.version))
+        proposal["item_ref"], proposal["revision"] = item["item_ref"], 1
+        proposal["requires_member_wording"] = False  # the member chose what this line becomes (B3m F1)
+        proposal["resume_conversation_v1"] = {"unit_ids": [source_unit["unit_id"]], "record_anchor": source_unit["unit_id"],
+            **({"presentation_section": label} if label is not None else {})}
+        self._bind_place_units(snapshot, proposal)
+        return proposal
+
+    def _undo_guide_place(self, owner, payload):
+        from services.resume_guide_turns import undo_token
+        required = {"request_id", "action", "operation_ref", "undo_token"}
+        if (not isinstance(payload, dict) or set(payload) != required
+                or not isinstance(payload["operation_ref"], str) or not isinstance(payload["undo_token"], str)):
+            raise ResumeIntakeValidationError("Invalid Undo.")
+        command = {**copy.deepcopy(payload), "request_id": _as_uuid(payload["request_id"], field="request id")}
+        digest = _json_digest({"type": "guide_place_undo", **{k: v for k, v in command.items() if k != "request_id"}})
+        with self.repository.owner_guard(owner):
+            snapshot = self._load(owner)
+            replay = self._conversion_receipt(snapshot, command["request_id"], digest)
+            if replay is not None:
+                return replay
+            parts = command["operation_ref"].split(":")
+            place = snapshot["receipts"].get(parts[1]) if len(parts) == 2 and parts[0] == "place" else None
+            result = (place or {}).get("result") or {}
+            if result.get("type") != "guide_place" or result.get("action") != "place":
+                raise ResumeIntakeNotFoundError()
+            resulting, inverse = place["resulting"], place["inverse"]
+            current = snapshot["proposals"].get(resulting["proposal_key"])
+            # Fresh only while the placed suggestion is exactly as placed: deciding, editing, hiding or moving it
+            # (each a new state, revision or successor) makes Undo stale. Hide and Show each bump the revision.
+            if (undo_token(owner, command["operation_ref"], resulting) != command["undo_token"]
+                    or current is None or current["state"] != "pending" or current.get("superseded_by")
+                    or current.get("revision") != resulting["revision"]):
+                raise ResumeIntakeConflictError("stale_undo", [], "This line changed since it was placed. Nothing changed.")
+            with self._unit_of_work(owner) as unit:
+                if not getattr(unit, "supports_atomic_composition", False):
+                    raise ResumeIntakeUnavailableError()
+                if inverse["origin"] == "pending":
+                    original = snapshot["proposals"][inverse["restore_from"]]
+                    meta = original.get("resume_conversation_v1") or {}
+                    self._place_successor(snapshot, current, original["record_type"],
+                        copy.deepcopy(original.get("proposed_values") or {}), None,
+                        meta.get("presentation_section"), placement=meta.get("placement"),
+                        member_wording=original.get("requires_member_wording", True))
+                else:
+                    # The line goes back to no suggestion at all, so "Try organizing again" is offered as before.
+                    current["state"] = "invalidated"
+                    current["guide_place_undone"] = True
+                    self._bind_place_units(snapshot, {**current, "record_type": "unspecified", "proposal_key": None})
+                undone = {"success": True, "type": "guide_place", "action": "undo", "outcome": "unplaced",
+                    "request_id": command["request_id"], "operation_ref": command["operation_ref"],
+                    "item_ref": result["item_ref"], "saved": False, "canonical_changed": False, "publishes": False,
                     "replayed": False}
                 snapshot["receipts"][command["request_id"]] = {"request_digest": digest, "submission_key": None, "result": undone}
                 try:
@@ -5170,7 +5384,8 @@ class ResumeIntakeService:
                 or not source.get("text")):
             return None
         organization = self._source_meta(source).get("organization")
-        bound = self._bound_proposals(snapshot, source["source_key"])
+        # B3m: an undone D23 placement of a line no suggestion covered leaves no trace on eligibility.
+        bound = [row for row in self._bound_proposals(snapshot, source["source_key"]) if not row.get("guide_place_undone")]
         if isinstance(organization, dict):
             if organization.get("state") not in {"unavailable", "member_sorted", "not_started"}:
                 return None
@@ -5976,6 +6191,9 @@ class ResumeIntakeService:
         # only meaningful when creating a child; an overlay change keeps the
         # existing parent.
         supplied_parent = values.pop("parent_key", None)
+        # B3m F1: a member-chosen bullet carries its role as ``suggested_parent_key``; that is the parent link, never
+        # a value, and a waiting role's first reference resolves to the role once it is saved.
+        suggested_parent = self._saved_key_for_ref(snapshot, values.pop("suggested_parent_key", None))
         fields = (frozenset({"title", "wording", "classification"})
                   if record_type == "knowledge" else EDITOR_FIELDS[record_type])
         unknown = set(values) - fields
@@ -5984,7 +6202,7 @@ class ResumeIntakeService:
         if not target_key:
             resolved_parent = None
             if record_type == "accomplishment":
-                resolved_parent = supplied_parent or proposal.get("parent_key")
+                resolved_parent = supplied_parent or proposal.get("parent_key") or suggested_parent
                 _parent, parent_reason = self._accomplishment_parent(owner, resolved_parent)
                 if parent_reason is not None:
                     raise ResumeIntakeConflictError(

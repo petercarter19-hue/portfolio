@@ -178,6 +178,70 @@ class GuideProposalHttpTests(unittest.TestCase):
             moved = next(row for section in working()["sections"] for row in section["items"] if row["item_ref"] == skill)
             self.assertEqual(moved["record_type"], "project")
 
+    def test_real_place_route_places_undoes_and_refuses_neutrally(self):
+        from urllib.request import Request, urlopen
+        from urllib.error import HTTPError
+        from tests.mvp1_acceptance_support import Mvp1AcceptanceServer
+        with Mvp1AcceptanceServer() as server:
+            owner = "g-member-a"
+            server.intake.submit(owner, {"request_id": str(uuid4()), "text": "Fictional pruning."})
+            headers = {"Cookie": "mvp1-synthetic-owner=" + owner}
+            def working():
+                with urlopen(Request(server.url + "/api/resume-intake/me/guide/working-set", headers=headers), timeout=10) as response:
+                    return json.load(response)
+            def post(payload, identity=owner, same_origin=True):
+                post_headers = {"Cookie": "mvp1-synthetic-owner=" + identity, "Content-Type": "application/json"}
+                if same_origin:
+                    post_headers["X-PeerSlate-Request"] = "same-origin"
+                return urlopen(Request(server.url + "/api/resume-intake/me/guide/place", method="POST",
+                    data=json.dumps(payload).encode(), headers=post_headers), timeout=10)
+            current = working()
+            line = current["unplaced"][0]
+            place = {"request_id": str(uuid4()), "action": "place", "item_ref": line["item_ref"],
+                "destination": {"section": "skills"}, "expected_working_set_token": current["working_set_token"],
+                "expected_item_revision": line["revision"]}
+            for identity, origin, status in (("g-member-b", True, 404), (owner, False, 403)):
+                with self.assertRaises(HTTPError) as refused:
+                    post(place, identity, origin)
+                self.assertEqual(refused.exception.code, status)
+                refused.exception.close()
+            with self.assertRaises(HTTPError) as anonymous:  # no identity at all
+                urlopen(Request(server.url + "/api/resume-intake/me/guide/place", method="POST",
+                    data=json.dumps(place).encode(), headers={"Content-Type": "application/json",
+                    "X-PeerSlate-Request": "same-origin"}), timeout=10)
+            self.assertEqual(anonymous.exception.code, 404)
+            anonymous.exception.close()
+            with self.assertRaises(HTTPError) as invalid:
+                post({**place, "request_id": str(uuid4()), "destination": {"section": "education"}})
+            self.assertEqual(invalid.exception.code, 400)
+            invalid.exception.close()
+            with post(place) as response:
+                self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+                placed = json.load(response)
+            self.assertEqual((placed["outcome"], placed["saved"], placed["publishes"]), ("waiting", False, False))
+            skill = next(row for section in working()["sections"] for row in section["items"] if row["item_ref"] == line["item_ref"])
+            self.assertEqual((skill["record_type"], skill["values"]["name"]), ("skill", "Fictional pruning."))
+            undo = {"request_id": str(uuid4()), "action": "undo", "operation_ref": placed["operation_ref"],
+                    "undo_token": placed["undo_token"]}
+            with post(undo) as response:
+                self.assertEqual(json.load(response)["outcome"], "unplaced")
+            with self.assertRaises(HTTPError) as stale:
+                post({**undo, "request_id": str(uuid4())})
+            self.assertEqual((stale.exception.code, json.load(stale.exception)["code"]), (409, "stale_undo"))
+            self.assertEqual(server.shared.canonical.list_items(owner), [])
+
+    def test_place_without_any_identity_never_reaches_the_service(self):
+        from unittest.mock import MagicMock
+        original = {name: app.config.get(name) for name in CONFIG_KEYS}
+        self.addCleanup(app.config.update, original)
+        service = MagicMock()
+        app.config.update(TESTING=True, PEERSLATE_ALLOW_DEV_IDENTITY=False, PEERSLATE_TRUST_EASYAUTH_HEADERS=False,
+                          PEERSLATE_RESUME_INTAKE_ENABLED=True, RESUME_INTAKE_SERVICE=service)
+        response = app.test_client().post("/api/resume-intake/me/guide/place",
+            headers={"X-PeerSlate-Request": "same-origin"}, json={"action": "place"})
+        self.assertEqual(response.status_code, 404)
+        service.guide_place.assert_not_called()
+
     def test_real_visibility_uses_the_http_working_token_and_restores_waiting(self):
         from urllib.request import Request, urlopen
         from urllib.error import HTTPError

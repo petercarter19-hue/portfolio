@@ -4,15 +4,114 @@ from __future__ import annotations
 from copy import deepcopy
 from hashlib import sha256
 import json
+import re
 from uuid import NAMESPACE_URL, UUID, uuid5
 from services.resume_publication_projection import (
     RESUME_CORE_SECTIONS, RESUME_BASE_SECTION_ORDER, RESUME_SECTION_LABELS,
-    resume_section_for, resume_section_order,
+    resume_presentation_key, resume_section_for, resume_section_order,
 )
 
 
 GUIDE_SECTIONS = RESUME_CORE_SECTIONS
 GUIDE_SECTION_ORDER = RESUME_BASE_SECTION_ORDER
+# B3m (Pete G6): the Guide's tabs run Experience before Skills. Lane D moves the page's base order to match in its
+# own round; until then the Guide sorts only its own list and never changes the shared constant.
+GUIDE_TAB_ORDER = ("impact_statement", "experience", "skills", "projects", "education", "certifications", "awards")
+# D23: where a line can be placed (manager Q4): Skills, the knowledge sections, or a role as a bullet. The label is
+# the approved knowledge envelope the accept path already recognises.
+PLACE_SECTIONS = {"skills": ("skill", "name", None), "impact_statement": ("knowledge", "wording", "Professional summary"),
+                  "projects": ("knowledge", "wording", "Independent Project"), "awards": ("knowledge", "wording", "Awards"),
+                  "story": ("knowledge", "wording", "My Story")}
+# D23 F1 (manager ruling): a placed line keeps its exact text except ONE leading list marker (a bullet, a dash, an
+# asterisk, or "1." / "1)") and the whitespace around it. "-5% cost" and "1.5 million" have no space after the mark.
+_LIST_MARKER = re.compile(r"\s*(?:[\u2022*-]|\d+[.)])\s+")
+
+
+def placed_text(text):
+    match = _LIST_MARKER.match(text)
+    rest = text[match.end():] if match else text
+    return rest if rest.strip() else text
+
+
+_GUESS_BY_HEADING = {"Skills": "skills", "Professional summary": "impact_statement", "Independent Project": "projects",
+                     "Awards": "awards", "My Story": "story"}
+
+
+def guide_section_order(seen=()):
+    base = list(resume_section_order(seen))
+    rank = {key: position for position, key in enumerate(GUIDE_TAB_ORDER)}
+    return tuple(sorted(base, key=lambda key: (rank.get(key, len(rank)), base.index(key))))
+
+
+def guide_missing_required(node):
+    """What an accept of this item would refuse as missing: the one Guide essentials table, never a copy (B3m I1)."""
+    from services.living_resume_editor_service import guide_required_fields, LivingResumeEditorValidationError
+    if node.get("record_type") in {None, "unspecified"} or node.get("section") == "unplaced":
+        return None
+    try:
+        return guide_required_fields(node["record_type"], node.get("values") or {}, section=node.get("section"))
+    except LivingResumeEditorValidationError:
+        return None
+
+
+def _item_order(node):
+    """Within a section: current first, then the latest known date (the page's own key); source lines last."""
+    values = node.get("values") or {}
+    try:
+        _section, current, ordinal = resume_presentation_key(node["record_type"], values)
+    except (TypeError, ValueError, AttributeError):
+        current, ordinal = 0, 0
+    return (node.get("origin") == "source", current, ordinal)
+
+
+def _unit_position(snapshot, source_key, unit_id):
+    source = (snapshot.get("sources") or {}).get(source_key) or {}
+    units = ((source.get("structured_values") or {}).get("resume_conversation_v1") or {}).get("source_units") or []
+    for position, unit in enumerate(units):
+        if unit.get("unit_id") == unit_id:
+            return position, unit
+    return None, None
+
+
+def _annotate_best_guess(snapshot, nodes, children):
+    """D23 best guess for each unplaced line: its own heading, or the role just above it under Experience.
+
+    Deterministic and read-only: no provider call and no write. No good guess is null; the member picks.
+    """
+    rows = snapshot.get("proposals") or {}
+    def anchor(row):
+        meta = row.get("resume_conversation_v1") or {}
+        return (row.get("binding") or {}).get("source_key"), meta.get("record_anchor") or next(iter(meta.get("unit_ids") or []), None)
+    roles = []
+    for row in rows.values():
+        if row.get("record_type") != "role" or row.get("state") not in {"pending", "accepted"} or row.get("superseded_by"):
+            continue
+        ref = (row.get("saved_record_key") or row.get("target_key")) if row["state"] == "accepted" else row.get("item_ref")
+        node = nodes.get(ref)
+        if node is None or node["record_type"] != "role" or node["state"] not in {"saved", "waiting"}:
+            continue
+        source_key, unit_id = anchor(row)
+        position, _unit = _unit_position(snapshot, source_key, unit_id)
+        if position is not None:
+            roles.append((source_key, position, ref))
+    for ref, node in nodes.items():
+        if ref in children or node["section"] != "unplaced":
+            continue
+        if node["origin"] == "source":
+            source_key, unit_id = (node.get("evidence") or [{}])[0].get("source_key"), node.get("source_unit_ref")
+        else:
+            row = rows.get(node.get("proposal_key") or next(iter(p["proposal_key"] for p in node["proposals"]), None)) or {}
+            source_key, unit_id = anchor(row)
+        position, unit = _unit_position(snapshot, source_key, unit_id)
+        heading = (unit or {}).get("section")
+        guess = None
+        if heading in _GUESS_BY_HEADING:
+            guess = {"section": _GUESS_BY_HEADING[heading]}
+        elif heading == "Experience" and position is not None:
+            above = [row for row in roles if row[0] == source_key and row[1] < position]
+            if above:
+                guess = {"role_ref": max(above, key=lambda row: row[1])[2]}
+        node["best_guess"] = guess
 
 
 def model_resume_values(record_type, values):
@@ -161,6 +260,7 @@ def project_working_set(owner, snapshot, canonical_items, draft_version, *, hist
             values, story_bound=item.get("story_bound") is True)
         hidden = history.get("inclusion",{}).get(key) is True
         nodes[key] = {"item_ref":key,"identity_aliases":[],"origin":"saved","state":"hidden" if hidden else "saved",
+            "needs_member_wording":False,
             "has_draft":item.get("has_draft") is True,
             "update_waiting":False,
             "record_type":item["record_type"],"section":section,"values":{
@@ -211,6 +311,9 @@ def project_working_set(owner, snapshot, canonical_items, draft_version, *, hist
                 "proposal_key":row["proposal_key"],"revision":row.get("revision") or 1,
                 "proposals":[],"evidence":[],"children":[]}
         node = nodes[reference]
+        if node["origin"] != "saved":
+            # B3m F1: accept as shown needs no wording from the member only when this is False.
+            node["needs_member_wording"] = bool(row.get("requires_member_wording", True))
         if node["origin"] == "saved":
             node["update_waiting"] = node["update_waiting"] or (row["state"] == "pending" and not pending_hidden)
         else:
@@ -248,27 +351,41 @@ def project_working_set(owner, snapshot, canonical_items, draft_version, *, hist
             evidence_row = {"binding":{"source_key":source["source_key"],"source_version":source.get("version")},
                 "span_start":unit.get("span_start"),"span_end":unit.get("span_end"),"quote":unit.get("text")}
             nodes[reference] = {"item_ref":reference,"identity_aliases":[],"origin":"source","state":state,
+                "needs_member_wording":None,
                 "record_type":"unspecified","section":"unplaced","values":{"text":unit.get("text")},
                 "saved_revision":None,"parent_ref":None,"proposal_key":None,"revision":source.get("version"),
                 "source_unit_ref":unit.get("unit_id"),"proposals":[],"evidence":[_evidence(snapshot,evidence_row)],"children":[]}
     children = set()
+    # B3m: a bullet placed under a waiting role keeps that role's first reference; once the role is saved, that
+    # reference is one of the saved node's aliases, so the bullet stays under it.
+    alias_owner = {alias:key for key,node in nodes.items() for alias in node["identity_aliases"]}
     for key,node in nodes.items():
-        parent = nodes.get(node["parent_ref"])
+        parent = nodes.get(node["parent_ref"]) or nodes.get(alias_owner.get(node["parent_ref"]))
         if node["record_type"]=="accomplishment" and parent and (parent["record_type"]=="role" or parent["section"]=="projects"):
             node["section"] = parent["section"]
             parent["children"].append(node)
             children.add(key)
+        # A bullet can be saved only under a saved role (the accept path's own rule), so the card says so (I1).
+        node["waits_for_parent"] = (node["record_type"] == "accomplishment" and node["origin"] != "saved"
+                                    and not (parent and parent["origin"] == "saved" and parent["state"] == "saved"))
         node["identity_aliases"] = sorted(set(node["identity_aliases"]))
+    for node in nodes.values():
+        node["missing_required"] = guide_missing_required(node)
+    _annotate_best_guess(snapshot, nodes, children)
     sections = []
     def counts(items):
         return {**{state:sum(item["state"]==state for item in items) for state in ("saved","waiting","hidden","skipped")},
                 "updates_waiting":sum(item.get("update_waiting") is True for item in items)}
-    section_order = resume_section_order(node["section"] for node in nodes.values())
+    section_order = guide_section_order(node["section"] for node in nodes.values())
     for key in section_order:
         label = RESUME_SECTION_LABELS[key]
-        items = [node for ref,node in nodes.items() if ref not in children and node["section"]==key]
+        items = sorted((node for ref,node in nodes.items() if ref not in children and node["section"]==key), key=_item_order)
+        visible = any(item["state"] in {"saved","waiting"} for item in items)
+        # B3m: a section whose only content is hidden keeps a tab, marked hidden (D70-D72, STATE_MAP:150). A hidden
+        # bullet's role is itself saved, waiting or hidden, so the section's own items decide this.
+        hidden = any(item["state"] == "hidden" for item in items)
         sections.append({"key":key,"label":label,"items":items,
-            "tab_visible":any(item["state"] in {"saved","waiting"} for item in items),
+            "tab_visible":visible,"tab_hidden":not visible and hidden,
             "counts":counts(items),"child_counts":counts([child for item in items for child in item["children"]])})
     unplaced = [node for ref,node in nodes.items() if ref not in children and node["section"]=="unplaced"]
     non_tab = [node for ref,node in nodes.items() if ref not in children and node["section"] in {"story","contact","looking_ahead"}]
