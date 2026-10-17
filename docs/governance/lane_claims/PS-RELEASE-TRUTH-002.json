@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "package": "PS-RELEASE-TRUTH-002",
+  "state": "active",
+  "outcome": "Record the verified production release fact for the PS-SITE-SHELL-ROUND5-001 deployment. Manual Azure run 4793 (20261017.28) deployed main 3f613e52b3f71cb1b27ebb4063dbb882260ddf82 with forceProductionDeploy=true, an authorization reference and schemaAction=none; the live /healthz release c0733050f1804fbd68b7ee65 equals release_id_for_build(3f613e52..., 4793). Update docs/governance/CURRENT_BASELINE.yaml (authority block, note and updated_at) and the pointers in tests/test_operational_readiness.py in lockstep, measured against the 900-word cap. Documentation and test pointers only: no product code, schema, configuration, flag or deployment.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude/2026-10-17/release-truth-002",
+  "branch": "work/2026-10-17-release-truth-002",
+  "delivery_path": "Routine",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "8704070667d96a8b817cbcc63e47ac8d9f1f20c5",
+  "owner_outcome_ref": "role:owner/pete-chat-2026-10-17/claude-site-manager/shell-release-go-and-release-record-run-4793",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-RELEASE-TRUTH-002.json",
+    "docs/governance/lane_claims/receipts/PS-RELEASE-TRUTH-002.json",
+    "docs/governance/lane_claims/evidence/PS-RELEASE-TRUTH-002.md",
+    "docs/governance/CURRENT_BASELINE.yaml",
+    "tests/test_operational_readiness.py"
+  ],
+  "domains": [
+    "governance:release-truth",
+    "testing:release-truth-pointers"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-RELEASE-TRUTH-002.md"
+  ],
+  "review_requirement": "self",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
