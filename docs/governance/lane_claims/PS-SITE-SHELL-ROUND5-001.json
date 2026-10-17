@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SITE-SHELL-ROUND5-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Build Pete's approved round-5 designs, nothing added: (1) the round-5 home page at / (Cairn top bar, cream Cairn mark, hero text, gold See Pete's resume button plus See Pete's story link, the five-card fan as WebP pictures with PNG fallback, phone variant and descriptive alt text, minimal footer); (2) the round-5 top bar on every base.html page (Cairn lockup; anonymous: centred My Resume and My Story, Pete's public demo, then a quiet Soon tag with non-clickable names; signed-in: the member's own My Resume, the rest under Soon; existing auth controls; phone Menu) plus the Cairn favicon set; (3) the owner resume page's existing green and beige tokens site-wide from ONE new shared token file, light only, no Guide recolour. Footer Privacy/Terms links only when those routes return 200. No app.py, safe_return.py, resume-page.css, other claims' page files, schema, paid AI call or production release. Codex reviews the exact Protected candidate independently; Pete's screenshot OK is part of done.",
   "assignment": "implementation",
   "writer_ref": "agent:claude/2026-10-15/site-shell",
@@ -64,6 +64,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "3f613e52b3f71cb1b27ebb4063dbb882260ddf82",
+  "closed_at": "2026-10-17T18:38:04Z"
 }
