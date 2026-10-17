@@ -51,7 +51,8 @@
     "tests/test_interview_studio.py",
     "tests/test_people_interests_feed.py",
     "tests/test_signin_experience.py",
-    "tests/test_site_rules.py"
+    "tests/test_site_rules.py",
+    "tests/test_resume_sage_mist_browser.py"
   ],
   "domains": [
     "presentation:home-page:round5",
