@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-TESTER-START-OVER-001",
+  "state": "active",
+  "outcome": "Slice A of Pete's per-tester Start over on the private onboarding test site (8444). Pete 2026-10-16: \"I want a reset button when I'm doing stuff... for when my friends are doing stuff... everybody needs the reset button... we're literally testing it\"; that evening: testers clear everything they entered (resume, uploads, voice, drafts, derived Guide knowledge, test publication) and start fresh as often as they like, and the account stays. One Start over choke point: a confirmation listing what goes, a verified checkpoint before any clear, an owner/namespace/generation/nonce-bound same-origin POST, refusal during provider work, idempotent replay, truthful results, a removable flag that never enables 8443, and a binding-coverage guard. Operator restore only; ledgers and identity stay. New module and tests first; the runtime hook follows only after PS-ONBOARDING-PRIVATE-SITES-001 releases its files. Live data, account deletion, schema, configuration, deployment and any 8443/8444 operation are excluded.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude/2026-10-16/start-over",
+  "branch": "work/2026-10-17-tester-start-over-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "cad4d1f78301bc6c13bfd9788dc272a0a2b201ba",
+  "owner_outcome_ref": "role:owner/pete-chat-2026-10-16/claude-site-manager/tester-start-over-reset-button",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-TESTER-START-OVER-001.json",
+    "docs/governance/lane_claims/receipts/PS-TESTER-START-OVER-001.json",
+    "docs/governance/lane_claims/evidence/PS-TESTER-START-OVER-001.md",
+    "tools/local_reviewer/start_over.py",
+    "tests/test_local_reviewer_start_over.py"
+  ],
+  "domains": [
+    "tooling:local-reviewer:tester-start-over"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-TESTER-START-OVER-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
