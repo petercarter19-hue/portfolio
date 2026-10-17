@@ -78,7 +78,6 @@
     "tests/test_community_public_pilot.py",
     "services/ask_pete/response.py",
     "tests/ask_pete/test_service.py",
-    "tests/test_resume_sage_mist_browser.py",
     "tests/ask_pete/run_recruiter_evidence_browser.py",
     "overview_projection_service.py",
     "templates/my_story.html",
@@ -104,9 +103,9 @@
   "merged_sha": null,
   "closed_at": null,
   "scope_release": {
-    "checkpoint_sha": "fc0a5f9e45fb1f6d6f0aa4ebde905a00c9efbbc6",
-    "control_branch": "work/2026-10-15-delivery-release-surfaces-public-trust-shell",
-    "control_lease_sha256": "d18abc47488a428de9894745840f92f5d3dae96290bd604c861c19ca5b562165",
+    "checkpoint_sha": "834caabef0a89360093e4b9132fb560d9b3d6f21",
+    "control_branch": "work/2026-10-16-delivery-release-surfaces-trust-sage-mist-test",
+    "control_lease_sha256": "5c3d68f968cab562b38f6c07e972d378fe4eed424af11b700a874621e4c3790b",
     "fixed_evidence_ref": "docs/governance/lane_claims/evidence/PS-PUBLIC-TRUST-PAGES-001.md",
     "index_schema": 4,
     "new_domains": [
@@ -114,102 +113,31 @@
       "privacy:ask-pete-direct:retention",
       "privacy:workshop:ip-counters"
     ],
-    "operation_id": "d09c341ed10ed286cea25043f23a3f0bf63a1fe3e77ad8fae8062ca53448b4d4",
-    "prepared_from_main": "ec2a49fdfdcb458e7fae810fef4061940779851d",
-    "prior_claim_sha256": "0bbb7287286eb5d80a6f5f578020b8ff0ca2a02970b108cafe1303af93dff1de",
+    "operation_id": "5feeddea3cf9eb1491b180fafe476a2930a31feae76b56698d2826430368a14c",
+    "prepared_from_main": "412765f66408bd7c9ccd8b8e61486e399f07e299",
+    "prior_claim_sha256": "c510ff6103293fd04887187b61fb1701dcb25731f11909a263298126896c93e0",
     "prior_domains": [
       "runtime:public-trust:privacy-terms",
       "privacy:ask-pete-direct:retention",
-      "privacy:workshop:ip-counters",
-      "presentation:public-policy-footer"
+      "privacy:workshop:ip-counters"
     ],
-    "quiescence_ref": "session:01a11384-f656-73b3-b57a-ad2952f1ffad/event:evt-cbdd9fb7-3a3b-4f0a-a006-d387ebecee9f",
-    "reduction_sha256": "919762e3c2e4cedfacae94e58b82615cab95d3e963acfef3335c5cb79175d959",
+    "quiescence_ref": "agent:claude/2026-10-15/trust-pages/quiescent-at-834caabe-for-sage-mist-test-release",
+    "reduction_sha256": "a7a477ae5a62b0ac588229d8d3e14c8952f46f6851d06ae9bbb3fc741b2ae566",
     "registry_schema": 2,
-    "release_rationale": "Pete selected custody release as an authorized path on 2026-10-15 so Claude can build the approved round-5 home page, shared header/Cairn and green/beige site theme. Prior unpublished shell changes are preserved at pushed f9c2494f76693b96067c19b3d6f00b8da9735409 and in external evidence; the release checkpoint deliberately restores these paths to main bytes/absence. Retained privacy work does not reacquire the shell. No product merge, deployment, schema action or spending.",
+    "release_rationale": "Claude site manager direction on 2026-10-16: release only tests/test_resume_sage_mist_browser.py so PS-SITE-SHELL-ROUND5-001 can acquire it and update a stale expectation for Pete's approved round-5 home page release. The trust branch first returned this file to exact main bytes at 834caabef0a89360093e4b9132fb560d9b3d6f21; the dropped contact-link expectation (/contact, Contact PeerSlate) is recorded externally and is re-applied only after fresh admission and ordinary exact-file re-acquisition. All other trust surfaces, domains and holds are retained. No product merge, deployment, schema action or spending.",
     "released_file_proofs": [
       {
         "accepted_introduction": null,
-        "checkpoint_blob": null,
-        "checkpoint_mode": null,
-        "main_blob": null,
-        "main_mode": null,
-        "path": "templates/partials/public_footer.html",
-        "unpublished_delta": false
-      },
-      {
-        "accepted_introduction": null,
-        "checkpoint_blob": "6a4c9a7fca7d0731c25d4853e7852e769fb85ee2",
+        "checkpoint_blob": "9604550f8ff683b6f5a6497c2db2eb698dda5b94",
         "checkpoint_mode": "100644",
-        "main_blob": "6a4c9a7fca7d0731c25d4853e7852e769fb85ee2",
+        "main_blob": "9604550f8ff683b6f5a6497c2db2eb698dda5b94",
         "main_mode": "100644",
-        "path": "templates/base.html",
-        "unpublished_delta": false
-      },
-      {
-        "accepted_introduction": null,
-        "checkpoint_blob": "146a4b5e17a01ec6eba4ed4280301c81457419ae",
-        "checkpoint_mode": "100644",
-        "main_blob": "146a4b5e17a01ec6eba4ed4280301c81457419ae",
-        "main_mode": "100644",
-        "path": "templates/control_room.html",
-        "unpublished_delta": false
-      },
-      {
-        "accepted_introduction": null,
-        "checkpoint_blob": "2835698699fa89b62fdc717fac5b10e1da318a24",
-        "checkpoint_mode": "100644",
-        "main_blob": "2835698699fa89b62fdc717fac5b10e1da318a24",
-        "main_mode": "100644",
-        "path": "templates/feed_living_stream_states.html",
-        "unpublished_delta": false
-      },
-      {
-        "accepted_introduction": null,
-        "checkpoint_blob": "8e29a3c87e6d46f1c178cdba2a60523563c49387",
-        "checkpoint_mode": "100644",
-        "main_blob": "8e29a3c87e6d46f1c178cdba2a60523563c49387",
-        "main_mode": "100644",
-        "path": "tests/test_public_nav_route_truth.py",
-        "unpublished_delta": false
-      },
-      {
-        "accepted_introduction": null,
-        "checkpoint_blob": "8b2aa8fb210aec7871be5b7e2e7383ce77f64ef5",
-        "checkpoint_mode": "100644",
-        "main_blob": "8b2aa8fb210aec7871be5b7e2e7383ce77f64ef5",
-        "main_mode": "100644",
-        "path": "templates/partials/homepage/_voice_hero.html",
-        "unpublished_delta": false
-      },
-      {
-        "accepted_introduction": null,
-        "checkpoint_blob": "37fb4e7f219f21b8629f04f87643125bb1f39453",
-        "checkpoint_mode": "100644",
-        "main_blob": "37fb4e7f219f21b8629f04f87643125bb1f39453",
-        "main_mode": "100644",
-        "path": "templates/partials/homepage/_living_resume_scene.html",
-        "unpublished_delta": false
-      },
-      {
-        "accepted_introduction": null,
-        "checkpoint_blob": "92908c03a4ff548094fc1eaf5f6deedfa7c9078f",
-        "checkpoint_mode": "100644",
-        "main_blob": "92908c03a4ff548094fc1eaf5f6deedfa7c9078f",
-        "main_mode": "100644",
-        "path": "templates/partials/homepage/_story_future_scene.html",
+        "path": "tests/test_resume_sage_mist_browser.py",
         "unpublished_delta": false
       }
     ],
     "released_surfaces": [
-      "templates/partials/public_footer.html",
-      "templates/base.html",
-      "templates/control_room.html",
-      "templates/feed_living_stream_states.html",
-      "tests/test_public_nav_route_truth.py",
-      "templates/partials/homepage/_voice_hero.html",
-      "templates/partials/homepage/_living_resume_scene.html",
-      "templates/partials/homepage/_story_future_scene.html"
+      "tests/test_resume_sage_mist_browser.py"
     ],
     "retained_responsibilities": [
       {
