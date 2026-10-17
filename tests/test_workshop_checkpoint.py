@@ -778,8 +778,8 @@ class WorkshopNavigationTests(unittest.TestCase):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
         body = response.data.decode("utf-8")
-        return body.split('class="platform-nav__links"', 1)[1].split(
-            "</ul>", 1
+        return body.split('<nav class="ps-top__nav"', 1)[1].split(
+            "</nav>", 1
         )[0]
 
     def _search_data(self):

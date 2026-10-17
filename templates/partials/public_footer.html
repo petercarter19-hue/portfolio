@@ -1,0 +1,15 @@
+{# Round-5 minimal footer (Pete-approved 2026-10-13): the Cairn and
+   "© 2026 PeerSlate". PS-SITE-SHELL-ROUND5-001, presentation:public-policy-footer.
+
+   policy_links() is the one Privacy / Terms link pair, shared with the default
+   site footer in base.html ({% from ... import policy_links with context %}),
+   so the two footers cannot drift. Pete, 2026-10-14 ("A"): the links appear
+   only once those pages return 200. The policy routes' owner
+   (PS-PUBLIC-TRUST-PAGES-001) sets public_policy_links_available when both
+   handlers are registered; while it is unset Jinja never evaluates the
+   branch, so no missing endpoint can raise. #}
+{% macro policy_links() %}{% if public_policy_links_available | default(false) %}<span class="ps-policy-links"><a href="{{ url_for('public_policy.privacy') }}">Privacy</a> <a href="{{ url_for('public_policy.terms') }}">Terms</a></span>{% endif %}{% endmacro %}
+<footer class="ps-home-foot">
+    <p class="ps-home-foot__mark"><svg class="ps-home-foot__stones" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3.6 19.6C3.6 14.8 20.4 14.8 20.4 19.6C20.4 23.07 3.6 23.07 3.6 19.6Z"/><path d="M6.7 11.73C6.7 7.56 19.3 7.56 19.3 11.73C19.3 14.76 6.7 14.76 6.7 11.73Z"/><path d="M6.8 4.58C6.8 0.87 15.4 0.87 15.4 4.58C15.4 7.27 6.8 7.27 6.8 4.58Z" transform="rotate(-10 11.1 4.2)"/></svg>&copy; 2026 {{ platform_brand_name }}</p>
+    {{ policy_links() }}
+</footer>

@@ -175,7 +175,7 @@ class AuthenticationFlowTests(unittest.TestCase):
         self.assertIn(b">Workspace waking</a>", response.data)
         self.assertNotIn(b"Sign in is not configured", response.data)
         self.assertIn(
-            b'data-ps-auth-control="signed_out" hidden>Sign In</a>',
+            b'data-ps-auth-control="signed_out" hidden>Sign in</a>',
             response.data,
         )
         first_row.assert_called_once()
@@ -721,12 +721,13 @@ class ShellAccountControlTests(unittest.TestCase):
 
     def test_signed_out_shows_sign_in_and_hides_the_account_control(self):
         header = self.header()
-        account = header.split('class="platform-account"', 1)[1].split(
+        account = header.split('class="platform-account ps-top__account"', 1)[1].split(
             ">", 1
         )[0]
         self.assertIn("hidden", account)
         self.assertIn('data-ps-auth-control="signed_out"', header)
-        self.assertIn(">Sign In</a>", header)
+        # Round 5 (Pete-approved 2026-10-13) writes "Sign in".
+        self.assertIn('data-ps-auth-control="signed_out">Sign in</a>', header)
 
     def test_authenticated_account_control_is_an_initial_not_a_photo(self):
         app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
@@ -739,8 +740,8 @@ class ShellAccountControlTests(unittest.TestCase):
             header,
         )
         self.assertIn("Account menu for Ada Lovelace", header)
-        account = header.split('class="platform-account"', 1)[1].split(
-            "</div>\n                    </div>", 1
+        account = header.split('class="platform-account ps-top__account"', 1)[1].split(
+            "</div>\n            </div>", 1
         )[0]
         self.assertNotIn("<img", account)
         self.assertNotIn("avatar", account)

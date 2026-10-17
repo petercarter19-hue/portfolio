@@ -267,7 +267,11 @@ class DarkThemeIsPausedNotRemovedTests(unittest.TestCase):
             self.assertIn('data-theme="dark"', css, name)
 
     def test_the_control_and_its_handler_are_still_in_the_repository(self):
-        base = read_repo_file('templates', 'base.html')
+        # PS-SITE-SHELL-ROUND5-001 moved the header (and the paused control)
+        # into one partial that base.html includes.
+        base = read_repo_file('templates', 'partials', 'site_header.html')
+        self.assertIn('{% include "partials/site_header.html" %}',
+                      read_repo_file('templates', 'base.html'))
         self.assertIn('class="theme-toggle"', base)
         self.assertIn('id="theme-toggle"', base)
         self.assertIn('theme-toggle__thumb', base)
@@ -355,9 +359,15 @@ class DarkThemeStaysLightInABrowserTests(unittest.TestCase):
         self.assertIsNone(seen['gate'], route)
         self.assertEqual(seen['colorScheme'], 'light', route)
         self.assertEqual(seen['themeControls'], 0, route)
-        # Light-theme ink is dark (navy in the shell, green on the Sage Mist
-        # resume); a dark render would invert it to a near-white.
-        self.assertLess(_relative_luminance(seen['bodyInk']), 0.2, route)
+        if route == '/':
+            # The round-5 home page (PS-SITE-SHELL-ROUND5-001) is a light
+            # design with white ink on the locked #3f6a51 green; dark inputs
+            # must leave exactly that.
+            self.assertEqual(seen['bodyBackground'], 'rgb(63, 106, 81)', route)
+        else:
+            # Light-theme ink is dark (navy in the shell, green on the Sage
+            # Mist resume); a dark render would invert it to a near-white.
+            self.assertLess(_relative_luminance(seen['bodyInk']), 0.2, route)
         return seen
 
     def _control(self, route):

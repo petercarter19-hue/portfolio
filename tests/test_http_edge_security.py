@@ -629,14 +629,16 @@ class StaticVersioningTests(unittest.TestCase):
                 response.close()
 
     def test_template_images_are_content_versioned(self):
-        version = _static_file_version("images/peerslate-logo-header.png")
+        version = _static_file_version("images/home/home-fan-desk@1x.png")
         self.assertRegex(version, r"^[0-9a-f]{12}$")
 
         html = self.client.get("/").get_data(as_text=True)
         self.assertIn(
-            f"/static/images/peerslate-logo-header.png?v={version}",
+            f"/static/images/home/home-fan-desk@1x.png?v={version}",
             html,
         )
+        icon = _static_file_version("images/site-icons/favicon.ico")
+        self.assertIn(f"/static/images/site-icons/favicon.ico?v={icon}", html)
         self.assertNotIn("/static/images/peerslate-mark.png", html)
 
     def test_editing_a_file_changes_its_token(self):

@@ -79,7 +79,7 @@ class PeopleInterestsPageTests(unittest.TestCase):
         html = self.client.get("/the-slate").get_data(as_text=True)
         # Community keeps the global header; the old People & Interests /
         # Feed / The Break switcher strip is retired with the public shell.
-        self.assertIn("platform-nav", html)
+        self.assertIn('<div class="ps-shell" id="site-header">', html)
         self.assertNotIn("profile-tabs", html)
         self.assertNotIn("People &amp; Interests", html)
         self.assertNotIn("data-comm-tab", html)

@@ -1,41 +1,69 @@
 {% extends "base.html" %}
 
-{#  HOMEPAGE — MVP1 minimal entry (PS-MVP1-MINIMAL-HOMEPAGE-001)
-    ============================================================
-    The accepted shared shell frames one expressive PeerSlate visual and
-    one short headline. Product explanation and entry actions belong to the
-    shell or their destination pages, not to this deliberately quiet body. #}
+{#  HOMEPAGE, round 5 "The Fan" (Pete-approved 2026-10-13), PS-SITE-SHELL-ROUND5-001
+    ==================================================================================
+    Locked authority: X:\PeerSlate\Claude\plans\home-screen-2026-10-13\round5\
+    (mockups/concept-2.html + screens/). Exactly that page, nothing added.
+    The five-card fan is a picture cropped from the mock-up; each layout has
+    its own screen-reader label, matching the cards that layout shows. The
+    off-layout picture resolves to a 1x1 data URI, so a phone never downloads
+    the desktop fan and a desktop never downloads the phone fan. #}
 
 {% block title %}PeerSlate — Your Work. Your Story. Your Future.{% endblock %}
 
 {% block meta_description %}PeerSlate — Your Work. Your Story. Your Future.{% endblock %}
 
-{% block body_class %}peerslate-home-page home-v3-page homepage-minimal-page{% endblock %}
+{# home-v3-page stays: scripts/verify_deployment_smoke.py asserts it on "/". #}
+{% block body_class %}ps-home-page home-v3-page{% endblock %}
 
 {% block extra_head %}
-<link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='css/homepage-minimal.css') }}"
->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+<link rel="preload" as="image" type="image/webp" media="(min-width: 761px)"
+      imagesrcset="{{ url_for('static', filename='images/home/home-fan-desk@1x.webp') }} 1x, {{ url_for('static', filename='images/home/home-fan-desk@2x.webp') }} 2x">
+<link rel="preload" as="image" type="image/webp" media="(max-width: 760px)"
+      imagesrcset="{{ url_for('static', filename='images/home/home-fan-phone@1x.webp') }} 1x, {{ url_for('static', filename='images/home/home-fan-phone@2x.webp') }} 2x">
 {% endblock %}
 
+{% set home_cairn_paths %}<path d="M3.6 19.6C3.6 14.8 20.4 14.8 20.4 19.6C20.4 23.07 3.6 23.07 3.6 19.6Z"/><path d="M6.7 11.73C6.7 7.56 19.3 7.56 19.3 11.73C19.3 14.76 6.7 14.76 6.7 11.73Z"/><path d="M6.8 4.58C6.8 0.87 15.4 0.87 15.4 4.58C15.4 7.27 6.8 7.27 6.8 4.58Z" transform="rotate(-10 11.1 4.2)"/>{% endset %}
+{% set home_blank = 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' %}
+
 {% block content %}
-<section class="homepage-minimal" aria-labelledby="homepage-minimal-title">
-    <div class="site-container homepage-minimal__inner">
-        <div class="homepage-minimal__visual" aria-hidden="true">
-            <img
-                src="{{ url_for('static', filename='images/cinematic/hero-aurora.jpg') }}"
-                alt=""
-                width="3840"
-                height="2160"
-                decoding="async"
-                fetchpriority="high"
-            >
+<div class="ps-home-bg" aria-hidden="true">
+    <svg class="ps-home-bg__stones ps-home-bg__stones--a" viewBox="0 0 24 24" aria-hidden="true" focusable="false">{{ home_cairn_paths }}</svg>
+    <svg class="ps-home-bg__stones ps-home-bg__stones--b" viewBox="0 0 24 24" aria-hidden="true" focusable="false">{{ home_cairn_paths }}</svg>
+</div>
+<div class="ps-home">
+    <section class="ps-home__hero" aria-labelledby="ps-home-title">
+        <svg class="ps-home__cairn" viewBox="0 0 24 24" aria-hidden="true" focusable="false">{{ home_cairn_paths }}</svg>
+        <h1 class="ps-home__title" id="ps-home-title"><span>Your Work.</span> <span>Your Story.</span> <span>Your Future.</span></h1>
+        <p class="ps-home__lede">A portfolio that tells your story and answers for you.</p>
+        <div class="ps-home__cta">
+            <a class="ps-home__gold" href="{{ portfolio_resume_url }}">See Pete’s resume</a>
+            <a class="ps-home__textlink" href="{{ portfolio_story_url }}">See Pete’s story</a>
         </div>
-        <h1 id="homepage-minimal-title">Your Work. Your Story. Your Future.</h1>
-        <p class="homepage-minimal__status">
-            A considered beginning. PeerSlate is taking shape. Access is by invitation as we prepare for what’s next.
-        </p>
-    </div>
-</section>
+        <p class="ps-home__inv">Access is by invitation for now. See it working on Pete’s resume.</p>
+    </section>
+
+    <section class="ps-home__fan">
+        <div class="ps-fan ps-fan--desk">
+            <picture>
+                <source media="(max-width: 760px)" srcset="{{ home_blank }}">
+                <source type="image/webp" srcset="{{ url_for('static', filename='images/home/home-fan-desk@1x.webp') }} 1x, {{ url_for('static', filename='images/home/home-fan-desk@2x.webp') }} 2x">
+                <img src="{{ url_for('static', filename='images/home/home-fan-desk@1x.png') }}" width="1396" height="600" decoding="async" fetchpriority="high"
+                     alt="A fan of PeerSlate screens: Opportunity Slate (coming soon), Pete’s story, Pete’s resume, Ask Pete AI, and Interview Studio (coming soon)">
+            </picture>
+        </div>
+        <div class="ps-fan ps-fan--phone">
+            <picture>
+                <source media="(min-width: 761px)" srcset="{{ home_blank }}">
+                <source type="image/webp" srcset="{{ url_for('static', filename='images/home/home-fan-phone@1x.webp') }} 1x, {{ url_for('static', filename='images/home/home-fan-phone@2x.webp') }} 2x">
+                <img src="{{ url_for('static', filename='images/home/home-fan-phone@1x.png') }}" width="714" height="580" decoding="async"
+                     alt="PeerSlate screens: Pete’s story, Pete’s resume, and Interview Studio (coming soon)">
+            </picture>
+        </div>
+    </section>
+</div>
 {% endblock %}
+
+{# Round-5 minimal footer; Privacy and Terms only once those pages exist. #}
+{% block site_footer %}{% include "partials/public_footer.html" %}{% endblock %}

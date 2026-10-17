@@ -1,0 +1,13 @@
+{# The Cairn browser-tab and home-screen icons (Pete, 2026-10-13: a green
+   square with white stones), PS-SITE-SHELL-ROUND5-001. One list for every
+   page that has its own <head>: base.html, control_room.html and
+   feed_living_stream_states.html include it. The previous
+   peerslate-favicon.png / peerslate-apple-touch.png files stay in the
+   repository for pages that still reference them. #}
+<link rel="icon" href="{{ url_for('static', filename='images/site-icons/favicon.ico') }}" sizes="16x16 32x32 48x48">
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/site-icons/favicon.svg') }}">
+<link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/site-icons/favicon-32x32.png') }}">
+<link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/site-icons/favicon-16x16.png') }}">
+<link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='images/site-icons/icon-192.png') }}">
+<link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='images/site-icons/icon-512.png') }}">
+<link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/site-icons/apple-touch-icon.png') }}">

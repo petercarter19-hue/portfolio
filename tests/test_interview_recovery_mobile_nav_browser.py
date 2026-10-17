@@ -412,7 +412,7 @@ class InterviewRecoveryMobileNavBrowserTests(unittest.TestCase):
 
         opener.click()
         page.wait_for_timeout(100)
-        sign_in = page.get_by_role("link", name="Sign In")
+        sign_in = page.get_by_role("link", name="Sign in", exact=True)
         sign_in.focus()
         page.wait_for_timeout(100)
         self.assertTrue(
@@ -422,7 +422,7 @@ class InterviewRecoveryMobileNavBrowserTests(unittest.TestCase):
             page.evaluate(
                 """() => {
                     const el = document.activeElement;
-                    return Boolean(el && (el.textContent || '').includes('Sign In'));
+                    return Boolean(el && (el.textContent || '').includes('Sign in'));
                 }"""
             )
         )

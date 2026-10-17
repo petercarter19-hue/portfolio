@@ -81,26 +81,55 @@ class PublicNavigationRouteTruthTests(unittest.TestCase):
         return response.get_data(as_text=True)
 
     def test_every_shell_representation_uses_the_same_promoted_routes(self):
-        expected = ("/petec/resume#resume-start", "/interview-studio?mode=ai")
+        # PS-SITE-SHELL-ROUND5-001: the round-5 bar (Pete, 2026-10-13) opens
+        # only My Resume and My Story on public pages, from the server's
+        # verified destination records; everything else is plain-text Soon.
+        expected = ("/petec/resume#resume-start", "/petec/my-story")
+        # Signed out (setUp signs in for the member-room tests below).
+        app.config.pop("PEERSLATE_DEV_USER_KEY", None)
         for path in ("/", "/petec/resume", "/interview-studio"):
             with self.subTest(path=path):
                 html = self.render(path)
-                for marker in (
-                    '<ul class="platform-nav__links"',
-                    '<ul class="platform-roomswitcher__list"',
-                    '<ul class="platform-menu__links"',
-                    '<ul class="platform-nojs-navigation__links"',
+                for marker, end in (
+                    ('<nav class="ps-top__nav"', "</nav>"),
+                    ('<ul class="platform-menu__links"', "</ul>"),
+                    ('<ul class="platform-nojs-navigation__links"', "</ul>"),
                 ):
                     with self.subTest(marker=marker):
-                        block = html.split(marker, 1)[1].split("</ul>", 1)[0]
+                        block = html.split(marker, 1)[1].split(end, 1)[0]
                         self.assertEqual(
                             expected, tuple(re.findall(r'href="([^"]+)"', block))
                         )
+                header = html.split("</header>", 1)[0]
+                self.assertNotIn("platform-roomswitcher", header)
                 for removed in ("Workshop", "Capture", "Slate Board"):
-                    self.assertNotIn(removed, html.split("</header>", 1)[0])
+                    self.assertNotIn(removed, header)
+                # Every promoted route really answers.
+                for href in expected:
+                    self.assertEqual(
+                        200, self.client.get(href.split("#", 1)[0]).status_code, href
+                    )
+        # Signed in, the bar opens only the member's own resume.
+        app.config["PEERSLATE_DEV_USER_KEY"] = "synthetic-navigation-member"
+        editor_flag = app.config.get("PEERSLATE_RESUME_EDITOR_ENABLED")
+        app.config["PEERSLATE_RESUME_EDITOR_ENABLED"] = True
+        try:
+            for path in ("/", "/petec/resume", "/app/workshop"):
+                with self.subTest(path=path, signed_in=True):
+                    response = self.client.get(path, base_url="http://localhost")
+                    self.assertIn(response.status_code, (200, 503), path)
+                    html = response.get_data(as_text=True)
+                    bar = html.split('<nav class="ps-top__nav"', 1)[1].split("</nav>", 1)[0]
+                    self.assertEqual(("/app/resume",), tuple(re.findall(r'href="([^"]+)"', bar)))
+                    self.assertNotIn("/petec", bar)
+        finally:
+            if editor_flag is None:
+                app.config.pop("PEERSLATE_RESUME_EDITOR_ENABLED", None)
+            else:
+                app.config["PEERSLATE_RESUME_EDITOR_ENABLED"] = editor_flag
 
     def test_public_footer_keeps_privacy_and_copyright_without_old_marketing_links(self):
-        for path in ("/", "/petec/resume"):
+        for path in ("/petec/resume", "/interview-studio"):
             with self.subTest(path=path):
                 html = self.render(path)
                 footer = html.split('<footer class="footer">', 1)[1].split(
@@ -111,7 +140,18 @@ class PublicNavigationRouteTruthTests(unittest.TestCase):
                 self.assertNotIn('href="/peerslate"', footer)
                 self.assertNotIn('class="footer-brand"', footer)
                 self.assertNotIn('class="footer-why-link"', footer)
-                self.assertIn('class="platform-brand__logo" href="/"', html)
+                self.assertIn('class="ps-top__lockup" href="/"', html)
+        # The round-5 home page has the minimal footer. Its Privacy and Terms
+        # links stay out until those routes return 200 (Pete, 2026-10-14).
+        home = self.render("/")
+        footer = home.split('<footer class="ps-home-foot">', 1)[1].split("</footer>", 1)[0]
+        self.assertIn("&copy; 2026 PeerSlate", footer)
+        self.assertNotIn("href=", footer)
+        self.assertNotIn('href="/peerslate"', home.split("<main", 1)[0])
+        self.assertIn('class="ps-top__lockup" href="/"', home)
+        for policy in ("/privacy", "/terms"):
+            if self.client.get(policy).status_code != 200:
+                self.assertNotIn(f'href="{policy}"', home)
 
     def test_member_launchpad_is_neutral_and_uses_available_destinations(self):
         html = self.render("/app")
@@ -304,7 +344,16 @@ class FrozenPreviewContractTests(unittest.TestCase):
     """Freeze preview handlers, referring cards/templates, and discovery."""
 
     TEMPLATE_HASHES = {
-        "templates/peerslate.html": "5be0be9c4440ca3b9a5286b83395e150533489e563490f80e38d29de35bf0fb9",
+        # Exactly two reviewed byte states, so main stays green whichever of
+        # PS-SITE-SHELL-ROUND5-001 and PS-PUBLIC-TRUST-PAGES-001 merges first:
+        # main's current bytes, and the trust pages' spelling-only change
+        # (Pete's 2026-10-11 r&eacute;sum&eacute; -> resume decision; three
+        # strings, preview behaviour frozen). Once the trust pages merge, a
+        # follow-up drops the first value.
+        "templates/peerslate.html": (
+            "5be0be9c4440ca3b9a5286b83395e150533489e563490f80e38d29de35bf0fb9",
+            "c8d1987745ff1c7b071d15a5e9ca5b84c1845d96b16cab96e88e4da549730c3b",
+        ),
         "templates/platform_page.html": "2c887c30dbb0bf4b2532a055f0ef1d84def4f38daea37363456d2da3d6a3b928",
     }
     HANDLER_HASHES = {
@@ -318,7 +367,8 @@ class FrozenPreviewContractTests(unittest.TestCase):
         for relative_path, expected in self.TEMPLATE_HASHES.items():
             with self.subTest(path=relative_path):
                 actual = hashlib.sha256((ROOT / relative_path).read_bytes()).hexdigest()
-                self.assertEqual(expected, actual)
+                accepted = expected if isinstance(expected, tuple) else (expected,)
+                self.assertIn(actual, accepted)
 
     def test_preview_handler_source_matches_activated_main(self):
         source = (ROOT / "app.py").read_text(encoding="utf-8")

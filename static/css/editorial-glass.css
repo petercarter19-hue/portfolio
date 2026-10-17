@@ -505,3 +505,1311 @@ body[data-theme="dark"].ps-editorial-surface .skf-orb__ball {
             rgba(0, 0, 0, 0.2)
         );
 }
+
+/* =====================================================================
+   5. Site-wide resume-page theme (PS-SITE-SHELL-ROUND5-001, light only)
+
+   Pete, 2026-10-14: "every other page has that same green and theme that
+   the resume page has." Values come only from the shared token file
+   static/css/peerslate-theme.css (the owner resume page's existing values):
+   the locked 6a #3f6a51 backdrop with faint Cairn stones, the beige frame
+   the content sits in, beige cards (#faf6ec, edges #e3d7c1, current item
+   #e8dfc9), green links and gold Soft Sheen primary buttons. No gold words.
+   The home page ("/") and the Experience film never carry
+   ps-editorial-surface; the owner resume page (body.rp-body) already
+   paints this theme itself. The Guide window keeps its own colours.
+   Appended last so it settles the earlier sections of this file.
+   ===================================================================== */
+body.ps-editorial-surface {
+    --ps-card-surface-top: var(--pt-rail-card);
+    --ps-card-surface-mid: var(--pt-rail-card);
+    --ps-card-surface-bottom: var(--pt-rail-card);
+    --ps-card-border: var(--pt-rail-line);
+    --ps-card-border-highlight: var(--pt-rail-line);
+    --ps-card-border-active: var(--pt-current-line);
+    --ps-card-title: var(--pt-head);
+    --ps-card-body: var(--pt-ink);
+    --ps-card-muted: var(--pt-muted);
+    --ps-shadow-quiet: 0 5px 18px rgba(29, 53, 39, .07);
+    --ps-shadow-standard: 0 5px 18px rgba(29, 53, 39, .07);
+    --ps-shadow-primary: 0 5px 18px rgba(29, 53, 39, .07);
+    --ps-shadow-hover: 0 5px 18px rgba(29, 53, 39, .10);
+    --ps-shadow-active: 0 5px 18px rgba(29, 53, 39, .10);
+    background-color: var(--pt-backdrop);
+    color-scheme: light;
+}
+
+/* The backdrop: one fixed layer behind every page. Pages that paint their
+   own sky inside the content stand it down so the frame reads cleanly. */
+body.ps-editorial-surface .site-sky {
+    background-color: var(--pt-backdrop);
+    background-image: var(--pt-backdrop-image);
+    background-size: var(--pt-backdrop-size);
+    background-position: var(--pt-backdrop-position);
+    background-repeat: no-repeat;
+    background-attachment: var(--pt-backdrop-attachment);
+}
+body.ps-editorial-surface .resume-v2::before,
+body.ps-editorial-surface .lr-page::before,
+body.ps-editorial-surface .story-act--day::before,
+body.ps-editorial-surface .r2-skillpop::after {
+    background: none;
+}
+
+/* The content column. Pete, 2026-10-15: "Think site-wide, consistency."
+   As on My Story and the resume page, the dark green shows behind the
+   content: the column keeps its box (so nothing moves) but paints no beige
+   frame; the cards and panels sit straight on the green. */
+body.ps-editorial-surface:not(.rp-body) .main-content {
+    box-sizing: border-box;
+    width: min(calc(100% - 32px), 1376px);
+    max-width: none;
+    margin: 14px auto 28px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 18px;
+    overflow: clip;
+}
+/* The Journal's book is laid out for the full phone width: on phones its
+   column takes the full width again, as before the theme (the 16px inset
+   pushed its two-line headline onto four lines). */
+@media (max-width: 759px) {
+    body.ps-editorial-surface.ps-journal-page .main-content {
+        width: auto;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+    }
+}
+
+/* Beige cards: the shared card families this file already finishes. */
+body.ps-editorial-surface .ps-card,
+body.ps-editorial-surface .preview-card,
+body.ps-editorial-surface .preview-main,
+body.ps-editorial-surface .preview-ghost,
+body.ps-editorial-surface .ps-project,
+body.ps-editorial-surface .ps-ov-block,
+body.ps-editorial-surface .ps-feature,
+body.ps-editorial-surface .ps-metric,
+body.ps-editorial-surface .ps-step,
+body.ps-editorial-surface .ct-card,
+body.ps-editorial-surface .iv-card,
+body.ps-editorial-surface .iv-mode,
+body.ps-editorial-surface .platform-page__card,
+body.ps-editorial-surface .fun-fact-card,
+body.ps-editorial-surface .story-card,
+body.ps-editorial-surface .work-hero-panel,
+body.ps-editorial-surface .work-project-panel,
+body.ps-editorial-surface .bd-shield,
+body.ps-editorial-surface .ts-heat,
+body.ps-editorial-surface .ts-group,
+body.ps-editorial-surface .pf-topic,
+body.ps-editorial-surface .pf-side > *,
+body.ps-editorial-surface .projects-section,
+body.ps-editorial-surface .ps-glass-card {
+    background: var(--pt-rail-card);
+    border-color: var(--pt-rail-line);
+    box-shadow: var(--ps-shadow-standard);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+body.ps-editorial-surface .ps-card--selected,
+body.ps-editorial-surface .ps-card[aria-selected="true"],
+body.ps-editorial-surface [aria-selected="true"].ct-card {
+    background: var(--pt-current);
+    border-color: var(--pt-current-line);
+}
+
+/* Green links (plain text links only; styled controls keep their own). */
+body.ps-editorial-surface .main-content a:not([class]) {
+    color: var(--pt-link);
+}
+
+/* Gold Soft Sheen primary buttons (the resume page's .rp-btn--gold). */
+body.ps-editorial-surface .ps-btn--primary,
+body.ps-editorial-surface .hv-btn--primary,
+body.ps-editorial-surface .btn-primary,
+body.ps-editorial-surface .os-btn--primary,
+body.ps-editorial-surface .wk-btn--primary {
+    background-color: var(--pt-btn);
+    background-image: var(--pt-sheen);
+    border-color: var(--pt-btn-edge);
+    color: var(--pt-green-deep);
+    box-shadow: 0 2px 6px rgba(118, 83, 22, .07);
+}
+body.ps-editorial-surface :is(.ps-btn--primary, .hv-btn--primary, .btn-primary, .os-btn--primary, .wk-btn--primary):hover {
+    background-color: var(--pt-btn-hover);
+}
+body.ps-editorial-surface :is(.ps-btn--primary, .hv-btn--primary, .btn-primary, .os-btn--primary, .wk-btn--primary):active {
+    background-color: var(--pt-btn-press);
+    box-shadow: inset 0 1px 3px rgba(118, 83, 22, .30);
+}
+
+/* The site footer carries the backdrop green itself, so its light text
+   stays readable even on pages that paint their own background. */
+body.ps-editorial-surface .footer {
+    background: var(--pt-backdrop);
+    border-top: 0;
+    color: rgba(255, 255, 255, .88);
+}
+body.ps-editorial-surface .footer :is(p, span, .footer-privacy) {
+    color: rgba(255, 255, 255, .88);
+}
+body.ps-editorial-surface .footer a {
+    color: #fff;
+}
+/* Privacy / Terms (partials/policy_links.html), when those pages exist. */
+body.ps-editorial-surface .footer .ps-policy-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 22px;
+    margin-top: 6px;
+}
+body.ps-editorial-surface .footer .ps-policy-links a { text-decoration: underline; text-underline-offset: 3px; }
+
+/* =====================================================================
+   6. The "Soon" pages take the same theme (PS-SITE-SHELL-ROUND5-001)
+
+   Pete, 2026-10-15, on the screenshots: the pages behind the bar's Soon
+   names "should also have a green theme ... Just apply the theme that
+   we've been doing to it." Colours only, from the shared tokens: beige
+   frame and cards, forest-green ink and headings, green eyebrows (no gold
+   words), gold Soft Sheen primary buttons and gold accents. No layout,
+   wording or structure changes; the pages' own files are not edited.
+   Opportunity Slate's files belong to the paused PS-OPPORTUNITY-SLATE-003
+   and are not edited; it is themed from here with page-scoped selectors.
+   ===================================================================== */
+
+/* My PeerSlate (/app): the launchpad only; other /app pages are unchanged. */
+body.ps-editorial-surface .owner-app--launchpad {
+    background: transparent;
+    color: var(--pt-head);
+}
+body.ps-editorial-surface .owner-app__panel--launchpad {
+    border-color: var(--pt-card-line);
+    background: var(--pt-card);
+    box-shadow: 0 5px 18px rgba(29, 53, 39, .07);
+}
+body.ps-editorial-surface .owner-app--launchpad .owner-app__eyebrow { color: var(--pt-green); }
+body.ps-editorial-surface .owner-app--launchpad .owner-app__launchpad-intro > p:not(.owner-app__eyebrow) { color: var(--pt-ink2); }
+body.ps-editorial-surface .owner-app--launchpad .owner-app__destination {
+    border-color: var(--pt-rail-line);
+    background: var(--pt-rail-card);
+    color: var(--pt-head);
+    box-shadow: 0 5px 18px rgba(29, 53, 39, .07);
+}
+body.ps-editorial-surface .owner-app--launchpad .owner-app__destination:hover {
+    border-color: var(--pt-gold-edge);
+    box-shadow: 0 5px 18px rgba(29, 53, 39, .10);
+}
+body.ps-editorial-surface .owner-app--launchpad .owner-app__destination:focus-visible { outline-color: var(--pt-gold-edge); }
+body.ps-editorial-surface .owner-app--launchpad .owner-app__destination-copy,
+body.ps-editorial-surface .owner-app--launchpad .owner-app__privacy-note { color: var(--pt-muted); }
+body.ps-editorial-surface .owner-app--launchpad .owner-app__privacy-note { border-top-color: var(--pt-card-line); }
+
+/* Interview Studio: its colours are tokens ("theme changes token values
+   only"), so the theme sets the token values. Its own textured sage
+   backdrop stands down so the site backdrop shows around the frame. */
+body.ps-editorial-surface.interview-studio-page .is {
+    --is-canvas: var(--pt-frame);
+    --is-canvas-2: var(--pt-panel);
+    --is-surface: var(--pt-card);
+    --is-surface-2: var(--pt-rail-card);
+    --is-ink: var(--pt-head);
+    --is-text: var(--pt-ink);
+    --is-text-muted: var(--pt-muted);
+    --is-gold-text: var(--pt-green);
+    --is-gold: var(--pt-gold-edge);
+    --is-gold-bright: var(--pt-btn-edge);
+    --is-gold-soft: var(--pt-band);
+    --is-active: var(--pt-green);
+    --is-active-strong: var(--pt-green-deep);
+    --is-active-soft: var(--pt-badge);
+    --is-line: var(--pt-card-line);
+    --is-line-strong: var(--pt-box-line);
+    --is-action-primary: var(--pt-green-deep);
+    --is-action-primary-strong: var(--pt-head);
+    --is-focus: var(--pt-gold-edge);
+}
+body.ps-editorial-surface.interview-studio-page .is__backdrop { display: none; }
+/* Its page canvas paints no beige either: the green shows around the cards. */
+body.ps-editorial-surface.interview-studio-page .is { background: transparent; }
+body.ps-editorial-surface.interview-studio-page .is :is(.is__button--primary, .is-auth__send):not([disabled]) {
+    background-color: var(--pt-btn);
+    background-image: var(--pt-sheen);
+    border-color: var(--pt-btn-edge);
+    color: var(--pt-green-deep);
+    box-shadow: 0 2px 6px rgba(118, 83, 22, .07);
+}
+body.ps-editorial-surface.interview-studio-page .is :is(.is__button--primary, .is-auth__send):hover:not([disabled]) {
+    background-color: var(--pt-btn-hover);
+    border-color: var(--pt-btn-edge);
+}
+
+/* Community (/the-slate): token values, the rust eyebrows go green and
+   the primary actions take the gold Soft Sheen. */
+body.ps-editorial-surface.community-public-pilot {
+    --cv1-ink: var(--pt-head);
+    --cv1-muted: var(--pt-muted);
+    --cv1-line: var(--pt-card-line);
+    --cv1-surface: var(--pt-card);
+    --cv1-soft: var(--pt-rail-card);
+    --cv1-blue: var(--pt-link);
+    --cv1-blue-dark: var(--pt-green-deep);
+    --cv1-shadow: 0 5px 18px rgba(29, 53, 39, .07);
+    --cv1-scrim: rgba(243, 236, 224, .82);
+    --community-canvas: var(--pt-frame);
+    --community-surface: var(--pt-card);
+    --community-surface-subtle: var(--pt-rail-card);
+    --community-ink: var(--pt-head);
+    --community-ink-muted: var(--pt-muted);
+    --community-line: var(--pt-card-line);
+    --community-brand: var(--pt-green);
+    --community-brand-strong: var(--pt-green-deep);
+    --community-brand-soft: var(--pt-badge);
+}
+body.ps-editorial-surface.community-public-pilot .cv1-eyebrow { color: var(--pt-green); }
+body.ps-editorial-surface.community-public-pilot {
+    /* Media-type medallions: forest green and gold on cream, not blue/red/purple. */
+    --community-accent-photo: var(--pt-green);
+    --community-accent-photo-soft: var(--pt-badge);
+    --community-accent-video: var(--pt-gold-edge);
+    --community-accent-video-soft: var(--pt-band);
+    --community-accent-file: var(--pt-gold-edge);
+    --community-accent-file-soft: var(--pt-band);
+    --community-accent-voice: var(--pt-green);
+    --community-accent-voice-soft: var(--pt-badge);
+    --community-accent-ai: var(--pt-green-deep);
+    --community-accent-ai-soft: var(--pt-band);
+}
+/* Community paints its own pale body gradient and fades the shared
+   backdrop to 16%; the theme restores the green backdrop around the frame,
+   as on the other pages. */
+body.ps-editorial-surface.community-public-pilot {
+    background-color: var(--pt-backdrop);
+    background-image: none;
+}
+body.ps-editorial-surface.community-public-pilot .site-sky { opacity: 1; }
+body.ps-editorial-surface.community-public-pilot .cv1-feed { background: var(--pt-card); }
+/* The active phone tab's underline (Mine / Ours / Beyond) is green, not
+   rust; forced-colours mode keeps Community's own Highlight rule. */
+@media (forced-colors: none) {
+    body.ps-editorial-surface.community-public-pilot .cv1-mobile-tabs button[aria-pressed="true"]::after { background: var(--pt-green); }
+}
+body.ps-editorial-surface.community-public-pilot :is(.cv1-empty, .cv1-unavailable, .cv1-feed-end) {
+    border-color: var(--pt-rail-line);
+    background: var(--pt-rail-card);
+}
+body.ps-editorial-surface.community-public-pilot :is(.cv1-primary, .cv1-quick-compose-submit):not([disabled]) {
+    border-color: var(--pt-btn-edge);
+    background-color: var(--pt-btn);
+    background-image: var(--pt-sheen);
+    color: var(--pt-green-deep);
+    box-shadow: 0 2px 6px rgba(118, 83, 22, .07);
+}
+
+/* Opportunity Slate (/opportunity-slate): its own CSS paints a near-white
+   body, hides the shared backdrop and restyles the footer; the theme takes
+   them back. Its colours are tokens on .os2, so the theme sets the values:
+   the rust eyebrows go green (no gold words), the primary action takes the
+   gold Soft Sheen; the error tint keeps its own warning colours. */
+body.ps-editorial-surface.opportunity-slate-v2-page { background-color: var(--pt-backdrop); }
+body.ps-editorial-surface.opportunity-slate-v2-page .site-sky { display: block; }
+body.ps-editorial-surface.opportunity-slate-v2-page .footer {
+    background: var(--pt-backdrop);
+    border-top: 0;
+    color: rgba(255, 255, 255, .88);
+}
+body.ps-editorial-surface.opportunity-slate-v2-page .footer :is(p, .footer-privacy) { color: rgba(255, 255, 255, .88); }
+body.ps-editorial-surface.opportunity-slate-v2-page .os2 {
+    --os2-bg: var(--pt-frame);
+    --os2-surface: var(--pt-card);
+    --os2-rail-bg: var(--pt-rail-card);
+    --os2-ink: var(--pt-ink);
+    --os2-ink-strong: var(--pt-head);
+    --os2-muted: var(--pt-muted);
+    --os2-helper-quiet: var(--pt-ink2);
+    --os2-subtitle-ink: var(--pt-ink);
+    --os2-label-ink: var(--pt-ink2);
+    --os2-meta-ink: var(--pt-head);
+    --os2-truth-quiet: var(--pt-ink2);
+    --os2-rail-quiet: var(--pt-ink2);
+    --os2-helper-ink: var(--pt-ink);
+    --os2-faint: var(--pt-muted);
+    --os2-line: var(--pt-card-line);
+    --os2-line-meta: var(--pt-frame-line);
+    --os2-line-footer: var(--pt-frame-line);
+    --os2-line-strong: var(--pt-frame-line);
+    --os2-border-textarea: var(--pt-box-line);
+    --os2-border-input: var(--pt-box-line);
+    --os2-border-doc: var(--pt-box-line);
+    --os2-accent: var(--pt-green);
+    --os2-olive: var(--pt-green);
+    --os2-olive-icon: var(--pt-green-deep);
+    --os2-primary: var(--pt-green-deep);
+    --os2-primary-hover: var(--pt-head);
+    --os2-dictate-border: var(--pt-rail-line);
+    --os2-focus: var(--pt-head);
+    background: transparent;
+}
+body.ps-editorial-surface.opportunity-slate-v2-page .os2 .os2-button--primary:not(:disabled):not([aria-disabled="true"]) {
+    background-color: var(--pt-btn);
+    background-image: var(--pt-sheen);
+    border-color: var(--pt-btn-edge);
+    color: var(--pt-green-deep);
+}
+body.ps-editorial-surface.opportunity-slate-v2-page .os2 .os2-button--primary:hover:not(:disabled):not([aria-disabled="true"]) {
+    background-color: var(--pt-btn-hover);
+}
+
+/* =====================================================================
+   7. Green behind every page (PS-SITE-SHELL-ROUND5-001)
+
+   Pete, 2026-10-15: "Think site-wide, consistency. Always." Every page
+   shows the dark green page background the resume page and My Story show,
+   with the cards and panels sitting on it (section 5 no longer paints the
+   beige frame; the pages' own beige canvases stand down here). Text that
+   now sits straight on the green is white: 6.2:1 on the backdrop and still
+   above 4.5:1 at its lightest highlight. Card text stays dark on beige.
+   Colours and backgrounds only: no layout, wording or structure changes.
+   ===================================================================== */
+body.ps-editorial-surface { --ps-on-green: #fff; }
+
+/* Interview Studio: the bar, the panel heads, the orientation copy and the
+   History summary sit on the green; the History disclosure is a card. */
+body.ps-editorial-surface.interview-studio-page .is__brand :is(.is__brand-eyebrow, h1, .is__brand-subtitle),
+body.ps-editorial-surface.interview-studio-page .is__panel > :is(.is__eyebrow, .is__title, .is__sub),
+body.ps-editorial-surface.interview-studio-page .is__history-head :is(.is__title, .is__sub),
+body.ps-editorial-surface.interview-studio-page .is__orientation-copy :is(.is__eyebrow, .is__title, p),
+body.ps-editorial-surface.interview-studio-page :is(.is__baseline, .is__baseline span, .is__history-disclosure) {
+    color: var(--ps-on-green);
+    text-shadow: none;
+}
+body.ps-editorial-surface.interview-studio-page :is(.is__shell > p, .is__clear-row) { --is-text-muted: var(--ps-on-green); }
+body.ps-editorial-surface.interview-studio-page .is__disclosure {
+    background: var(--pt-card);
+    border-color: var(--pt-card-line);
+}
+
+/* Opportunity Slate: on its green canvas the ink tokens are white; inside
+   its cards, fields, rail and buttons they are the theme's dark inks again. */
+body.ps-editorial-surface.opportunity-slate-v2-page .os2 {
+    --os2-ink: var(--ps-on-green);
+    --os2-ink-strong: var(--ps-on-green);
+    --os2-muted: var(--ps-on-green);
+    --os2-helper-quiet: var(--ps-on-green);
+    --os2-subtitle-ink: var(--ps-on-green);
+    --os2-label-ink: var(--ps-on-green);
+    --os2-meta-ink: var(--ps-on-green);
+    --os2-truth-quiet: var(--ps-on-green);
+    --os2-helper-ink: var(--ps-on-green);
+    --os2-faint: var(--ps-on-green);
+    --os2-accent: var(--ps-on-green);
+    --os2-olive: var(--ps-on-green);
+    --os2-olive-icon: var(--ps-on-green);
+    --os2-focus: var(--ps-on-green);
+}
+body.ps-editorial-surface.opportunity-slate-v2-page .os2 :is(h1, h2, h3) { text-shadow: none; }
+body.ps-editorial-surface.opportunity-slate-v2-page .os2 :is(.os2-rail, .os2-card, .os2-input, .os2-textarea, .os2-inflight, .os2-disclosure, .os2-button--secondary, .os2-dictate, .os2-source-doc) {
+    --os2-ink: var(--pt-ink);
+    --os2-ink-strong: var(--pt-head);
+    --os2-muted: var(--pt-muted);
+    --os2-helper-quiet: var(--pt-ink2);
+    --os2-subtitle-ink: var(--pt-ink);
+    --os2-label-ink: var(--pt-ink2);
+    --os2-meta-ink: var(--pt-head);
+    --os2-truth-quiet: var(--pt-ink2);
+    --os2-helper-ink: var(--pt-ink);
+    --os2-faint: var(--pt-muted);
+    --os2-accent: var(--pt-green);
+    --os2-olive: var(--pt-green);
+    --os2-olive-icon: var(--pt-green-deep);
+    --os2-focus: var(--pt-head);
+}
+
+/* Community: the policy line under the feed. */
+body.ps-editorial-surface.community-public-pilot .cv1-policy-line,
+body.ps-editorial-surface.community-public-pilot .cv1-policy-line a {
+    color: var(--ps-on-green);
+}
+
+/* Contact: the heading block and the closing note. */
+body.ps-editorial-surface .ct-page :is(.ct-head .ps-eyebrow, .ct-head h1, .ct-lead, .ct-note) {
+    color: var(--ps-on-green);
+    text-shadow: none;
+}
+
+/* Why PeerSlate (/peerslate): the section headings below the hero. */
+body.ps-editorial-surface.peerslate-home-page .ps-section-head :is(.ps-eyebrow, h2, .ps-section-sub, .ps-link, .ps-link span) {
+    color: var(--ps-on-green);
+    text-shadow: none;
+}
+
+/* Skills: the daylight haze stands down; headings go white; each orb's
+   count sits on a solid green, and its name pill keeps dark ink. */
+body.ps-editorial-surface .sky-haze::before { background: none; }
+body.ps-editorial-surface :is(.skf-open .section-eyebrow, .skf-open h1, .skf-open h1 span, .skf-open__lead, .skf-act__head, .skf-act__head .section-eyebrow) {
+    color: var(--ps-on-green);
+    text-shadow: none;
+}
+body.ps-editorial-surface .skf-orb__ball {
+    background: var(--pt-green-deep);
+    color: var(--ps-on-green);
+}
+body.ps-editorial-surface .skf-orb__name {
+    color: var(--pt-head);
+    text-shadow: none;
+}
+
+/* Slate Board: the board heading and its small footer, the section intros
+   and heads sit on the green; the outline Filters button, the
+   recommendation cards and the banner are cards. */
+body.ps-editorial-surface .sb-workspace__heading :is(h1, p),
+body.ps-editorial-surface .sb-reference-footer,
+body.ps-editorial-surface .main-content .sb-reference-footer :is(strong, span, a),
+body.ps-editorial-surface .ts-intro__copy :is(h2, p),
+body.ps-editorial-surface .ts-featured__head :is(h3, .ts-rail__sub, .ps-link, .ps-link span),
+body.ps-editorial-surface .ts-reco > .ts-pp__colhead :is(h4, .ps-link) {
+    color: var(--ps-on-green);
+    text-shadow: none;
+}
+body.ps-editorial-surface :is(.ts-filters-btn, .ts-reco__card, .ts-banner) {
+    background: var(--pt-rail-card);
+    border-color: var(--pt-rail-line);
+}
+
+/* My Story (Pete, 2026-10-15): the midnight-navy cards become the theme's
+   light sage, with dark ink. The black Act One panel, the photos, the
+   paper notes and the photo-backed closing card are unchanged. */
+body.ps-editorial-surface :is(.sc-dark, .sc-var-dark, .sc-stat.sc-var-dark, .sc-chapter.sc-var-systems, .sc-chapter.sc-var-code) {
+    background: var(--pt-badge);
+    border-color: var(--pt-badge-line);
+    color: var(--pt-head);
+    box-shadow: 0 0.7rem 1.9rem rgba(29, 53, 39, .12);
+}
+body.ps-editorial-surface :is(.sc-dark, .sc-var-dark, .sc-chapter.sc-var-systems, .sc-chapter.sc-var-code) :is(.sc-title, .sc-stat-value) { color: var(--pt-head); }
+body.ps-editorial-surface :is(.sc-dark, .sc-var-dark, .sc-chapter.sc-var-systems, .sc-chapter.sc-var-code) :is(.sc-body, .sc-stat-label, .sc-expand p) { color: var(--pt-ink); }
+body.ps-editorial-surface :is(.sc-dark, .sc-var-dark, .sc-chapter.sc-var-systems, .sc-chapter.sc-var-code) :is(.sc-eyebrow, .sc-stat-context) { color: var(--pt-ink2); }
+body.ps-editorial-surface :is(.sc-dark, .sc-var-dark, .sc-chapter.sc-var-systems, .sc-chapter.sc-var-code) .sc-ghost { color: rgba(58, 106, 79, .22); }
+body.ps-editorial-surface :is(.sc-dark, .sc-var-dark, .sc-chapter.sc-var-systems, .sc-chapter.sc-var-code) :is(.sc-expand-toggle, .sc-link) { color: var(--pt-link); }
+body.ps-editorial-surface :is(.sc-dark, .sc-var-dark, .sc-chapter.sc-var-systems, .sc-chapter.sc-var-code) .sc-meaning { color: var(--pt-accent-ink); }
+
+/* =====================================================================
+   8. Every single page has the same theme (PS-SITE-SHELL-ROUND5-001)
+
+   Pete, 2026-10-15: "EVERY SINGLE PAGE HAS THE SAME THEME." The document
+   behind every themed page is the backdrop green (so no white or black
+   stretch shows below a short page), the shared Cairn backdrop shows on
+   every page, the pages' own white, cool-grey and navy page fills stand
+   down, their big white panels become the theme's beige cards, and text
+   that then sits on the green is white. Functional colour (errors,
+   warnings, success) is kept. Colours and backgrounds only.
+   ===================================================================== */
+html:has(> body.ps-editorial-surface) { background-color: var(--pt-backdrop); }
+body.ps-editorial-surface .site-sky { display: block; opacity: 1; }
+
+/* The public resume (Sage Mist): its white page turns green; its cards and
+   rail keep their own cream and sage. */
+body.ps-editorial-surface:has([data-sage-mist]) { background: var(--pt-backdrop) !important; }
+body.ps-editorial-surface #living-resume-page.lr-page { background: transparent; }
+body.ps-editorial-surface .lr-page::before { display: none; }
+
+/* My PeerSlate rooms built on owner-app (sign-in, Settings, My Data,
+   Download your data, Capture, Publish): no cool-white page fill; the
+   panels are beige cards. */
+body.ps-editorial-surface .owner-app:not(.owner-app--launchpad) { background: transparent; }
+body.ps-editorial-surface .owner-app__panel:not(.owner-app__panel--launchpad) {
+    border-color: var(--pt-card-line);
+    background: var(--pt-card);
+    box-shadow: 0 5px 18px rgba(29, 53, 39, .07);
+}
+body.ps-editorial-surface .resume-publication-review {
+    border-color: var(--pt-rail-line);
+    background: var(--pt-rail-card);
+}
+body.ps-editorial-surface .resume-editor__privacy-note { background: var(--pt-badge); }
+
+/* Pete's profile pages: the profile header band is a beige card, and its
+   About panel a lighter one; no white wash behind them. */
+body.ps-editorial-surface .profile-header { background-image: none; }
+body.ps-editorial-surface .profile-header__inner {
+    border-color: var(--pt-rail-line);
+    background: var(--pt-rail-card);
+}
+body.ps-editorial-surface .profile-about {
+    border-color: var(--pt-card-line);
+    background: var(--pt-card);
+}
+/* The list rows inside the shared page cards (Career Search, My Network,
+   Explore Profiles, For Recruiters) lose their cool blue-white wash. */
+body.ps-editorial-surface .platform-page__points li { background: var(--pt-card); }
+
+/* Slate Board: the document is green below the board too; its sub-nav is
+   a beige card. (The whiteboard itself is a drawn whiteboard: kept.) */
+body.ps-editorial-surface.slate-board-redesign { background-color: var(--pt-backdrop); background-image: none; }
+body.ps-editorial-surface .ts-subnav {
+    border-color: var(--pt-rail-line);
+    background: var(--pt-rail-card);
+}
+
+/* Community policy page: the policy is a beige card with green links. */
+body.ps-editorial-surface .cv1-policy {
+    border-color: var(--pt-card-line);
+    background: var(--pt-card);
+}
+body.ps-editorial-surface .cv1-policy a { color: var(--pt-link); }
+
+/* Journal: the desk under the book is the green, not near-black navy. */
+body.ps-editorial-surface.ps-journal-page {
+    --jbook-desk-1: var(--pt-backdrop);
+    --jbook-desk-2: var(--pt-green-deep);
+}
+
+/* Workshop: its blue-grey canvas, rings and blue tokens take the theme;
+   the page head and footnote on the green are white; the surfaces are
+   beige cards. Success, warning and danger colours are kept. */
+body.ps-editorial-surface.workshop-page {
+    --wk-canvas: var(--pt-backdrop);
+    --wk-surface: var(--pt-card);
+    --wk-surface-muted: var(--pt-rail-card);
+    --wk-line: var(--pt-card-line);
+    --wk-line-soft: var(--pt-band);
+    --wk-ink: var(--pt-head);
+    --wk-muted: var(--pt-ink2);
+    --wk-action: var(--pt-green-deep);
+    --wk-action-strong: var(--pt-head);
+    --wk-action-tint: var(--pt-badge);
+    --wk-focus: var(--pt-gold-edge);
+    --wk-sheen: linear-gradient(180deg, var(--pt-card-soft) 0%, var(--pt-card) 100%);
+    background-color: var(--pt-backdrop);
+}
+body.ps-editorial-surface.workshop-page::before { background: none; }
+body.ps-editorial-surface.workshop-page :is(.wk-hero__title, .wk-modes__tab, .wk-footnote, .wk-breadcrumb) {
+    color: var(--ps-on-green);
+    text-shadow: none;
+}
+body.ps-editorial-surface.workshop-page .wk-modes__tab--active { border-bottom-color: var(--ps-on-green); }
+
+/* My Story: the remaining blue becomes theme colour. The Act labels and
+   rules are gold on the black panel; list icons, links, eyebrows and the
+   chapter number medallions are forest green or gold; the values band is
+   a beige band with forest-green words; Completed Goals is a beige card
+   with a green control. Photos and the photo-backed scenes are unchanged. */
+body.ps-editorial-surface .story-acts {
+    --st-ink: var(--pt-head);
+    --st-muted: var(--pt-ink2);
+    --st-indigo: var(--pt-green-deep);
+    --st-azure: var(--pt-btn-edge);
+    --st-cyan: var(--pt-btn-edge);
+}
+body.ps-editorial-surface .story-acts .sc-eyebrow { color: var(--pt-green-deep); }
+/* The ember chapter card is a dark brown: its eyebrow is the theme's gold. */
+body.ps-editorial-surface .story-acts .sc-chapter.sc-var-ember .sc-eyebrow { color: var(--pt-btn); }
+body.ps-editorial-surface .story-acts #act-next .sc-paper .sc-eyebrow { color: var(--pt-accent-ink); }
+body.ps-editorial-surface .story-acts .sc-list__icon {
+    color: var(--pt-green);
+    background: var(--pt-badge);
+}
+body.ps-editorial-surface .story-acts :is(.sc-link, .sc-expand-toggle) { color: var(--pt-link); }
+body.ps-editorial-surface .story-acts .sc-chapter.sc-var-ember .sc-expand-toggle { color: var(--pt-btn); }
+body.ps-editorial-surface .story-acts .sc-chapter.sc-var-ember .sc-expand-toggle:is(:hover, :focus-visible) { color: #fff; }
+body.ps-editorial-surface .story-acts .sc-ai-chip:is(:hover, :focus-visible) {
+    background: var(--pt-badge);
+    border-color: var(--pt-badge-line);
+}
+body.ps-editorial-surface .story-values {
+    color: var(--pt-green-deep);
+    background: var(--pt-rail-card);
+    border-top-color: var(--pt-rail-line);
+    border-bottom-color: var(--pt-rail-line);
+}
+body.ps-editorial-surface .story-values :is(li, a) { color: var(--pt-green-deep); }
+body.ps-editorial-surface .story-values :is(li, a) > span { color: var(--pt-gold-edge); }
+body.ps-editorial-surface .story-values :is(li + li, a) { border-left-color: var(--pt-rail-line); }
+body.ps-editorial-surface .story-values a:is(:hover, :focus-visible) { color: var(--pt-head); }
+body.ps-editorial-surface .story-goals {
+    --color-gold: var(--pt-green);
+    --color-text-primary: var(--pt-head);
+    --color-text-muted: var(--pt-ink2);
+    --color-border: var(--pt-box-line);
+    --color-border-soft: var(--pt-card-line);
+    background: var(--pt-rail-card);
+    border-color: var(--pt-rail-line);
+    box-shadow: 0 5px 18px rgba(29, 53, 39, .07);
+}
+
+/* The old blue and navy accents left on the themed pages take the theme:
+   eyebrows, titles and links forest green; primary actions the gold Soft
+   Sheen; selected tabs and numbered steps deep green; the Ask boxes deep
+   green with a gold Ask. (Slate Board's colour-coded category tags and the
+   drawn whiteboard keep their colours; they carry meaning.) */
+body.ps-editorial-surface :is(.section-eyebrow, .owner-app__eyebrow, .profile-title) { color: var(--pt-green); }
+body.ps-editorial-surface :is(.ps-link, .ps-link span) { color: var(--pt-link); }
+body.ps-editorial-surface :is(.owner-app__primary, .resume-editor__button:not(.resume-editor__button--quiet), .skf-cta__btn) {
+    border-color: var(--pt-btn-edge);
+    background-color: var(--pt-btn);
+    background-image: var(--pt-sheen);
+    color: var(--pt-green-deep);
+}
+body.ps-editorial-surface .my-data__views [role="tab"][aria-selected="true"] {
+    background: var(--pt-green-deep);
+    color: #fff;
+}
+body.ps-editorial-surface.peerslate-home-page .ps-hero { background: linear-gradient(180deg, var(--pt-frame) 0%, var(--pt-frame) 46%, rgba(243, 236, 224, 0) 100%); }
+body.ps-editorial-surface.peerslate-home-page {
+    --home-blue: var(--pt-green);
+    --home-blue-hover: var(--pt-green-deep);
+    --home-blue-faint: var(--pt-badge);
+    --home-navy: var(--pt-head);
+    --home-navy-2: var(--pt-green-deep);
+}
+body.ps-editorial-surface .ct-ai .hero-ai-search__box {
+    background: linear-gradient(180deg, var(--pt-green-deep), var(--pt-head));
+    border-color: var(--pt-btn-edge);
+}
+body.ps-editorial-surface .ct-ai .hero-ai-search__button {
+    background-color: var(--pt-btn);
+    background-image: var(--pt-sheen);
+    color: var(--pt-green-deep);
+}
+body.ps-editorial-surface :is(.ts-filter.is-active, .ts-btn--soft, .ts-btn--outline, .ts-subnav__item.is-active, .ts-goal__path) { color: var(--pt-link); }
+body.ps-editorial-surface .ts-banner__icon { background: var(--pt-green); }
+body.ps-editorial-surface .story-acts .sc-figure figcaption { background: linear-gradient(180deg, rgba(29, 53, 39, 0), rgba(29, 53, 39, .84) 34%, rgba(29, 53, 39, .94)); }
+body.ps-editorial-surface .story-acts .sc-stat:not(.sc-var-dark) .sc-stat-value { color: var(--pt-head); }
+body.ps-editorial-surface .story-acts .sc-ghost { color: rgba(58, 106, 79, .3); }
+body.ps-editorial-surface .skip-link { background: var(--pt-green-deep); color: #fff; }
+
+/* =====================================================================
+   9. The Experience film takes the theme (PS-SITE-SHELL-ROUND5-001)
+
+   Pete, 2026-10-15: "EVERY SINGLE PAGE HAS THE SAME THEME." The film's
+   photographs, full-bleed imagery and their scrims (the section veils and
+   the story-card veils) are unchanged. Around them: the page is the
+   backdrop green with the theme footer; on the light scenes the glass
+   panels are beige glass with forest-green ink, on the dark scenes deep
+   green glass with white ink; the blue, mint and pink accents (titles,
+   icons, bullets, buttons) are gold or green.
+   ===================================================================== */
+html:has(> body.cinematic-home-page) { background-color: var(--pt-backdrop); }
+html body.cinematic-home-page { background: var(--pt-backdrop); }
+html body.cinematic-home-page .main-content { background: transparent; }
+body.cinematic-home-page .footer {
+    background: var(--pt-backdrop);
+    border-top: 0;
+    color: rgba(255, 255, 255, .88);
+}
+body.cinematic-home-page .footer :is(p, span, .footer-privacy) { color: rgba(255, 255, 255, .88); }
+body.cinematic-home-page .footer a { color: #fff; }
+body.cinematic-home-page .footer .ps-policy-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 22px;
+    margin-top: 6px;
+}
+
+/* Dark scenes (hero, connect, story, together): white ink, gold accent,
+   deep green glass. */
+body.cinematic-home-page :is(.cinematic-hero, .cinematic-section--connect, .cinematic-section--story, .cinematic-section--dark) {
+    --cine-accent: var(--pt-btn);
+}
+body.cinematic-home-page .cinematic-section--dark {
+    --cine-glass-bg: rgba(29, 53, 39, .55);
+    --cine-glass-border: rgba(214, 185, 104, .45);
+}
+/* Light scenes (work, work AI, future): forest-green ink, beige glass. */
+body.cinematic-home-page :is(.cinematic-section--work, .cinematic-section--work-ai, .cinematic-section--work-proof, .cinematic-section--future) {
+    --cine-ink: var(--pt-head);
+    --cine-ink-soft: rgba(29, 53, 39, .86);
+    --cine-accent: var(--pt-green);
+    --cine-glass-bg: rgba(250, 246, 236, .78);
+    --cine-glass-border: var(--pt-rail-line);
+}
+body.cinematic-home-page .cinematic-section--future { --cine-accent: var(--pt-accent-ink); }
+body.cinematic-home-page :is(.work-ai-panel, .work-proof-panel) { background: rgba(250, 246, 236, .62); }
+body.cinematic-home-page :is(.work-ai-kicker, .work-ai-question, .work-ai-answer, .work-ai-proof-strip, .work-ai-score-row,
+    .work-ai-proof-strip span, .work-ai-score-row span, .work-skill-chip, .work-skill-chip__face, .work-timeline-card,
+    .work-timeline-card strong) {
+    background: rgba(250, 246, 236, .86);
+}
+body.cinematic-home-page .glass-feature-card__icon { background: color-mix(in srgb, var(--cine-accent) 22%, rgba(250, 246, 236, .5)); }
+
+/* Titles and buttons: the aurora and pink gradients are gold; the white
+   primary button is the gold Soft Sheen; the pink story accents are gold. */
+body.cinematic-home-page :is(.cinematic-hero__title span:last-child, .cinematic-section--connect .connect-accent) {
+    background: linear-gradient(100deg, var(--pt-btn) 5%, var(--pt-btn-edge) 95%);
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+body.cinematic-home-page .cine-btn--primary {
+    border-color: var(--pt-btn-edge);
+    background-color: var(--pt-btn);
+    background-image: var(--pt-sheen);
+    color: var(--pt-green-deep);
+}
+body.cinematic-home-page :is(.story-card__icon, .story-card:hover .story-card__go, .story-living__btn) {
+    background: var(--pt-btn);
+    background-image: var(--pt-sheen);
+    color: var(--pt-green-deep);
+}
+body.cinematic-home-page .story-card__list li::before { background: var(--pt-btn); }
+body.cinematic-home-page :is(.story-card__lead, .story-living__icon, .story-living__text strong) { color: var(--pt-btn); }
+body.cinematic-home-page .story-living { background: rgba(29, 53, 39, .55); }
+
+/* =====================================================================
+   10. The Ask Pete chat panel takes the theme (PS-SITE-SHELL-ROUND5-001)
+
+   chatbot.css is not this package's file; this scoped override recolours
+   the opened panel and its launcher with the theme tokens: a beige panel,
+   a forest-green header and send button, gold accents. The round-5 home
+   page is left exactly as approved.
+   ===================================================================== */
+body:not(.ps-home-page) :is(#chat-panel, #chat-toggle) {
+    --color-gold: var(--pt-gold-edge);
+    --color-gold-bright: var(--pt-btn-edge);
+    --color-text-primary: var(--pt-head);
+    --color-text-secondary: var(--pt-ink);
+    --color-text-muted: var(--pt-muted);
+    --color-text-dark: var(--pt-green-deep);
+    --color-border-soft: var(--pt-card-line);
+}
+body:not(.ps-home-page) #chat-panel {
+    background: var(--pt-card);
+    border-color: var(--pt-btn-edge);
+    box-shadow: 0 22px 70px rgba(29, 53, 39, .28);
+}
+body:not(.ps-home-page) #chat-header { background: var(--pt-green-deep); }
+body:not(.ps-home-page) #chat-header-text h3 { color: var(--pt-btn); }
+body:not(.ps-home-page) :is(#chat-header-text p, #chat-close) { color: rgba(255, 255, 255, .9); }
+body:not(.ps-home-page) .bot-message {
+    background: var(--pt-rail-card);
+    border-color: var(--pt-rail-line);
+    color: var(--pt-head);
+}
+body:not(.ps-home-page) .user-message {
+    background-color: var(--pt-btn);
+    background-image: var(--pt-sheen);
+    color: var(--pt-green-deep);
+}
+body:not(.ps-home-page) .suggestion-btn {
+    background: var(--pt-rail-card);
+    border-color: var(--pt-rail-line);
+    color: var(--pt-ink);
+}
+body:not(.ps-home-page) .suggestion-btn:hover {
+    background: var(--pt-badge);
+    border-color: var(--pt-gold-edge);
+    color: var(--pt-green-deep);
+}
+body:not(.ps-home-page) :is(#chat-input-area, #chat-disclaimer) {
+    background: var(--pt-band);
+    border-top-color: var(--pt-card-line);
+    color: var(--pt-ink2);
+}
+body:not(.ps-home-page) #chat-input {
+    background: var(--pt-card-soft);
+    border-color: var(--pt-box-line);
+    color: var(--pt-head);
+}
+body:not(.ps-home-page) #chat-send {
+    background: var(--pt-green-deep);
+    border-color: var(--pt-green-deep);
+    color: #fff;
+}
+body:not(.ps-home-page) #chat-send:hover { background: var(--pt-head); color: #fff; }
+body:not(.ps-home-page) #chat-toggle {
+    border-color: var(--pt-btn-edge);
+    background-color: var(--pt-btn);
+    background-image: var(--pt-sheen);
+    color: var(--pt-green-deep);
+}
+/* The Experience film anchors the panel beside its own button as a glass
+   sheet over the photograph: beige glass there too. */
+body.cinematic-home-page.cine-chat-anchored #chat-panel {
+    background: rgba(250, 246, 236, .9);
+    border-color: var(--pt-btn-edge);
+    color: var(--pt-head);
+}
+body.cinematic-home-page.cine-chat-anchored #chat-header { background: var(--pt-green-deep); }
+body.cinematic-home-page.cine-chat-anchored :is(#chat-header-text p, #chat-close) { color: rgba(255, 255, 255, .9); }
+body.cinematic-home-page.cine-chat-anchored #chat-header-text h3 { color: var(--pt-btn); }
+body.cinematic-home-page.cine-chat-anchored #chat-input-area { background: var(--pt-band); }
+body.cinematic-home-page.cine-chat-anchored :is(.bot-message, .suggestion-btn, #chat-input) {
+    background: var(--pt-rail-card);
+    border-color: var(--pt-rail-line);
+    color: var(--pt-head);
+}
+
+/* =====================================================================
+   11. One theme-wide remap of the old ink, blue, navy and teal tokens
+       (PS-SITE-SHELL-ROUND5-001)
+
+   Independent review of 37ab31c2 (F1): the old palette survived inside
+   cards because the legacy design tokens were never mapped. This is the
+   choke point: every old ink token takes the theme's forest ink, every
+   old blue, navy or teal accent the theme green (deep green where it was
+   a strong action colour, white-on-green where it was a dark band), every
+   cool-white surface tint the theme's beige or sage. Pages that hard-code
+   a colour get the scoped overrides in section 12. Photographs are not
+   touched. The home page (no ps-editorial-surface) keeps round 5.
+   ===================================================================== */
+body.slate-light.ps-editorial-surface,
+body.ps-editorial-surface:not(.slate-light) {
+    /* style.css body.slate-light */
+    --text: var(--pt-head);
+    --text-muted: var(--pt-ink2);
+    --text-dark: var(--pt-head);
+    --accent: var(--pt-green);
+    --accent-hover: var(--pt-green-deep);
+    --accent-soft: rgba(58, 106, 79, .10);
+    --tab-active: var(--pt-green);
+    --button-primary-bg: var(--pt-green-deep);
+    --button-primary-text: #fff;
+    --askbar-bg: linear-gradient(135deg, var(--pt-green-deep), var(--pt-head));
+    --surface: var(--pt-card);
+    --surface-soft: var(--pt-rail-card);
+    --bg-elevated: var(--pt-card);
+    --border: var(--pt-card-line);
+    --ink-btn-bg: var(--pt-green-deep);
+    --navy-700: var(--pt-green);
+    --navy-800: var(--pt-green-deep);
+    --navy-900: var(--pt-head);
+    /* style.css body[data-theme="modern-blue"]: the light palette every
+       page runs on (data-theme is set on every page) */
+    --color-page: var(--pt-frame);
+    --color-page-deep: var(--pt-band);
+    --color-section: var(--pt-band);
+    --color-card: var(--pt-card);
+    --color-card-elevated: var(--pt-rail-card);
+    --color-card-hover: var(--pt-current);
+    --color-gold: var(--pt-green);
+    --color-gold-bright: var(--pt-green);
+    --color-gold-muted: var(--pt-green-deep);
+    --color-gold-dark: var(--pt-head);
+    --color-blue: var(--pt-green);
+    --color-cyan: var(--pt-green);
+    --color-text-primary: var(--pt-head);
+    --color-text-secondary: var(--pt-ink2);
+    --color-text-muted: var(--pt-muted);
+    --color-text-dark: var(--pt-head);
+    --color-border: var(--pt-card-line);
+    --color-border-soft: var(--pt-card-line);
+    --color-border-gold: var(--pt-current-line);
+    --shadow-gold: 0 8px 22px rgba(29, 53, 39, .12);
+    --button-secondary-text: var(--pt-head);
+    --slate-tint-band: rgba(240, 233, 218, .82);
+    --slate-tint-tabs: rgba(250, 246, 236, .92);
+    --slate-tint-card: rgba(250, 246, 236, .92);
+    --slate-tint-chip: rgba(250, 246, 236, .92);
+    --slate-screen: var(--pt-band);
+    /* style.css :root product tokens */
+    --ps-ink-950: var(--pt-head);
+    --ps-ink: var(--pt-head);
+    --ps-muted: var(--pt-ink2);
+    --ps-border: var(--pt-card-line);
+    --ps-surface: var(--pt-card);
+    --ps-canvas: var(--pt-frame);
+    --ps-cloud-white: var(--pt-frame);
+    --ps-primary: var(--pt-green-deep);
+    --ps-primary-strong: var(--pt-head);
+    --ps-primary-soft: var(--pt-badge);
+    --ps-product-indigo: var(--pt-green-deep);
+    --ps-product-indigo-strong: var(--pt-green);
+    --ps-connection-azure: var(--pt-green);
+    --ps-ai-cyan: var(--pt-green);
+    --ps-success-teal: var(--pt-green);
+    --ps-room-teal: var(--pt-green-deep);
+    --ps-room-plum: var(--pt-green-deep);
+    --ps-room-amber: var(--pt-green-deep);
+    --ps-room-pine: var(--pt-green-deep);
+    --ps-room-ultraviolet: var(--pt-green-deep);
+    /* design-system tokens.css */
+    --ps-color-ink-950: var(--pt-head);
+    --ps-color-accent-blue: var(--pt-green);
+    --ps-color-accent-cyan: var(--pt-green);
+    --ps-color-accent-violet: var(--pt-green-deep);
+    --ps-color-surface-light: var(--pt-card);
+    --ps-color-focus: var(--pt-gold-edge);
+    --ps-color-border-light: var(--pt-card-line);
+    --ps-glass-border-light: var(--pt-card-line);
+    /* component palettes declared on :root */
+    --lr-ink: var(--pt-head);
+    --lr-ink-soft: var(--pt-ink2);
+    --lr-blue: var(--pt-green-deep);
+    --lr-indigo: var(--pt-green-deep);
+    --lr-cyan: var(--pt-green);
+    --lr-night: var(--pt-head);
+    --lr-cloud: var(--pt-rail-card);
+    --lr-paper: var(--pt-card);
+    --overview-ink: var(--pt-head);
+    --overview-muted: var(--pt-ink2);
+    --overview-blue: var(--pt-green);
+    --overview-navy: var(--pt-green-deep);
+    --overview-navy-deep: var(--pt-head);
+    --overview-teal: var(--pt-green);
+    --sb-ink: var(--pt-head);
+    --sb-ink-soft: var(--pt-ink2);
+    --sb-indigo: var(--pt-green-deep);
+    --sb-cyan: var(--pt-green);
+    --sb-azure: var(--pt-green);
+    --sb-cloud: var(--pt-rail-card);
+    --profile-teal: var(--pt-green);
+    --profile-focus: var(--pt-gold-edge);
+    --cv1-ink: var(--pt-head);
+    --cv1-muted: var(--pt-muted);
+    --cv1-blue: var(--pt-link);
+    --cv1-blue-dark: var(--pt-green-deep);
+    --cv1-soft: var(--pt-rail-card);
+    --ss-navy: var(--pt-green-deep);
+    --ss-navy-strong: var(--pt-head);
+    --ss-focus: var(--pt-gold-edge);
+    --cr-navy: var(--pt-green-deep);
+    --cr-navy-strong: var(--pt-head);
+    --cr-teal: var(--pt-green);
+}
+/* The old dark --color-* palette, remapped to light on the story and
+   work pages by style.css: its blue "gold" slots take the theme green. */
+body.ps-editorial-surface :is(.my-story-page, .work-page) {
+    --color-text-primary: var(--pt-head);
+    --color-text-secondary: var(--pt-ink);
+    --color-text-muted: var(--pt-muted);
+    --color-gold: var(--pt-green);
+    --color-gold-bright: var(--pt-green);
+    --color-gold-muted: var(--pt-green-deep);
+    --color-gold-dark: var(--pt-head);
+    --color-blue: var(--pt-green);
+    --color-cyan: var(--pt-green);
+    --color-card: var(--pt-card);
+    --color-card-elevated: var(--pt-rail-card);
+    --color-card-hover: var(--pt-current);
+    --color-border: var(--pt-card-line);
+    --color-border-soft: var(--pt-card-line);
+    --color-border-gold: var(--pt-current-line);
+}
+/* Palettes declared on a page's own container. */
+body.ps-editorial-surface.peerslate-home-page {
+    --home-text: var(--pt-head);
+    --home-muted: var(--pt-ink2);
+    --home-soft: var(--pt-muted);
+    --home-teal: var(--pt-green);
+    --home-teal-soft: var(--pt-badge);
+    --home-bg: var(--pt-frame);
+    --home-bg-soft: var(--pt-band);
+    --home-surface-soft: var(--pt-card-soft);
+    --home-surface-solid: var(--pt-card);
+    --home-border: var(--pt-card-line);
+    --home-border-soft: var(--pt-card-line);
+    --text: var(--pt-head);
+    --text-muted: var(--pt-ink2);
+    --accent: var(--pt-green);
+    --accent-soft: var(--pt-badge);
+}
+body.ps-editorial-surface .skills-film {
+    --skf-ink: var(--pt-head);
+    --skf-ink-soft: var(--pt-ink2);
+}
+body.ps-editorial-surface :is(.resume-consolidated, .resume2-story) {
+    --r2-ink: var(--pt-head);
+    --r2-muted: var(--pt-ink2);
+    --r2-indigo: var(--pt-green-deep);
+    --r2-azure: var(--pt-green);
+    --r2-cyan: var(--pt-green);
+    --r2-cloud: var(--pt-rail-card);
+    --r2-line: var(--pt-card-line);
+}
+body.ps-editorial-surface .story-acts { --st-cloud: var(--pt-rail-card); }
+
+/* =====================================================================
+   12. Scoped overrides where a page hard-codes an old colour
+       (PS-SITE-SHELL-ROUND5-001; review of 37ab31c2, F1 and F4)
+   ===================================================================== */
+/* The skip link: deep green with white words and a light gold focus ring
+   (every page, the home page included; it is off-screen until focused). */
+body .skip-link { background: var(--pt-green-deep); color: #fff; }
+body .skip-link:focus,
+body .skip-link:focus-visible { outline: 3px solid var(--pt-btn); outline-offset: 3px; }
+
+/* Ink hard-coded by the owner rooms and the resume editor. */
+body.ps-editorial-surface :is(.owner-app, .owner-app__destination, .owner-app__secondary, .owner-app__sign-out,
+    .resume-editor, .resume-editor__button--secondary, .resume-editor__button--quiet) { color: var(--pt-head); }
+body.ps-editorial-surface :is(.owner-app dt, .owner-app__destination-copy, .owner-app__privacy-note,
+    .owner-app__launchpad-intro > p:not(.owner-app__eyebrow), .owner-app__panel > p.owner-app__waking-status,
+    .resume-editor__intro > p, .resume-editor__empty, .resume-editor__meta, .resume-editor__privacy-note) { color: var(--pt-ink2); }
+
+/* Pastel icon tiles (Why PeerSlate, Contact): sage with green marks. */
+body.ps-editorial-surface :is(.ps-tint--blue, .ps-tint--sky, .ps-tint--green, .ps-tint--violet, .ct-card__icon--linkedin) {
+    background: var(--pt-badge);
+    color: var(--pt-green);
+}
+body.ps-editorial-surface .hero-ai-search__label { color: var(--pt-green); }
+
+/* Why PeerSlate: the closing card is beige; the Ask bar's icon is light. */
+body.ps-editorial-surface.peerslate-home-page .ps-example {
+    background: var(--pt-rail-card);
+    border-color: var(--pt-rail-line);
+}
+body.ps-editorial-surface.peerslate-home-page .ai-bar-icon { color: var(--pt-btn); }
+
+/* The profile tabs' "Ask Pete AI" pill on every portfolio page. */
+body.ps-editorial-surface .profile-tabs__ask-btn {
+    border-color: var(--pt-current-line);
+    background: var(--pt-badge);
+    color: var(--pt-green-deep);
+}
+body.ps-editorial-surface .profile-tabs__ask-btn:is(:hover, :focus-visible) {
+    border-color: var(--pt-green-deep);
+    background: var(--pt-green-deep);
+    color: #fff;
+}
+
+/* The public resume's inline Ask Pete AI panel. */
+body.ps-editorial-surface #living-resume-page .resume-ai-panel { color: var(--pt-head); }
+body.ps-editorial-surface #living-resume-page .resume-ai-panel :is(.r2-ai-rail-header p, small, .overview-ai-truth span) { color: var(--pt-ink2); }
+body.ps-editorial-surface #living-resume-page .resume-ai-panel :is(.r2-ai-quick-label, .r2-ai-context span, .r2-ai-context strong, .overview-ai-truth strong) { color: var(--pt-green-deep); }
+body.ps-editorial-surface #living-resume-page .resume-ai-panel :is(.r2-ai-context, .overview-ai-truth) {
+    border-color: var(--pt-card-line);
+    background: var(--pt-card);
+}
+body.ps-editorial-surface #living-resume-page .resume-ai-panel .r2-ai-chip {
+    border-color: var(--pt-card-line);
+    background: var(--pt-card);
+    color: var(--pt-head);
+}
+body.ps-editorial-surface #living-resume-page .resume-ai-panel .r2-ai-chip:is(:hover, :focus-visible) { background: var(--pt-current); }
+body.ps-editorial-surface #living-resume-page .resume-ai-panel .overview-ai-icon {
+    background: var(--pt-badge);
+    color: var(--pt-green);
+}
+body.ps-editorial-surface #living-resume-page .resume-ai-panel .hero-ai-search__box {
+    border-color: var(--pt-box-line);
+    background: var(--pt-card-soft);
+}
+body.ps-editorial-surface #living-resume-page .resume-ai-panel :is(.hero-ai-search__button, button[type="submit"]) {
+    background: var(--pt-green-deep);
+    color: #fff;
+}
+/* Plain email links only: a member without a contact page gets a mailto:
+   Contact me button, which keeps its own white-on-green. */
+body.ps-editorial-surface #living-resume-page a[href^="mailto:"]:not(.overview-button) { color: var(--pt-link); }
+
+/* My Story: polaroid captions, handwriting and lists in forest ink (captions
+   over a photograph stay white on their scrim); the clinical chapter card
+   beige; Act Four's cards beige; its Ask chips and button in the theme; the
+   closing card's veil deep green over its photo. Separate rules, not one
+   :is() list: a list takes its most specific member's weight, which would
+   outrank the closing card's own sign-off colour further down. */
+body.ps-editorial-surface .story-acts .sc-image.sc-var-polaroid .sc-figure figcaption { color: var(--pt-head); }
+body.ps-editorial-surface .story-acts .sc-hand { color: var(--pt-head); }
+body.ps-editorial-surface .story-acts #act-next .sc-paper .sc-hand { color: var(--pt-head); }
+body.ps-editorial-surface .story-acts .sc-image.sc-var-polaroid .sc-figure figcaption { background: var(--pt-card-soft); }
+body.ps-editorial-surface .story-acts .sc-list li { color: var(--pt-ink); }
+body.ps-editorial-surface .story-acts .sc-chapter.sc-var-clinical {
+    background: linear-gradient(90deg, var(--pt-card) 0 58%, var(--pt-rail-card) 100%);
+}
+body.ps-editorial-surface .story-acts .sc-chapter.sc-var-clinical :is(.sc-body, .sc-title) { color: var(--pt-head); }
+body.ps-editorial-surface .story-acts #act-next :is(.sc-glass, .sc-paper, .sc-ai) {
+    border-color: var(--pt-rail-line);
+    background: var(--pt-rail-card);
+}
+body.ps-editorial-surface .story-acts .sc-ai-chip {
+    border-color: var(--pt-card-line);
+    background: var(--pt-card);
+    color: var(--pt-head);
+}
+body.ps-editorial-surface .story-acts .sc-ai-chip:is(:hover, :focus-visible) {
+    border-color: var(--pt-current-line);
+    background: var(--pt-current);
+}
+body.ps-editorial-surface .story-acts .sc-ai :is(.sc-body, p) { color: var(--pt-ink); }
+body.ps-editorial-surface .story-acts .sc-ai .hero-ai-search__box {
+    border-color: var(--pt-box-line);
+    background: var(--pt-card-soft);
+}
+body.ps-editorial-surface .story-acts .sc-ai .hero-ai-search__button {
+    background: var(--pt-green-deep);
+    color: #fff;
+}
+body.ps-editorial-surface .story-acts .sc-closing {
+    background:
+        linear-gradient(165deg, rgba(33, 78, 60, .52), rgba(29, 53, 39, .84)),
+        url("../images/cinematic/hero-aurora.jpg") center / cover no-repeat;
+}
+body.ps-editorial-surface .story-acts .sc-closing-sign { color: var(--pt-btn); }
+body.ps-editorial-surface #living-resume-page .r2-ai-quick-label { color: var(--pt-green-deep) !important; }
+body.ps-editorial-surface #living-resume-page :is(.r2-section-heading > div > span, .r2-summary__tags, .r2-credential-panel header p,
+    .r2-exp-card__head small, .r2-credential-record__heading > p, .r2-credential-record__heading strong, .r2-story-transition > p) {
+    color: var(--pt-green);
+}
+/* The "What's next" contact row: its plain text links and location in the
+   theme's link ink. The row's Contact me button keeps its own white-on-
+   green (re-review of fccd4482: an earlier, broader rule here recoloured
+   the button's words too). */
+body.ps-editorial-surface #living-resume-page .overview-future-actions > :not(.overview-button) { color: var(--pt-link); }
+/* Image wells behind the resume's photographs (seen only while a photo loads). */
+body.ps-editorial-surface .overview-media { background-color: var(--pt-band); }
+/* My Story: the checklist's handwriting, the summit chapter's words, the act navigator. */
+body.ps-editorial-surface .story-acts :is(.sc-checklist, .sc-checklist li) { color: var(--pt-ink); }
+body.ps-editorial-surface .story-acts .sc-chapter.sc-var-summit .sc-body { color: var(--pt-ink); }
+body.ps-editorial-surface .story-rail,
+body.ps-editorial-surface .story-rail ol { background: var(--pt-rail-card); }
+body.ps-editorial-surface .story-rail a[aria-current="true"] { background: var(--pt-green-deep); color: #fff; }
+/* Publish: the welcome line. */
+body.ps-editorial-surface .resume-publication__intro > p { color: var(--pt-ink2); }
+/* Slate Board: the board-controls panel is a beige card with forest ink;
+   its active tool is the theme's current tint; the PeerSlate mark in its
+   small footer is green. (The drawn whiteboard and the colour-coded
+   category, member and status marks keep their colours: they carry meaning.) */
+body.ps-editorial-surface .sb-controls {
+    border-color: var(--pt-rail-line);
+    background: var(--pt-rail-card);
+    color: var(--pt-head);
+}
+body.ps-editorial-surface .sb-controls :is(.sb-controls__label, small, output, span:not([class*="dot"]):not([class*="status"])) { color: var(--pt-ink2); }
+body.ps-editorial-surface .sb-controls button { color: var(--pt-head); }
+body.ps-editorial-surface .sb-controls button svg { color: var(--pt-ink2); }
+body.ps-editorial-surface .sb-controls button.is-active {
+    border-color: var(--pt-current-line);
+    background: var(--pt-current);
+    color: var(--pt-green-deep);
+}
+body.ps-editorial-surface .sb-controls button.is-active svg { color: var(--pt-green-deep); }
+body.ps-editorial-surface .sb-controls .sb-person-avatar {
+    background: var(--pt-badge);
+    color: var(--pt-green-deep);
+}
+body.ps-editorial-surface .sb-reference-footer__mark {
+    background: linear-gradient(135deg, var(--pt-btn) 0 48%, var(--pt-green-deep) 49% 100%);
+    box-shadow: 4px 3px 0 -1px rgba(214, 185, 104, .65);
+}
+/* Why PeerSlate's ghost button: a beige card button, not white. */
+body.ps-editorial-surface.peerslate-home-page .ps-btn--ghost {
+    border-color: var(--pt-rail-line);
+    background: var(--pt-card);
+    color: var(--pt-green-deep);
+}
+/* My Story's closing card: white words over its now-green veil. */
+body.ps-editorial-surface .story-acts .sc-closing { color: #fff; }
+/* Owner rooms: the status tiles (Settings) and capture panels use the
+   theme's band instead of a navy tint. */
+body.ps-editorial-surface :is(.owner-app__status div, .owner-app__capture-methods, .owner-app__voice-status) { background: var(--pt-band); }
+
+/* =====================================================================
+   13. Readable text everywhere (PS-SITE-SHELL-ROUND5-001; re-review of fccd4482)
+   The whole-site route test (tests/test_site_shell_round5.py,
+   test_every_visible_text_reads_against_its_real_background) measures every
+   visible word against the pixels under it: 4.5:1, or 3:1 for large text.
+   Each rule below changes only the ink of text that fell short, using the
+   shared --pt-* tokens; it never touches a background the rule does not own.
+   ===================================================================== */
+/* Small helper and status lines on beige cards: the theme's secondary ink. */
+body.ps-editorial-surface :is(.hero-ai-search__status, .is__intent, .sb-preview-label) { color: var(--pt-ink2); }
+/* Why PeerSlate's lead sits on the hero's fade into the green: the deep ink. */
+body.ps-editorial-surface.peerslate-home-page .ps-hero__lead { color: var(--pt-head); }
+/* The resume's My Story teaser reads over the edge of its photograph. */
+body.ps-editorial-surface #living-resume-page .overview-story-copy > p:not(.overview-section-kicker) { color: var(--pt-head); }
+/* Slate's colour-coded chips and states: the theme's deep green and amber ink, dark enough to read. */
+body.ps-editorial-surface :is(.ts-tag--green, .ts-zone--green, .ts-vis--public, .ts-ai__tag,
+    .ts-privacy__opt:not([data-privacy="Private"]).is-active, .ts-roomlist__body small b, .ts-mile__state--done) { color: var(--pt-green-deep); }
+body.ps-editorial-surface .ts-cat--work { --cat-deep: var(--pt-green-deep); }
+body.ps-editorial-surface :is(.ts-tag--orange, .ts-zone--orange, .ts-mile__state--current) { color: var(--pt-accent-ink); }
+
+/* =====================================================================
+   14. Second review of f57ec07f (PS-SITE-SHELL-ROUND5-001)
+   F1 the resume's Credentials and the Constellation's words, F3 text boxes
+   (ink, placeholder, caret, focus), F4 My Story's white cards, F5 focus rings.
+   ===================================================================== */
+
+/* F1: Credentials. resume2.css hard-codes navy titles, blue-grey lines, teal
+   pills and blue buttons, so the token remap cannot reach them: titles in the
+   deep ink, lines in the secondary ink, pills sage with deep-green words,
+   buttons beige, and the opened panel's blue labels, dots and line in green. */
+body.ps-editorial-surface #living-resume-page .r2-credential-card:nth-child(1) { border-color: var(--pt-badge-line); }
+body.ps-editorial-surface #living-resume-page .r2-credential-card li strong { color: var(--pt-head); }
+body.ps-editorial-surface #living-resume-page :is(.r2-credential-card li small, .r2-credential-card footer > span) { color: var(--pt-ink2); }
+body.ps-editorial-surface #living-resume-page .r2-credential-card li > span { background: var(--pt-badge); color: var(--pt-green-deep); }
+body.ps-editorial-surface #living-resume-page .r2-credential-card footer button {
+    border-color: var(--pt-box-line);
+    background: var(--pt-card-soft);
+    color: var(--pt-green-deep);
+}
+body.ps-editorial-surface #living-resume-page .r2-credential-card footer button:hover {
+    border-color: var(--pt-gold-edge);
+    color: var(--pt-head);
+}
+body.ps-editorial-surface #living-resume-page .r2-credential-panel > header > button { background: var(--pt-card-soft); color: var(--pt-green-deep); }
+body.ps-editorial-surface #living-resume-page .r2-credential-record__skills span { color: var(--pt-ink); }
+body.ps-editorial-surface #living-resume-page .r2-credential-record__metrics li { color: var(--pt-ink2); }
+body.ps-editorial-surface #living-resume-page .r2-credential-record__metrics strong { color: var(--pt-green-deep); }
+body.ps-editorial-surface #living-resume-page .r2-credential-panel__records.is-timeline::before {
+    background: linear-gradient(var(--pt-green), var(--pt-green-deep));
+}
+body.ps-editorial-surface #living-resume-page .r2-credential-panel__records.is-timeline .r2-credential-record::before {
+    border-color: var(--pt-green);
+}
+
+/* F1: the Career Constellation stays the deliberate dark night-sky band
+   (Pete, 2026-10-13: "the career constellation stays the same on the desktop
+   resume"; RP3 #7), but every word on it must read. The legend and outcomes
+   strips sit a little darker behind their light words, and the dark words on
+   the pale half of the sky are the deep navy the band already uses. */
+body.ps-editorial-surface #living-resume-page .lr-constellation__legend { background: rgba(7, 29, 55, .7); }
+body.ps-editorial-surface #living-resume-page .lr-constellation__outcomes { background: rgba(16, 58, 91, .9); }
+@media (min-width: 48.0625rem) {
+    body.ps-editorial-surface #living-resume-page .lr-constellation-node:nth-child(n + 4) .lr-constellation-node__copy > small { color: rgb(3, 40, 66); }
+    body.ps-editorial-surface #living-resume-page .lr-constellation-node:nth-child(n + 4) .lr-constellation-node__copy :is(ul, p) { color: rgb(11, 52, 86); }
+}
+@media (max-width: 48rem) {
+    body.ps-editorial-surface #living-resume-page .lr-constellation-node__copy > small { color: rgb(207, 247, 250); }
+}
+
+/* F4: My Story's white cards in every act (Acts One and Three kept the white
+   cards of story-acts.css; only Act Four was beiged), and its white eyebrow
+   pill over a photograph. */
+body.ps-editorial-surface .story-acts :is(.sc-glass, .sc-ai, .sc-paper.sc-var-white, .sc-stat:not(.sc-var-dark)) {
+    border-color: var(--pt-rail-line);
+    background: var(--pt-rail-card);
+}
+body.ps-editorial-surface .story-acts .sc-figure__eyebrow { background: var(--pt-card-soft); }
+
+/* F3 and F5: text boxes. Contact's Ask box is the theme's dark green with
+   light typing, a light placeholder and caret; My Story's and the chat
+   panel's placeholders take the secondary ink (the old blue-grey was about
+   4.3:1). Every Ask box shows a two-tone focus ring (deep ink inside, soft
+   gold outside) that reads on a beige card and on the green alike (Why
+   PeerSlate's pill had a blue one). Slate's check-in box, whose own focus was an
+   orange border at 2.9:1, shows a deep-ink ring. Every other field already shows
+   one, and the every-text-box test catches any that does not (windows with their
+   own focus look, like the Guide, are left alone). */
+body.ps-editorial-surface .ct-ai .hero-ai-search__input { color: #fff; caret-color: #fff; }
+body.ps-editorial-surface .ct-ai .hero-ai-search__input::placeholder { color: rgba(255, 255, 255, .82); opacity: 1; }
+body.ps-editorial-surface .story-acts .sc-ai .hero-ai-search__input::placeholder { color: var(--pt-ink2); }
+body.ps-editorial-surface #chat-panel #chat-input::placeholder { color: var(--pt-ink2); }
+body.ps-editorial-surface #chat-panel #chat-input:focus-visible { outline: 3px solid var(--pt-head); outline-offset: 2px; }
+body.ps-editorial-surface :is(.hero-ai-search__box, .ai-bar):focus-within {
+    outline: 3px solid var(--pt-head);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 7px var(--pt-btn);
+}
+body.ps-editorial-surface .ts-checkin__text:focus-visible {
+    outline: 3px solid var(--pt-head);
+    outline-offset: 2px;
+}
+
+/* Borders and the ::before / ::after layers the palette check now reads (it
+   found these once it looked past fills and text): the owner rooms' secondary
+   buttons, the publication editor's note, field and secondary button, Interview
+   Studio's framework chip, Slate's path cards, the Ask boxes' "searching" glow
+   (cyan and blue) and the Credentials timeline dot's white fill. */
+body.ps-editorial-surface :is(.owner-app__secondary, .owner-app__sign-out, .resume-editor__button--secondary, .resume-editor__button--quiet) { border-color: var(--pt-box-line); }
+body.ps-editorial-surface .resume-editor__privacy-note { border-left-color: var(--pt-green); }
+body.ps-editorial-surface .resume-publication-review input:not([type="checkbox"]) { border-color: var(--pt-box-line); }
+body.ps-editorial-surface .is__chip--framework { border-color: var(--pt-card-line); }
+body.ps-editorial-surface .ts-pathcard { border-color: var(--pt-card-line); }
+body.ps-editorial-surface :is(.hero-ai-search__box, .ai-bar)::before {
+    background: linear-gradient(90deg, transparent, var(--pt-btn-edge), var(--pt-gold-edge), transparent);
+}
+body.ps-editorial-surface #living-resume-page .r2-credential-panel__records.is-timeline .r2-credential-record::before {
+    background: var(--pt-card-soft);
+}
+

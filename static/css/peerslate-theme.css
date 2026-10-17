@@ -1,0 +1,76 @@
+/* PeerSlate site theme tokens (PS-SITE-SHELL-ROUND5-001). Light theme only.
+ *
+ * Pete, 2026-10-14: "make sure every other page has that same green and theme
+ * that the resume page has." These are exactly the owner resume page's
+ * existing values (static/css/resume-page.css, presentation:resume-page:theme,
+ * Lane D), renamed --rp-* -> --pt-* ("PeerSlate theme"). No new colour is
+ * introduced here. The --pt- prefix is reserved for this file: style.css
+ * already declares older --ps-ink / --ps-muted values on :root.
+ *
+ * ONE source: this file is loaded first by templates/base.html. Named
+ * follow-up for Lane D (PS-RESUME-PAGE-OWNER-001): point resume-page.css's
+ * --rp-* colour tokens at these (--rp-x: var(--pt-x)) so the values live only
+ * here. Until then a test pins both copies to the same values.
+ *
+ * Page layout tokens (text size, rail width, gaps) stay page-owned. */
+:root {
+    --pt-backdrop: #3f6a51;
+    --pt-frame: #f3ece0;
+    --pt-frame-line: #e3d7c1;
+    --pt-card: #faf8f2;
+    --pt-card-line: #e6dfd1;
+    --pt-card-soft: #fffdf8;
+    --pt-rail-card: #faf6ec;
+    --pt-rail-line: #e3d7c1;
+    --pt-current: #e8dfc9;
+    --pt-current-line: #d6c9a9;
+    --pt-gold-edge: #a8781e;
+    --pt-band: #f0e9da;
+    --pt-chip: #ece4d3;
+    --pt-box-line: #cfc3a8;
+    --pt-panel: #f3ecdd;
+    --pt-head: #1d3527;
+    --pt-ink: #2d3932;
+    --pt-ink2: #495a51;
+    --pt-muted: #596860;
+    --pt-green: #3a6a4f;
+    --pt-green-deep: #214e3c;
+    --pt-link: #2f5640;
+    --pt-num: #a8690a;
+    --pt-accent-ink: #7d5916;
+    --pt-badge: #e8efe6;
+    --pt-badge-line: #c8d5bd;
+    --pt-btn: #f4dfa6;
+    --pt-btn-edge: #d6b968;
+    --pt-btn-hover: #efd690;
+    --pt-btn-press: #e8d08d;
+    --pt-sheen: linear-gradient(180deg, rgba(255, 255, 255, .40) 0%, rgba(255, 255, 255, .10) 46%, rgba(118, 83, 22, 0) 54%, rgba(118, 83, 22, .10) 100%);
+    --pt-serif: "Newsreader", Georgia, serif;
+    --pt-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+
+    /* The locked 6a backdrop (resume-page.css body.rp-body): faint
+       hairline-outline Cairn stones, low-left and mirrored high-right, fixed
+       while scrolling, over soft light. */
+    --pt-backdrop-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='%23fff' stroke-opacity='0.11' stroke-width='0.0375'%3E%3Cpath d='M3.6 19.6C3.6 14.8 20.4 14.8 20.4 19.6C20.4 23.07 3.6 23.07 3.6 19.6Z'/%3E%3Cpath d='M6.7 11.73C6.7 7.56 19.3 7.56 19.3 11.73C19.3 14.76 6.7 14.76 6.7 11.73Z'/%3E%3Cpath d='M6.8 4.58C6.8 0.87 15.4 0.87 15.4 4.58C15.4 7.27 6.8 7.27 6.8 4.58Z' transform='rotate(-10 11.1 4.2)'/%3E%3C/g%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='%23fff' stroke-opacity='0.11' stroke-width='0.0429' transform='translate(24 0) scale(-1 1)'%3E%3Cpath d='M3.6 19.6C3.6 14.8 20.4 14.8 20.4 19.6C20.4 23.07 3.6 23.07 3.6 19.6Z'/%3E%3Cpath d='M6.7 11.73C6.7 7.56 19.3 7.56 19.3 11.73C19.3 14.76 6.7 14.76 6.7 11.73Z'/%3E%3Cpath d='M6.8 4.58C6.8 0.87 15.4 0.87 15.4 4.58C15.4 7.27 6.8 7.27 6.8 4.58Z' transform='rotate(-10 11.1 4.2)'/%3E%3C/g%3E%3C/svg%3E"),
+        radial-gradient(ellipse 70% 45% at 58% 22%, rgba(255, 255, 255, .13), rgba(255, 255, 255, 0) 70%),
+        linear-gradient(135deg, rgba(255, 255, 255, .10) 0%, rgba(255, 255, 255, 0) 40%, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, .16) 100%);
+    --pt-backdrop-size: 640px 640px, 560px 560px, 100% 100%, 100% 100%;
+    --pt-backdrop-position: left 40px bottom -130px, right -290px top 70px, 0 0, 0 0;
+    --pt-backdrop-attachment: fixed, fixed, scroll, scroll;
+}
+
+/* Phone and narrow tablet (resume-page.css max-width 959px): one smaller
+   stack bottom-right, half off-screen. */
+@media (max-width: 959px) {
+    :root {
+        --pt-backdrop-image:
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='%23fff' stroke-opacity='0.11' stroke-width='0.08'%3E%3Cpath d='M3.6 19.6C3.6 14.8 20.4 14.8 20.4 19.6C20.4 23.07 3.6 23.07 3.6 19.6Z'/%3E%3Cpath d='M6.7 11.73C6.7 7.56 19.3 7.56 19.3 11.73C19.3 14.76 6.7 14.76 6.7 11.73Z'/%3E%3Cpath d='M6.8 4.58C6.8 0.87 15.4 0.87 15.4 4.58C15.4 7.27 6.8 7.27 6.8 4.58Z' transform='rotate(-10 11.1 4.2)'/%3E%3C/g%3E%3C/svg%3E"),
+            radial-gradient(ellipse 70% 45% at 58% 22%, rgba(255, 255, 255, .13), rgba(255, 255, 255, 0) 70%),
+            linear-gradient(135deg, rgba(255, 255, 255, .10) 0%, rgba(255, 255, 255, 0) 40%, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, .16) 100%);
+        --pt-backdrop-size: 300px 300px, 100% 100%, 100% 100%;
+        --pt-backdrop-position: right -150px bottom -40px, 0 0, 0 0;
+        --pt-backdrop-attachment: fixed, scroll, scroll;
+    }
+}

@@ -113,7 +113,7 @@ class SageMistBrowserTests(unittest.TestCase):
                 self.open(width, height)
                 self.assertEqual(self.page.locator('[data-ask-pete-starter]').count(), 2)
                 self.assertEqual(self.page.locator('[data-ask-pete-companion]').get_attribute('data-sage-placement'), 'inline')
-                self.assertEqual(self.page.evaluate("getComputedStyle(document.body).backgroundColor"), 'rgb(255, 255, 255)')
+                self.assertEqual(self.page.evaluate("getComputedStyle(document.body).backgroundColor"), 'rgb(63, 106, 81)')  # the site theme green
                 self.away(width)
                 self.assert_geometry()
                 self.respond()

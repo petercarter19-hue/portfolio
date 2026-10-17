@@ -242,23 +242,27 @@ class ShellSearchScopeTests(unittest.TestCase):
         namespace = {"sitemap": "http://www.sitemaps.org/schemas/sitemap/0.9"}
         self.assertEqual(root.findall("sitemap:url/sitemap:loc", namespace), [])
 
-    def test_there_is_exactly_one_search_field_in_the_shell(self):
+    def test_round_five_shell_has_no_search_field(self):
         """The released shell carried two: a header field hidden below
         73.75rem, and a second one inside the phone sheet. The header field is
         now present at every width, so keeping the sheet's copy meant two
         visible inputs — and two controls with the same accessible name —
         whenever the sheet was open. Rendered markup, not stylesheet text:
         one input, one results panel, one accessible name."""
+        # PS-SITE-SHELL-ROUND5-001: Pete's approved round-5 bar has no search
+        # field at all, at any width. The server-built index stays in the page
+        # for a later search design and offers nothing without a field.
         for path in ("/", "/interview-studio", "/petec/resume"):
             with self.subTest(path=path):
                 body = self.client.get(
                     path, base_url="http://localhost"
                 ).get_data(as_text=True)
-                self.assertEqual(body.count('class="nav-search__input"'), 1)
-                self.assertEqual(body.count('class="nav-search__results"'), 1)
-                self.assertEqual(body.count('aria-label="Search PeerSlate"'), 1)
+                self.assertEqual(body.count('class="nav-search__input"'), 0)
+                self.assertEqual(body.count('class="nav-search__results"'), 0)
+                self.assertEqual(body.count('aria-label="Search PeerSlate"'), 0)
                 self.assertNotIn('id="nav-search-input-mobile"', body)
-                self.assertIn('id="nav-search-input"', body)
+                self.assertNotIn('data-nav-search', body)
+                self.assertIn('id="nav-search-data"', body)
 
     def test_search_authorization_and_behaviour_are_untouched(self):
         source = Path("static/js/public-site-search.js").read_text(encoding="utf-8")

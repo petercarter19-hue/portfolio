@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SITE-SHELL-ROUND5-001",
+  "candidate_sha": "e4cb4ff4ac51327b56b602b20a42e30de07b8fdf",
+  "review_type": "independent",
+  "reviewer_ref": "session:441ca69e-0c95-4317-bbd4-e6ede8f92674",
+  "result": "pass",
+  "reviewed_at": "2026-10-17T18:04:12Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SITE-SHELL-ROUND5-001.md"
+}

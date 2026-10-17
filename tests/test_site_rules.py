@@ -292,8 +292,12 @@ class NavigationLanguageTests(unittest.TestCase):
 
     def test_about_peerslate_not_in_header_nav(self):
         content = _read(os.path.join(ROOT, 'templates/base.html'))
-        nav = content.split('class="platform-nav__links"', 1)[1].split(
-            '</ul>', 1
+        # PS-SITE-SHELL-ROUND5-001: the round-5 top bar lives in one partial
+        # that base.html includes.
+        header = _read(os.path.join(ROOT, 'templates/partials/site_header.html'))
+        self.assertIn('{% include "partials/site_header.html" %}', content)
+        nav = header.split('class="ps-top__nav"', 1)[1].split(
+            '</nav>', 1
         )[0]
         self.assertNotIn('About PeerSlate', nav)
         self.assertNotIn('footer-why-link', content)
