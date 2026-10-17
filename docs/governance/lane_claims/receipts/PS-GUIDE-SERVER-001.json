@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-GUIDE-SERVER-001",
-  "candidate_sha": "00cd41b39ff2c2f3155d15ac308f095dee70837f",
+  "candidate_sha": "cfe7d7c31fe069618323b92993b93ba22937e546",
   "review_type": "independent",
-  "reviewer_ref": "session:16023c0e-7189-420e-8a4d-11f8012a9713",
+  "reviewer_ref": "session:ddd8a815-2ecc-46ce-9ccd-73c6d79d4f2d",
   "result": "pass",
-  "reviewed_at": "2026-10-16T15:00:00Z",
+  "reviewed_at": "2026-10-17T04:25:18Z",
   "findings": [],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-GUIDE-SERVER-001.md"
 }

@@ -1816,7 +1816,7 @@ _The B3t acceptance JSON above is kept as historical JSON and is no longer the a
 - Independent exact-SHA review by `session:16023c0e-7189-420e-8a4d-11f8012a9713`.
 - Mutants and the lifecycle probe are run by the writer before the request (the new process).
 
-```package-acceptance-json
+```json
 {
   "schema_version": 1,
   "package": "PS-GUIDE-SERVER-001",
@@ -2104,3 +2104,215 @@ Runtime: `fb2a2cd8`. Manager rulings: F1 (a), the list-marker normalisation, F2 
 - **Minors carried into B3c (manager):**
   - m1: widen the list-marker set to common resume bullets followed by whitespace, with pinned negatives;
   - m2: a test for "Only a line or a bullet can be placed".
+
+## B3c pre-code round plan: one Looking Ahead entry, re-place on restore, and Move-to Undo safety
+
+_The B3m acceptance JSON above is kept as historical JSON and is no longer the active record._
+
+**Rulings.** The data-path map is coordination `3d61ccf`, OK'd by the manager on 2026-10-16:
+- **Q1:** only the placement map counts toward the one-entry rule.
+- **Q2:** re-placement is derived at read, and the one-entry rule wins. The restore response says when an entry came back unplaced.
+- **Q3:** deleting a moved item voids the move.
+- **Q4:** B3c is this round; the Move-to set is B3e.
+- **Q5:** the field maps are approved, with I4.
+
+The plan also carries the B3t Minors m1/m2 and the B3m Minors m1/m2.
+
+**Q2 refinement (manager ruling (a), 2026-10-16), after the writer mutant `retired_returned_with_live` showed the restore order mattered:**
+- A restore **claims** Looking Ahead inside entry policy's own atomic restore commit, and only while Looking Ahead is empty (no live placement of an active entry and no other active claim). Restoring A then B, or B then A, keeps whichever was restored first.
+- A delete releases the claim. The first save that persists the placement consumes it (the retired copy is removed). A released or consumed claim never places anything again.
+- The draft reads claims through the policy its catalog already reads; SQL storage refuses placements, so it reads none.
+
+**Scope:**
+
+1. **One Looking Ahead entry.**
+   - `_create_private_item` and `_save_item` refuse to place an entry while another **active** entry is placed: `looking_ahead_already_placed`, "Looking Ahead already has an entry. Your words are kept." (provisional, for Pete).
+   - Re-saving the placed entry passes, and the map of deleted or orphan entries doesn't count.
+   - Nothing is written and no provider is called.
+2. **Placement on delete and restore.**
+   - **Soft delete:** the delete prune moves a placed key into the private `presentation_placements_retired`. **Permanent delete** and expiry drop it from both maps.
+   - **On read:** the workspace and the guards present a retired key as placed when its entry is active again **and** no other active entry is placed.
+   - **On the restore response:** a `looking_ahead` field says `replaced` or `not_replaced` (another entry holds the place).
+   - **Next save:** the first save of the restored entry writes the derived placement back into the live map.
+   - **B3t m1 tests:** delete removes the live placement; placing an existing entry through a save.
+3. **Move-to Undo safety (R2-m1 and the stuck restore).**
+   - The delete prune drops a moved item's **conversion overlay** and marks its conversion `voided_by_delete`. Restore then brings back the canonical original type, editable.
+   - **Undo of a voided or deleted move** refuses `conversion_item_missing`, "This item was deleted, so the move can't be undone. Nothing changed." (provisional), before any write. It never brings back pruned links.
+   - One test per stuck path: Undo, a save of either type, discard and a new stage.
+4. **Rename guard lift**, only if D6c is on main when B3c freezes; otherwise a one-line follow-up.
+   - A rename keeps the placement.
+   - The work/both, wording and 120-unit checks stay.
+5. **B3m Minors.**
+   - **m1:** one leading list marker from `• ▪ ◦ ● - – — *` or "1." / "1)", **only when followed by whitespace**. Pinned negatives: "-5%", "1.5 million", "–3 days". Pinned positive: "– Led the team".
+   - **m2:** a test for "Only a line or a bullet can be placed".
+
+**Excluded:**
+- the Move-to set (B3e);
+- publication files and D6c;
+- panel UI;
+- schema, models, deployment and production.
+
+**Holds:**
+- Fake providers only; $0.
+- Independent exact-SHA review by `session:16023c0e-7189-420e-8a4d-11f8012a9713`.
+- Writer-run mutants and lifecycle probes before the request.
+- Heavy runs under `check.py --heavy`.
+
+```package-acceptance-json
+{
+  "schema_version": 1,
+  "package": "PS-GUIDE-SERVER-001",
+  "plan_sha": "0271bb52d9af50283d46f728b8142dac3982612a",
+  "candidate_sha": "cfe7d7c31fe069618323b92993b93ba22937e546",
+  "baseline": [
+    {
+      "command": "X:/PeerSlate/runtimes/development/Scripts/python.exe -B -m unittest tests.test_resume_draft_service tests.test_resume_draft_routes tests.test_resume_guide_service tests.test_resume_intake_service tests.test_resume_intake_routes tests.test_resume_guide_turns tests.test_living_resume_editor_service tests.test_resume_onboarding_conversation tests.test_resume_publication_routes tests.test_resume_publication_service tests.test_resume_intake_sql tests.test_entry_policy_service tests.test_resume_publication_projection -q",
+      "exit_code": 0,
+      "observation": "686/686 PASS in 38.4s on an export of main 17eaaaa4 before B3c code. Fake/in-memory providers only. Raw log X:/PeerSlate/Claude/reviews/b3c/b3c-precode-baseline.log."
+    }
+  ],
+  "criteria": [
+    {
+      "id": "b3c_one_looking_ahead",
+      "expected": "Create and save refuse to place an entry while another active entry is placed (looking_ahead_already_placed, provisional wording) before any write or provider call; re-saving the placed entry passes; deleted or orphan placements do not count; a title alone is not a placement.",
+      "verification": "Draft-service and My Data tests for a second placement by create and by save, the re-save, and a deleted placed entry; RED on main."
+    },
+    {
+      "id": "b3c_restore_replaces",
+      "expected": "Soft delete moves the placement to the private retired map (permanent delete and expiry drop it); a restored entry is presented and guarded as placed only while no other active entry is placed; the restore response says looking_ahead replaced or not_replaced; the next save persists it; the retired map is never presented or published.",
+      "verification": "Lifecycle tests for delete, restore into an empty Looking Ahead, restore while another entry is placed, permanent delete, and publish/guest read; B3t m1 tests for delete removal and save placement; RED on main."
+    },
+    {
+      "id": "b3c_move_delete_safety",
+      "expected": "Deleting a moved item voids its move (conversion overlay dropped, conversion voided_by_delete) so restore brings back the canonical original type, editable; Undo of a deleted or voided move refuses conversion_item_missing before any write and never restores pruned links; no path leaves a restored item stuck.",
+      "verification": "Tests for Undo after delete, delete then restore, then save as either type, discard and a new stage, with raw draft and reference comparisons; RED on main."
+    },
+    {
+      "id": "b3c_marker_and_minors",
+      "expected": "placed_text drops one leading marker from the common resume bullets and numbered forms only when followed by whitespace ('-5%', '1.5 million', '\u20133 days' untouched; '\u2013 Led the team' stripped); 'Only a line or a bullet can be placed' is tested.",
+      "verification": "Table tests for placed_text and a refusal test for a typed unplaced item."
+    },
+    {
+      "id": "b3c_rename_guard",
+      "expected": "If D6c is on main at freeze: a placed entry's rename keeps the placement and only the work/both, wording and 120-unit checks remain; otherwise the guard is unchanged and named as a follow-up.",
+      "verification": "The rename test flipped (or kept) to match main at freeze, stated in the review request."
+    },
+    {
+      "id": "b3c_regression_review",
+      "expected": "Existing commands, digests and reads are unchanged apart from the new behavior; affected suites, lock-order witness, strict runner normal and load pair, full no-Playwright discover (heavy runs under check.py --heavy), writer-run mutants and lifecycle probes show no new failure.",
+      "verification": "Focused suites under the witness, strict runs, discover comparison against 17eaaaa4, mutate_b3c results, exact-SHA independent receipt, package_acceptance check and merge preflight."
+    }
+  ],
+  "checks": [
+    {
+      "criterion_id": "b3c_one_looking_ahead",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "cfe7d7c31fe069618323b92993b93ba22937e546",
+      "source_ref": "coordination:49d6fff:Shared/handoffs/2026-10-16_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3c_round2.md + tests.test_resume_intake_service.GuideB3cTests.test_a_second_placement_is_refused_by_create_and_by_save_and_a_re_save_passes + tests.test_resume_intake_service.GuideB3cTests.test_a_title_alone_is_not_a_placement_and_a_deleted_placement_does_not_count + tests.test_resume_intake_service.GuideB3cTests.test_an_existing_entry_can_be_placed_through_a_save + tests.test_resume_intake_service.GuideB3cTests.test_m2_the_guide_presents_looking_ahead_from_the_placement_only",
+      "observed": "A second placement is refused looking_ahead_already_placed by create and by save with nothing written; re-saving the placed entry passes; only the placement map counts (a title alone, a deleted entry or an unplaced restore never does); the Guide shows Looking Ahead from the placement only, through the real working-set route."
+    },
+    {
+      "criterion_id": "b3c_restore_replaces",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "cfe7d7c31fe069618323b92993b93ba22937e546",
+      "source_ref": "coordination:49d6fff:Shared/handoffs/2026-10-16_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3c_round2.md + tests.test_resume_intake_service.GuideB3cTests.test_restore_into_an_empty_looking_ahead_places_it_again_and_the_next_save_keeps_it + tests.test_resume_intake_service.GuideB3cTests.test_restore_while_another_entry_is_placed_comes_back_unplaced_and_says_so + tests.test_resume_intake_service.GuideB3cTests.test_the_first_restore_keeps_looking_ahead_in_either_order + tests.test_resume_intake_service.GuideB3cTests.test_f1_a_retired_copy_left_by_an_unplaced_restore_never_places_a_later_delete_and_restore + tests.test_resume_intake_service.GuideB3cTests.test_f1_the_flag_follows_the_latest_delete_in_every_order + tests.test_resume_intake_service.GuideB3cTests.test_m1_a_replaced_restore_means_the_workspace_presents_the_entry_as_placed + tests.test_resume_intake_service.GuideB3cTests.test_a_permanently_deleted_placement_never_comes_back + tests.test_resume_intake_service.GuideB3cTests.test_a_never_placed_restore_says_nothing_and_the_retired_map_is_never_public",
+      "observed": "A restored entry is placed only if it was placed AT ITS LAST DELETE (per-delete flag, spent by every restore) and Looking Ahead is empty; the response says replaced or not_replaced and the workspace and Guide agree with it; the six-step stale-copy case runs through the real routes (A unplaced, B reclaims); permanent delete or expiry erases flag and claim; the retired map, flag and claim are never presented or published (reviewer: none of 50+ responses)."
+    },
+    {
+      "criterion_id": "b3c_move_delete_safety",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "cfe7d7c31fe069618323b92993b93ba22937e546",
+      "source_ref": "coordination:49d6fff:Shared/handoffs/2026-10-16_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3c_round2.md + tests.test_resume_intake_service.GuideB3cTests.test_undo_after_deleting_the_moved_item_is_refused_and_never_restores_pruned_links + tests.test_resume_intake_service.GuideB3cTests.test_a_restored_moved_item_is_back_as_its_original_type_and_never_stuck + tests.test_resume_intake_service.GuideB3cTests.test_m3_undo_says_the_item_was_deleted_only_when_it_is_gone",
+      "observed": "Deleting a moved item voids the move; Undo is refused conversion_item_missing only when the item is gone, otherwise stale_undo, never bringing back pruned links; a restored item is its original type, editable, and a new stage can start."
+    },
+    {
+      "criterion_id": "b3c_marker_and_minors",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "cfe7d7c31fe069618323b92993b93ba22937e546",
+      "source_ref": "coordination:49d6fff:Shared/handoffs/2026-10-16_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3c_round2.md + tests.test_resume_intake_service.GuideB3cTests.test_one_leading_list_marker_is_dropped_only_when_whitespace_follows + tests.test_resume_intake_service.GuideB3cTests.test_only_a_line_or_a_bullet_can_be_placed + tests.test_resume_intake_service.GuideB3cTests.test_m4_a_placing_save_on_a_store_without_shared_media_state_drops_the_retired_copy",
+      "observed": "placed_text drops one leading common resume marker only when whitespace follows ('-5%', '1.5 million', '-3 days' untouched, a doubled marker loses one); a typed unplaced item cannot be placed; a non-shared draft's placing save drops the retired copy."
+    },
+    {
+      "criterion_id": "b3c_rename_guard",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "cfe7d7c31fe069618323b92993b93ba22937e546",
+      "source_ref": "coordination:49d6fff:Shared/handoffs/2026-10-16_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3c_round2.md + tests.test_resume_intake_service.LookingAheadPlacementTests.test_renaming_a_placed_entry_is_refused_and_changes_nothing + tests.test_resume_intake_service.GuideB3cTests.test_a_my_data_rename_of_a_restored_placed_entry_is_refused_too",
+      "observed": "D6c was not on main at freeze, so the rename guard is unchanged (a placed or restored placed entry cannot be renamed) and its lift stays a named follow-up after D6c lands (reviewer note n3: the guard also keeps a placed entry titled Looking Ahead, so a flagged claim can never fail it through routes)."
+    },
+    {
+      "criterion_id": "b3c_regression_review",
+      "result": "pass",
+      "kind": "automated",
+      "candidate_sha": "cfe7d7c31fe069618323b92993b93ba22937e546",
+      "source_ref": "coordination:49d6fff:Shared/handoffs/2026-10-16_claude-pc_to-claude-pc_REVIEW_PS-GUIDE-SERVER-001_B3c_round2.md + X:/PeerSlate/Claude/reviews/b3c/mutations-r3.txt + X:/PeerSlate/Claude/reviews/b3c/r3/affected.log + X:/PeerSlate/Claude/reviews/b3c/r3/witness.log + X:/PeerSlate/Claude/reviews/b3c/r3/strict-normal.log + X:/PeerSlate/Claude/reviews/b3c/r3/strict-load.log + X:/PeerSlate/Claude/reviews/b3c/r3/discover.log + X:/PeerSlate/Claude/reviews/b3c/probe_lifecycle_r3.log",
+      "observed": "Writer mutants 38/38 killed (the reviewer's 18 recreated plus 20 of mine); affected 1169 OK 0 skipped; lock-order witness 0 violations; strict 210/210 and the concurrent pair 210/210 x2, 0 skipped; no-Playwright discover failure set identical to main 412765f6 (8068 vs 8039 run); lifecycle probe PASS (21 steps), all heavy runs under check.py --heavy; independent exact-SHA PASS at cfe7d7c3 (reviewer mutants 42/45 killed, the 3 survivors equivalent or defence-in-depth; discover identical; strict pair 210/210 x2)."
+    }
+  ]
+}
+```
+
+### B3c implementation evidence (round 1, candidate `2724255e`)
+
+- **Scope:** one Looking Ahead entry (`looking_ahead_already_placed`); a deleted placement is retired and a restore claims it again, in its own atomic restore commit, while Looking Ahead is empty (manager ruling Q2 a); deleting a moved item voids the move and Undo refuses; the list-marker set widened; the B3t m1 tests.
+- **Writer proofs at `2724255e`:** mutants 22/22 killed; lifecycle probe PASS (`probe_claim.log`); privacy probe clean; 704/704 affected; lock-order witness 0 violations; the new tests red on main 15/18.
+- **Independent review:** FAIL at `2724255e` (coordination `4d47364`): F1 Medium (a retired copy left by a `not_replaced` restore re-placed a later, unplaced delete and restore) and four Minors.
+
+### B3c round 2: review findings (FAIL at `2724255e`, coordination `4d47364`)
+
+Runtime: `cfe7d7c3` (round 2b; `debbfd89` was round 2a). Manager rulings: F1 reviewer's preferred fix; m1 explicit seam with a transitional fallback; m2 Guide shows Looking Ahead from the placement only; m3; m4. Evidence root: `X:/PeerSlate/Claude/reviews/b3c/` (`r3/`, `proofs_r3.log`, `mutations-r3.txt`, `probe_lifecycle_r3.log`).
+
+**F1 (Medium): fixed at the source.** A retired copy now describes the latest delete only.
+- Entry policy records `looking_ahead_retired: true` on each deleted entry **when it was placed at that delete**, as presented (a live placement, or a restore claim: a claimed entry is flagged too, or a claimed-then-deleted entry would come back unplaced), and removes the flag otherwise.
+- A restore claims only for a flagged entry that also has a retired copy, and **every restore spends the flag**, so a retired copy left by a `not_replaced` restore can never place a later delete and restore.
+- Permanent delete and expiry (`_erase`) drop the flag and any claim.
+- The six-step test runs through the real routes (`test_f1_a_retired_copy_left_by_an_unplaced_restore_…`): A comes back unplaced and says nothing, B reclaims.
+
+**Same-class list: every way a retired copy or claim can outlive the delete it describes.**
+
+| Path | Before | Now |
+|---|---|---|
+| `not_replaced` restore leaves the draft's retired copy | the copy stayed trusted | the copy is trusted only through the per-delete flag, which every restore spends |
+| a later delete while unplaced | the old copy was still claimed | no flag is set (a stale flag is removed), so no claim |
+| a claimed entry deleted again | not placed at delete (live map only) | flagged (placement as presented), so it reclaims |
+| flag with no retired copy | n/a | `not_replaced`, nothing claimed (honest reply) |
+| claim left on a deleted entry | released by delete | still released, and also by erase |
+| permanent delete or expiry | claim and copy inert | flag and claim erased too; the draft's copy stays inert (the entry can never be active) |
+| group delete or restore | anchor only | every key of the group is flagged and spent; each flagged key claims in order |
+| claim after the entry's own placing save | ignored (retired copy popped) | unchanged |
+
+**m1: explicit seam, with a declared deferral.** `ResumeDraftService(placement_claims=…)` replaces the hidden probe as the way the draft reads restore claims; tests inject it where they build the draft. **TRANSITIONAL (manager ruling):** a draft built without the port still reads claims through its catalog's policy, clearly marked in the code, so 8444 keeps placing Looking Ahead. The fail-closed refusal (a non-SQL draft without the port refuses `presentation_section`) is **deferred until C14 wires the port** in `SharedMvp1Fixture` (`tests/mvp1_acceptance_support.py`, claim PS-ONBOARDING-PRIVATE-SITES-001): that branch adds `ResumeDraftService(..., placement_claims=self.policy)`, then a one-line guide-server follow-up removes the fallback and turns fail-closed on. Tests: a `replaced` restore means the workspace presents the entry as placed; an injected port wins over the fallback; the fallback gives the same answer as the port.
+
+**Declared deferral (criterion text): "fail-closed flip deferred until C14 wires the port."**
+
+**m2:** the Guide working set gives an entry the `looking_ahead` section only when the workspace presents it as placed; otherwise it is sectioned without the title rule (natural section). Tested through the real Guide working-set route, including a restored `not_replaced` entry. Pending Guide proposals are unchanged.
+
+**D6c review R1 (lockstep):** `GuideTileTests.test_publish_keeps_plain_tiles_and_drops_object_tiles_honestly` accepts either outcome: a tile reason in `dropped_references`, or no tile reason with `published_highlight_tiles` on the tiled bullet's row of `proposed.display`. It passes on this branch and on a tree with D6c's `755f8d5c` applied (`r3-combined-tile.log`).
+
+**D6c review m2 (preview must equal Publish):** `_onboarding_preview_sections` no longer lets an onboarding section binding override a row Publish keeps in place (`looking_ahead`, `story`). Test through the real preview route (`test_a_placed_onboarding_bound_entry_previews_where_publish_keeps_it`); an ordinary bound entry is still sorted by its binding.
+
+**Cross-claim finding for Lane D (not changed here):** D6c's `test_delete_removes_the_published_placement_and_restore_does_not_re_place` (tests/test_resume_publication_service.py) assumes restore never re-places. With B3c's restore claim it errors on the combined tree (the entry it places is titled "Next chapter", which the B3t title guard refuses once restore claims it). That test needs updating by Lane D when B3c lands.
+
+**m3:** `conversion_item_missing` only when the moved row is gone or orphaned; an overlay that is simply missing (a publish consumed it, or a deleted-then-restored item) is `stale_undo`; nothing changes either way.
+
+**m4:** a non-shared draft test (plain in-memory store) pins the placing save's own retired-copy drop.
+
+**Writer proofs.**
+- **Mutants: 38 of 38 killed** (`mutations-r3.txt`): the reviewer's 18, recreated against the current code (their script was not saved), and 20 of mine for F1, m1 (port and fallback), m2, m3 and the preview fix. Three survived the first run (a stale flag, a stale claim, a flag with no retired copy), plus the weak ones for the port and the doubled marker; each has a test now.
+- **Red on the previous candidate** (`r2-red-prior.log`): 9 of the new or changed tests fail on `2724255e`.
+- **Lifecycle probe A/B** (`probe_lifecycle_r2.log`): the reviewer's six steps with the flag, retired and claim state at each step, claimed then deleted then restored, an unplaced-at-delete entry against a stale retired copy, and the reply-versus-workspace consistency check: PASS.
+
+### B3c independent PASS and receipt
+
+- **Verdict:** the independent re-check at `cfe7d7c3` is a **PASS** with no findings and three notes (coordination `49d6fff`, reviewer `session:ddd8a815-2ecc-46ce-9ccd-73c6d79d4f2d`).
+- **Bound:** the receipt and the six acceptance checks are bound to that SHA.
+- **Notes carried:**
+  - n1: the `orphaned` half of the m3 check is defence in depth;
+  - n2: a flag with no retired copy answers `not_replaced` (no current path produces it);
+  - n3: when the rename guard is lifted after D6c, remember it also keeps a placed entry titled Looking Ahead, so a flagged restore claim cannot fail it through routes.
+- **Queued guide-server follow-ups:** after D6c lands, narrow the tile publish test, flip `resolve_tile`'s `publish` to `after_update` and lift the rename guard; after C14 wires the port, remove the transitional fallback and turn fail-closed on.
+- **Lockstep for Lane D:** D6c's `test_delete_removes_the_published_placement_and_restore_does_not_re_place` assumes restore never re-places; with B3c it must title its placed entry "Looking Ahead" and expect `looking_ahead` after the restore.

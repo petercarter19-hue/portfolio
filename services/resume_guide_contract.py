@@ -22,9 +22,10 @@ GUIDE_TAB_ORDER = ("impact_statement", "experience", "skills", "projects", "educ
 PLACE_SECTIONS = {"skills": ("skill", "name", None), "impact_statement": ("knowledge", "wording", "Professional summary"),
                   "projects": ("knowledge", "wording", "Independent Project"), "awards": ("knowledge", "wording", "Awards"),
                   "story": ("knowledge", "wording", "My Story")}
-# D23 F1 (manager ruling): a placed line keeps its exact text except ONE leading list marker (a bullet, a dash, an
-# asterisk, or "1." / "1)") and the whitespace around it. "-5% cost" and "1.5 million" have no space after the mark.
-_LIST_MARKER = re.compile(r"\s*(?:[\u2022*-]|\d+[.)])\s+")
+# D23 F1 / B3c m1 (manager rulings): a placed line keeps its exact text except ONE leading list marker (a common
+# resume bullet, a dash, an asterisk, or "1." / "1)") and the whitespace around it, only when whitespace follows the
+# mark: "-5% cost", "1.5 million" and "\u20133 days" are left as written.
+_LIST_MARKER = re.compile(r"\s*(?:[\u2022\u25aa\u25e6\u25cf*\u2013\u2014-]|\d+[.)])\s+")
 
 
 def placed_text(text):
@@ -258,6 +259,11 @@ def project_working_set(owner, snapshot, canonical_items, draft_version, *, hist
         section = _section(item["record_type"],{"presentation_section":history.get("section",{}).get(key)
             or item.get("presentation_section") or (item.get("values") or {}).get("presentation_section")},
             values, story_bound=item.get("story_bound") is True)
+        if section == "looking_ahead" and item.get("presentation_section") != "looking_ahead":
+            # B3c m2 (manager ruling): the Guide presents Looking Ahead from the private placement only. An entry that
+            # is not placed there goes to its natural section, never to a second Looking Ahead entry, whatever its title.
+            section = _section(item["record_type"], {}, {name: value for name, value in values.items() if name != "title"},
+                story_bound=item.get("story_bound") is True)
         hidden = history.get("inclusion",{}).get(key) is True
         nodes[key] = {"item_ref":key,"identity_aliases":[],"origin":"saved","state":"hidden" if hidden else "saved",
             "needs_member_wording":False,

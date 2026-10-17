@@ -340,6 +340,12 @@ def _present_moment(value):
     return text or None
 
 
+def _claims(snapshot: dict) -> dict:
+    """B3c: active entries' Looking Ahead restore claims, {entry_key: claim order}."""
+    return {key: entry["looking_ahead_claim"] for key, entry in (snapshot.get("entries") or {}).items()
+            if entry.get("lifecycle") == LIFECYCLE_ACTIVE and type(entry.get("looking_ahead_claim")) is int}
+
+
 def _present(entry: dict, *, now: datetime) -> dict:
     recover_until = entry.get("recover_until")
     return {
@@ -517,14 +523,22 @@ class EntryPolicyService:
             affected, presented = self._apply(snapshot, command, now)
         except Exception:
             raise
+        # B3c F1: a delete records whether the entry was placed AT THIS DELETE, so a later restore never reads a
+        # stale retired copy; a restore's Looking Ahead claim is part of this same commit, so the guard sees it (Q2 a).
+        if command["type"] == "delete":
+            self._record_placed_at_delete(owner, before, snapshot, affected)
+        restored_placement = self._restored_placement(owner, snapshot, affected) if command["type"] == "restore" else None
         # The one choke point for every command: check the values that would be stored, after the
         # command is applied and before anything is written (B3t review R2-F1, same-class rule).
         self._enforce_looking_ahead_placement(owner, snapshot, affected)
+        if restored_placement is not None:
+            presented["looking_ahead"] = restored_placement
         receipt = {
             "request_id": command["request_id"],
             "request_digest": command["digest"],
             "type": command["type"],
             "outcome": presented.get("outcome"),
+            **({"looking_ahead": restored_placement} if restored_placement is not None else {}),
         }
         snapshot["receipts"][command["request_id"]] = {
             "request_digest": command["digest"],
@@ -552,6 +566,8 @@ class EntryPolicyService:
         result = {"receipt": receipt, "replayed": False, "entries": presented["entries"]}
         if "match" in presented:
             result["match"] = presented["match"]
+        if "looking_ahead" in presented:
+            result["looking_ahead"] = presented["looking_ahead"]  # B3c Q2: the restore says what became of the place
         return result
 
     def _sql_command_port(self) -> bool:
@@ -667,6 +683,72 @@ class EntryPolicyService:
             "entries": [_present(entry, now=now)],
         }
 
+    def _draft_placement_state(self, owner):
+        """The private draft's stored placement maps, or None when no draft is attached (nothing can be placed)."""
+        draft = getattr(self.publication_service, "draft_service", None)
+        if draft is None:
+            return None
+        try:
+            return draft.repository.load_owner(owner) or {}
+        except Exception as error:
+            raise EntryPolicyUnavailableError("Entry policy is unavailable.") from error
+
+    def _record_placed_at_delete(self, owner, before, snapshot, affected):
+        """B3c F1: each deleted entry says whether it was placed in Looking Ahead AT THIS DELETE (as presented: a live
+        placement, or a restore claim), and the flag is removed otherwise. The draft keeps the retired placement; this
+        flag is what lets a restore trust it, so a copy left by an earlier delete can never place a later one."""
+        stored = self._draft_placement_state(owner)
+        placed = set()
+        if stored is not None:
+            from services.resume_draft_service import effective_placements
+            active = {k for k, entry in before.get("entries", {}).items() if entry.get("lifecycle") == LIFECYCLE_ACTIVE}
+            placed = effective_placements(stored.get("presentation_placements"),
+                                          stored.get("presentation_placements_retired"), active, _claims(before))
+        for key in affected:
+            if key in placed:
+                snapshot["entries"][key]["looking_ahead_retired"] = True
+            else:
+                snapshot["entries"][key].pop("looking_ahead_retired", None)
+
+    def _restored_placement(self, owner, snapshot, affected):
+        """B3c Q2 (ruling a): a restored entry that was placed AT ITS LAST DELETE (the flag) CLAIMS Looking Ahead in this
+        same atomic commit, but only while Looking Ahead is empty (no live placement of an active entry and no other
+        active claim). The flag is spent by any restore. "replaced" when it claimed, "not_replaced" when another entry
+        holds the place; None if it was not placed when deleted."""
+        entries = snapshot.get("entries", {})
+        flagged = [key for key in sorted(affected) if entries[key].get("looking_ahead_retired") is True]
+        for key in affected:
+            entries[key].pop("looking_ahead_retired", None)
+        if not flagged:
+            return None
+        stored = self._draft_placement_state(owner)
+        if stored is None:
+            return None
+        from services.resume_draft_service import effective_placements
+        active = {k for k, entry in entries.items() if entry.get("lifecycle") == LIFECYCLE_ACTIVE}
+        outcome = "not_replaced"
+        for key in flagged:
+            if (stored.get("presentation_placements_retired") or {}).get(key) != "looking_ahead":
+                continue
+            if effective_placements(stored.get("presentation_placements"), stored.get("presentation_placements_retired"),
+                                    active - {key}, _claims(snapshot)):
+                continue
+            snapshot["looking_ahead_claim_seq"] = int(snapshot.get("looking_ahead_claim_seq") or 0) + 1
+            entries[key]["looking_ahead_claim"] = snapshot["looking_ahead_claim_seq"]
+            outcome = "replaced"
+        return outcome
+
+    def looking_ahead_claims(self, user_key: object) -> dict:
+        """The narrow read the draft uses for a restored placement: {entry_key: claim order} of active entries."""
+        owner = self._owner(user_key)
+        if self._sql_command_port():
+            return {}
+        try:
+            snapshot = self.repository.load_owner(owner) or {}
+        except EntryPolicyStoreUnavailable as error:
+            raise EntryPolicyUnavailableError("Entry policy is unavailable.") from error
+        return _claims(snapshot)
+
     def _enforce_looking_ahead_placement(self, owner, snapshot, affected):
         """B3t invariant until D6c reads the private placement: a placed knowledge entry that this
         command touched keeps the title "Looking Ahead" and a work (or both) classification. It runs
@@ -676,11 +758,15 @@ class EntryPolicyService:
         if draft is None:
             return
         try:
-            placements = (draft.repository.load_owner(owner) or {}).get("presentation_placements") or {}
+            stored = draft.repository.load_owner(owner) or {}
         except Exception as error:
             raise EntryPolicyUnavailableError("Entry policy is unavailable.") from error
+        from services.resume_draft_service import effective_placements
+        active = {key for key, entry in snapshot.get("entries", {}).items() if entry.get("lifecycle") == LIFECYCLE_ACTIVE}
+        placed = effective_placements(stored.get("presentation_placements"), stored.get("presentation_placements_retired"),
+                                      active, _claims(snapshot))
         # Only the entries this command touched (review R3-F2): an unrelated change is never refused.
-        for key in sorted(set(affected or ()) & {k for k, v in placements.items() if v == "looking_ahead"}):
+        for key in sorted(set(affected or ()) & placed):
             entry = snapshot.get("entries", {}).get(key)
             if not entry or entry.get("canonical_type") != "knowledge" or entry.get("lifecycle") != LIFECYCLE_ACTIVE:
                 continue
@@ -794,6 +880,7 @@ class EntryPolicyService:
         presented = []
         for key in group:
             member = snapshot["entries"][key]
+            member.pop("looking_ahead_claim", None)  # B3c: a delete releases a restore claim
             member["lifecycle"] = LIFECYCLE_DELETED
             member["deleted_at"] = now
             member["recover_until"] = recover_until
@@ -902,6 +989,8 @@ class EntryPolicyService:
     @staticmethod
     def _erase(entry: dict) -> None:
         entry["lifecycle"] = LIFECYCLE_PERMANENT
+        entry.pop("looking_ahead_retired", None)  # B3c: nothing about a placement outlives a permanent delete
+        entry.pop("looking_ahead_claim", None)
         entry["values"] = {}
         entry["resume_display"] = False
         entry["visitor_ai"] = False

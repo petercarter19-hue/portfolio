@@ -1389,6 +1389,12 @@ class ResumeIntakeService:
                     # Unrelated edits, Hide or other links elsewhere never make Undo stale.
                     moved_key = resulting["moved_key"]
                     moved = next((row for row in workspace["items"] if row["record_key"] == moved_key), None)
+                    if moved is None or moved.get("orphaned"):
+                        # B3c (R2-m1, Q3, m3): the moved item is gone (deleted), which voided the move. Undo never
+                        # brings back the links the delete pruned, before or after a restore. Any other change to the
+                        # move (publish consuming its overlay, a restored item) is a plain stale Undo below.
+                        raise ResumeIntakeConflictError("conversion_item_missing", [],
+                            "This item was deleted, so the move can't be undone. Nothing changed.")
                     base = resulting["items"][moved_key]
                     parent_ok = True
                     if resulting.get("parent_key"):

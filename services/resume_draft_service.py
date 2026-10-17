@@ -179,9 +179,16 @@ def _normalize_draft_values(record_type, values, *, guide_review=False, section=
 
 
 class ResumeDraftService:
-    def __init__(self, repository=None, catalog=None) -> None:
+    def __init__(self, repository=None, catalog=None, placement_claims=None) -> None:
         self.repository = repository or SqlResumeDraftRepository()
         self.catalog = catalog or LivingResumeCanonicalCatalog()
+        # B3c m1: the explicit reader of Looking Ahead restore claims, ``looking_ahead_claims(owner)`` ->
+        # {entry_key: claim order}. Entry policy writes the claims in a restore's own commit; this port is how the
+        # draft reads them. TRANSITIONAL (manager ruling, round 2): a draft built without the port still reads them
+        # through its catalog's policy, so 8444 keeps placing Looking Ahead until the C14 branch injects the port
+        # where it wires the draft. The follow-up then removes that fallback and makes a draft without the port
+        # refuse a ``presentation_section`` (fail closed, as SQL does).
+        self.placement_claims = placement_claims
 
     def _load(self, owner: str) -> dict:
         try:
@@ -315,7 +322,17 @@ class ResumeDraftService:
                 changed = True
         placements = after.get("presentation_placements")
         if isinstance(placements, dict) and set(placements) & set(removed):
-            after["presentation_placements"] = {key: value for key, value in placements.items() if key not in removed}
+            # B3c: a deleted entry's placement is retired, so a restore can place it again (derived at read).
+            retired = after.setdefault("presentation_placements_retired", {})
+            for key in [key for key in placements if key in removed]:
+                retired.pop(key, None)
+                retired[key] = placements.pop(key)
+            changed = True
+        # A permanently deleted entry's retired key stays inert: its entry can never be active again, so it is never
+        # presented (this prune is called with every inactive key and cannot tell a permanent delete apart).
+        for key in [key for key, item in after.get("items", {}).items() if key in removed and item.get("conversion")]:
+            # B3c Q3: deleting a moved item voids its move, so a restore brings back the original type, editable.
+            after["items"].pop(key)
             changed = True
         if "highlight_refs" in after:
             prior = after["highlight_refs"]
@@ -443,6 +460,10 @@ class ResumeDraftService:
             placed_here = (snapshot.get("presentation_placements") or {}).get(record_key) if record_key else None
             if placed_here:
                 live["presentation_placements"] = {**(live.get("presentation_placements") or {}), record_key: placed_here}
+                if record_key in (live.get("presentation_placements_retired") or {}):
+                    # B3c: a restored entry's first save persists its placement, so the retired copy goes.
+                    live["presentation_placements_retired"] = {key: value for key, value in
+                        live["presentation_placements_retired"].items() if key != record_key}
             if (command or {}).get("type") in {"bind_story", "clear_story"}:
                 live["story_entry_key"] = snapshot.get("story_entry_key")
             for key in receipt_keys:
@@ -492,6 +513,20 @@ class ResumeDraftService:
         except CanonicalReadUnavailable:
             return [], "unavailable"
 
+    def _placement_claims(self, owner: str) -> dict:
+        """The restore claims, read through the injected port (the only storage that places; SQL refuses placements)."""
+        port = self.placement_claims
+        if port is None:
+            # TRANSITIONAL fallback (see __init__): the catalog's own policy, as before the port existed.
+            port = getattr(self.catalog, "policy", None)
+        reader = getattr(port, "looking_ahead_claims", None)
+        return reader(owner) if callable(reader) else {}
+
+    def _effective_placements(self, owner: str, snapshot: dict) -> set:
+        active = {row["record_key"] for row in self._catalog_list(owner)[0]}
+        return effective_placements(snapshot.get("presentation_placements"),
+                                    snapshot.get("presentation_placements_retired"), active, self._placement_claims(owner))
+
     def _catalog_get(self, owner: str, record_key: str) -> dict | None:
         try:
             return self.catalog.get_item(owner, record_key)
@@ -512,9 +547,11 @@ class ResumeDraftService:
             seen.add(key)
         self._place_moved_bullets(merged)
         # B3t: the private Looking Ahead placement lives beside the highlight list, which publish keeps.
-        placements = snapshot.get("presentation_placements") or {}
+        placed_keys = effective_placements(snapshot.get("presentation_placements"),
+                                           snapshot.get("presentation_placements_retired"), seen,
+                                           self._placement_claims(owner))
         for row in merged:
-            if placements.get(row["record_key"]) == "looking_ahead":
+            if row["record_key"] in placed_keys:
                 row["presentation_section"] = "looking_ahead"
         highlight_tiles = self._highlight_tiles(snapshot.get("highlight_refs"), merged)
         for key, overlay in overlays.items():
@@ -829,8 +866,11 @@ class ResumeDraftService:
                 and previous.get('base_access_revision') == int(canonical['access_revision'])) else {}
             merged = {**(canonical.get("values") or {}), **previous_values, **command["values"]}
             section = command.get("guide_section")
-            placed = ((snapshot.get("presentation_placements") or {}).get(command["record_key"])
-                      or command.get("presentation_section"))
+            effective = self._effective_placements(owner, snapshot)
+            placed = command["record_key"] in effective or command.get("presentation_section")
+            if placed and effective - {command["record_key"]}:
+                raise ResumeDraftConflictError("looking_ahead_already_placed", [{"record_key": command["record_key"]}],
+                                               LOOKING_AHEAD_ALREADY_PLACED_MESSAGE, proposed=command["values"])
             if command["record_type"] == "knowledge":
                 from services.resume_publication_projection import resume_section_for
                 existing_section = resume_section_for("knowledge", canonical.get("values") or {},
@@ -857,6 +897,7 @@ class ResumeDraftService:
         }
         if placed:
             snapshot.setdefault("presentation_placements", {})[command["record_key"]] = "looking_ahead"
+            (snapshot.get("presentation_placements_retired") or {}).pop(command["record_key"], None)
         snapshot["draft_version"] = int(snapshot["draft_version"]) + 1
         item = self._present_item(canonical, snapshot["items"][command["record_key"]])
         if placed:
@@ -907,6 +948,9 @@ class ResumeDraftService:
             if self._catalog_get(owner, command["parent_key"]) is None:
                 raise ResumeDraftNotFoundError()
         placed = command.get("presentation_section")
+        if placed and self._effective_placements(owner, snapshot):
+            raise ResumeDraftConflictError("looking_ahead_already_placed", [], LOOKING_AHEAD_ALREADY_PLACED_MESSAGE,
+                                           proposed=command["values"])
         try:
             values = _normalize_draft_values(command["record_type"], command["values"],
                 guide_review=command.get("guide_review", False),
@@ -1086,7 +1130,23 @@ class ResumeDraftService:
 
 
 LOOKING_AHEAD_RENAME_MESSAGE = "The Looking Ahead name can't be changed yet. Your words are kept."
+LOOKING_AHEAD_ALREADY_PLACED_MESSAGE = "Looking Ahead already has an entry. Your words are kept."
 LOOKING_AHEAD_PLACEMENT_MESSAGE = "Looking Ahead is for a work entry. Your words are kept."
+
+
+def effective_placements(placements, retired, active_keys, claims=None):
+    """B3c (map 3d61ccf, Q1/Q2 ruling a): the one placed Looking Ahead entry as presented and guarded.
+
+    Only the placement map counts, never a title. A live placement of an active entry wins. When there is none, a
+    retired placement (an entry deleted and then restored) is placed again only if its restore CLAIMED Looking Ahead:
+    entry policy records that claim in the restore's own atomic commit, and only while Looking Ahead was empty, so the
+    first restore keeps it whatever the order. An unclaimed retired placement never comes back by itself."""
+    live = [key for key, value in (placements or {}).items() if value == "looking_ahead" and key in active_keys]
+    if live:
+        return set(live)
+    claimed = [(claim, key) for key, claim in (claims or {}).items()
+               if key in active_keys and (retired or {}).get(key) == "looking_ahead"]
+    return {min(claimed)[1]} if claimed else set()
 
 
 def _check_looking_ahead_placement(values, proposed):

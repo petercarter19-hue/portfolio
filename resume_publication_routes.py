@@ -208,7 +208,9 @@ def _onboarding_preview_sections(owner, result):
                 continue
             if wording.get('classification') == 'work' and entry.get('presentation_section') == 'story':
                 raise PublicationConflictError('stale_preview', 'Choose a personal entry for My Story.')
-            if bindings.get(key) in sections:
+            # B3c m2 (D6c review): Publish keeps a placed Looking Ahead entry and a My Story entry where they are, so the
+            # preview must too; an onboarding section binding only sorts the rest.
+            if bindings.get(key) in sections and entry.get('presentation_section') not in {'story', 'looking_ahead'}:
                 entry = {**entry, 'presentation_section': sections[bindings[key]]}
         display[key] = entry
     for key, link in credential_links.items():

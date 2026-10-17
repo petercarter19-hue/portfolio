@@ -174,6 +174,8 @@ class GuideReferenceCommandTests(unittest.TestCase):
     def setup_shared(self):
         from tests.mvp1_acceptance_support import SharedMvp1Fixture
         self.shared,self.owner = SharedMvp1Fixture(),'guide-reference-command-fictional'
+        # B3c m1: the draft reads Looking Ahead restore claims only through this injected port.
+        self.shared.draft.placement_claims = self.shared.policy
         self.service = ResumeIntakeService(repository=InMemoryResumeIntakeRepository(),draft_service=self.shared.draft,
             policy=selected_policy_for_tests())
         def create(kind, values, parent=None):
@@ -359,7 +361,12 @@ class GuideTileTests(unittest.TestCase):
         tile_reasons = {'reference_invalid', 'highlight_tile_unpublishable'}
         self.assertEqual([r for r in mixed.get('dropped_references', []) if r['reason'] not in tile_reasons],
                          plain.get('dropped_references', []))
-        self.assertTrue(tile_reasons & {r['reason'] for r in mixed.get('dropped_references', [])})
+        # Mode-tolerant (D6c review R1, the B2c pattern): before D6c the captioned tile drops with a tile reason; once D6c
+        # is in it publishes, so there is no tile reason and the bullet's row carries its published tiles.
+        row = (((mixed.get('proposed') or {}).get('display') or {}).get(self.lead) or {})
+        self.assertTrue(tile_reasons & {r['reason'] for r in mixed.get('dropped_references', [])}
+                        or 'published_highlight_tiles' in (row.get('wording') or {}),
+                        'The captioned tile is either dropped with a tile reason or published on the tiled bullet row')
         self.assertEqual([t['publish'] for t in self.tiles()], ['as_today', 'as_today', 'after_update'])
 
     def test_deleting_a_bullet_prunes_every_tile_it_backs_without_error(self):
@@ -4497,6 +4504,611 @@ class GuideB3mTests(unittest.TestCase):
         back = self.line('- Fictional Pruning')
         self.assertEqual((back['origin'], back['item_ref']), ('source', line['item_ref']))
 
+
+
+class GuideB3cTests(unittest.TestCase):
+    """B3c (map coordination 3d61ccf; plan 0271bb52): placement, restore, move safety, markers."""
+    setup_shared = GuideReferenceCommandTests.setup_shared
+    create = LookingAheadPlacementTests.create
+    row = LookingAheadPlacementTests.row
+    save = LookingAheadPlacementTests.save
+    stage = GuideConversionTests.stage
+    reviewed = GuideConversionTests.reviewed
+    confirm = GuideConversionTests.confirm
+    undo = GuideConversionTests.undo
+    item = GuideConversionTests.item
+    working = GuideConversionTests.working
+    raw_draft = GuideConversionTests.raw_draft
+    WORDS = {'title': 'Looking Ahead', 'wording': 'Lead port automation controls.', 'classification': 'work'}
+
+    def entry(self, key):
+        return self.shared.policy.get_entry(self.owner, key)['entry']
+
+    def policy(self, kind, key, **extra):
+        entry = self.entry(key)
+        return self.shared.policy.commit(self.owner, {'request_id': str(uuid4()), 'type': kind, 'entry_key': key,
+            'expected_content_version': entry['content_version'], 'expected_access_revision': entry['access_revision'],
+            **extra})
+
+    def delete(self, key):
+        return self.policy('delete', key, dependent_keys=[])
+
+    def restore(self, key):
+        return self.policy('restore', key)
+
+    def placed(self):
+        return {row['record_key'] for row in self.shared.draft.get_workspace(self.owner)['items']
+                if row.get('presentation_section') == 'looking_ahead'}
+
+    def draft_maps(self):
+        stored = self.shared.draft.repository.load_owner(self.owner)
+        return dict(stored.get('presentation_placements') or {}), dict(stored.get('presentation_placements_retired') or {})
+
+    def place_by_save(self, key):
+        workspace = self.shared.draft.get_workspace(self.owner)
+        row = next(r for r in workspace['items'] if r['record_key'] == key)
+        return self.shared.draft.commit(self.owner, {'type': 'save_item', 'request_id': str(uuid4()), 'record_key': key,
+            'record_type': 'knowledge', 'expected_draft_version': workspace['draft_version'],
+            'expected_content_token': row['content_token'], 'expected_access_revision': row['access_revision'],
+            'values': dict(self.WORDS), 'presentation_section': 'looking_ahead'})
+
+    # ---- one Looking Ahead entry (Q1)
+
+    def test_a_second_placement_is_refused_by_create_and_by_save_and_a_re_save_passes(self):
+        from services.resume_draft_service import ResumeDraftConflictError
+        self.setup_shared()
+        first = self.create(dict(self.WORDS))
+        before = self.shared.draft.repository.load_owner(self.owner)
+        with self.assertRaises(ResumeDraftConflictError) as by_create:
+            self.create(dict(self.WORDS))
+        self.assertEqual((by_create.exception.error_code, str(by_create.exception)),
+                         ('looking_ahead_already_placed', 'Looking Ahead already has an entry. Your words are kept.'))
+        other = self.create(dict(self.WORDS), placement=None)
+        with self.assertRaises(ResumeDraftConflictError) as by_save:
+            self.place_by_save(other)
+        self.assertEqual(by_save.exception.error_code, 'looking_ahead_already_placed')
+        self.assertEqual(self.placed(), {first})
+        self.assertEqual(self.draft_maps()[0], {first: 'looking_ahead'}, 'Nothing was written by a refusal')
+        self.save(first, {'wording': 'Second words.'})
+        self.assertEqual(self.placed(), {first}, 'Re-saving the placed entry passes')
+        self.assertTrue(before)
+
+    def test_a_title_alone_is_not_a_placement_and_a_deleted_placement_does_not_count(self):
+        self.setup_shared()
+        self.create(dict(self.WORDS), placement=None)  # titled "Looking Ahead", not placed
+        first = self.create(dict(self.WORDS))
+        self.assertEqual(self.placed(), {first})
+        self.delete(first)
+        self.assertEqual(self.draft_maps(), ({}, {first: 'looking_ahead'}), 'B3t m1: delete removes the live placement')
+        second = self.create(dict(self.WORDS))
+        self.assertEqual(self.placed(), {second}, 'A deleted placement does not count')
+
+    def test_an_existing_entry_can_be_placed_through_a_save(self):
+        self.setup_shared()
+        key = self.create(dict(self.WORDS), placement=None)
+        self.place_by_save(key)
+        self.assertEqual((self.placed(), self.draft_maps()[0]), ({key}, {key: 'looking_ahead'}))
+
+    # ---- re-place on restore (Q2)
+
+    def test_restore_into_an_empty_looking_ahead_places_it_again_and_the_next_save_keeps_it(self):
+        from services.resume_draft_service import ResumeDraftConflictError
+        self.setup_shared()
+        key = self.create(dict(self.WORDS))
+        self.delete(key)
+        self.assertEqual(self.placed(), set())
+        restored = self.restore(key)
+        self.assertEqual(restored['looking_ahead'], 'replaced')
+        self.assertEqual(self.placed(), {key}, 'Derived at read: no draft write on restore')
+        self.assertEqual(self.draft_maps(), ({}, {key: 'looking_ahead'}))
+        with self.assertRaises(ResumeDraftConflictError) as renamed:
+            self.save(key, {'title': 'Plans'})
+        self.assertEqual(renamed.exception.error_code, 'looking_ahead_rename_unavailable', 'The guards see it too')
+        with self.assertRaises(ResumeDraftConflictError) as second:
+            self.create(dict(self.WORDS))
+        self.assertEqual(second.exception.error_code, 'looking_ahead_already_placed')
+        self.save(key, {'wording': 'Words after the restore.'})
+        self.assertEqual(self.draft_maps(), ({key: 'looking_ahead'}, {}), 'The next save persists the placement')
+
+    def test_restore_while_another_entry_is_placed_comes_back_unplaced_and_says_so(self):
+        self.setup_shared()
+        first = self.create(dict(self.WORDS))
+        self.delete(first)
+        second = self.create(dict(self.WORDS))
+        restored = self.restore(first)
+        self.assertEqual(restored['looking_ahead'], 'not_replaced')
+        self.assertEqual(self.placed(), {second}, 'The one-entry rule wins')
+        self.assertNotIn('presentation_section', self.row(first))
+        self.save(first, {'title': 'My next step'})
+        self.assertEqual(self.placed(), {second}, 'The unplaced entry can be renamed freely')
+
+    def two_retired(self):
+        """Two entries each placed in Looking Ahead in turn, then both deleted: both retired placements."""
+        self.setup_shared()
+        first = self.create(dict(self.WORDS))
+        self.delete(first)
+        second = self.create(dict(self.WORDS))
+        self.delete(second)
+        self.assertEqual(self.draft_maps(), ({}, {first: 'looking_ahead', second: 'looking_ahead'}))
+        return first, second
+
+    def claims(self):
+        entries = self.shared.policy.repository.load_owner(self.owner)['entries']
+        return {key: entry['looking_ahead_claim'] for key, entry in entries.items() if 'looking_ahead_claim' in entry}
+
+    def test_the_first_restore_keeps_looking_ahead_in_either_order(self):
+        for order in ('first_then_second', 'second_then_first'):
+            with self.subTest(order=order):
+                first, second = self.two_retired()
+                one, two = (first, second) if order == 'first_then_second' else (second, first)
+                self.assertEqual(self.restore(one)['looking_ahead'], 'replaced')
+                self.assertEqual(self.claims(), {one: 1}, 'The claim is stored in the restore commit itself')
+                self.assertEqual(self.restore(two)['looking_ahead'], 'not_replaced', 'A held claim counts as placed')
+                self.assertEqual(self.claims(), {one: 1}, 'The second restore claims nothing')
+                self.assertEqual(self.placed(), {one}, 'The first restore keeps it, whatever the order')
+                self.assertEqual(self.draft_maps()[0], {}, 'Restore writes no draft placement')
+
+    def test_a_delete_releases_the_claim_and_never_brings_back_the_other_entry(self):
+        first, second = self.two_retired()
+        self.restore(first)
+        self.restore(second)
+        self.delete(first)
+        self.assertEqual(self.claims(), {}, 'A delete releases the claim')
+        self.assertEqual(self.placed(), set(), 'The unclaimed entry is not placed by a later delete')
+        third = self.create(dict(self.WORDS))
+        self.assertEqual(self.placed(), {third}, 'Looking Ahead is empty, so a new entry can be placed')
+        self.delete(third)
+        self.assertEqual(self.restore(first)['looking_ahead'], 'replaced', 'Restoring again claims it again')
+        self.assertEqual((self.placed(), self.claims()), ({first}, {first: 2}))
+
+    def test_the_placement_rule_pins_states_no_current_path_produces(self):
+        """Rule pins (writer mutants retired_returned_with_live, claim_without_retired_check, claims_include_deleted):
+        stored states that today's paths never create, so a later path (an un-place, a migration) can't widen it."""
+        from services.resume_draft_service import effective_placements
+        LA = 'looking_ahead'
+        self.assertEqual(effective_placements({'b': LA}, {'a': LA}, {'a', 'b'}, {'a': 1}), {'b'}, 'A live placement wins')
+        self.assertEqual(effective_placements({}, {}, {'a'}, {'a': 1}), set(), 'A consumed claim places nothing')
+        self.assertEqual(effective_placements({}, {'a': LA, 'b': LA}, {'a', 'b'}, {'b': 2, 'a': 1}), {'a'}, 'The first claim')
+        self.assertEqual(effective_placements({}, {'a': LA}, {'a'}, {}), set(), 'An unclaimed retired copy stays unplaced')
+        self.setup_shared()
+        first = self.create(dict(self.WORDS))
+        self.delete(first)
+        snapshot = self.shared.policy.repository.load_owner(self.owner)
+        snapshot['entries'][first]['looking_ahead_claim'] = 1
+        self.shared.policy.repository.save_owner(self.owner, snapshot)
+        self.assertEqual(self.shared.policy.looking_ahead_claims(self.owner), {}, "A deleted entry's claim is never read")
+
+    def test_a_stale_claim_never_takes_the_place_back_after_a_delete(self):
+        first, second = self.two_retired()
+        self.restore(first)
+        self.delete(first)
+        self.assertEqual(self.restore(second)['looking_ahead'], 'replaced', 'Looking Ahead is empty again')
+        self.assertEqual(self.restore(first)['looking_ahead'], 'not_replaced')
+        self.assertEqual((self.placed(), self.claims()), ({second}, {second: 2}), 'The released claim stays released')
+
+    def test_a_save_consumes_the_claim_and_a_later_delete_resurrects_nothing(self):
+        first, second = self.two_retired()
+        self.restore(first)
+        self.restore(second)
+        self.save(first, {'wording': 'Words after the restore.'})
+        self.assertEqual(self.draft_maps(), ({first: 'looking_ahead'}, {second: 'looking_ahead'}),
+                         'The save persists the place; the claim is consumed')
+        self.delete(first)
+        self.assertEqual(self.claims(), {})
+        self.assertEqual(self.placed(), set(), 'Neither the stale claim nor the other retired copy places anything')
+
+    def test_a_never_placed_restore_says_nothing_and_the_retired_map_is_never_public(self):
+        import json
+        self.setup_shared()
+        plain = self.create({'title': 'Plans', 'wording': 'Fictional words.', 'classification': 'work'}, placement=None)
+        self.delete(plain)
+        self.assertNotIn('looking_ahead', self.restore(plain))
+        key = self.create(dict(self.WORDS))
+        self.shared.seed_publication(self.owner, [(key, True, False)])
+        self.delete(key)
+        public = json.dumps([self.shared.publication.owner_preview(self.owner),
+                             self.shared.publication.read_publication_basis_for_owner(self.owner)], default=str)
+        self.assertNotIn('presentation_placements_retired', public)
+        restored = self.restore(key)
+        self.assertEqual(self.claims(), {key: 1})
+        shown = json.dumps([restored, self.shared.publication.owner_preview(self.owner), self.shared.policy.get_entry(self.owner, key),
+                            self.shared.publication.read_publication_basis_for_owner(self.owner),
+                            self.shared.draft.get_workspace(self.owner)], default=str)
+        self.assertNotIn('looking_ahead_claim', shown, 'The restore claim is private policy state, never presented')
+
+    def test_a_permanently_deleted_placement_never_comes_back(self):
+        self.setup_shared()
+        key = self.create(dict(self.WORDS))
+        self.delete(key)
+        self.policy('permanently_delete', key)
+        self.assertEqual(self.placed(), set())
+        replacement = self.create(dict(self.WORDS))
+        self.assertEqual(self.placed(), {replacement}, 'An inert retired key never blocks or presents')
+
+    def test_a_my_data_rename_of_a_restored_placed_entry_is_refused_too(self):
+        from services.entry_policy_service import EntryPolicyConflictError
+        self.setup_shared()
+        key = self.create(dict(self.WORDS))
+        self.delete(key)
+        self.restore(key)
+        entry = self.entry(key)
+        with self.assertRaises(EntryPolicyConflictError) as renamed:
+            self.shared.policy.commit(self.owner, {'request_id': str(uuid4()), 'type': 'edit', 'entry_key': key,
+                'expected_content_version': entry['content_version'],
+                'values': {'title': 'Plans', 'wording': self.WORDS['wording'], 'classification': 'work'}})
+        self.assertEqual(renamed.exception.error_code, 'looking_ahead_rename_unavailable')
+
+    def test_a_stale_live_placement_of_a_deleted_entry_never_counts(self):
+        self.setup_shared()
+        stale = self.create(dict(self.WORDS))
+        policy = self.shared.policy.repository.load_owner(self.owner)
+        policy['entries'][stale]['lifecycle'] = 'deleted'  # a delete that never reached the draft prune
+        self.shared.policy.repository.save_owner(self.owner, policy)
+        self.assertEqual(self.draft_maps()[0], {stale: 'looking_ahead'})
+        fresh = self.create(dict(self.WORDS))
+        self.assertEqual(self.placed(), {fresh})
+
+    # ---- B3c round 2 (review 4d47364): F1 stale retired copy, m1 port, m2 Guide section, m4 non-shared save
+
+    def routes(self):
+        """The real routes (Flask app, fixture stores), with the placement port wired as the fixture's owner will."""
+        import json
+        from urllib.error import HTTPError
+        from urllib.request import Request, urlopen
+        from tests.mvp1_acceptance_support import Mvp1AcceptanceServer
+        server = Mvp1AcceptanceServer()
+        server.__enter__()
+        self.addCleanup(server.__exit__, None, None, None)
+        server.shared.draft.placement_claims = server.shared.policy
+        owner = 'g-member-a'
+
+        def call(method, path, payload=None):
+            request = Request(server.url + path, method=method, headers={
+                'Content-Type': 'application/json', 'X-PeerSlate-Request': 'same-origin',
+                'Cookie': 'mvp1-synthetic-owner=' + owner},
+                data=json.dumps(payload).encode() if payload is not None else None)
+            try:
+                response = urlopen(request, timeout=10)
+            except HTTPError as error:
+                response = error
+            with response:
+                return response.status, json.load(response)
+
+        class Client:
+            def create(self, values=None, placed=True):
+                payload = {'type': 'create_private_item', 'request_id': str(uuid4()), 'record_key': str(uuid4()),
+                           'record_type': 'knowledge', 'values': dict(values or GuideB3cTests.WORDS)}
+                if placed:
+                    payload['presentation_section'] = 'looking_ahead'
+                status, body = call('POST', '/api/resume-drafts/me/commands', payload)
+                assert status == 200, (status, body)
+                return payload['record_key']
+
+            def policy(self, kind, key, **extra):
+                status, body = call('GET', '/api/entry-policy/me/entries/' + key)
+                entry = body['entry']
+                return call('POST', '/api/entry-policy/me/commands', {'request_id': str(uuid4()), 'type': kind,
+                    'entry_key': key, 'expected_content_version': entry['content_version'],
+                    'expected_access_revision': entry['access_revision'], **extra})
+
+            def delete(self, key):
+                status, body = self.policy('delete', key, dependent_keys=[])
+                assert status == 200, (status, body)
+
+            def restore(self, key):
+                status, body = self.policy('restore', key)
+                assert status == 200, (status, body)
+                return body.get('looking_ahead')
+
+            def workspace_placed(self):
+                status, body = call('GET', '/api/resume-drafts/me')
+                return {row['record_key'] for row in body['items'] if row.get('presentation_section') == 'looking_ahead'}
+
+            def guide(self):
+                status, body = call('GET', '/api/resume-intake/me/guide/working-set')
+                assert status == 200, (status, body)
+                return body
+
+        return Client()
+
+    def test_f1_a_retired_copy_left_by_an_unplaced_restore_never_places_a_later_delete_and_restore(self):
+        """The reviewer's six steps through the real routes: A must come back unplaced, and B must reclaim."""
+        client = self.routes()
+        a = client.create()                                                   # 1. A is placed, then deleted
+        client.delete(a)
+        b = client.create()                                                   # 2. B is created placed
+        self.assertEqual(client.restore(a), 'not_replaced')                   # 3. A comes back unplaced; B holds it
+        self.assertEqual(client.workspace_placed(), {b})
+        client.delete(b)                                                      # 4. delete B (placed), then A (unplaced)
+        client.delete(a)
+        self.assertIsNone(client.restore(a), 'A was not placed when last deleted, so the restore says nothing')  # 5.
+        self.assertEqual(client.workspace_placed(), set(), 'A comes back unplaced')
+        self.assertEqual(client.restore(b), 'replaced', 'B was placed when deleted and Looking Ahead is empty')  # 6.
+        self.assertEqual(client.workspace_placed(), {b})
+
+    def entry_flags(self, key):
+        entry = self.shared.policy.repository.load_owner(self.owner)['entries'][key]
+        return entry.get('looking_ahead_retired'), entry.get('looking_ahead_claim')
+
+    def test_f1_the_flag_follows_the_latest_delete_in_every_order(self):
+        self.setup_shared()
+        key = self.create(dict(self.WORDS))
+        self.assertEqual(self.entry_flags(key), (None, None))
+        self.delete(key)
+        self.assertEqual(self.entry_flags(key), (True, None), 'Placed at this delete')
+        self.assertEqual(self.restore(key)['looking_ahead'], 'replaced')
+        self.assertEqual(self.entry_flags(key), (None, 1), 'The flag is spent; the claim stands in for it')
+        self.delete(key)
+        self.assertEqual(self.entry_flags(key), (True, None), 'A claimed entry was presented as placed, so it is flagged')
+        self.assertEqual(self.restore(key)['looking_ahead'], 'replaced', 'Claimed, deleted, restored: it reclaims')
+        other = self.create(dict(self.WORDS), placement=None)
+        self.delete(key)
+        self.delete(other)
+        self.assertEqual(self.entry_flags(other), (None, None), 'An unplaced entry is never flagged')
+        self.assertNotIn('looking_ahead', self.restore(other), 'It says nothing')
+        self.assertEqual(self.restore(key)['looking_ahead'], 'replaced')
+        self.assertEqual(self.placed(), {key})
+
+    def test_f1_a_permanent_delete_or_expiry_keeps_neither_flag_nor_claim(self):
+        from datetime import timedelta
+        self.setup_shared()
+        first = self.create(dict(self.WORDS))
+        self.delete(first)
+        self.policy('permanently_delete', first)
+        self.assertEqual(self.entry_flags(first), (None, None))
+        second = self.create(dict(self.WORDS))
+        self.delete(second)
+        snapshot = self.shared.policy.repository.load_owner(self.owner)
+        snapshot['entries'][second]['recover_until'] = self.shared.policy._now() - timedelta(days=1)
+        self.shared.policy.repository.save_owner(self.owner, snapshot)
+        from services.entry_policy_service import EntryPolicyNotFoundError
+        with self.assertRaises(EntryPolicyNotFoundError):
+            self.shared.policy.get_entry(self.owner, second)  # the read that sweeps an expired delete
+        self.assertEqual(self.shared.policy.repository.load_owner(self.owner)['entries'][second]['lifecycle'], 'permanently_deleted')
+        self.assertEqual(self.entry_flags(second), (None, None))
+
+    def test_f1_rule_pins_for_a_stale_flag_a_stale_claim_and_a_missing_retired_copy(self):
+        """States no current path produces (a later path or a migration could): none of them may place anything
+        or say 'replaced' without a placement (writer mutants W03, W08, W11)."""
+        self.setup_shared()
+        key = self.create(dict(self.WORDS))
+        snapshot = self.shared.policy.repository.load_owner(self.owner)
+        snapshot['entries'][key]['looking_ahead_retired'] = True  # a stale flag on an active, placed-by-map entry
+        self.shared.policy.repository.save_owner(self.owner, snapshot)
+        other = self.create(dict(self.WORDS), placement=None)
+        snapshot = self.shared.policy.repository.load_owner(self.owner)
+        snapshot['entries'][other]['looking_ahead_retired'] = True  # a stale flag on an active, unplaced entry
+        self.shared.policy.repository.save_owner(self.owner, snapshot)
+        self.delete(other)
+        self.assertEqual(self.entry_flags(other), (None, None), 'A delete of an unplaced entry removes any stale flag')
+        self.assertNotIn('looking_ahead', self.restore(other))
+        self.delete(key)
+        stored = self.shared.draft.repository.load_owner(self.owner)
+        stored['presentation_placements_retired'] = {}  # the flag outlives its retired copy
+        self.shared.draft.repository.save_owner(self.owner, stored)
+        self.assertEqual(self.restore(key)['looking_ahead'], 'not_replaced', 'No retired copy: it cannot be replaced')
+        self.assertEqual((self.placed(), self.claims()), (set(), {}), 'And nothing is claimed')
+        self.delete(key)
+        snapshot = self.shared.policy.repository.load_owner(self.owner)
+        snapshot['entries'][key]['looking_ahead_claim'] = 5  # a claim stale on a deleted entry
+        snapshot['entries'][key]['looking_ahead_retired'] = True
+        self.shared.policy.repository.save_owner(self.owner, snapshot)
+        self.policy('permanently_delete', key)
+        self.assertEqual(self.entry_flags(key), (None, None), 'A permanent delete erases both')
+
+    def test_m1_an_injected_port_wins_over_the_fallback(self):
+        from types import SimpleNamespace
+        from services.resume_draft_service import ResumeDraftService
+        self.setup_shared()
+        key = self.create(dict(self.WORDS))
+        self.delete(key)
+        self.assertEqual(self.restore(key)['looking_ahead'], 'replaced')
+        self.assertEqual(self.placed(), {key})
+        def placed_by(port):
+            draft = ResumeDraftService(repository=self.shared.draft.repository, catalog=self.shared.canonical,
+                                       placement_claims=port)
+            return {row['record_key'] for row in draft.get_workspace(self.owner)['items']
+                    if row.get('presentation_section') == 'looking_ahead'}
+        self.assertEqual(placed_by(None), {key}, 'TRANSITIONAL: no port falls back to the catalog\'s policy')
+        self.assertEqual(placed_by(SimpleNamespace(looking_ahead_claims=lambda owner: {})), set(),
+                         'An injected port wins over the fallback, even when it holds no claims')
+        self.assertEqual(placed_by(SimpleNamespace(looking_ahead_claims=lambda owner: {key: 1})), {key})
+        self.assertEqual(placed_by(self.shared.policy), {key})
+
+    def test_f1_the_flag_is_never_presented_or_published(self):
+        import json
+        self.setup_shared()
+        key = self.create(dict(self.WORDS))
+        self.shared.seed_publication(self.owner, [(key, True, False)])
+        self.delete(key)
+        restored = self.restore(key)
+        shown = json.dumps([restored, self.shared.policy.get_entry(self.owner, key), self.shared.policy.list_entries(self.owner),
+                            self.shared.publication.owner_preview(self.owner),
+                            self.shared.publication.read_publication_basis_for_owner(self.owner),
+                            self.shared.draft.get_workspace(self.owner)], default=str)
+        self.assertNotIn('looking_ahead_retired', shown)
+        self.assertNotIn('looking_ahead_claim', shown)
+
+    def test_m1_transitional_a_draft_without_the_port_gives_the_same_answer_through_its_catalog_policy(self):
+        """TRANSITIONAL (manager ruling): until the C14 branch injects the port where it wires the draft, a draft built
+        without it reads claims through its catalog's policy, so 8444 keeps placing. Same answer as the port."""
+        from services.resume_draft_repository import InMemoryResumeDraftRepository
+        from services.resume_draft_service import ResumeDraftService
+        from tests.mvp1_acceptance_support import EntryPolicyCanonicalFixture
+        self.setup_shared()
+        first = self.create(dict(self.WORDS))
+        self.delete(first)
+        second = self.create(dict(self.WORDS))
+        self.delete(second)
+        self.assertEqual(self.restore(first)['looking_ahead'], 'replaced')
+        self.assertEqual(self.restore(second)['looking_ahead'], 'not_replaced')
+
+        def workspace_placed(draft):
+            return {row['record_key'] for row in draft.get_workspace(self.owner)['items']
+                    if row.get('presentation_section') == 'looking_ahead'}
+        with_port = ResumeDraftService(repository=self.shared.draft.repository, catalog=self.shared.canonical,
+                                       placement_claims=self.shared.policy)
+        without_port = ResumeDraftService(repository=self.shared.draft.repository, catalog=self.shared.canonical)
+        self.assertIsNone(without_port.placement_claims)
+        self.assertEqual(workspace_placed(without_port), workspace_placed(with_port))
+        self.assertEqual(workspace_placed(without_port), {first})
+        # A draft that can place, with neither a port nor a policy behind its catalog, reads no claims and does not fail.
+        bare = ResumeDraftService(repository=InMemoryResumeDraftRepository(),
+                                  catalog=type('NoPolicyCatalog', (), {'list_items': lambda self, owner: [],
+                                                                       'get_item': lambda self, owner, key: None})())
+        self.assertEqual(bare._placement_claims(self.owner), {})
+        # A placement through the port-less draft is allowed today (the fail-closed flip is deferred until C14 wires the port).
+        key = self.create(dict(self.WORDS), placement=None)
+        workspace = without_port.get_workspace(self.owner)
+        row = next(r for r in workspace['items'] if r['record_key'] == key)
+        self.delete(first)
+        without_port.commit(self.owner, {'type': 'save_item', 'request_id': str(uuid4()), 'record_key': key,
+            'record_type': 'knowledge', 'expected_draft_version': workspace['draft_version'],
+            'expected_content_token': row['content_token'], 'expected_access_revision': row['access_revision'],
+            'values': dict(self.WORDS), 'presentation_section': 'looking_ahead'})
+        self.assertIn(key, workspace_placed(without_port))
+
+    def test_m1_a_replaced_restore_means_the_workspace_presents_the_entry_as_placed(self):
+        """The reply and the workspace never disagree, in every state a restore can meet."""
+        self.setup_shared()
+        first = self.create(dict(self.WORDS))
+        self.delete(first)
+        second = self.create(dict(self.WORDS))
+        plain = self.create({'title': 'Plans', 'wording': 'Fictional words.', 'classification': 'work'}, placement=None)
+        self.delete(plain)
+        seen = []
+        for key in (first, plain):
+            seen.append(self.restore(key).get('looking_ahead'))
+            self.assertEqual(key in self.placed(), seen[-1] == 'replaced', (key, seen[-1]))
+        self.delete(second)
+        seen.append(self.restore(second).get('looking_ahead'))
+        self.assertEqual(second in self.placed(), seen[-1] == 'replaced')
+        self.assertEqual(seen, ['not_replaced', None, 'replaced'], 'Every outcome was exercised')
+        self.assertNotIn('presentation_section', self.row(first))
+
+    def test_m2_the_guide_presents_looking_ahead_from_the_placement_only(self):
+        client = self.routes()
+        title_only = client.create(placed=False)  # titled "Looking Ahead", never placed
+        guide = client.guide()
+        self.assertEqual([item['item_ref'] for item in guide['non_tab_items']], [], 'A title alone is not Looking Ahead')
+        self.assertEqual([item['item_ref'] for item in guide['unplaced']], [title_only], 'Its natural section')
+        placed = client.create()
+        guide = client.guide()
+        self.assertEqual([item['item_ref'] for item in guide['non_tab_items']], [placed])
+        self.assertEqual([item['item_ref'] for item in guide['unplaced']], [title_only], 'Never a second Looking Ahead')
+        client.delete(placed)
+        holder = client.create()
+        self.assertEqual(client.restore(placed), 'not_replaced')
+        guide = client.guide()
+        self.assertEqual([item['item_ref'] for item in guide['non_tab_items']], [holder])
+        self.assertEqual({item['item_ref'] for item in guide['unplaced']}, {title_only, placed},
+                         'A restored, unplaced entry is not a second Looking Ahead either')
+
+    def test_m4_a_placing_save_on_a_store_without_shared_media_state_drops_the_retired_copy(self):
+        from services.resume_draft_repository import InMemoryResumeDraftRepository
+        from services.resume_draft_service import ResumeDraftService
+        from tests.mvp1_acceptance_support import EntryPolicyCanonicalFixture
+        self.setup_shared()
+        draft = ResumeDraftService(repository=InMemoryResumeDraftRepository(),
+                                   catalog=EntryPolicyCanonicalFixture(self.shared.policy), placement_claims=self.shared.policy)
+        self.assertFalse(getattr(draft.repository, 'resume_media_state_present', False), 'The plain, non-shared path')
+        key = self.create(dict(self.WORDS), placement=None)
+        stored = draft.repository.load_owner(self.owner)
+        stored['presentation_placements_retired'] = {key: 'looking_ahead'}
+        draft.repository.save_owner(self.owner, stored)
+        workspace = draft.get_workspace(self.owner)
+        row = next(r for r in workspace['items'] if r['record_key'] == key)
+        draft.commit(self.owner, {'type': 'save_item', 'request_id': str(uuid4()), 'record_key': key,
+            'record_type': 'knowledge', 'expected_draft_version': workspace['draft_version'],
+            'expected_content_token': row['content_token'], 'expected_access_revision': row['access_revision'],
+            'values': dict(self.WORDS), 'presentation_section': 'looking_ahead'})
+        stored = draft.repository.load_owner(self.owner)
+        self.assertEqual(stored['presentation_placements'], {key: 'looking_ahead'})
+        self.assertEqual(stored.get('presentation_placements_retired') or {}, {}, 'The placing save spends the retired copy')
+
+    # ---- deleting a moved item voids the move (Q3, R2-m1)
+
+    def moved_skill(self):
+        self.setup_shared()
+        self.service.set_guide_references(self.owner, {'request_id': str(uuid4()), 'kind': 'highlights',
+            'item_ref': None, 'references': [self.bullet],
+            'expected_working_set_token': self.working()['working_set_token']})
+        staged = self.stage(self.skill, 'project', {'project_name': 'Fictional skill', 'summary': 'A fictional project.'})
+        return self.confirm(staged)
+
+    def test_undo_after_deleting_the_moved_item_is_refused_and_never_restores_pruned_links(self):
+        confirmed = self.moved_skill()
+        self.delete(self.skill)
+        self.assertNotIn(self.skill, self.raw_draft()[0], 'Delete voids the move: its overlay is gone')
+        before = self.raw_draft()
+        with self.assertRaises(ResumeIntakeConflictError) as refused:
+            self.undo(confirmed)
+        self.assertEqual(refused.exception.error_code, 'conversion_item_missing')
+        self.assertEqual(self.raw_draft(), before, 'Nothing changed: no pruned link came back')
+
+    def test_m3_undo_says_the_item_was_deleted_only_when_it_is_gone(self):
+        """An overlay a later publish consumed is a stale Undo, not a falsely 'deleted' item."""
+        confirmed = self.moved_skill()
+        stored = self.shared.draft.repository.load_owner(self.owner)
+        stored['items'].pop(self.skill)  # what a publish that consumes the overlay does (after D6c)
+        self.shared.draft.repository.save_owner(self.owner, stored)
+        before = self.raw_draft()
+        with self.assertRaises(ResumeIntakeConflictError) as refused:
+            self.undo(confirmed)
+        self.assertEqual(refused.exception.error_code, 'stale_undo')
+        self.assertEqual(self.raw_draft(), before)
+
+    def test_a_restored_moved_item_is_back_as_its_original_type_and_never_stuck(self):
+        confirmed = self.moved_skill()
+        self.delete(self.skill)
+        self.restore(self.skill)
+        item = self.item(self.skill)
+        self.assertEqual((item['record_type'], item.get('conversion')), ('skill', None), 'The original type, unmoved')
+        before = self.raw_draft()
+        with self.assertRaises(ResumeIntakeConflictError) as stale:
+            self.undo(confirmed)
+        self.assertEqual(stale.exception.error_code, 'stale_undo', 'B3c m3: the item is back, so this is a stale Undo')
+        self.assertEqual(self.raw_draft(), before, 'No pruned link comes back')
+        workspace = self.shared.draft.get_workspace(self.owner)
+        row = next(r for r in workspace['items'] if r['record_key'] == self.skill)
+        self.shared.draft.commit(self.owner, {'type': 'save_item', 'request_id': str(uuid4()), 'record_key': self.skill,
+            'record_type': 'skill', 'expected_draft_version': workspace['draft_version'],
+            'expected_content_token': row['content_token'], 'expected_access_revision': row['access_revision'],
+            'values': {'summary': 'Editable again.'}})
+        self.assertEqual(self.row(self.skill)['proposed_values']['summary'], 'Editable again.', 'A save works')
+        workspace = self.shared.draft.get_workspace(self.owner)
+        row = next(r for r in workspace['items'] if r['record_key'] == self.skill)
+        self.shared.draft.commit(self.owner, {'type': 'discard_item', 'request_id': str(uuid4()), 'record_key': self.skill,
+            'expected_draft_version': workspace['draft_version'], 'expected_content_token': row['content_token'],
+            'expected_access_revision': row['access_revision']})
+        staged = self.stage(self.skill, 'project', {'project_name': 'Fictional skill', 'summary': 'Moved again.'})
+        self.assertEqual(staged['outcome'], 'staged', 'A new move can start')
+
+    # ---- markers (B3m m1) and the typed-item refusal (B3m m2)
+
+    def test_one_leading_list_marker_is_dropped_only_when_whitespace_follows(self):
+        from services.resume_guide_contract import placed_text
+        stripped = {'- Led the team': 'Led the team', '– Led the team': 'Led the team', '— Led': 'Led',
+                    '• Led': 'Led', '▪ Led': 'Led', '◦ Led': 'Led', '● Led': 'Led', '* Led': 'Led',
+                    '1. Led': 'Led', '12) Led': 'Led', '- - Led': '- Led', '• 2. Led': '2. Led'}
+        kept = ['-5% cost', '1.5 million users', '–3 days', 'Led the team', '-', '2020 award']
+        for text, expected in stripped.items():
+            self.assertEqual(placed_text(text), expected, text)
+        for text in kept:
+            self.assertEqual(placed_text(text), text, text)
+
+    def test_only_a_line_or_a_bullet_can_be_placed(self):
+        t = GuideB3mTests('test_an_unplaced_knowledge_line_has_no_missing_essentials')
+        t.setUp()
+        note = {'record_type': 'knowledge', 'values': {'title': 'Fictional note', 'wording': '- Fictional Pruning'},
+                'quote': '- Fictional Pruning', 'outcome': 'new', 'confidence': 'certain', 'presentation_section': 'Unsorted'}
+        working = t.organized([t.ROLE, note])
+        line = next(row for row in working['unplaced'] if row['record_type'] == 'knowledge')
+        before = t.stored()
+        with self.assertRaises(ResumeIntakeConflictError) as refused:
+            t.place(line, {'section': 'skills'}, working=working)
+        self.assertEqual(str(refused.exception), 'Only a line or a bullet can be placed. Nothing changed.')
+        self.assertEqual(t.stored(), before)
 
 if __name__ == "__main__":
     unittest.main()

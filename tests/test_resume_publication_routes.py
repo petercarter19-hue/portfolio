@@ -215,6 +215,37 @@ class ResumePublicationRouteTests(unittest.TestCase):
     def _headers(self):
         return {"X-PeerSlate-Request": "same-origin"}
 
+    def test_a_placed_onboarding_bound_entry_previews_where_publish_keeps_it(self):
+        """B3c m2 (D6c review): an onboarding section binding sorts ordinary entries, but never moves a placed Looking
+        Ahead entry or a My Story entry, so the owner preview equals Publish. Real preview route; the publication
+        service is a stand-in that returns what Publish keeps."""
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        rows = {
+            'placed': {'canonical_type': 'knowledge', 'presentation_section': 'looking_ahead',
+                       'wording': {'title': 'Looking Ahead', 'wording': 'Lead fictional automation.', 'classification': 'work'}},
+            'story': {'canonical_type': 'knowledge', 'presentation_section': 'story',
+                      'wording': {'title': 'My Story', 'wording': 'A fictional story.', 'classification': 'personal'}},
+            'sorted': {'canonical_type': 'knowledge', 'presentation_section': 'entry',
+                       'wording': {'title': 'Awards', 'wording': 'A fictional award.', 'classification': 'work'}},
+        }
+        class Intake:
+            repository = SimpleNamespace(supports_resume_conversation=True)
+
+            def get_workspace(self, owner):
+                return {'resume_section_bindings': {'placed': 'Professional summary', 'story': 'Awards', 'sorted': 'Awards'}}
+        class Publication:
+            def draft_preview(self, owner, payload):
+                return {'display': {key: dict(value) for key, value in rows.items()}, 'media': {}, 'publication_revision': 1}
+        with patch.dict(app.config, {'RESUME_INTAKE_SERVICE': Intake(), 'PEERSLATE_RESUME_INTAKE_ENABLED': True,
+                                     'RESUME_PUBLICATION_SERVICE': Publication()}):
+            response = self._client().get('/api/resume-publication/me/preview', headers=self._headers())
+        self.assertEqual(response.status_code, 200, response.get_json())
+        display = response.get_json()['display']
+        self.assertEqual(display['placed']['presentation_section'], 'looking_ahead', 'A placed entry stays in Looking Ahead')
+        self.assertEqual(display['story']['presentation_section'], 'story')
+        self.assertEqual(display['sorted']['presentation_section'], 'awards', 'The binding still sorts an ordinary entry')
+
     def test_flag_off_is_not_found(self):
         app.config["PEERSLATE_RESUME_PUBLICATION_ENABLED"] = False
         client = self._client()
